@@ -1,0 +1,57 @@
+# General Settings
+gpu: true
+host: 127.0.0.1
+port: 11434
+
+# Model Configuration
+default_model: codellama:13b
+models:
+  - name: codellama:13b
+    parameters:
+      temperature: 0.7
+      top_p: 0.9
+      top_k: 40
+      repeat_penalty: 1.1
+      max_tokens: 2048
+  
+  - name: mistral:7b
+    parameters:
+      temperature: 0.8
+      top_p: 0.9
+      top_k: 40
+      repeat_penalty: 1.1
+      max_tokens: 4096
+
+  - name: llama2:13b
+    parameters:
+      temperature: 0.7
+      top_p: 0.9
+      top_k: 40
+      repeat_penalty: 1.1
+      max_tokens: 2048
+
+# System Resources
+num_gpu: 1
+num_thread: 8
+memory_limit: "16GB"
+gpu_memory_limit: "12GB"
+
+# API Settings
+api:
+  cors_origins: ["*"]
+  timeout: 120
+  max_request_size: "20MB"
+
+# Cache Settings
+cache:
+  enabled: true
+  path: ~/.cache/ollama
+  size: "10GB"
+
+# Logging
+log:
+  level: info
+  file: ~/.local/state/ollama/ollama.log
+  format: json
+  max_size: "100MB"
+  max_backups: 3

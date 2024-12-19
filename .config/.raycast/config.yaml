@@ -1,0 +1,188 @@
+# General Settings
+appearance:
+  theme: dark
+  color: blue
+  hideMenuBarIcon: true
+  showQuickAccess: true
+
+# Window Settings
+window:
+  defaultWidth: 800
+  defaultHeight: 500
+  decorations: transparent
+  blur: true
+
+# Search Settings
+search:
+  defaultApplications: true
+  defaultCalculator: true
+  defaultConversions: true
+  defaultSnippets: true
+  fuzzyMatch: true
+
+# Hotkeys
+hotkeys:
+  toggleRaycast: "cmd + space"
+  quickActions: "cmd + k"
+  snippets: "cmd + shift + s"
+  clipboard: "cmd + shift + v"
+  floatingNotes: "cmd + shift + n"
+
+# Extensions
+extensions:
+  # Development
+  - name: "GitHub Repository Search"
+    enabled: true
+    hotkey: "cmd + shift + g"
+  
+  - name: "VS Code Projects"
+    enabled: true
+    hotkey: "cmd + shift + p"
+    
+  - name: "Terminal Commands"
+    enabled: true
+    hotkey: "cmd + shift + t"
+  
+  # System
+  - name: "System Commands"
+    enabled: true
+    settings:
+      showHidden: true
+  
+  - name: "Clipboard History"
+    enabled: true
+    settings:
+      maxItems: 100
+      keepImages: true
+  
+  # Productivity
+  - name: "Calendar"
+    enabled: true
+    settings:
+      defaultCalendar: "Work"
+  
+  - name: "Reminders"
+    enabled: true
+    settings:
+      defaultList: "Tasks"
+  
+  # Window Management
+  - name: "Window Management"
+    enabled: true
+    settings:
+      shortcuts:
+        # Full Screen
+        - name: "Full Screen"
+          shortcut: "ctrl + cmd + f"
+          frame: { x: 0, y: 0, width: 1, height: 1 }
+        
+        # Halves
+        - name: "Left Half"
+          shortcut: "ctrl + cmd + left"
+          frame: { x: 0, y: 0, width: 0.5, height: 1 }
+        - name: "Right Half"
+          shortcut: "ctrl + cmd + right"
+          frame: { x: 0.5, y: 0, width: 0.5, height: 1 }
+        
+        # Quarters
+        - name: "Top Left"
+          shortcut: "ctrl + cmd + u"
+          frame: { x: 0, y: 0, width: 0.5, height: 0.5 }
+        - name: "Top Right"
+          shortcut: "ctrl + cmd + i"
+          frame: { x: 0.5, y: 0, width: 0.5, height: 0.5 }
+        - name: "Bottom Left"
+          shortcut: "ctrl + cmd + j"
+          frame: { x: 0, y: 0.5, width: 0.5, height: 0.5 }
+        - name: "Bottom Right"
+          shortcut: "ctrl + cmd + k"
+          frame: { x: 0.5, y: 0.5, width: 0.5, height: 0.5 }
+        
+        # Thirds
+        - name: "Left Third"
+          shortcut: "ctrl + cmd + d"
+          frame: { x: 0, y: 0, width: 0.33, height: 1 }
+        - name: "Center Third"
+          shortcut: "ctrl + cmd + f"
+          frame: { x: 0.33, y: 0, width: 0.34, height: 1 }
+        - name: "Right Third"
+          shortcut: "ctrl + cmd + g"
+          frame: { x: 0.67, y: 0, width: 0.33, height: 1 }
+        
+        # Center
+        - name: "Center"
+          shortcut: "ctrl + cmd + c"
+          frame: { x: 0.15, y: 0.1, width: 0.7, height: 0.8 }
+        
+        # Multi-Monitor
+        - name: "Next Display"
+          shortcut: "ctrl + cmd + n"
+          action: "next-display"
+        - name: "Previous Display"
+          shortcut: "ctrl + cmd + p"
+          action: "previous-display"
+        
+      # Default Layouts
+      layouts:
+        - name: "Development"
+          windows:
+            - app: "Cursor"
+              frame: { x: 0, y: 0, width: 0.6, height: 1 }
+            - app: "Warp"
+              frame: { x: 0.6, y: 0, width: 0.4, height: 0.5 }
+            - app: "Arc"
+              frame: { x: 0.6, y: 0.5, width: 0.4, height: 0.5 }
+        
+        - name: "Writing"
+          windows:
+            - app: "Cursor"
+              frame: { x: 0.15, y: 0.1, width: 0.7, height: 0.8 }
+        
+        - name: "Communication"
+          windows:
+            - app: "Slack"
+              frame: { x: 0, y: 0, width: 0.7, height: 1 }
+            - app: "Discord"
+              frame: { x: 0.7, y: 0, width: 0.3, height: 1 }
+
+# Custom Scripts
+scripts:
+  - name: "New Python Project"
+    command: "warp open python_project"
+    hotkey: "cmd + shift + n"
+  
+  - name: "AWS Session"
+    command: "warp open aws_session"
+    hotkey: "cmd + shift + a"
+  
+  - name: "Docker Dev"
+    command: "warp open docker_dev"
+    hotkey: "cmd + shift + d"
+
+# Quick Links
+quicklinks:
+  - name: "GitHub"
+    url: "https://github.com"
+    hotkey: "cmd + shift + 1"
+  
+  - name: "AWS Console"
+    url: "https://console.aws.amazon.com"
+    hotkey: "cmd + shift + 2"
+  
+  - name: "Documentation"
+    url: "https://devdocs.io"
+    hotkey: "cmd + shift + 3"
+
+# Snippets
+snippets:
+  - name: "Git Commit"
+    keyword: "gc"
+    script: "warp open git_commit"
+  
+  - name: "Python Test"
+    keyword: "pt"
+    script: "warp open python_test"
+  
+  - name: "AWS Lambda"
+    keyword: "al"
+    script: "warp open aws_lambda_dev" 

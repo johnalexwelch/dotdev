@@ -1,0 +1,175 @@
+{
+  "name": "Default Profile",
+  "devices": [
+    {
+      "type": "Keypad",
+      "brightness": 80,
+      "buttons": [
+        {
+          "index": 0,
+          "action": "Website",
+          "settings": {
+            "path": "https://dbtlabs.okta.com/app/UserHome",
+            "openInBrowser": true
+          },
+          "icon": "okta.png"
+        },
+        {
+          "index": 1,
+          "action": "Website",
+          "settings": {
+            "path": "https://fivetran.com/dashboard/connectors",
+            "openInBrowser": true
+          },
+          "icon": "fivetran.png"
+        },
+        {
+          "index": 2,
+          "action": "ZoomControl",
+          "settings": {
+            "type": "muteToggle"
+          },
+          "states": [
+            { "icon": "zoom-unmuted.png" },
+            { "icon": "zoom-muted.png" }
+          ]
+        },
+
+        {
+          "index": 3,
+          "action": "Website",
+          "settings": {
+            "path": "https://app.snowflake.com/cmvgrnf/kw27752/worksheets",
+            "openInBrowser": true
+          },
+          "icon": "snowflake.png"
+        },
+        {
+          "index": 4,
+          "action": "Website",
+          "settings": {
+            "path": "https://app.prefect.cloud/account/a9457d50-da4e-4a3a-9a30-5a0019d4b718/workspace/ede04aaa-1b28-4481-b1bb-567ccee8cf8f/dashboard",
+            "openInBrowser": true
+          },
+          "icon": "prefect.png"
+        },
+        {
+          "index": 5,
+          "action": "ZoomControl",
+          "settings": {
+            "type": "videoToggle"
+          },
+          "states": [
+            { "icon": "zoom-video-on.png" },
+            { "icon": "zoom-video-off.png" }
+          ]
+        },
+
+        {
+          "index": 6,
+          "action": "Website",
+          "settings": {
+            "path": "https://cloud.getdbt.com/explore/1/projects/672/",
+            "openInBrowser": true
+          },
+          "icon": "dbt-cloud.png"
+        },
+        {
+          "index": 7,
+          "action": "Website",
+          "settings": {
+            "path": "https://app.hightouch.com/workspaces",
+            "openInBrowser": true
+          },
+          "icon": "hightouch.png"
+        },
+        {
+          "index": 8,
+          "action": "MultiAction",
+          "settings": {
+            "actions": [
+              {
+                "type": "ZoomControl",
+                "action": "leaveMeeting"
+              },
+              {
+                "type": "Light",
+                "action": "toggle",
+                "device": "Key Light - Right"
+              }
+            ]
+          },
+          "icon": "end-meeting.png"
+        },
+
+        {
+          "index": 9,
+          "action": "Website",
+          "settings": {
+            "path": "https://fishtown.looker.com/boards/5",
+            "openInBrowser": true
+          },
+          "icon": "looker.png"
+        },
+        {
+          "index": 10,
+          "action": "Website",
+          "settings": {
+            "path": "https://app.elementary-data.com/report",
+            "openInBrowser": true
+          },
+          "icon": "elementary.png"
+        },
+        {
+          "index": 11,
+          "action": "Light",
+          "settings": {
+            "device": "Key Light - Right",
+            "type": "toggle"
+          },
+          "icon": "key-light.png"
+        },
+
+        {
+          "index": 12,
+          "action": "Website",
+          "settings": {
+            "path": "https://app.hex.tech/fishtown/home",
+            "openInBrowser": true
+          },
+          "icon": "hex.png"
+        },
+        {
+          "index": 13,
+          "action": "Website",
+          "settings": {
+            "path": "https://github.com/dbt-labs/internal-analytics",
+            "openInBrowser": true
+          },
+          "icon": "github.png"
+        },
+        {
+          "index": 14,
+          "action": "NextPage",
+          "settings": {},
+          "icon": "next-page.png"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "brightness": {
+      "default": 80,
+      "whenDimmed": 20
+    },
+    "dimming": {
+      "enabled": true,
+      "afterMinutes": 30
+    },
+    "feedback": {
+      "enabled": true,
+      "haptic": true,
+      "sound": false
+    }
+  }
+} 

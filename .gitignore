@@ -1,0 +1,105 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.env
+.venv
+env/
+venv/
+ENV/
+.python-version
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Cache directories
+.cache/
+.npm/
+.eslintcache
+
+# Local configuration
+.localrc
+.tool-versions
+
+# Compiled files
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+
+# Packages
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Secrets and keys
+*.pem
+*.key
+*.cert
+.ssh/
+
+# Project specific
+.dotfiles-backup/
+.stow-local-ignore 

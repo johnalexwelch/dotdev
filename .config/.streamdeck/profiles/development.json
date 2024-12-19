@@ -1,0 +1,156 @@
+{
+  "name": "Development Profile",
+  "devices": [
+    {
+      "type": "Keypad",
+      "brightness": 80,
+      "buttons": [
+        {
+          "index": 0,
+          "action": "System",
+          "settings": {
+            "command": "Mute Mic",
+            "feedback": true
+          },
+          "icon": "mic-mute.png"
+        },
+        {
+          "index": 1,
+          "action": "System",
+          "settings": {
+            "command": "Volume Up"
+          },
+          "icon": "volume-up.png"
+        },
+        {
+          "index": 2,
+          "action": "System",
+          "settings": {
+            "command": "Volume Down"
+          },
+          "icon": "volume-down.png"
+        },
+
+        {
+          "index": 3,
+          "action": "Open",
+          "settings": {
+            "app": "Cursor"
+          },
+          "icon": "cursor.png"
+        },
+        {
+          "index": 4,
+          "action": "Open",
+          "settings": {
+            "app": "Warp"
+          },
+          "icon": "warp.png"
+        },
+        {
+          "index": 5,
+          "action": "Open",
+          "settings": {
+            "app": "Arc"
+          },
+          "icon": "arc.png"
+        },
+
+        {
+          "index": 6,
+          "action": "Hotkey",
+          "settings": {
+            "command": "cmd+shift+n",
+            "name": "New Python Project"
+          },
+          "icon": "python.png"
+        },
+        {
+          "index": 7,
+          "action": "Hotkey",
+          "settings": {
+            "command": "cmd+shift+g",
+            "name": "Git Commit"
+          },
+          "icon": "git.png"
+        },
+        {
+          "index": 8,
+          "action": "Hotkey",
+          "settings": {
+            "command": "cmd+shift+t",
+            "name": "Run Tests"
+          },
+          "icon": "test.png"
+        },
+
+        {
+          "index": 9,
+          "action": "Hotkey",
+          "settings": {
+            "command": "ctrl+cmd+left",
+            "name": "Window Left"
+          },
+          "icon": "window-left.png"
+        },
+        {
+          "index": 10,
+          "action": "Hotkey",
+          "settings": {
+            "command": "ctrl+cmd+right",
+            "name": "Window Right"
+          },
+          "icon": "window-right.png"
+        },
+        {
+          "index": 11,
+          "action": "Hotkey",
+          "settings": {
+            "command": "ctrl+cmd+f",
+            "name": "Window Full"
+          },
+          "icon": "window-full.png"
+        },
+
+        {
+          "index": 12,
+          "action": "Profile",
+          "settings": {
+            "profile": "Default Profile"
+          },
+          "icon": "profile-work.png"
+        },
+        {
+          "index": 13,
+          "action": "Light",
+          "settings": {
+            "device": "Key Light - Right",
+            "type": "toggle"
+          },
+          "icon": "key-light.png"
+        },
+        {
+          "index": 14,
+          "action": "NextPage",
+          "settings": {},
+          "icon": "next-page.png"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "brightness": {
+      "default": 80,
+      "whenDimmed": 20
+    },
+    "dimming": {
+      "enabled": true,
+      "afterMinutes": 30
+    },
+    "feedback": {
+      "enabled": true,
+      "haptic": true,
+      "sound": false
+    }
+  }
+} 

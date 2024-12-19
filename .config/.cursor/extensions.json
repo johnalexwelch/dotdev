@@ -1,0 +1,59 @@
+{
+  "recommendations": [
+    // Python
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.black-formatter",
+    "charliermarsh.ruff",
+    "dbt-labs.dbt-power-user",
+    "dbt.dbt-language-server",
+    
+    // Git
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+    
+    // AI/Copilot
+    "github.copilot",
+    "github.copilot-chat",
+    
+    // Themes and Icons
+    "enkia.tokyo-night",
+    "pkief.material-icon-theme",
+    "file-icons.file-icons",
+    
+    // General Development
+    "usernamehw.errorlens",
+    "streetsidesoftware.code-spell-checker",
+    "visualstudioexptteam.vscodeintellicode",
+    "christian-kohler.path-intellisense",
+    "formulahendry.code-runner",
+    "ms-vscode.makefile-tools",
+    
+    // Docker
+    "ms-azuretools.vscode-docker",
+    
+    // YAML/JSON/Markdown
+    "redhat.vscode-yaml",
+    "esbenp.prettier-vscode",
+    "yzhang.markdown-all-in-one",
+    "samuelcolvin.jinjahtml",
+    
+    // AWS
+    "amazonwebservices.aws-toolkit-vscode",
+    "1password.op-vscode",
+    
+    // Testing
+    "littlefoxteam.vscode-python-test-adapter",
+    
+    // Database
+    "mtxr.sqltools",
+    "mtxr.sqltools-driver-pg",
+    "duckdb.duckdb-vscode",
+    "sqlfluff.vscode-sqlfluff",
+    "mechatroner.rainbow-csv",
+    
+    // Remote Development
+    "ms-vscode-remote.remote-ssh",
+    "ms-vscode-remote.remote-containers"
+  ]
+} 

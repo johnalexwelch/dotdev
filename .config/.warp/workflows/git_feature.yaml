@@ -1,0 +1,21 @@
+name: Git Feature Branch
+description: Create and set up a new feature branch
+command: |
+  # Create and checkout feature branch
+  git checkout -b feature/{{branch_name}}
+  
+  # Pull latest from main/master
+  git pull origin {{base_branch}}
+  
+  # Push branch and set upstream
+  git push -u origin feature/{{branch_name}}
+  
+  # Show branch status
+  git status
+
+arguments:
+  - name: branch_name
+    description: Name of the feature (without feature/ prefix)
+  - name: base_branch
+    description: Base branch to branch from
+    default_value: main 

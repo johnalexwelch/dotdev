@@ -1,0 +1,11 @@
+name: Git Branch Cleanup
+description: Clean up merged branches and prune remotes
+command: |
+  # Fetch and prune remote branches
+  git fetch --prune
+  
+  # Delete merged local branches
+  git branch --merged | egrep -v "(^\*|master|main|dev)" | xargs git branch -d
+  
+  # Show remaining branches
+  git branch -a 

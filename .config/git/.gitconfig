@@ -1,0 +1,82 @@
+[user]
+    name = Alex Welch
+    email = alex@welch.engineering
+
+[init]
+    defaultBranch = main
+
+[core]
+    editor = code --wait
+    excludesfile = ~/.gitignore_global
+    pager = delta
+
+[interactive]
+    diffFilter = delta --color-only
+
+[delta]
+    navigate = true    # use n and N to move between diff sections
+    light = false      # set to true if you're in a terminal w/ a light background color
+    side-by-side = true
+    line-numbers = true
+
+[merge]
+    conflictstyle = diff3
+
+[diff]
+    colorMoved = default
+
+[push]
+    autoSetupRemote = true
+    default = current
+
+[pull]
+    rebase = true
+
+[fetch]
+    prune = true
+
+[rebase]
+    autoStash = true
+
+[alias]
+    # Shorter commands
+    st = status -sb
+    co = checkout
+    br = branch
+    ci = commit
+    df = diff
+    dc = diff --cached
+    lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --date=relative
+    who = shortlog -s --
+    undo = reset --soft HEAD^
+    stash-all = stash save --include-untracked
+
+    # Feature improving aliases
+    branches = branch -a
+    remotes = remote -v
+    tags = tag -l
+    amend = commit --amend --no-edit
+    unstage = reset HEAD --
+    uncommit = reset --soft HEAD^
+    last = log -1 HEAD --stat
+    contributors = shortlog -s -n
+    filehistory = log --follow -p --
+
+[color]
+    ui = auto
+
+[color "branch"]
+    current = yellow reverse
+    local = yellow
+    remote = green
+
+[color "diff"]
+    meta = yellow bold
+    frag = magenta bold
+    old = red bold
+    new = green bold
+
+[color "status"]
+    added = yellow
+    changed = green
+    untracked = red

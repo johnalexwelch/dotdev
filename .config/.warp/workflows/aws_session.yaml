@@ -1,0 +1,16 @@
+name: AWS Session Setup
+description: Configure AWS session with profile and region
+command: |
+  # Set AWS Profile
+  export AWS_PROFILE={{profile}}
+  # Set AWS Region
+  export AWS_DEFAULT_REGION={{region}}
+  # Verify identity
+  aws sts get-caller-identity
+
+arguments:
+  - name: profile
+    description: AWS profile to use
+  - name: region
+    description: AWS region to use
+    default_value: us-west-2 

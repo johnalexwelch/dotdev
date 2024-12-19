@@ -1,0 +1,75 @@
+{
+  "installed_plugins": [
+    {
+      "name": "Zoom Plugin",
+      "id": "com.lostdomain.zoom",
+      "version": "1.3.2",
+      "url": "https://marketplace.elgato.com/plugins/com.lostdomain.zoom"
+    },
+    {
+      "name": "Control Center",
+      "id": "com.elgato.controlcenter",
+      "version": "1.1.0",
+      "url": "https://marketplace.elgato.com/plugins/com.elgato.controlcenter"
+    },
+    {
+      "name": "Discord",
+      "id": "com.elgato.discord",
+      "version": "1.0.0",
+      "url": "https://marketplace.elgato.com/plugins/com.elgato.discord"
+    },
+    {
+      "name": "Key Creator",
+      "id": "com.elgato.keycreator",
+      "version": "1.0.0",
+      "url": "https://marketplace.elgato.com/plugins/com.elgato.keycreator"
+    },
+    {
+      "name": "OBS Studio",
+      "id": "com.elgato.obsstudio",
+      "version": "1.0.0",
+      "url": "https://marketplace.elgato.com/plugins/com.elgato.obsstudio"
+    },
+    {
+      "name": "Spotify",
+      "id": "com.elgato.spotify",
+      "version": "1.0.0",
+      "url": "https://marketplace.elgato.com/plugins/com.elgato.spotify"
+    },
+    {
+      "name": "Volume Controller",
+      "id": "com.elgato.volume-controller",
+      "version": "1.0.0",
+      "url": "https://marketplace.elgato.com/plugins/com.elgato.volume-controller"
+    },
+    {
+      "name": "Kenku Remote",
+      "id": "fm.kenku.remote",
+      "version": "1.0.0",
+      "url": "https://marketplace.elgato.com/plugins/fm.kenku.remote"
+    },
+    {
+      "name": "Pi-hole",
+      "id": "us.johnholbrook.pihole",
+      "version": "1.0.0",
+      "url": "https://marketplace.elgato.com/plugins/us.johnholbrook.pihole"
+    }
+  ],
+  "plugin_settings": {
+    "com.lostdomain.zoom": {
+      "auto_connect": true,
+      "show_meeting_info": true
+    },
+    "com.elgato.controlcenter": {
+      "default_brightness": 80,
+      "auto_dim": true
+    },
+    "com.elgato.spotify": {
+      "show_artwork": true,
+      "show_progress": true
+    },
+    "com.elgato.volume-controller": {
+      "show_percentage": true
+    }
+  }
+} 

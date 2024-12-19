@@ -1,0 +1,12 @@
+name: Docker Development Setup
+description: Set up a Docker development environment
+command: |
+  # Create Docker network
+  docker network create {{project_name}}-network
+  
+  # Start development containers
+  docker-compose -p {{project_name}} up -d
+
+arguments:
+  - name: project_name
+    description: Project name for Docker resources 

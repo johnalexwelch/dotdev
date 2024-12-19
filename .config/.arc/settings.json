@@ -1,0 +1,179 @@
+{
+  // General Settings
+  "theme": {
+    "mode": "dark",
+    "customColors": {
+      "accent": "#7AA2F7",
+      "background": "#1A1B26",
+      "text": "#A9B1D6"
+    }
+  },
+
+  // Window Settings
+  "window": {
+    "startupPage": "spaces",
+    "newTabPosition": "right",
+    "closeTabPosition": "left",
+    "tabBarPosition": "top",
+    "showTabBar": true,
+    "showFavicons": true
+  },
+
+  // Space Settings
+  "spaces": {
+    "enabled": true,
+    "defaultSpace": "Personal",
+    "predefinedSpaces": [
+      {
+        "name": "Work",
+        "icon": "💼",
+        "color": "#7AA2F7"
+      },
+      {
+        "name": "Personal",
+        "icon": "🏠",
+        "color": "#9ECE6A"
+      }
+    ]
+  },
+
+  // Feature Settings
+  "features": {
+    "splitView": {
+      "enabled": true,
+      "defaultSplit": "vertical"
+    },
+    "commandBar": {
+      "enabled": true,
+      "shortcut": "cmd+k"
+    },
+    "easel": {
+      "enabled": true,
+      "defaultBackground": "blur"
+    },
+    "littleArcs": {
+      "enabled": true,
+      "position": "bottom"
+    }
+  },
+
+  // Privacy Settings
+  "privacy": {
+    "doNotTrack": true,
+    "blockThirdPartyCookies": true,
+    "clearDataOnQuit": {
+      "cookies": false,
+      "cache": true,
+      "history": false
+    }
+  },
+
+  // Keyboard Shortcuts
+  "shortcuts": {
+    "newTab": "cmd+t",
+    "newWindow": "cmd+n",
+    "newSpace": "cmd+shift+n",
+    "closeTab": "cmd+w",
+    "reopenTab": "cmd+shift+t",
+    "switchToPreviousTab": "cmd+shift+[",
+    "switchToNextTab": "cmd+shift+]",
+    "toggleSplitView": "cmd+shift+d"
+  },
+
+  // Search Settings
+  "search": {
+    "defaultEngine": "google",
+    "quickSearchEnabled": true,
+    "suggestionsEnabled": true,
+    "customEngines": [
+      {
+        "name": "GitHub",
+        "keyword": "gh",
+        "url": "https://github.com/search?q=%s"
+      },
+      {
+        "name": "DevDocs",
+        "keyword": "dd",
+        "url": "https://devdocs.io/#q=%s"
+      },
+      {
+        "name": "PyPI",
+        "keyword": "py",
+        "url": "https://pypi.org/search/?q=%s"
+      }
+    ]
+  },
+
+  // Boost Settings
+  "boosts": {
+    "enabled": true,
+    "defaultDuration": 30,
+    "showTimer": true,
+    "notifications": {
+      "enabled": true,
+      "sound": true
+    }
+  },
+
+  // Extension Settings
+  "extensions": {
+    "enabled": true,
+    "installed": [
+      {
+        "name": "1Password",
+        "id": "com.1password.extension",
+        "enabled": true,
+        "permissions": [
+          "passwords",
+          "identities",
+          "creditCards"
+        ]
+      },
+      {
+        "name": "Freedom",
+        "id": "com.freedom.extension",
+        "enabled": true,
+        "settings": {
+          "blockingMode": "strict",
+          "syncWithDesktop": true,
+          "showBlockingPage": true
+        }
+      },
+      {
+        "name": "Readwise Highlighter",
+        "id": "io.readwise.highlighter",
+        "enabled": true,
+        "settings": {
+          "shortcut": "cmd+shift+h",
+          "autoSync": true,
+          "highlightStyles": {
+            "default": "#FFD60A",
+            "important": "#F7768E",
+            "question": "#7AA2F7",
+            "definition": "#9ECE6A"
+          }
+        }
+      },
+      {
+        "name": "Tactiq",
+        "id": "com.tactiq.extension",
+        "enabled": true,
+        "settings": {
+          "autoTranscribe": true,
+          "language": "en-US",
+          "saveLocation": "cloud",
+          "notifications": {
+            "meetingStart": true,
+            "transcriptReady": true
+          }
+        }
+      }
+    ],
+    "autoUpdate": true,
+    "allowPermissions": [
+      "microphone",
+      "notifications",
+      "clipboard"
+    ]
+  }
+}

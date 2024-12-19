@@ -1,0 +1,54 @@
+{
+  "search_categories": {
+    "APPLICATIONS": true,
+    "SYSTEM_PREFS": true,
+    "DIRECTORIES": true,
+    "PDF": true,
+    "DOCUMENTS": true,
+    "SPREADSHEETS": true,
+    "PRESENTATIONS": true,
+    "SOURCE_CODE": true,
+    "JUPYTER_NOTEBOOKS": true,
+    "MESSAGES": false,
+    "CONTACT": false,
+    "EVENT_TODO": false,
+    "IMAGES": false,
+    "BOOKMARKS": false,
+    "MUSIC": false,
+    "MOVIES": false,
+    "FONTS": false,
+    "DEVELOPMENT": false
+  },
+  "excluded_locations": [
+    "~/Library",
+    "~/Downloads",
+    "/System",
+    "/private",
+    "~/node_modules",
+    "~/.venv",
+    "~/.git",
+    "~/.cache",
+    "~/.local",
+    "~/venv",
+    "**/env",
+    "**/dist",
+    "**/build",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/.ruff_cache",
+    "**/.mypy_cache",
+    "**/target",
+    "**/dbt_packages"
+  ],
+  "keyboard_shortcuts": {
+    "spotlight_search": "cmd+space",
+    "finder_search": "cmd+alt+space"
+  },
+  "priority_folders": [
+    "~/dbtlabs",
+    "~/Documents",
+    "~/Desktop",
+    "~/projects",
+    "~/jarvis"
+  ]
+} 
