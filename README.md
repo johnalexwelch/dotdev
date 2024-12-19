@@ -17,17 +17,21 @@ cd ~/.dotfiles
 
 ```
 .dotfiles/
-├── app_configs/           # Application configurations
-│   ├── .config/          # XDG Base Directory configs
-│   │   ├── arc/         # Arc browser settings
-│   │   ├── cursor/      # Cursor editor config
-│   │   ├── git/         # Git configuration
-│   │   ├── warp/        # Warp terminal settings
-│   │   └── zsh/         # Shell configuration
-│   └── .macos/          # macOS specific settings
-├── scripts/              # Setup and configuration scripts
-├── docs/                 # Documentation
-└── Brewfile             # Package dependencies
+├── .config/          # Application configurations - XDG Base Directory configs
+│   ├── .arc/         # Arc browser settings
+│   ├── .cursor/      # Cursor editor config
+│   ├── .macos/       # macOS specific settings
+│   ├── .ollama/      # Ollama AI settings
+│   ├── .raycast/     # Raycast finder settings
+│   ├── .starship/    # Starship terminal customized settings
+│   ├── .streamdeck/  # Elgato stremdeck settings
+│   ├── .warp/        # Warp terminal settings
+│   ├── .zsh/         # Shell configuration
+│   └── git/          # Git configuration
+├── scripts/        # Setup and configuration scripts
+├── docs/           # Documentation
+└── install.sh      # Main setup script
+└── Brewfile        # Package dependencies
 ```
 
 ## 📚 Documentation
@@ -57,6 +61,10 @@ cd ~/.dotfiles
 - Git workflow optimization
 - AWS CLI configuration
 - Docker development setup
+
+### Testing
+- **Test Scripts**: Use `scripts/test.sh` to simulate installation commands without executing them.
+- **Local Test Suite**: Use `scripts/test-local.sh` to run a comprehensive test suite, including pre-commit hooks, stow operations, shell script validation, and Brewfile checks. Ensure that `stow` is installed before running this script.
 
 ## 📝 License
 
