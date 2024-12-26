@@ -1,13 +1,134 @@
-# Shell Configuration
+# 🐚 Shell Configuration
 
-## ZSH Setup
+This guide details the shell configurations and customizations included in these dotfiles.
 
-### Core Configuration
+## 📦 Components
 
-- Location: `app_configs/.zsh/.zshrc`
-- Plugin management
-- Theme configuration
-- Module loading
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| 🐚 ZSH | Main shell | `.zshrc` |
+| ⭐ Starship | Custom prompt | `.config/starship.toml` |
+| 🔧 Aliases | Command shortcuts | `.zsh/aliases.zsh` |
+| 🌍 Environment | Variables & paths | `.zsh/env.zsh` |
+| 🎨 Theme | Shell styling | `.zsh/theme.zsh` |
+
+## 🛠️ Features
+
+### 🔍 Smart Search
+
+| Tool | Purpose | Shortcut |
+|------|---------|----------|
+| 🔎 fzf | Fuzzy finder | `Ctrl+R` |
+| 📂 z | Directory jumper | `z <pattern>` |
+| 🔍 ripgrep | Fast search | `rg <pattern>` |
+
+### 📝 Command Line Tools
+
+| Tool | Replaces | Purpose |
+|------|----------|---------|
+| 📊 eza | ls | Modern file listing |
+| 🐱 bat | cat | Syntax highlighting |
+| 📈 htop | top | Process management |
+| 🌳 tree | ls -R | Directory trees |
+| 💾 duf | df | Disk usage |
+
+### ⚡ Productivity Shortcuts
+
+```bash
+# Directory Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ~='cd ~'
+alias d='dirs -v'
+
+# File Operations
+alias l='eza -la'
+alias ll='eza -l'
+alias lt='eza --tree'
+alias cat='bat'
+
+# Git Shortcuts
+alias g='git'
+alias gs='git status'
+alias gc='git commit'
+alias gp='git push'
+```
+
+## 🎨 Theme & Styling
+
+### 🎯 Starship Prompt
+
+```toml
+# Starship configuration
+[character]
+success_symbol = "[➜](bold green)"
+error_symbol = "[✗](bold red)"
+
+[git_branch]
+symbol = "🌱 "
+```
+
+### 🎨 Color Scheme
+
+| Element | Color | Usage |
+|---------|-------|--------|
+| 📝 Prompt | Green | Active prompt |
+| ⚠️ Warnings | Yellow | Alerts |
+| ❌ Errors | Red | Error messages |
+| 🔗 Links | Blue | File links |
+
+## ⚙️ Configuration
+
+### 🔧 Environment Setup
+
+```bash
+# Path configuration
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Tool configuration
+export EDITOR='nvim'
+export VISUAL='code'
+export PAGER='less'
+```
+
+### 🏃 Performance Optimization
+
+```bash
+# Cache optimization
+zstyle ':completion:*' use-cache on
+zstyle ':completion:*' cache-path "$XDG_CACHE_HOME/zsh/.zcompcache"
+
+# History settings
+HISTSIZE=10000
+SAVEHIST=10000
+```
+
+## 🔄 Updates & Maintenance
+
+### 🔄 Regular Updates
+
+```bash
+# Update shell components
+./scripts/update-shell.sh
+
+# Rebuild completion cache
+rm -f ~/.zcompdump; compinit
+```
+
+### 🔍 Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| 🐌 Slow startup | Run `zprof` to profile |
+| 🔄 Completion issues | Rebuild cache |
+| 🎨 Theme broken | Check Starship install |
+
+## 📚 Resources
+
+- [🐚 ZSH Documentation](https://zsh.sourceforge.io/Doc/)
+- [⭐ Starship Manual](https://starship.rs/guide/)
+- [🔧 Dotfiles Wiki](../wiki/Shell.md)
 
 ### Environment
 

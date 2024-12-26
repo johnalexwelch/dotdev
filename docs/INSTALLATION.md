@@ -6,180 +6,106 @@ This guide walks you through setting up your development environment using these
 
 Before you begin, ensure you have:
 
-```bash
-# Install Command Line Tools
-xcode-select --install
-```
+| Tool | Purpose | Installation |
+|------|---------|--------------|
+| 🍎 Xcode CLI | Development tools | `xcode-select --install` |
+| 🔑 SSH Key | GitHub access | [📝 Guide](https://docs.github.com/authentication/connecting-to-github-with-ssh) |
+| 🎯 Git | Version control | Included in Xcode CLI |
 
 ## 📥 Installation Steps
 
-### 1️⃣ Clone the Repository
+### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/johnalexwelch/dotdev.git ~/.dotfiles
+# Clone the repository
+git clone https://github.com/yourusername/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 ```
 
-### 2️⃣ Run Installation Script
-
-The installation script will:
-
-- 🍺 Install Homebrew if not present
-- 📦 Install GNU Stow and other dependencies
-- 🔒 Install pre-commit and security tools
-- ⚙️ Set up configuration files
-- 🛡️ Configure security baselines
+### 2️⃣ Run Installation
 
 ```bash
 # Make scripts executable
 chmod +x scripts/*.sh
 
-# Run the installation script
+# Run installation
 ./install.sh
 ```
 
-### 3️⃣ Verify Installation
+## 🔧 What Gets Installed
+
+### 📦 Package Managers
+
+| Tool | Purpose | Documentation |
+|------|---------|---------------|
+| 🍺 Homebrew | macOS package manager | [📚 Docs](https://docs.brew.sh) |
+| 📦 npm | Node.js package manager | [📘 Docs](https://docs.npmjs.com) |
+| 🐍 pip | Python package manager | [📗 Guide](https://pip.pypa.io) |
+
+### 🛠️ Development Tools
+
+| Category | Tools |
+|----------|-------|
+| 📝 Editors | Cursor, VSCode |
+| 📟 Terminal | Warp, iTerm2 |
+| 🐳 Containers | Docker, OrbStack |
+| ☁️ Cloud | AWS CLI, gcloud |
+| 🔨 Build Tools | gcc, make |
+
+### 🔒 Security Tools
+
+| Tool | Purpose | Documentation |
+|------|---------|---------------|
+| 🔍 detect-secrets | Secret scanning | [📚 Docs](https://github.com/Yelp/detect-secrets) |
+| 🕵️ gitleaks | Git security scanner | [📘 Guide](https://github.com/zricethezav/gitleaks) |
+| 🔐 git-secrets | AWS credential scanner | [📗 Docs](https://github.com/awslabs/git-secrets) |
+
+## ✅ Post-Installation
+
+### 🔍 Verify Installation
 
 ```bash
-./scripts/test-local.sh
+# Run tests
+./scripts/test.sh
+
+# Check security baseline
+./scripts/security-init.sh
 ```
 
-## 🔧 Configuration Components
-
-### Stow Packages
-
-The following configurations will be managed by GNU Stow:
-
-- 📁 `.config/` - XDG Base Directory configurations
-- 🌳 `git/` - Git configuration
-- 🐚 `.zsh/` - Shell configuration
-
-### Application Configurations
-
-The installation includes settings for:
-
-- 🌐 Arc browser
-- 📝 Cursor editor
-- 🔍 Raycast
-- ⭐ Starship prompt
-- 🎮 Stream Deck
-- 📟 Warp terminal
-
-### Development Tools
-
-The following development tools will be installed via Homebrew:
-
-- 🐍 Python development tools
-- ☁️ AWS CLI
-- 🐳 Docker
-- 🌳 Git and related tools
-- 📟 Terminal utilities
-
-## ✨ Post-Installation
-
-### 🐚 Shell Configuration
+### 🔧 Configure Git
 
 ```bash
-# Set Zsh as default shell
-chsh -s $(which zsh)
-```
-
-### 🌳 Git Configuration
-
-```bash
-# Configure git user
+# Set your Git credentials
 git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 
-### 🔒 Security Verification
-
-```bash
-# Test pre-commit hooks
-pre-commit run --all-files
-
-# Verify security scanning
-gitleaks detect --config .gitleaks.toml
-```
-
-## ❗ Troubleshooting
+## 🚨 Troubleshooting
 
 ### Common Issues
 
-1. **📦 Stow Conflicts**
+| Issue | Solution |
+|-------|----------|
+| 🔒 Permission denied | `chmod +x scripts/*.sh` |
+| 📦 Homebrew fails | Run `xcode-select --install` |
+| 🔗 Symlink conflicts | Remove existing config files |
+
+### 📋 Logs
+
+Installation logs are stored in:
+
+- 📝 `~/.dotfiles/logs/install.log`
+- 🔍 `~/.dotfiles/logs/test.log`
+
+## 🔄 Updates
+
+### Regular Maintenance
 
 ```bash
-# Remove existing config files
-rm -rf ~/.config/existing-config
-
-# Retry stow
-stow -nvt ~ .config/
-```
-
-2. **🔑 Permission Issues**
-
-```bash
-# Fix script permissions
-chmod +x scripts/*.sh
-```
-
-3. **🔄 Pre-commit Hook Failures**
-
-```bash
-# Update pre-commit hooks
-pre-commit autoupdate
-
-# Clean pre-commit cache
-pre-commit clean
-```
-
-### 🚨 Security Alerts
-
-If you receive security alerts:
-
-1. Check the `.secrets.baseline` file
-2. Review `.gitleaks.toml` configuration
-3. Verify no sensitive files are tracked:
-
-```bash
-git ls-files | grep -i secret
-```
-
-## 🔄 Maintenance
-
-### Regular Updates
-
-```bash
-# Update Homebrew packages
+# Update packages
 brew update && brew upgrade
 
-# Update pre-commit hooks
-pre-commit autoupdate
-
-# Update security baselines
-detect-secrets scan > .secrets.baseline
+# Update dotfiles
+git pull origin main
+./scripts/update.sh
 ```
-
-### 💾 Backup
-
-Before making significant changes:
-
-```bash
-# Create backup directory
-mkdir -p ~/.dotfiles_backup
-
-# Backup current configs
-cp -r ~/.config ~/.dotfiles_backup/
-```
-
-## 💁 Support
-
-For issues or questions:
-
-1. Check the [README.md](../README.md)
-2. Review [existing issues](https://github.com/johnalexwelch/dotdev/issues)
-3. Open a new issue if needed
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
