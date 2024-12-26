@@ -123,11 +123,7 @@
         "name": "1Password",
         "id": "com.1password.extension",
         "enabled": true,
-        "permissions": [
-          "passwords",
-          "identities",
-          "creditCards"
-        ]
+        "permissions": ["passwords", "identities", "creditCards"]
       },
       {
         "name": "Freedom",
@@ -170,10 +166,6 @@
       }
     ],
     "autoUpdate": true,
-    "allowPermissions": [
-      "microphone",
-      "notifications",
-      "clipboard"
-    ]
+    "allowPermissions": ["microphone", "notifications", "clipboard"]
   }
 }

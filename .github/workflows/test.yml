@@ -1,67 +1,54 @@
 name: Test Installation
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
-
 jobs:
   test:
     runs-on: macos-latest
-    
     steps:
-    - uses: actions/checkout@v4
-      
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.x'
-        
-    - name: Install pre-commit
-      run: |
-        brew install pre-commit
-        pre-commit install
-        
-    - name: Create test environment
-      run: |
-        TEST_HOME=$(mktemp -d)
-        mkdir -p "$TEST_HOME"/{.config,.local/share,.cache,Library/Preferences}
-        echo "TEST_HOME=$TEST_HOME" >> $GITHUB_ENV
-        
-    - name: Run pre-commit checks
-      run: pre-commit run --all-files
-        
-    - name: Test stow operations
-      run: stow -nvt "$TEST_HOME" app_configs/
-        
-    - name: Validate shell scripts
-      run: |
-        brew install shellcheck
-        find scripts -type f -name "*.sh" -exec shellcheck {} \;
-        
-    - name: Test Brewfile
-      run: |
-        brew bundle check --file=Brewfile || true
-        
-    - name: Test macOS defaults
-      run: |
-        for script in scripts/macos/*.sh; do
-          echo "Testing $script..."
-          bash -n "$script"
-          # Run with --dry-run if script supports it
-          if grep -q "DRY_RUN" "$script"; then
-            DRY_RUN=1 bash "$script"
-          fi
-        done
-        
-    - name: Validate directory structure
-      run: |
-        mkdir -p "$TEST_HOME"
-        ./install.sh --dry-run
-        
-    - name: Clean up
-      if: always()
-      run: |
-        rm -rf "$TEST_HOME" 
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install pre-commit
+        run: |
+          brew install pre-commit
+          pre-commit install
+      - name: Create test environment
+        run: |
+          TEST_HOME=$(mktemp -d)
+          mkdir -p "$TEST_HOME"/{.config,.local/share,.cache,Library/Preferences}
+          echo "TEST_HOME=$TEST_HOME" >> $GITHUB_ENV
+      - name: Run pre-commit checks
+        run: pre-commit run --all-files
+      - name: Test stow operations
+        run: stow -nvt "$TEST_HOME" app_configs/
+      - name: Validate shell scripts
+        run: |
+          brew install shellcheck
+          find scripts -type f -name "*.sh" -exec shellcheck {} \;
+      - name: Test Brewfile
+        run: |
+          brew bundle check --file=Brewfile || true
+      - name: Test macOS defaults
+        run: |
+          for script in scripts/macos/*.sh; do
+            echo "Testing $script..."
+            bash -n "$script"
+            # Run with --dry-run if script supports it
+            if grep -q "DRY_RUN" "$script"; then
+              DRY_RUN=1 bash "$script"
+            fi
+          done
+      - name: Validate directory structure
+        run: |
+          mkdir -p "$TEST_HOME"
+          ./install.sh --dry-run
+      - name: Clean up
+        if: always()
+        run: |
+          rm -rf "$TEST_HOME"

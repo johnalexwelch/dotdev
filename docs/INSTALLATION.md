@@ -1,81 +1,185 @@
-# Installation Guide
+# 🛠️ Installation Guide
 
-## Prerequisites
+This guide walks you through setting up your development environment using these dotfiles.
 
-- macOS 12.0 or later
-- Command Line Tools for Xcode
-- Administrator privileges
-- Python 3.8 or later
-- pre-commit
+## 📋 Prerequisites
 
-## Step-by-Step Installation
-
-1. **Install Command Line Tools**
+Before you begin, ensure you have:
 
 ```bash
+# Install Command Line Tools
 xcode-select --install
 ```
 
-2. **Clone Repository**
+## 📥 Installation Steps
+
+### 1️⃣ Clone the Repository
 
 ```bash
 git clone https://github.com/johnalexwelch/dotdev.git ~/.dotfiles
 cd ~/.dotfiles
 ```
 
-3. **Install pre-commit hooks**
+### 2️⃣ Run Installation Script
+
+The installation script will:
+
+- 🍺 Install Homebrew if not present
+- 📦 Install GNU Stow and other dependencies
+- 🔒 Install pre-commit and security tools
+- ⚙️ Set up configuration files
+- 🛡️ Configure security baselines
 
 ```bash
-# Install pre-commit
-brew install pre-commit
+# Make scripts executable
+chmod +x scripts/*.sh
 
-# Install the pre-commit hooks
-pre-commit install
-```
-
-4. **Run Installation Script**
-
-```bash
+# Run the installation script
 ./install.sh
 ```
 
-4. **Post-Installation**
+### 3️⃣ Verify Installation
 
-- Configure GitHub authentication
-- Set up SSH keys
-- Customize application settings
+```bash
+./scripts/test-local.sh
+```
 
-## Manual Steps
+## 🔧 Configuration Components
 
-Some configurations require manual intervention:
+### Stow Packages
 
-1. **System Preferences**
-   - Enable Full Disk Access for Terminal
-   - Configure Touch ID for sudo
-   - Set up Screen Saver
+The following configurations will be managed by GNU Stow:
 
-2. **Application Setup**
-   - Sign in to Arc browser
-   - Configure Cursor editor
-   - Set up Stream Deck
+- 📁 `.config/` - XDG Base Directory configurations
+- 🌳 `git/` - Git configuration
+- 🐚 `.zsh/` - Shell configuration
 
-## Troubleshooting
+### Application Configurations
 
-Common issues and solutions:
+The installation includes settings for:
 
-1. **Homebrew Installation Fails**
+- 🌐 Arc browser
+- 📝 Cursor editor
+- 🔍 Raycast
+- ⭐ Starship prompt
+- 🎮 Stream Deck
+- 📟 Warp terminal
 
-   ```bash
-   # Reset Homebrew
-   rm -rf /opt/homebrew
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
+### Development Tools
 
-2. **Stow Conflicts**
+The following development tools will be installed via Homebrew:
 
-   ```bash
-   # Remove existing config
-   rm ~/.config/conflicting_file
-   # Retry stow
-   stow -R app_configs
-   ```
+- 🐍 Python development tools
+- ☁️ AWS CLI
+- 🐳 Docker
+- 🌳 Git and related tools
+- 📟 Terminal utilities
+
+## ✨ Post-Installation
+
+### 🐚 Shell Configuration
+
+```bash
+# Set Zsh as default shell
+chsh -s $(which zsh)
+```
+
+### 🌳 Git Configuration
+
+```bash
+# Configure git user
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+```
+
+### 🔒 Security Verification
+
+```bash
+# Test pre-commit hooks
+pre-commit run --all-files
+
+# Verify security scanning
+gitleaks detect --config .gitleaks.toml
+```
+
+## ❗ Troubleshooting
+
+### Common Issues
+
+1. **📦 Stow Conflicts**
+
+```bash
+# Remove existing config files
+rm -rf ~/.config/existing-config
+
+# Retry stow
+stow -nvt ~ .config/
+```
+
+2. **🔑 Permission Issues**
+
+```bash
+# Fix script permissions
+chmod +x scripts/*.sh
+```
+
+3. **🔄 Pre-commit Hook Failures**
+
+```bash
+# Update pre-commit hooks
+pre-commit autoupdate
+
+# Clean pre-commit cache
+pre-commit clean
+```
+
+### 🚨 Security Alerts
+
+If you receive security alerts:
+
+1. Check the `.secrets.baseline` file
+2. Review `.gitleaks.toml` configuration
+3. Verify no sensitive files are tracked:
+
+```bash
+git ls-files | grep -i secret
+```
+
+## 🔄 Maintenance
+
+### Regular Updates
+
+```bash
+# Update Homebrew packages
+brew update && brew upgrade
+
+# Update pre-commit hooks
+pre-commit autoupdate
+
+# Update security baselines
+detect-secrets scan > .secrets.baseline
+```
+
+### 💾 Backup
+
+Before making significant changes:
+
+```bash
+# Create backup directory
+mkdir -p ~/.dotfiles_backup
+
+# Backup current configs
+cp -r ~/.config ~/.dotfiles_backup/
+```
+
+## 💁 Support
+
+For issues or questions:
+
+1. Check the [README.md](../README.md)
+2. Review [existing issues](https://github.com/johnalexwelch/dotdev/issues)
+3. Open a new issue if needed
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.

@@ -7,10 +7,9 @@ command: |
   export AWS_DEFAULT_REGION={{region}}
   # Verify identity
   aws sts get-caller-identity
-
 arguments:
   - name: profile
     description: AWS profile to use
   - name: region
     description: AWS region to use
-    default_value: us-west-2 
+    default_value: us-west-2

@@ -18,4 +18,4 @@ docker run --rm -it dotfiles-test
 
 # Cleanup
 echo -e "\n🧹 Cleaning up..."
-docker rmi dotfiles-test 2>/dev/null 
+docker rmi dotfiles-test 2>/dev/null

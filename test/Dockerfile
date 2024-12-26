@@ -74,4 +74,4 @@ EOF
 RUN chmod +x test-install.sh
 
 # Run tests by default
-CMD ["./test-install.sh"] 
+CMD ["./test-install.sh"]

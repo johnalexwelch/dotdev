@@ -87,4 +87,4 @@ show_always = false
 [hostname]
 ssh_only = true
 format = "[$hostname](bold red) "
-disabled = false 
+disabled = false

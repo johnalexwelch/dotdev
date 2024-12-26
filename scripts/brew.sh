@@ -1,13 +1,16 @@
 #!/bin/bash
 
+# Set DOTFILES path to the root directory
+DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
 # Check if Homebrew is installed
-if ! command -v brew &> /dev/null; then
+if ! command -v brew &>/dev/null; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    
+
     # Add Homebrew to PATH for Apple Silicon Macs
     if [[ $(uname -m) == 'arm64' ]]; then
-        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> "$HOME/.zprofile"
+        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>"$HOME/.zprofile"
         eval "$(/opt/homebrew/bin/brew shellenv)"
     fi
 fi
@@ -24,4 +27,4 @@ brew bundle --file="$DOTFILES/Brewfile"
 echo "Cleaning up Homebrew..."
 brew cleanup
 
-echo "Homebrew setup complete!" 
+echo "Homebrew setup complete!"
