@@ -33,4 +33,4 @@ else
     stow -v -R -t "$HOME" config/
 fi
 
-echo "Installation complete! Please restart your computer." 
+echo "Installation complete! Please restart your computer."

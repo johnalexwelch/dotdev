@@ -7,6 +7,6 @@ for location in $(jq -r '.excluded_locations[]' ~/.dotdev/.config/.macos/spotlig
 done
 
 # Kill and restart Spotlight
-killall mds > /dev/null 2>&1
-sudo mdutil -i on / > /dev/null
-sudo mdutil -E / > /dev/null 
+killall mds >/dev/null 2>&1
+sudo mdutil -i on / >/dev/null
+sudo mdutil -E / >/dev/null

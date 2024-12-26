@@ -52,4 +52,55 @@ for script in scripts/macos/*.sh; do
     bash -n "$script" # Syntax check only
 done
 
-echo "✅ Test completed successfully!" 
+# Test shell formatting tools
+if ! command -v shfmt &>/dev/null; then
+    echo "❌ shfmt not found"
+    exit 1
+else
+    echo "✅ shfmt installed"
+fi
+
+# Test security tools
+echo "🔒 Testing security configurations..."
+
+# Check detect-secrets
+if ! command -v detect-secrets &>/dev/null; then
+    echo "❌ detect-secrets not found"
+    exit 1
+else
+    echo "✅ detect-secrets installed"
+fi
+
+# Check git-secrets
+if ! command -v git-secrets &>/dev/null; then
+    echo "❌ git-secrets not found"
+    exit 1
+else
+    echo "✅ git-secrets installed"
+fi
+
+# Check gitleaks
+if ! command -v gitleaks &>/dev/null; then
+    echo "❌ gitleaks not found"
+    exit 1
+else
+    echo "✅ gitleaks installed"
+fi
+
+# Verify baseline files exist
+if [ ! -f .secrets.baseline ]; then
+    echo "❌ .secrets.baseline missing"
+    exit 1
+else
+    echo "✅ .secrets.baseline exists"
+fi
+
+# Test YAML formatting tools
+if ! command -v yamlfmt &>/dev/null; then
+    echo "❌ yamlfmt not found"
+    exit 1
+else
+    echo "✅ yamlfmt installed"
+fi
+
+echo "✅ Test completed successfully!"

@@ -7,15 +7,14 @@ command: |
         --cov-report=html \
         -v \
         {{extra_args}}
-  
+
   # Open coverage report if generated
   if [ -f htmlcov/index.html ]; then
     open htmlcov/index.html
   fi
-
 arguments:
   - name: project_name
     description: Name of the project/module to test
   - name: extra_args
     description: Additional pytest arguments
-    default_value: "" 
+    default_value: ""

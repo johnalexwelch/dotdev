@@ -2,8 +2,6 @@
 
 # Base directory
 DOTFILES="$HOME/.dotdev"
-CONFIG_DIR="$DOTFILES/.config"
-
 # Create base directories
 echo "Creating base directories..."
 mkdir -p ~/dbtlabs ~/jarvis ~/projects
@@ -27,7 +25,6 @@ ln -sf "$HOME/.config/cursor" "$HOME/Library/Application Support/Cursor"
 ln -sf "$HOME/.config/warp" "$HOME/Library/Application Support/Warp"
 ln -sf "$HOME/.config/streamdeck" "$HOME/Library/Application Support/com.elgato.StreamDeck"
 
-
 # Configure macOS settings
 echo "Configuring macOS settings..."
 bash "$DOTFILES/scripts/macos/defaults.sh"
@@ -37,7 +34,14 @@ bash "$DOTFILES/scripts/macos/spotlight.sh"
 bash "$DOTFILES/scripts/macos/terminal.sh"
 
 # Create symbolic links
-cd "$DOTFILES"
+cd "$DOTFILES" || exit
 stow -v -R -t "$HOME" .config/
 
-echo "Setup complete!" 
+# Initialize security tools
+echo "Setting up security tools..."
+bash "$DOTFILES/scripts/security-init.sh"
+
+# Make shellcheck-fix script executable
+chmod +x scripts/shellcheck-fix.sh
+
+echo "Setup complete!"

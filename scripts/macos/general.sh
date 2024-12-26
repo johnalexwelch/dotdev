@@ -9,4 +9,4 @@ sudo scutil --set LocalHostName "awelch"
 sudo defaults write /Library/Preferences/SystemConfiguration/com.apple.smb.server NetBIOSName -string "awelch"
 
 # Save to disk (not to iCloud) by default
-defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false 
+defaults write NSGlobalDomain NSDocumentSaveNewDocumentsToCloud -bool false

@@ -35,7 +35,7 @@ defaults write com.apple.desktopservices DSDontWriteUSBStores -bool true
 defaults write com.apple.finder FXPreferredViewStyle -string "Nlsv"
 
 # Show the ~/Library folder
-chflags nohidden ~/Library 
+chflags nohidden ~/Library
 
 # Sidebar configuration
 # Remove all default items
@@ -55,7 +55,7 @@ defaults write com.apple.sidebarlists favorites -dict-add items -array
 
 # Add new favorites
 for item in "${mysidebar[@]}"; do
-    IFS=' ' read -r path label <<< "$item"
+    IFS=' ' read -r path label <<<"$item"
     defaults write com.apple.sidebarlists favorites -array-add "<dict>
         <key>Name</key>
         <string>${label}</string>
@@ -78,4 +78,4 @@ defaults write com.apple.NetworkBrowser EnableAFP -bool true
 defaults write com.apple.NetworkBrowser EnableSMB -bool true
 
 # Restart finder
-killall Finder;
+killall Finder

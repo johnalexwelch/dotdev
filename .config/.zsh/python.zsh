@@ -1,4 +1,5 @@
 # Python environment configuration
+# shellcheck disable=SC2154  # False positive from .gitignore pattern *$py.class
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 
@@ -11,8 +12,8 @@ eval "$(pyenv init --path)"
 eval "$(pyenv virtualenv-init -)"
 
 # Python aliases
-alias py='python'
 alias python='python3'
+alias py='python'
 alias pip='uv pip'
 alias venv='python -m venv venv'
 alias activate='source venv/bin/activate'
@@ -31,14 +32,17 @@ if command -v uv &> /dev/null; then
 fi
 
 # Python development helpers
+# shellcheck disable=SC2120
 mkenv() {
     # Create and activate a new Python virtual environment
-    if [ -z "$1" ]; then
-        python -m venv venv
-    else
-        python -m venv "$1"
-    fi
-    source "${1:-venv}/bin/activate"
+    # Usage: mkenv [env_name]
+    # Arguments:
+    #   env_name: Optional name for the virtual environment (default: venv)
+    local env_name
+    env_name="${1:-venv}"
+
+    python -m venv "$env_name"
+    source "$env_name/bin/activate"
 }
 
 pyinit() {
@@ -47,7 +51,7 @@ pyinit() {
         echo "Creating pyproject.toml..."
         cat > pyproject.toml << EOL
 [project]
-name = "$(basename $(pwd))"
+name = "$(basename "$(pwd)")"
 version = "0.1.0"
 description = ""
 authors = []
@@ -115,4 +119,4 @@ pyclean() {
     find . -type d -name "*.egg-info" -exec rm -r {} +
     find . -type d -name "*.egg" -exec rm -r {} +
     find . -type d -name ".pytest_cache" -exec rm -r {} +
-} 
+}

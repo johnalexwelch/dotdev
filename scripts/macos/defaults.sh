@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ~/.macos 
+# ~/.macos
 
 # Exit on error
 set -e
@@ -13,16 +13,20 @@ osascript -e 'tell application "System Preferences" to quit'
 sudo -v
 
 # Keep sudo alive
-while true; do sudo -n true; sleep 60; kill -0 "$$" || exit; done 2>/dev/null &
+while true; do
+    sudo -n true
+    sleep 60
+    kill -0 "$$" || exit
+done 2>/dev/null &
 
 # Install Xcode Command Line Tools
-if ! command -v xcode-select &> /dev/null; then
+if ! command -v xcode-select &>/dev/null; then
     echo "Installing Xcode Command Line Tools..."
     xcode-select --install
 fi
 
 # Install Homebrew if not installed
-if ! command -v brew &> /dev/null; then
+if ! command -v brew &>/dev/null; then
     echo "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi

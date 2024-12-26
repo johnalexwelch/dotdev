@@ -9,7 +9,7 @@ if [ ! -d "$HOME/.oh-my-zsh" ]; then
 fi
 
 # Install Starship prompt if not already installed
-if ! command -v starship &> /dev/null; then
+if ! command -v starship &>/dev/null; then
     echo "Installing Starship prompt..."
     curl -sS https://starship.rs/install.sh | sh
 fi
@@ -38,5 +38,5 @@ cd "${BASH_SOURCE%/*}/../stow" && stow starship
 
 # Set zsh as default shell
 if [ "$SHELL" != "$(which zsh)" ]; then
-    chsh -s $(which zsh)
-fi 
+    chsh -s "$(which zsh)"
+fi

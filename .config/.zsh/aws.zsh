@@ -16,7 +16,9 @@ alias awsr='aws configure list-regions | fzf --height 40% --layout=reverse --bor
 aws-profile() {
     if [ -z "$1" ]; then
         # If no argument provided, use fzf to select
-        export AWS_PROFILE=$(aws configure list-profiles | fzf --height 40% --layout=reverse --border)
+        local AWS_PROFILE
+        AWS_PROFILE=$(aws configure list-profiles | fzf --height 40% --layout=reverse --border)
+        export AWS_PROFILE
     else
         export AWS_PROFILE="$1"
     fi
@@ -27,7 +29,9 @@ aws-profile() {
 aws-region() {
     if [ -z "$1" ]; then
         # If no argument provided, use fzf to select
-        export AWS_DEFAULT_REGION=$(aws configure list-regions | fzf --height 40% --layout=reverse --border)
+        local AWS_DEFAULT_REGION
+        AWS_DEFAULT_REGION=$(aws configure list-regions | fzf --height 40% --layout=reverse --border)
+        export AWS_DEFAULT_REGION
     else
         export AWS_DEFAULT_REGION="$1"
     fi
@@ -45,13 +49,14 @@ aws-ssm() {
 
 # List EC2 instances with FZF and connect
 aws-ec2() {
-    local instance_id=$(aws ec2 describe-instances \
+    local instance_id
+    instance_id=$(aws ec2 describe-instances \
         --query 'Reservations[].Instances[].[InstanceId,Tags[?Key==`Name`].Value|[0],State.Name,PrivateIpAddress]' \
         --output text | \
         column -t | \
         fzf --height 40% --layout=reverse --border | \
         awk '{print $1}')
-    
+
     if [ ! -z "$instance_id" ]; then
         aws-ssm "$instance_id"
     fi
@@ -59,10 +64,11 @@ aws-ec2() {
 
 # AWS CloudWatch logs helper
 aws-logs() {
-    local group=$(aws logs describe-log-groups --query 'logGroups[].logGroupName' --output text | \
+    local group
+    group=$(aws logs describe-log-groups --query 'logGroups[].logGroupName' --output text | \
         tr '\t' '\n' | \
         fzf --height 40% --layout=reverse --border)
-    
+
     if [ ! -z "$group" ]; then
         aws logs tail "$group" --follow
     fi
@@ -74,4 +80,4 @@ aws-profiles() {
         echo -n "$profile: "
         AWS_PROFILE=$profile aws sts get-caller-identity 2>/dev/null || echo "No session"
     done
-} 
+}

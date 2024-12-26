@@ -5,10 +5,10 @@ command: |
   echo "Staged files:"
   git diff --cached --name-status
   echo "-------------------"
-  
+
   # Determine type of changes for gitmoji suggestion
   STAGED_FILES=$(git diff --cached --name-only)
-  
+
   # Enhanced change detection
   if echo "$STAGED_FILES" | grep -q "package.json\|requirements.txt\|pyproject.toml\|poetry.lock\|Pipfile"; then
     echo "📦 Detected dependency changes - Consider using :package:"
@@ -70,7 +70,7 @@ command: |
   if echo "$STAGED_FILES" | grep -q "LICENSE\|COPYING\|legal/"; then
     echo "📄 Detected license changes - Consider using :page_facing_up:"
   fi
-  
+
   # Expanded gitmoji list
   echo "\nCommon Gitmojis:"
   echo "✨ :sparkles: - New feature"
@@ -93,7 +93,7 @@ command: |
   echo "💥 :boom: - Breaking changes"
   echo "🗃️  :card_file_box: - Database"
   echo "👷 :construction_worker: - CI/CD"
-  
+
   # Enhanced commit types
   echo "\nCommit Types:"
   echo "feat     - A new feature"
@@ -107,51 +107,50 @@ command: |
   echo "ci       - Changes to CI configuration files and scripts"
   echo "chore    - Other changes that don't modify src or test files"
   echo "revert   - Reverts a previous commit"
-  
+
   # Get commit details
   echo "\nEnter gitmoji (e.g., :sparkles:):"
   read GITMOJI
-  
+
   echo "Enter commit type (feat/fix/docs/style/refactor/perf/test/build/ci/chore/revert):"
   read TYPE
-  
+
   echo "Enter scope (optional, press enter to skip):"
   read SCOPE
-  
+
   echo "Enter brief description:"
   read DESC
-  
+
   echo "Enter longer description (optional, press enter to skip):"
   read BODY
-  
+
   echo "Add breaking change warning? (y/n):"
   read BREAKING
-  
+
   # Construct commit message
   if [ -n "$SCOPE" ]; then
     SCOPE="($SCOPE)"
   fi
-  
+
   MSG="$GITMOJI $TYPE$SCOPE: $DESC"
   if [ -n "$BODY" ]; then
     MSG="$MSG\n\n$BODY"
   fi
-  
+
   if [ "$BREAKING" = "y" ]; then
     MSG="$MSG\n\nBREAKING CHANGE: This commit introduces breaking changes."
   fi
-  
+
   # Show the final message and confirm
   echo "\nFinal commit message:"
   echo "$MSG"
   echo "\nProceed with commit? (y/n)"
   read CONFIRM
-  
+
   if [ "$CONFIRM" = "y" ]; then
     git commit -m "$MSG"
     echo "Commit created successfully!"
   else
     echo "Commit cancelled"
   fi
-
-arguments: [] 
+arguments: []

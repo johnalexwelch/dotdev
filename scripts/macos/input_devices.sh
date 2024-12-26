@@ -14,4 +14,4 @@ defaults write NSGlobalDomain KeyRepeat -int 1
 defaults write NSGlobalDomain InitialKeyRepeat -int 15
 
 # Keyboard: Disable press-and-hold for keys in favor of key repeat
-defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false 
+defaults write NSGlobalDomain ApplePressAndHoldEnabled -bool false

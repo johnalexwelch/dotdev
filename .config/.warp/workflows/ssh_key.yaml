@@ -5,45 +5,43 @@ command: |
   read -p "Enter service name (e.g., github, gitlab): " service
   read -p "Enter email address: " email
   read -p "Enter key filename (default: id_ed25519_$service): " filename
-  
+
   # Set default filename if empty
   filename=${filename:-"id_ed25519_$service"}
-  
+
   # Create .ssh directory if it doesn't exist
   mkdir -p "$HOME/.ssh"
   chmod 700 "$HOME/.ssh"
-  
+
   # Generate SSH key
   ssh-keygen -t ed25519 -C "$email" -f "$HOME/.ssh/$filename" -N ""
-  
+
   # Start ssh-agent and add key
   eval "$(ssh-agent -s)"
   ssh-add --apple-use-keychain "$HOME/.ssh/$filename"
-  
+
   # Update or create SSH config
   if ! grep -q "Host $service" "$HOME/.ssh/config" 2>/dev/null; then
     cat >> "$HOME/.ssh/config" << EOL
-  
-Host $service
-    AddKeysToAgent yes
-    UseKeychain yes
-    IdentityFile ~/.ssh/$filename
-EOL
+
+  Host $service
+      AddKeysToAgent yes
+      UseKeychain yes
+      IdentityFile ~/.ssh/$filename
+  EOL
   fi
-  
+
   # Copy public key to clipboard
   pbcopy < "$HOME/.ssh/$filename.pub"
-  
+
   echo "SSH key generated successfully!"
   echo "Public key has been copied to clipboard"
   echo "Key location: $HOME/.ssh/$filename"
   echo "Config updated in: $HOME/.ssh/config"
-
 tags:
   - ssh
   - security
   - git
-
 arguments:
   - name: service
     description: Name of the service (e.g., github, gitlab)
@@ -53,4 +51,4 @@ arguments:
     default_value: ""
   - name: filename
     description: Custom filename for the key (optional)
-    default_value: "" 
+    default_value: ""

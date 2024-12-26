@@ -21,7 +21,7 @@ defaults write com.apple.screencapture disable-shadow -bool true
 mkdir -p ~/Library/KeyBindings
 
 # Create or update the custom key bindings file
-cat > ~/Library/KeyBindings/DefaultKeyBinding.dict << EOL
+cat >~/Library/KeyBindings/DefaultKeyBinding.dict <<EOL
 {
     "@\$F5" = (selectAll:, copy:);  # CMD + SHIFT + F5
 }

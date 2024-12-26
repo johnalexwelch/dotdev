@@ -3,21 +3,21 @@ description: Set up a new Python project with pyenv, uv, git, and pre-commit
 command: |
   # Create project directory and cd into it
   mkdir {{project_name}} && cd {{project_name}}
-  
+
   # Initialize git
   git init
-  
+
   # Set up Python environment
   pyenv install {{python_version}}
   pyenv local {{python_version}}
-  
+
   # Initialize uv and create venv
   uv venv
   source .venv/bin/activate
-  
+
   # Install dev dependencies
   uv pip install pre-commit black ruff pytest
-  
+
   # Create pre-commit config
   cat > .pre-commit-config.yaml << EOL
   repos:
@@ -28,25 +28,25 @@ command: |
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-added-large-files
-  
+
   - repo: https://github.com/psf/black
     rev: 23.9.1
     hooks:
       - id: black
-  
+
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: v0.0.292
     hooks:
       - id: ruff
   EOL
-  
+
   # Initialize pre-commit
   pre-commit install
-  
+
   # Create initial project structure
   mkdir {{project_name}}
   touch {{project_name}}/__init__.py
-  
+
   # Create pyproject.toml
   cat > pyproject.toml << EOL
   [project]
@@ -56,29 +56,28 @@ command: |
   authors = []
   dependencies = []
   requires-python = ">=3.8"
-  
+
   [build-system]
   requires = ["hatchling"]
   build-backend = "hatchling.build"
-  
+
   [tool.black]
   line-length = 88
-  
+
   [tool.ruff]
   line-length = 88
   select = ["E", "F", "I"]
   EOL
-  
+
   # Create README
   echo "# {{project_name}}" > README.md
-  
+
   # Create gitignore
   curl -sL https://www.toptal.com/developers/gitignore/api/python > .gitignore
-
 arguments:
   - name: project_name
     description: Name of the project
     default_value: my_project
   - name: python_version
     description: Python version to use
-    default_value: 3.11.5 
+    default_value: 3.11.5

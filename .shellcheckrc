@@ -1,0 +1,11 @@
+# Allow sourcing of files that aren't specified as inputs
+disable=SC1091
+
+# Disable shell directive requirement for zsh files
+disable=SC2148
+
+# Disable warning about preferring -n to ! -z
+disable=SC2236
+
+# Disable warning about unused variables in zsh config files
+disable=SC2034

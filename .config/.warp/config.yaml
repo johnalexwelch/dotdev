@@ -1,17 +1,14 @@
----
 # Theme and appearance
 theme: dark
 font_family: "JetBrainsMono Nerd Font"
 font_size: 14
-window_padding: 
+window_padding:
   x: 5
   y: 5
-
 # Editor settings
 editor: "code"
 cursor_blink_rate: 500
 cursor_shape: block
-
 # Features
 features:
   command_palette: true
@@ -20,7 +17,6 @@ features:
   ligatures: true
   open_config_editor: true
   tiling: true
-
 # Keybindings
 keybindings:
   - command: "split_pane_horizontally"
@@ -31,40 +27,35 @@ keybindings:
     key: "cmd+w"
   - command: "toggle_pane_zoom"
     key: "cmd+shift+z"
-
 # Hooks
 hooks:
   pre_command: []
   post_command: []
-
 # Session settings
 session:
   working_directory: "~"
   launch_at_startup: false
-
 # Appearance customization
 colors:
-  background: '#1A1B26'
-  foreground: '#A9B1D6'
-  cursor: '#C0CAF5'
-  selection: '#33467C'
-  
+  background: "#1A1B26"
+  foreground: "#A9B1D6"
+  cursor: "#C0CAF5"
+  selection: "#33467C"
   # Normal colors
-  black: '#32344A'
-  red: '#F7768E'
-  green: '#9ECE6A'
-  yellow: '#E0AF68'
-  blue: '#7AA2F7'
-  magenta: '#AD8EE6'
-  cyan: '#449DAB'
-  white: '#787C99'
-
+  black: "#32344A"
+  red: "#F7768E"
+  green: "#9ECE6A"
+  yellow: "#E0AF68"
+  blue: "#7AA2F7"
+  magenta: "#AD8EE6"
+  cyan: "#449DAB"
+  white: "#787C99"
   # Bright colors
-  bright_black: '#444B6A'
-  bright_red: '#FF7A93'
-  bright_green: '#B9F27C'
-  bright_yellow: '#FF9E64'
-  bright_blue: '#7DA6FF'
-  bright_magenta: '#BB9AF7'
-  bright_cyan: '#0DB9D7'
-  bright_white: '#ACB0D0' 
+  bright_black: "#444B6A"
+  bright_red: "#FF7A93"
+  bright_green: "#B9F27C"
+  bright_yellow: "#FF9E64"
+  bright_blue: "#7DA6FF"
+  bright_magenta: "#BB9AF7"
+  bright_cyan: "#0DB9D7"
+  bright_white: "#ACB0D0"

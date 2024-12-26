@@ -38,6 +38,8 @@ cask "orbstack"          # Docker alternative
 cask "postman"           # API testing
 cask "visual-studio-code"  # Code editor
 cask "warp"              # Modern terminal
+brew "shfmt"            # Shell script formatter
+brew "yamlfmt"          # YAML formatter
 
 # AI/ML Tools
 cask "ollama"           # Local AI models
@@ -92,3 +94,7 @@ cask "quicklook-csv"     # Preview CSV files
 cask "betterzip"         # Preview archives
 cask "webpquicklook"     # Preview WebP images
 cask "suspicious-package" # Preview macOS installer packages
+
+# Security Tools
+brew "detect-secrets"   # Secret detection tool
+brew "git-secrets"      # AWS credential scanning
