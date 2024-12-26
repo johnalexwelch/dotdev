@@ -1,58 +1,95 @@
-# macOS Configuration
+# 🍎 macOS Configuration
 
-## System Preferences
+## ⚙️ System Preferences
 
-### Dock
+### 🎯 Dock
 
-- Position and size
-- Minimize effect
-- Auto-hide behavior
-- Application arrangement
+- Position: Bottom
+- Size: 36 pixels
+- Magnification: Enabled (128 pixels)
+- Minimize effect: Scale
+- Auto-hide: Enabled
+- Show indicators for open apps: Yes
+- Show recent applications: No
 
-### Finder
+### 🔍 Finder
 
-- Default view settings
-- Sidebar customization
-- File extension visibility
-- Search preferences
+- Default view: List
+- Show all filename extensions
+- Show hidden files
+- Keep folders on top
+- Search current folder by default
+- Show path bar and status bar
+- New window opens: Home directory
 
-### Security
+### 🔒 Security
 
-- Firewall configuration
-- FileVault setup
-- Privacy settings
-- Touch ID integration
+- FileVault: Enabled
+- Firewall: Enabled with stealth mode
+- Automatic updates: Security only
+- Gatekeeper: App Store and identified developers
+- Privacy permissions: Managed per application
 
-### Input
+### ⌨️ Input
 
-- Key repeat rate
-- Trackpad gestures
-- Mouse acceleration
-- Keyboard shortcuts
+- Key repeat rate: Fast (level 2)
+- Delay until repeat: Short (level 15)
+- Tap to click: Enabled
+- Three finger drag: Enabled
+- Natural scrolling: Enabled
+- Smart quotes: Disabled
+- Auto-correct: Disabled
 
-## Spotlight
+## 🔍 Spotlight
 
-### Search Configuration
+### 🎯 Search Configuration
 
-- Excluded locations
-- Priority folders
-- Search categories
-- Keyboard shortcuts
+- Excluded locations:
+  - `/node_modules`
+  - `/.git`
+  - `/Library`
+  - `/System`
+- Priority folders:
+  - Documents
+  - Applications
+  - Developer
+- Search categories:
+  - Applications
+  - Documents
+  - Folders
+  - Developer
+  - System Settings
 
-## Screenshots
+## 📸 Screenshots
 
-### Settings
+### 📝 Settings
 
-- Save location
-- File format
-- Shadow effects
-- Keyboard shortcuts
+- Save location: `~/Pictures/Screenshots`
+- File format: PNG
+- Include date in filename
+- Disable shadow effect
+- Show thumbnail: Yes
+- Default name format: `Screenshot {date} at {time}`
 
-## Terminal
+### ⌨️ Shortcuts
 
-### Integration
+- Full screen: `Shift + Cmd + 3`
+- Selected portion: `Shift + Cmd + 4`
+- Window capture: `Shift + Cmd + 4 + Space`
+- Copy to clipboard: Add `Control` to any above
 
-- SSH key management
-- Git authentication
-- Environment variables
-- Shell configuration
+## 🖥️ Terminal
+
+### 🔧 Integration
+
+- Default shell: zsh
+- SSH key management: 1Password
+- Git credentials: Git Credential Manager
+- Environment setup: `.zshrc` and `.zshenv`
+
+### 🎨 Theme
+
+- Font: JetBrains Mono
+- Theme: Dracula
+- Opacity: 95%
+- Blur: Enabled
