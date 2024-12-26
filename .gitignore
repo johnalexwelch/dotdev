@@ -95,11 +95,19 @@ jspm_packages/
 *.zip
 
 # Secrets and keys
-*.pem
-*.key
 *.cert
+*.crt
+*.csr
+*.cer
+*.der
+*.key
+*.p12
+*.pem
+*.pfx
+.env*
+.aws/
 .ssh/
 
 # Project specific
 .dotfiles-backup/
-.stow-local-ignore 
+.stow-local-ignore

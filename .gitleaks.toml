@@ -1,0 +1,29 @@
+title = "Gitleaks Configuration"
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey|secret)[a-z0-9_-]*\s*[=:]\s*['"][0-9a-zA-Z]{32,}['"]'''
+tags = ["key", "API", "generic"]
+severity = "HIGH"
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+tags = ["key", "AWS"]
+severity = "HIGH"
+
+[[rules]]
+id = "private-key"
+description = "Private Key File"
+regex = '''-----BEGIN ((RSA|DSA|EC|PGP|OPENSSH) )?PRIVATE KEY( BLOCK)?-----'''
+tags = ["key", "private"]
+severity = "HIGH"
+
+[[rules]]
+id = "certificate"
+description = "Certificate"
+regex = '''-----BEGIN CERTIFICATE-----'''
+tags = ["certificate"]
+severity = "MEDIUM"
