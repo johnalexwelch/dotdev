@@ -11,6 +11,7 @@ brew "dust"          # Better du
 brew "duf"           # Better df
 brew "eza"           # Better ls
 brew "fd"            # Better find
+brew "fzf"
 brew "gitmoji"       # Emoji git commits
 brew "htop"          # Better top
 brew "ripgrep"       # Better grep
@@ -42,6 +43,7 @@ brew "shfmt"            # Shell script formatter
 brew "yamlfmt"          # YAML formatter
 
 # AI/ML Tools
+cask "claude"           # Anthropic AI  
 cask "ollama"           # Local AI models
 
 # Productivity

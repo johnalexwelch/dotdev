@@ -50,22 +50,22 @@ mysidebar=(
     "file://${HOME}/Code/ CODE"
 )
 
-# Clear existing favorites
-defaults write com.apple.sidebarlists favorites -dict-add items -array
+# # Clear existing favorites
+# defaults write com.apple.sidebarlists favorites -dict-add items -array
 
-# Add new favorites
-for item in "${mysidebar[@]}"; do
-    IFS=' ' read -r path label <<<"$item"
-    defaults write com.apple.sidebarlists favorites -array-add "<dict>
-        <key>Name</key>
-        <string>${label}</string>
-        <key>URL</key>
-        <string>${path}</string>
-    </dict>"
-done
+# # Add new favorites
+# for item in "${mysidebar[@]}"; do
+#     IFS=' ' read -r path label <<<"$item"
+#     defaults write com.apple.sidebarlists favorites -array-add "<dict>
+#         <key>Name</key>
+#         <string>${label}</string>
+#         <key>URL</key>
+#         <string>${path}</string>
+#     </dict>"
+# done
 
 # Disable all shared items
-defaults write com.apple.sidebarlists networkbrowser -dict-add CustomListProperties -array
+# defaults write com.apple.sidebarlists networkbrowser -dict-add CustomListProperties -array
 defaults write com.apple.sidebarlists networkbrowser -dict-add ShowBonjour -bool false
 defaults write com.apple.sidebarlists networkbrowser -dict-add ShowConnectedServers -bool true
 defaults write com.apple.sidebarlists networkbrowser -dict-add ShowNetworkDrives -bool true

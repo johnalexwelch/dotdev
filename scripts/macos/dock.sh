@@ -57,8 +57,8 @@ done
 # Other dock settings
 defaults write com.apple.dock show-recents -bool false
 defaults write com.apple.dock mru-spaces -bool false
-defaults write com.apple.dock autohide -bool true
-defaults write com.apple.dock tilesize -int 36
+defaults write com.apple.dock autohide -bool false
+defaults write com.apple.dock tilesize -int 70
 
 # Restart dock to apply changes
 killall Dock

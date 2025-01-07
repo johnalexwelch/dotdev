@@ -109,3 +109,14 @@ pre-commit install
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE)
+
+## TODO
+
+- [ ] Configure global git parameters
+    ```bash
+      git config --global user.email "you@example.com"
+      git config --global user.name "Your Name"
+    ```
+- [ ] Add a script to install all the apps
+- [ ] Add a script to install all the apps
+- [ ] Add a script to install all the apps
