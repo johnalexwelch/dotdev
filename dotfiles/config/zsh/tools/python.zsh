@@ -3,13 +3,16 @@
 export PYENV_ROOT="$HOME/.pyenv"
 export PATH="$PYENV_ROOT/bin:$PATH"
 
+# Initialize pyenv if installed
+if command -v pyenv 1>/dev/null 2>&1; then
+  eval "$(pyenv init -)"
+  eval "$(pyenv init --path)"
+fi
+
 # Poetry configuration
 export POETRY_VIRTUALENVS_IN_PROJECT=true
 export POETRY_VIRTUALENVS_CREATE=true
 
-# Initialize pyenv
-eval "$(pyenv init --path)"
-eval "$(pyenv virtualenv-init -)"
 
 # Python aliases
 alias python='python3'
@@ -26,10 +29,6 @@ alias uvd='uv pip uninstall'
 alias uvl='uv pip list'
 alias uvf='uv pip freeze'
 
-# UV completion
-if command -v uv &> /dev/null; then
-    eval "$(uv --completion-script)"
-fi
 
 # Python development helpers
 # shellcheck disable=SC2120

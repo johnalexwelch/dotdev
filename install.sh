@@ -13,7 +13,7 @@ run_cmd() {
 }
 
 # Base directory
-DOTFILES="$HOME/.dotdev"
+DOTFILES="$HOME/dotdev"
 
 # Install Homebrew and packages
 if [ -f "$DOTFILES/scripts/brew.sh" ]; then

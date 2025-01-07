@@ -20,16 +20,15 @@
     "DEVELOPMENT": false
   },
   "excluded_locations": [
-    "~/Library",
-    "~/Downloads",
-    "/System",
+    "$HOME/Library",
+    "$HOME/Downloads",
     "/private",
-    "~/node_modules",
-    "~/.venv",
-    "~/.git",
-    "~/.cache",
-    "~/.local",
-    "~/venv",
+    "$HOME/node_modules",
+    "$HOME/.venv",
+    "$HOME/.git",
+    "$HOME/.cache",
+    "$HOME/.local",
+    "$HOME/venv",
     "**/env",
     "**/dist",
     "**/build",
@@ -45,10 +44,10 @@
     "finder_search": "cmd+alt+space"
   },
   "priority_folders": [
-    "~/dbtlabs",
-    "~/Documents",
-    "~/Desktop",
-    "~/projects",
-    "~/jarvis"
+    "$HOME/dbtlabs",
+    "$HOME/Documents",
+    "$HOME/Desktop",
+    "$HOME/projects",
+    "$HOME/jarvis"
   ]
 }

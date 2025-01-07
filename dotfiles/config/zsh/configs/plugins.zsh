@@ -21,6 +21,7 @@ plugins=(
     terraform            # Terraform completions
     aws                  # AWS CLI completions
     colored-man-pages    # Colorized man pages
+    zoxide               # Directory navigation
 )
 
 # Plugin configurations

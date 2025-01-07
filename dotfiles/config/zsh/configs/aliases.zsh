@@ -23,6 +23,7 @@ alias vim='nvim'
 # Configuration
 alias zshconfig="code ~/.zshrc"
 alias reload="source ~/.zshrc"
+
 alias ohmyzsh="code ~/.oh-my-zsh"
 
 # Directory shortcuts

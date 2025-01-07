@@ -19,8 +19,15 @@ if [ ! -f "$HOME/.zshrc" ]; then
     touch "$HOME/.zshrc"
 fi
 
+# Add Homebrew's zsh to /etc/shells if not already present
+BREW_ZSH="/opt/homebrew/bin/zsh"
+if ! grep -q "$BREW_ZSH" /etc/shells; then
+    echo "Adding Homebrew's zsh to /etc/shells..."
+    echo "$BREW_ZSH" | sudo tee -a /etc/shells
+fi
+
 # Stow ZSH configuration
-cd "${BASH_SOURCE%/*}/../stow" && stow zsh
+cd "$DOTFILES" && stow -v -R -t "$HOME" .config/
 
 # Install zsh-autosuggestions
 if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
@@ -34,9 +41,8 @@ fi
 
 # Configure Starship
 mkdir -p ~/.config
-cd "${BASH_SOURCE%/*}/../stow" && stow starship
 
 # Set zsh as default shell
-if [ "$SHELL" != "$(which zsh)" ]; then
-    chsh -s "$(which zsh)"
+if [ "$SHELL" != "$BREW_ZSH" ]; then
+    chsh -s "$BREW_ZSH"
 fi

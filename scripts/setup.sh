@@ -1,10 +1,14 @@
 #!/bin/bash
 
 # Base directory
-DOTFILES="$HOME/.dotdev"
+DOTFILES="$HOME/dotdev"
 # Create base directories
 echo "Creating base directories..."
 mkdir -p ~/dbtlabs ~/jarvis ~/projects
+
+# Initialize config directory structure
+echo "Initializing config directory structure..."
+bash "$DOTFILES/scripts/config-init.sh"
 
 # Install Homebrew and packages
 echo "Setting up Homebrew..."
@@ -13,9 +17,6 @@ bash "$DOTFILES/scripts/brew.sh"
 # Setup GitHub SSH
 echo "Setting up GitHub SSH..."
 bash "$DOTFILES/scripts/github.sh"
-
-# Create XDG config directory
-mkdir -p "$HOME/.config"
 
 # Create symbolic links from Library/Application Support to .config
 echo "Setting up application config symlinks..."
@@ -32,6 +33,11 @@ bash "$DOTFILES/scripts/macos/finder.sh"
 bash "$DOTFILES/scripts/macos/dock.sh"
 bash "$DOTFILES/scripts/macos/spotlight.sh"
 bash "$DOTFILES/scripts/macos/terminal.sh"
+
+# Make scripts executable and configure macOS permissions
+echo "Configuring app permissions..."
+chmod +x "$DOTFILES/scripts/macos/permissions.sh"
+"$DOTFILES/scripts/macos/permissions.sh"
 
 # Create symbolic links
 cd "$DOTFILES" || exit
