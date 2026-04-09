@@ -28,6 +28,14 @@ repos:
     rev: v0.11.0
     hooks:
       - id: yamlfmt
+  - repo: local
+    hooks:
+      - id: normalize-commit-msg
+        name: normalize commit message
+        entry: scripts/normalize-commit-msg.sh
+        language: script
+        stages: [prepare-commit-msg]
+        always_run: true
   - repo: https://github.com/zricethezav/gitleaks
     rev: v8.22.0
     hooks:
