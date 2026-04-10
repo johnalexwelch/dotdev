@@ -52,7 +52,7 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           gh pr comment "$PR_NUMBER" --repo "$REPO" --body "CI has failed 3 times and auto-fix was unable to resolve it. Manual intervention needed."
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: steps.pr.outputs.pr_number && steps.retry.outputs.count < 3
         with:
           ref: ${{ steps.pr.outputs.branch }}
