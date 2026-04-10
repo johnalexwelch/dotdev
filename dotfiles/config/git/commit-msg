@@ -10,18 +10,18 @@ NORMALIZE_SCRIPT=""
 
 # Search order: same directory, global hooks dir, dotdev
 for candidate in \
-  "$HOOK_DIR/commit-normalize.sh" \
-  "${XDG_CONFIG_HOME:-$HOME/.config}/git/hooks/commit-normalize.sh" \
-  "$HOME/dotdev/dotfiles/config/git/commit-normalize.sh"; do
-  if [ -x "$candidate" ]; then
-    NORMALIZE_SCRIPT="$candidate"
-    break
-  fi
+    "$HOOK_DIR/commit-normalize.sh" \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/git/hooks/commit-normalize.sh" \
+    "$HOME/dotdev/dotfiles/config/git/commit-normalize.sh"; do
+    if [ -x "$candidate" ]; then
+        NORMALIZE_SCRIPT="$candidate"
+        break
+    fi
 done
 
 if [ -z "$NORMALIZE_SCRIPT" ]; then
-  echo "Warning: commit-normalize.sh not found — skipping normalization" >&2
-  exit 0
+    echo "Warning: commit-normalize.sh not found — skipping normalization" >&2
+    exit 0
 fi
 
 exec "$NORMALIZE_SCRIPT" "$1"
