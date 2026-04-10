@@ -47,3 +47,22 @@ alias cur="cursor"   # Shorter alias for Cursor
 alias dev='bash ~/dotdev/scripts/dev.sh'
 alias iris='bash ~/dotdev/scripts/dev.sh ~/projects/iris'
 alias iris-reset='bash ~/dotdev/scripts/dev.sh down'
+
+# Auto-launch dev layout when cd'ing into a project root
+_dev_auto_launch() {
+    # Only in cmux
+    [[ -z "$CMUX_WORKSPACE_ID" ]] && return
+    # Only at a git root (not a subdirectory)
+    [[ -d ".git" ]] || return
+    # Don't re-trigger for dotdev itself or home
+    [[ "$PWD" == "$HOME" || "$PWD" == "$HOME/dotdev" ]] && return
+    # One layout per project per boot — atomic file guard
+    local marker="/tmp/.dev-layout-$(basename "$PWD")"
+    [[ -f "$marker" ]] && return
+    touch "$marker"
+    # Apply layout to current workspace in background
+    bash ~/dotdev/scripts/dev.sh here "$PWD" &>/dev/null &
+    disown
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd _dev_auto_launch
