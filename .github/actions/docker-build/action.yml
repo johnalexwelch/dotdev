@@ -1,0 +1,36 @@
+name: Docker Build
+description: Build Docker image with layer caching
+
+inputs:
+  context:
+    description: Build context path
+    default: "."
+  dockerfile:
+    description: Dockerfile path
+    default: "Dockerfile"
+  push:
+    description: Push image after build
+    default: "false"
+  registry:
+    description: Registry to push to (required if push is true)
+    default: ""
+  image-name:
+    description: Image name (defaults to repo name)
+    default: ""
+  tags:
+    description: Image tags (comma-separated)
+    default: "latest"
+
+runs:
+  using: composite
+  steps:
+    - uses: docker/setup-buildx-action@v3
+    - name: Build
+      uses: docker/build-push-action@v6
+      with:
+        context: ${{ inputs.context }}
+        file: ${{ inputs.dockerfile }}
+        push: ${{ inputs.push }}
+        tags: ${{ inputs.registry && format('{0}/{1}:{2}', inputs.registry, inputs.image-name || github.event.repository.name, inputs.tags) || format('{0}:{1}', inputs.image-name || github.event.repository.name, inputs.tags) }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
