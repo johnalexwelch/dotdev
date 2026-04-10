@@ -48,7 +48,7 @@
       "Bash(rm -rf / *)",
       "Bash(rm -rf ~*)"
     ],
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "plan"
   },
   "model": "opus[1m]",
   "hooks": {
@@ -180,5 +180,5 @@
     }
   },
   "alwaysThinkingEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": false
 }
