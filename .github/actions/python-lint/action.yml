@@ -1,0 +1,32 @@
+name: Python Lint
+description: Run ruff and pyright on Python code
+inputs:
+  python-version:
+    description: Python version to use
+    default: "3.x"
+  ruff-args:
+    description: Arguments to pass to ruff
+    default: "check ."
+  pyright:
+    description: Run pyright type checking
+    default: "true"
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - shell: bash
+      run: pip install ruff
+    - name: Ruff lint
+      shell: bash
+      run: ruff ${{ inputs.ruff-args }}
+    - name: Ruff format check
+      shell: bash
+      run: ruff format --check .
+    - name: Pyright
+      if: inputs.pyright == 'true'
+      shell: bash
+      run: |
+        pip install pyright
+        pyright

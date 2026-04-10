@@ -2,7 +2,7 @@
 
 # Base directories
 CONFIG_DIR="$HOME/.config"
-DOTFILES_CONFIG="$DOTFILES/.config"
+DOTFILES_CONFIG="${DOTFILES:?DOTFILES must be set}/.config"
 
 # Create base config directory
 echo "Creating config directory structure..."
@@ -26,7 +26,7 @@ for dir in "${config_dirs[@]}"; do
     # Create in home directory
     mkdir -p "$CONFIG_DIR/$dir"
     echo "Created $CONFIG_DIR/$dir"
-    
+
     # Create in dotfiles directory
     mkdir -p "$DOTFILES_CONFIG/$dir"
     echo "Created $DOTFILES_CONFIG/$dir"
@@ -42,4 +42,4 @@ echo "Creating symlinks with stow..."
 cd "$DOTFILES" || exit
 stow -v -R -t "$HOME" .config/
 
-echo "Configuration setup complete" 
+echo "Configuration setup complete"

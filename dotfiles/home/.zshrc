@@ -4,11 +4,13 @@ export ZSH_CONFIG="$XDG_CONFIG_HOME/zsh"
 
 # Source configs
 for conf in "$ZSH_CONFIG/configs"/*.zsh; do
+  # shellcheck source=/dev/null
   source "$conf"
 done
 
 # Source tools
 for conf in "$ZSH_CONFIG/tools"/*.zsh; do
+  # shellcheck source=/dev/null
   source "$conf"
 done
 
