@@ -42,3 +42,8 @@ alias ports='netstat -tulanp'
 # Editor aliases
 alias code="cursor"  # Make 'code' command open Cursor
 alias cur="cursor"   # Shorter alias for Cursor
+
+# Projects
+alias dev='bash ~/dotdev/scripts/dev.sh'
+alias iris='bash ~/dotdev/scripts/dev.sh ~/projects/iris'
+alias iris-reset='bash ~/dotdev/scripts/dev.sh down'
