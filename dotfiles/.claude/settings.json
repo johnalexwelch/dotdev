@@ -1,0 +1,184 @@
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "TRACE_TO_LANGFUSE": "true",
+    "LANGFUSE_HOST": "http://192.168.4.43:3050"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Skill(*)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep",
+      "LS",
+      "WebFetch",
+      "WebSearch",
+      "Agent",
+      "Monitor",
+      "SendMessage",
+      "NotebookEdit",
+      "NotebookRead",
+      "TaskCreate",
+      "TaskUpdate",
+      "TaskList",
+      "TaskGet",
+      "TaskOutput",
+      "TaskStop",
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "EnterWorktree",
+      "ExitWorktree",
+      "AskUserQuestion",
+      "LSP",
+      "TeamCreate",
+      "TeamDelete",
+      "RemoteTrigger",
+      "CronCreate",
+      "CronDelete",
+      "CronList",
+      "mcp__*"
+    ],
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(rm -rf / *)",
+      "Bash(rm -rf ~*)"
+    ],
+    "defaultMode": "bypassPermissions"
+  },
+  "model": "opus[1m]",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/guardian/run.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmux claude-hook session-start"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmux claude-hook notification"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmux claude-hook stop"
+          },
+          {
+            "type": "command",
+            "command": "python3 ~/.claude/hooks/langfuse_hook.py",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ext=\"${CLAUDE_FILE##*.}\"; if [ \"$ext\" = \"py\" ]; then ruff check --fix \"$CLAUDE_FILE\" 2>/dev/null && ruff format \"$CLAUDE_FILE\" 2>/dev/null; elif [ \"$ext\" = \"ts\" ] || [ \"$ext\" = \"tsx\" ]; then npx eslint --fix \"$CLAUDE_FILE\" 2>/dev/null; fi",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "if [ -f \"$CLAUDE_FILE\" ]; then grep -nE '(sk-[a-zA-Z0-9]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC )?PRIVATE KEY|password\\s*=\\s*\"[^\"]+\")' \"$CLAUDE_FILE\" && echo 'WARNING: Possible secret detected in '\"$CLAUDE_FILE\" || true; fi",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "if [ -f \"$CLAUDE_FILE\" ]; then lines=$(wc -l < \"$CLAUDE_FILE\"); if [ \"$lines\" -gt 300 ]; then echo \"WARNING: $CLAUDE_FILE is $lines lines (max 300)\"; fi; fi",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": "case \"$CLAUDE_FILE\" in */.claude/guardian/*.ts) cd ~/.claude/guardian && npx tsc --noEmit 2>&1 | head -5 && npx tsc 2>/dev/null && echo 'Guardian recompiled' ;; esac",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bunx -y ccstatusline@latest",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "plugin-dev@claude-plugins-official": true,
+    "slack@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "agent-sdk-dev@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "code-review@claude-plugins-official": true,
+    "code-simplifier@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "security-guidance@claude-plugins-official": true,
+    "serena@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true,
+    "skill-creator@claude-plugins-official": true,
+    "figma@claude-plugins-official": true,
+    "rpi@local": true,
+    "cmux-plugin@patchoutech-plugins": true,
+    "data-engineering@claude-plugins-official": true,
+    "git-cleanup@trailofbits": true,
+    "zeroize-audit@trailofbits": true
+  },
+  "extraKnownMarketplaces": {
+    "patchoutech-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "hopchouinard/patchoutech-plugins"
+      }
+    },
+    "trailofbits": {
+      "source": {
+        "source": "github",
+        "repo": "trailofbits/skills"
+      }
+    },
+    "caleb-davis-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "agent-observability"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "skipDangerousModePermissionPrompt": true
+}

@@ -124,6 +124,8 @@ brew "marcus/tap/td"
 cask "1password"
 # Command-line interface for 1Password
 cask "1password-cli"
+# AeroSpace is an i3-like tiling window manager for macOS
+cask "nikitabobko/tap/aerospace"
 # Application uninstaller
 cask "appcleaner"
 # Chromium based browser
@@ -218,6 +220,8 @@ cask "suspicious-package"
 cask "todoist-app"
 # Open-source code editor
 cask "visual-studio-code"
+# Rust-based terminal
+cask "warp"
 # Quick Look plugin for webp files
 cask "webpquicklook"
 mas "Goodnotes", id: 1444383602
