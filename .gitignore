@@ -111,3 +111,19 @@ jspm_packages/
 # Project specific
 .dotfiles-backup/
 .stow-local-ignore
+
+# Claude guardian generated files
+dotfiles/.claude/guardian/node_modules/
+dotfiles/.claude/guardian/dist/
+dotfiles/.claude/guardian/log.json
+dotfiles/.claude/guardian/log.jsonl
+dotfiles/.claude/guardian/llm-cache.json
+dotfiles/.claude/guardian/.disabled
+dotfiles/.claude/guardian/package-lock.json
+
+# SSH keys (only track config, never keys)
+dotfiles/.ssh/id_*
+dotfiles/.ssh/known_hosts
+dotfiles/.ssh/authorized_keys
+.superpowers/
+.worktrees/
