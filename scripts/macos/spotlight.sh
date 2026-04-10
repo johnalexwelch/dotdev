@@ -16,7 +16,7 @@ declare -a pattern_paths=()
 while read -r location; do
     # Skip if location is empty
     [ -z "$location" ] && continue
-    
+
     if [[ "$location" == *"**"* ]]; then
         # Strip ** from pattern and add to pattern paths
         clean_pattern=${location//\*\*/}
@@ -35,7 +35,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
 <dict>
     <key>pathListArray</key>
-    <array>' > "$privacy_plist"
+    <array>' >"$privacy_plist"
 
 # Define required paths that should exist
 required_paths=(
@@ -53,11 +53,11 @@ for location in "${standard_paths[@]}"; do
 
     # Get the real path by resolving symlinks
     real_path=$(readlink -f "$location" 2>/dev/null || echo "$location")
-    
+
     # Check if path exists
     if [ ! -e "$location" ] && [ ! -e "$real_path" ]; then
         # Only warn about required paths
-        if [[ " ${required_paths[@]} " =~ " ${location} " ]]; then
+        if [[ " ${required_paths[*]} " =~ ${location} ]]; then
             echo "Warning: Required path does not exist: $location"
         fi
         continue
@@ -65,13 +65,13 @@ for location in "${standard_paths[@]}"; do
 
     echo "Adding to Spotlight privacy list: $location"
     # Add path to privacy plist
-    echo "        <string>$real_path</string>" >> "$privacy_plist"
+    echo "        <string>$real_path</string>" >>"$privacy_plist"
 done
 
 # Write plist footer
 echo '    </array>
 </dict>
-</plist>' >> "$privacy_plist"
+</plist>' >>"$privacy_plist"
 
 # Import privacy settings
 defaults import com.apple.Spotlight.PrivacyPreferences "$privacy_plist"
@@ -82,18 +82,18 @@ rm "$privacy_plist"
 # Handle pattern paths through Spotlight preferences
 if [ ${#pattern_paths[@]} -gt 0 ]; then
     echo "Adding pattern-based exclusions to Spotlight preferences..."
-    
+
     # Create temporary file for plist
     tmp_plist=$(mktemp)
-    
+
     # Write plist header
     echo '<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
     <key>CustomSearchScopes</key>
-    <array>' > "$tmp_plist"
-    
+    <array>' >"$tmp_plist"
+
     # Add each pattern
     for pattern in "${pattern_paths[@]}"; do
         echo "        <dict>
@@ -101,17 +101,17 @@ if [ ${#pattern_paths[@]} -gt 0 ]; then
             <string>$pattern</string>
             <key>enabled</key>
             <true/>
-        </dict>" >> "$tmp_plist"
+        </dict>" >>"$tmp_plist"
     done
-    
+
     # Write plist footer
     echo '    </array>
 </dict>
-</plist>' >> "$tmp_plist"
-    
+</plist>' >>"$tmp_plist"
+
     # Import the plist
     defaults import com.apple.Spotlight "$tmp_plist"
-    
+
     # Clean up
     rm "$tmp_plist"
 fi
@@ -130,7 +130,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>
 <plist version="1.0">
 <dict>
     <key>orderedItems</key>
-    <array>' > "$tmp_plist"
+    <array>' >"$tmp_plist"
 
 # Add each category
 while IFS="=" read -r category enabled; do
@@ -140,14 +140,14 @@ while IFS="=" read -r category enabled; do
             <integer>$([[ "$enabled" == "true" ]] && echo "1" || echo "0")</integer>
             <key>name</key>
             <string>$category</string>
-        </dict>" >> "$tmp_plist"
+        </dict>" >>"$tmp_plist"
     fi
 done < <(echo "$config" | jq -r '.search_categories | to_entries | .[] | "\(.key)=\(.value)"')
 
 # Write plist footer
 echo '    </array>
 </dict>
-</plist>' >> "$tmp_plist"
+</plist>' >>"$tmp_plist"
 
 # Import the plist
 defaults import com.apple.Spotlight "$tmp_plist"

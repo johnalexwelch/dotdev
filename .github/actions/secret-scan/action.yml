@@ -1,11 +1,9 @@
 name: Secret Scan
 description: Run gitleaks secret scanning
-
 inputs:
   config:
     description: Path to gitleaks config file
     default: ""
-
 runs:
   using: composite
   steps:

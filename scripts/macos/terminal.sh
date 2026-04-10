@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+DOTFILES="${DOTFILES:?DOTFILES must be set}"
+
 echo "Configuring Terminal settings..."
 
 # Install Oh My Zsh if not already installed

@@ -1,6 +1,5 @@
 name: Python Lint
 description: Run ruff and pyright on Python code
-
 inputs:
   python-version:
     description: Python version to use
@@ -11,7 +10,6 @@ inputs:
   pyright:
     description: Run pyright type checking
     default: "true"
-
 runs:
   using: composite
   steps:

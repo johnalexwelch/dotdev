@@ -1,6 +1,5 @@
 name: Docker Build
 description: Build Docker image with layer caching
-
 inputs:
   context:
     description: Build context path
@@ -20,7 +19,6 @@ inputs:
   tags:
     description: Image tags (comma-separated)
     default: "latest"
-
 runs:
   using: composite
   steps:

@@ -23,24 +23,24 @@ traits=()
 
 # Web trait: package.json must contain a frontend framework dependency
 if [[ -f "$PROJECT_DIR/package.json" ]]; then
-  if grep -qE '"(next|react|vue|svelte|angular|nuxt|vite)"' "$PROJECT_DIR/package.json" 2>/dev/null; then
-    traits+=(web)
-  fi
+    if grep -qE '"(next|react|vue|svelte|angular|nuxt|vite)"' "$PROJECT_DIR/package.json" 2>/dev/null; then
+        traits+=(web)
+    fi
 fi
 
 # Override: .project-type file wins for trait lines (ignore key=value lines)
 if [[ -f "$PROJECT_DIR/.project-type" ]]; then
-  traits=()
-  while IFS= read -r line; do
-    line="${line%%#*}"        # strip comments
-    line="$(echo "$line" | xargs)" # trim whitespace
-    [[ -z "$line" ]] && continue
-    [[ "$line" == *=* ]] && continue  # skip key=value pairs
-    traits+=("$line")
-  done < "$PROJECT_DIR/.project-type"
+    traits=()
+    while IFS= read -r line; do
+        line="${line%%#*}"             # strip comments
+        line="$(echo "$line" | xargs)" # trim whitespace
+        [[ -z "$line" ]] && continue
+        [[ "$line" == *=* ]] && continue # skip key=value pairs
+        traits+=("$line")
+    done <"$PROJECT_DIR/.project-type"
 fi
 
 # Output traits
 for trait in "${traits[@]}"; do
-  echo "$trait"
+    echo "$trait"
 done

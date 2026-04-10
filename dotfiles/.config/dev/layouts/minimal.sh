@@ -17,11 +17,11 @@ cmux new-split right --workspace "$WORKSPACE"
 
 # If git repo, split the right pane: Git on top, Terminal on bottom
 if echo "$TRAITS" | grep -q "git"; then
-  # Right pane is focused after split — send git command here
-  cmux rpc surface.send_text --text "cd $PROJECT_DIR && $(git_cmd)" --enter true
-  # Split down for terminal
-  cmux new-split down --workspace "$WORKSPACE"
-  cmux rpc surface.send_text --text "cd $PROJECT_DIR" --enter true
+    # Right pane is focused after split — send git command here
+    cmux rpc surface.send_text --text "cd $PROJECT_DIR && $(git_cmd)" --enter true
+    # Split down for terminal
+    cmux new-split down --workspace "$WORKSPACE"
+    cmux rpc surface.send_text --text "cd $PROJECT_DIR" --enter true
 else
-  cmux rpc surface.send_text --text "cd $PROJECT_DIR" --enter true
+    cmux rpc surface.send_text --text "cd $PROJECT_DIR" --enter true
 fi

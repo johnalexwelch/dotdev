@@ -1,6 +1,5 @@
 name: Python Test
 description: Run pytest with optional coverage threshold
-
 inputs:
   python-version:
     description: Python version to use
@@ -11,7 +10,6 @@ inputs:
   pytest-args:
     description: Arguments to pass to pytest
     default: "-x --tb=short"
-
 runs:
   using: composite
   steps:

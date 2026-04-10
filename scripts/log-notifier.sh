@@ -10,10 +10,10 @@ PROJECT="${1:-logs}"
 PATTERNS='(Traceback \(most recent call last\)|(ERROR|FATAL|CRITICAL)\b|exited with code [^0]|UnhandledPromiseRejection|ECONNREFUSED)'
 
 while IFS= read -r line; do
-  echo "$line"
-  if echo "$line" | grep -qE "$PATTERNS"; then
-    cmux notify \
-      --title "$PROJECT" \
-      --body "$(echo "$line" | head -c 200)" 2>/dev/null || true
-  fi
+    echo "$line"
+    if echo "$line" | grep -qE "$PATTERNS"; then
+        cmux notify \
+            --title "$PROJECT" \
+            --body "$(echo "$line" | head -c 200)" 2>/dev/null || true
+    fi
 done
