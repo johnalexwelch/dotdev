@@ -127,3 +127,4 @@ dotfiles/.ssh/known_hosts
 dotfiles/.ssh/authorized_keys
 .superpowers/
 .worktrees/
+.serena/
