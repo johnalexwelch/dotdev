@@ -1,0 +1,44 @@
+name: Python Test
+description: Run pytest with optional coverage threshold
+
+inputs:
+  python-version:
+    description: Python version to use
+    default: "3.x"
+  coverage-threshold:
+    description: Minimum coverage percentage (0 to disable)
+    default: "0"
+  pytest-args:
+    description: Arguments to pass to pytest
+    default: "-x --tb=short"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install dependencies
+      shell: bash
+      run: |
+        if [[ -f "pyproject.toml" ]] && command -v uv &>/dev/null; then
+          uv sync
+        elif [[ -f "pyproject.toml" ]]; then
+          pip install -e ".[dev]" 2>/dev/null || pip install -e .
+        elif [[ -f "requirements-dev.txt" ]]; then
+          pip install -r requirements-dev.txt
+        elif [[ -f "requirements.txt" ]]; then
+          pip install -r requirements.txt
+        fi
+        pip install pytest pytest-cov
+    - name: Run tests
+      shell: bash
+      env:
+        THRESHOLD: ${{ inputs.coverage-threshold }}
+        PYTEST_ARGS: ${{ inputs.pytest-args }}
+      run: |
+        if [[ "$THRESHOLD" != "0" ]]; then
+          pytest $PYTEST_ARGS --cov --cov-report=term --cov-fail-under="$THRESHOLD"
+        else
+          pytest $PYTEST_ARGS
+        fi
