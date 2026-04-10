@@ -12,7 +12,7 @@ mkdir -p "$BACKUP_PATH"
 # Function to backup settings
 backup_settings() {
     echo "Backing up Arc settings..."
-    
+
     if [ -f "$ARC_SETTINGS_PATH/Preferences" ]; then
         cp "$ARC_SETTINGS_PATH/Preferences" "$SETTINGS_BACKUP_PATH/settings.json"
         echo "Settings backup completed!"
@@ -24,7 +24,7 @@ backup_settings() {
 # Function to restore settings
 restore_settings() {
     echo "Restoring Arc settings..."
-    
+
     if [ -f "$SETTINGS_BACKUP_PATH/settings.json" ]; then
         cp "$SETTINGS_BACKUP_PATH/settings.json" "$ARC_SETTINGS_PATH/Preferences"
         echo "Settings restoration completed!"
@@ -36,26 +36,26 @@ restore_settings() {
 # Function to backup extensions
 backup_extensions() {
     echo "Backing up Arc extensions..."
-    
+
     # Create manifest file
     manifest_file="$BACKUP_PATH/manifest.txt"
-    : > "$manifest_file"  # Clear existing manifest
-    
+    : >"$manifest_file" # Clear existing manifest
+
     # Copy extensions and create manifest
     for ext in "$ARC_EXTENSION_PATH"/*; do
         if [ -d "$ext" ]; then
             ext_name=$(basename "$ext")
             ext_version=$(ls "$ext" | sort -V | tail -n1)
-            
+
             # Copy extension files
             mkdir -p "$BACKUP_PATH/$ext_name"
             cp -R "$ext/$ext_version"/* "$BACKUP_PATH/$ext_name/"
-            
+
             # Add to manifest
-            echo "$ext_name:$ext_version" >> "$manifest_file"
+            echo "$ext_name:$ext_version" >>"$manifest_file"
         fi
     done
-    
+
     echo "Backup completed! Extensions saved to $BACKUP_PATH"
 }
 
@@ -63,25 +63,25 @@ backup_extensions() {
 restore_extensions() {
     echo "Restoring Arc extensions..."
     manifest_file="$BACKUP_PATH/manifest.txt"
-    
+
     if [ ! -f "$manifest_file" ]; then
         echo "Error: Manifest file not found at $manifest_file"
         exit 1
     fi
-    
+
     # Make sure Arc is closed
-    if pgrep -x "Arc" > /dev/null; then
+    if pgrep -x "Arc" >/dev/null; then
         echo "Please close Arc browser before restoring extensions"
         exit 1
     fi
-    
+
     # Read manifest and restore extensions
     while IFS=: read -r ext_name ext_version; do
         echo "Restoring extension: $ext_name"
         mkdir -p "$ARC_EXTENSION_PATH/$ext_name/$ext_version"
         cp -R "$BACKUP_PATH/$ext_name/"* "$ARC_EXTENSION_PATH/$ext_name/$ext_version/"
-    done < "$manifest_file"
-    
+    done <"$manifest_file"
+
     echo "Restoration completed! Please restart Arc browser"
 }
 
