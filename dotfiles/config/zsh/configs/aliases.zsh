@@ -57,7 +57,8 @@ _dev_auto_launch() {
     # Don't re-trigger for dotdev itself or home
     [[ "$PWD" == "$HOME" || "$PWD" == "$HOME/dotdev" ]] && return
     # One layout per project per boot — atomic file guard
-    local marker="/tmp/.dev-layout-$(basename "$PWD")"
+    local marker
+    marker="/tmp/.dev-layout-$(basename "$PWD")"
     [[ -f "$marker" ]] && return
     touch "$marker"
     # Apply layout to current workspace in background
