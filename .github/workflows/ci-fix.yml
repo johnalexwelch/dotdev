@@ -1,0 +1,116 @@
+name: CI Fix
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+jobs:
+  fix:
+    name: Auto-fix CI failures
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.event == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+      checks: read
+    steps:
+      - name: Get PR info
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Get the PR associated with this workflow run
+          PR_NUMBER=$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq '.pull_requests[0].number')
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "No PR found for this run"
+            exit 0
+          fi
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+
+          # Get the branch name
+          BRANCH=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json headRefName --jq '.headRefName')
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Check retry count
+        id: retry
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$PR_NUMBER" ]; then exit 0; fi
+          COUNT=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json commits --jq '[.commits[].messageHeadline | select(startswith("fix(ci):"))] | length')
+          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+          echo "CI fix attempt count: $COUNT"
+
+      - name: Give up after 3 attempts
+        if: steps.retry.outputs.count >= 3
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "CI has failed 3 times and auto-fix was unable to resolve it. Manual intervention needed."
+
+      - uses: actions/checkout@v4
+        if: steps.pr.outputs.pr_number && steps.retry.outputs.count < 3
+        with:
+          ref: ${{ steps.pr.outputs.branch }}
+          fetch-depth: 0
+
+      - name: Get failed job logs
+        if: steps.pr.outputs.pr_number && steps.retry.outputs.count < 3
+        id: logs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh run view "$RUN_ID" --repo "$REPO" --log-failed > /tmp/ci-logs.txt 2>&1 || true
+          # Truncate to 4000 chars to fit in Claude's prompt reasonably
+          tail -c 4000 /tmp/ci-logs.txt > /tmp/ci-logs-truncated.txt
+
+      - name: Install Claude Code
+        if: steps.pr.outputs.pr_number && steps.retry.outputs.count < 3
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run Claude to fix CI
+        if: steps.pr.outputs.pr_number && steps.retry.outputs.count < 3
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          LOGS=$(cat /tmp/ci-logs-truncated.txt)
+          claude -p "CI failed on this repo. Here are the failed job logs:
+
+          $LOGS
+
+          Diagnose the failure and fix it. Rules:
+          - Only modify files that are causing the CI failure
+          - Run 'pre-commit run --all-files' after your fix to verify
+          - Do not change test expectations or skip checks to make CI pass
+          - If the fix requires changing CI workflow files, that is OK
+          - Do not commit your changes — I will handle the commit" \
+            --allowedTools "Read,Write,Edit,Bash,Glob,Grep"
+
+      - name: Commit and push fix
+        if: steps.pr.outputs.pr_number && steps.retry.outputs.count < 3
+        env:
+          BRANCH: ${{ steps.pr.outputs.branch }}
+        run: |
+          git config user.name "claude-ci-fix[bot]"
+          git config user.email "noreply@anthropic.com"
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git add -A
+          git commit -m "fix(ci): auto-fix CI failures
+
+          Co-Authored-By: Claude <noreply@anthropic.com>"
+          git push origin "$BRANCH"
