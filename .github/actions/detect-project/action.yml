@@ -1,0 +1,43 @@
+name: Detect Project Type
+description: Scan marker files and output project traits
+
+outputs:
+  traits:
+    description: Comma-separated list of detected traits
+    value: ${{ steps.detect.outputs.traits }}
+
+runs:
+  using: composite
+  steps:
+    - id: detect
+      shell: bash
+      run: |
+        traits=()
+        # Language traits
+        [[ -f "pyproject.toml" || -f "setup.py" || -f "setup.cfg" ]] && traits+=(python)
+        [[ -f "package.json" ]] && traits+=(node)
+        [[ -f "go.mod" ]] && traits+=(go)
+        [[ -f "Cargo.toml" ]] && traits+=(rust)
+        # Infrastructure
+        [[ -f "docker-compose.yml" || -f "docker-compose.yaml" || -f "Dockerfile" ]] && traits+=(docker)
+        [[ -f "dbt_project.yml" ]] && traits+=(dbt)
+        [[ -f "Brewfile" && -d "dotfiles" ]] && traits+=(dotfiles)
+        # Web
+        if [[ -f "package.json" ]]; then
+          if grep -qE '"(next|react|vue|svelte|angular|nuxt|vite)"' package.json 2>/dev/null; then
+            traits+=(web)
+          fi
+        fi
+        # Override
+        if [[ -f ".project-type" ]]; then
+          traits=()
+          while IFS= read -r line; do
+            line="${line%%#*}"
+            line="$(echo "$line" | xargs)"
+            [[ -z "$line" || "$line" == *=* ]] && continue
+            traits+=("$line")
+          done < .project-type
+        fi
+        result=$(IFS=,; echo "${traits[*]}")
+        echo "traits=$result" >> "$GITHUB_OUTPUT"
+        echo "Detected traits: $result"
