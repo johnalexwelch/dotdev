@@ -1,9 +1,9 @@
 #!/bin/bash
 # Minimal layout: Claude | Git > Terminal
-# Args: workspace_id project_dir project_name traits_string
+# Args: workspace_ref project_dir project_name traits_string
 set -euo pipefail
 
-WORKSPACE="$1"
+WS="$1"
 PROJECT_DIR="$2"
 PROJECT_NAME="$3"
 TRAITS="$4"
@@ -12,16 +12,14 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 
 # Claude is the initial pane (already created with workspace)
-# Create right split for terminal
-cmux new-split right --workspace "$WORKSPACE"
+# Create right split
+local_surface="$(do_split right "$WS")"
 
-# If git repo, split the right pane: Git on top, Terminal on bottom
 if echo "$TRAITS" | grep -q "git"; then
-    # Right pane is focused after split — send git command here
-    cmux rpc surface.send_text --text "cd $PROJECT_DIR && $(git_cmd)" --enter true
+    # This surface is Git
+    send_cmd "$WS" "$local_surface" "$(safe_cd "$PROJECT_DIR") $(git_cmd)"
     # Split down for terminal
-    cmux new-split down --workspace "$WORKSPACE"
-    cmux rpc surface.send_text --text "cd $PROJECT_DIR" --enter true
-else
-    cmux rpc surface.send_text --text "cd $PROJECT_DIR" --enter true
+    local_surface="$(do_split down "$WS")"
 fi
+
+send_cmd "$WS" "$local_surface" "$(safe_cd "$PROJECT_DIR")"
