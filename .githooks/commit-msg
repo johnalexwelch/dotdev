@@ -1,0 +1,13 @@
+#!/bin/bash
+# commit-msg hook — normalizes commit messages to Conventional Commits format
+# Delegates to commit-normalize.sh in the repo's dotfiles/config/git/ directory.
+
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+NORMALIZE_SCRIPT="$REPO_ROOT/dotfiles/config/git/commit-normalize.sh"
+
+if [ -x "$NORMALIZE_SCRIPT" ]; then
+    exec "$NORMALIZE_SCRIPT" "$1"
+else
+    echo "Warning: commit-normalize.sh not found at $NORMALIZE_SCRIPT — skipping normalization" >&2
+    exit 0
+fi
