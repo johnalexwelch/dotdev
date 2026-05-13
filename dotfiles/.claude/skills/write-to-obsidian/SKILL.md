@@ -2,7 +2,19 @@
 name: write-to-obsidian
 description: Write or append content to files in the Obsidian vault at ~/Documents/Home/. Use when saving briefings, meeting prep, notes, or any structured output to Obsidian. Triggers on "save to obsidian", "write to obsidian", "export to obsidian", "save note", "write note".
 user_invocable: false
+codex-compatible: false
 ---
+
+## Contract
+Consumes: content to save (briefings, meeting prep, notes, structured output)
+Produces: Obsidian vault file(s) at ~/Documents/Home/
+Requires: filesystem access to ~/Documents/Home/
+Side effects: creates/appends files in Obsidian vault
+Human gates: none (checks for existing files and asks before overwriting)
+
+## Context
+Typical workflows: output persistence (after any skill that produces notes, briefings, or structured content)
+Pairs well with: slack-update, any skill producing saveable output
 
 # Write to Obsidian
 

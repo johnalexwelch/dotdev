@@ -130,4 +130,4 @@ dotfiles/.ssh/authorized_keys
 .serena/
 
 # Claude local settings (per-project permissions)
-.claude/
+/.claude/

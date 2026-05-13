@@ -3,6 +3,17 @@ name: tdd
 description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
 ---
 
+## Contract
+Consumes: behavior specification (user-confirmed interface + behaviors), codebase
+Produces: tests and implementation code (red-green-refactor cycles)
+Requires: project test runner
+Side effects: creates/modifies source and test files
+Human gates: planning phase (interface and behavior confirmation before any code)
+
+## Context
+Typical workflows: feature development, bug fixing (test-first)
+Pairs well with: diagnose, execute-phase, improve-codebase-architecture
+
 # Test-Driven Development
 
 ## Philosophy

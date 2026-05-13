@@ -37,6 +37,17 @@ writes:
   - copied env/config files inside the worktree
 ---
 
+## Contract
+Consumes: plan phase number and/or branch name, repo state
+Produces: isolated git worktree directory with copied env/config files
+Requires: git
+Side effects: creates worktree directory, creates git branch (if new), copies env/config files
+Human gates: none
+
+## Context
+Typical workflows: on-demand side-car (when /execute-phase halts at [human] gate, or for isolated branch review)
+Pairs well with: execute-phase, watch-ci, design-plan
+
 # /setup-worktree — Isolated Checkout for a Plan Phase
 
 ## Purpose

@@ -30,6 +30,17 @@ writes:
   - docs/audits/.fact-packs-<date>[-<path-slug>]/*.md (intermediate, deleted unless keep_facts=true)
 ---
 
+## Contract
+Consumes: entire codebase (or scoped subtree via path param), README, CLAUDE.md, spec docs
+Produces: audit report with stable FIND-NN IDs (docs/audits/<date>-repo-audit.md)
+Requires: git
+Side effects: writes audit file and intermediate fact-packs (fact-packs deleted by default)
+Human gates: none
+
+## Context
+Typical workflows: audit-loop (entrypoint for refactor-scale work, before /design-plan)
+Pairs well with: design-plan, post-mortem, improve-codebase-architecture
+
 # /repo-audit — Map-Reduce State-of-the-Repo Investigation
 
 ## Purpose
@@ -118,6 +129,19 @@ below, substituting the question-specific text.
 > `<path>`.
 
 If `focus` was set, drop agents whose questions don't apply.
+
+## Research Guardrail
+
+During evidence gathering (fact-pack generation), sub-agents follow this constraint:
+
+**Document what IS, not what SHOULD BE.**
+
+- Describe current state, not desired state
+- Report measurements, not judgments
+- List what exists, not what's missing
+- Findings describe reality; recommendations come only in the synthesis phase
+
+This separation prevents premature solutioning. The research phase builds an accurate map; the synthesis phase interprets it.
 
 ## Step 2: Wait for map phase
 

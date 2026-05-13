@@ -3,6 +3,17 @@ name: to-prd
 description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
 ---
 
+## Contract
+Consumes: conversation context, codebase understanding, grilling output
+Produces: PRD issue on the project issue tracker
+Requires: gh (or configured issue tracker CLI)
+Side effects: creates issue on the project issue tracker
+Human gates: module breakdown confirmed with user; PRD published with ready-for-agent label (user reviews post-publish)
+
+## Context
+Typical workflows: feature ideation (after /grill-with-docs, before /to-issues)
+Pairs well with: grill-with-docs, to-issues, triage
+
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
 
 The issue tracker and triage label vocabulary should have been provided to you — run `/setup-skills` if not.

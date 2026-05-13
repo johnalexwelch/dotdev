@@ -46,6 +46,17 @@ writes:
   - docs/plans/<date>[-<slug>]-design.md (or override via output_path)
 ---
 
+## Contract
+Consumes: repo audit report (docs/audits/) or free-form brief (inline text, file path, or URL), target outcome, constraints
+Produces: phased execution plan (docs/plans/)
+Requires: git
+Side effects: writes plan file to docs/plans/
+Human gates: plan review before execution; outcome and constraints questions asked if not provided
+
+## Context
+Typical workflows: audit-loop (after /repo-audit, before /execute-phase), brief-mode (standalone entrypoint for bugs/features)
+Pairs well with: repo-audit, execute-phase, grill-with-docs
+
 # /design-plan — Turn an Audit Into an Executable Plan
 
 ## Purpose
@@ -461,6 +472,22 @@ Claude: [finds docs/plans/2026-04-20-design.md; finds phase branches
          OAuth-refactor after FIND-05 was found more invasive
          than expected]
 ```
+
+## Iteration Mode
+
+When invoked with "iterate" or on an existing plan:
+
+1. Read the existing plan file first
+2. Identify what has changed (new requirements, execution feedback, post-mortem findings)
+3. Produce a DIFF of changes rather than regenerating from scratch
+4. Preserve phase numbering and completed phases
+5. Mark changed sections clearly
+
+This prevents first-draft bias where a skill always starts from scratch. The iterate path is triggered when:
+- User says "update the plan" or "iterate on the plan"
+- A post-mortem references plan gaps
+- Execution feedback suggests plan revision
+- The plan file already exists and the user invokes design-plan again
 
 ## Tuning notes
 

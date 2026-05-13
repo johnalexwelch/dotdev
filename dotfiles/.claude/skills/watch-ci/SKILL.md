@@ -49,10 +49,22 @@ reads:
   - PR state via `gh pr view <pr> --json …`
 writes:
   - docs/executions/.ci-runs/<date>-pr-<N>-attempt-<M>.md (one per CI attempt this run drives)
+  - docs/executions/ci-handoffs/<pr-number>-<date>.md (exhaustion handoff artifact for diagnose)
   - git commits on the PR's branch (auto-fix commits, format `ci-fix(<class>): <one-liner>`)
   - PR comment via `gh pr comment` (one structured comment per `/watch-ci` invocation)
   - PR review via `gh pr review --approve` (only on clean self-review pass; gated by `no_approve`)
 ---
+
+## Contract
+Consumes: PR number or branch, GitHub Actions output, phase-run outcome files
+Produces: CI status report (docs/executions/.ci-runs/), PR comment, optional auto-fix commits
+Requires: gh, git
+Side effects: may push fix commits (max 3 attempts), posts PR comments, submits PR approval (when gate passes), may auto-create PR
+Human gates: exhaustion halts with handoff artifact; out-of-scope failures (test-logic, build-infra, security, unknown) always halt
+
+## Context
+Typical workflows: audit-loop (after /describe-pr, before human merge)
+Pairs well with: describe-pr, review, setup-worktree
 
 # /watch-ci — Drive CI to Green and Self-Review
 
@@ -212,6 +224,8 @@ On halt:
   ```
 - Surface halt state to chat. Exit non-zero. **Do not submit Approve.**
 
+> **Explicit rule:** watch-ci never invokes diagnose. On exhaustion, it produces the handoff artifact and halts. The calling workflow is responsible for routing to diagnose.
+
 ## Step 6: Post review comment + Approve gate
 
 Reached on green CI with self-review (or `no_review == true`) complete.
@@ -347,6 +361,47 @@ The Step 2 classifier table is the canonical reference. Maintenance rules:
 | `no_review == true` | Skip Step 4 entirely. Post a comment with CI history only. Cannot Approve (gate requires review). |
 | `no_approve == true` | Run review pass normally. Post comment with verdict. Skip the `gh pr review --approve` call regardless of cleanness. |
 | Astronomer reference dir not present locally | Skip the cross-reference; classifier still works from the inline table. Note in Tuning notes that pattern-source guidance is unavailable. |
+
+## Exhaustion Handoff
+
+When auto-fix exhausts (3 attempts with no progress toward green), emit a structured handoff artifact instead of silently halting:
+
+### Handoff artifact format
+
+```markdown
+## CI Exhaustion Handoff — [PR #N]
+
+**Workflow:** [workflow name that failed]
+**Job:** [specific job name]
+**Classification:** [lint | type-error | test-failure | build-failure | deploy-failure | timeout | unknown]
+**Attempts:** 3/3 (exhausted)
+
+### Failure pattern
+[Concise description of what's failing and why auto-fix couldn't resolve it]
+
+### Log excerpt
+\`\`\`
+[Relevant error lines from the most recent failure — max 50 lines]
+\`\`\`
+
+### Attempts tried
+1. [What was tried in attempt 1 + why it didn't work]
+2. [What was tried in attempt 2 + why it didn't work]
+3. [What was tried in attempt 3 + why it didn't work]
+
+### Suspected root cause
+[Best guess based on the pattern — may be wrong, diagnose should verify]
+
+### Recommended diagnosis mode
+[quick | standard | deep | regression — based on failure complexity]
+```
+
+### Rules
+
+- watch-ci does NOT invoke diagnose directly — it produces the artifact and halts
+- When issue context is available, write to `docs/tasks/{issue-number}-{slug}/ci-handoff.md`. Fallback: `docs/executions/ci-handoffs/{pr-number}-{date}.md`
+- workflow-debug or workflow-build-one will pick up the artifact and route to diagnose
+- The artifact must be self-contained: diagnose should be able to start without re-reading CI logs
 
 ## Example Invocation
 

@@ -3,6 +3,17 @@ name: write-a-skill
 description: Create new agent skills with proper structure, progressive disclosure, and bundled resources. Use when user wants to create, write, or build a new skill.
 ---
 
+## Contract
+Consumes: skill requirements/description from user
+Produces: SKILL.md file with optional reference files and scripts
+Requires: none
+Side effects: creates skill directory and files
+Human gates: skill draft review before finalizing
+
+## Context
+Typical workflows: skill authoring (standalone)
+Pairs well with: skill-maintenance
+
 # Writing Skills
 
 ## Process

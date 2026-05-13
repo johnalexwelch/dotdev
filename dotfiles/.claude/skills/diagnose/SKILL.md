@@ -137,6 +137,13 @@ Required before declaring done:
 
 ## Diagnosis Artifact
 
+When issue context is available, write the diagnosis artifact to:
+```
+docs/tasks/{issue-number}-{slug}/diagnosis.md
+```
+
+Fallback: write inline in the conversation (no file output when no issue context).
+
 Emit this structured artifact at the end of Phase 5 (or earlier if halting):
 
 - **Observed failure**: [what actually happened]

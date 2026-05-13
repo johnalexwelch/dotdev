@@ -3,6 +3,17 @@ name: improve-codebase-architecture
 description: Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.
 ---
 
+## Contract
+Consumes: codebase, CONTEXT.md (domain glossary), ADRs (docs/adr/)
+Produces: refactoring opportunities report (numbered deepening candidates)
+Requires: git
+Side effects: none (read-only analysis); may update CONTEXT.md or create ADRs during grilling loop (Step 3)
+Human gates: none for analysis; candidate selection requires user choice before grilling
+
+## Context
+Typical workflows: architecture improvement (standalone or after /diagnose surfaces structural issues)
+Pairs well with: diagnose, repo-audit, grill-with-docs, design-plan
+
 # Improve Codebase Architecture
 
 Surface architectural friction and propose **deepening opportunities** — refactors that turn shallow modules into deep ones. The aim is testability and AI-navigability.

@@ -42,6 +42,17 @@ writes:
   - git commits on that branch
 ---
 
+## Contract
+Consumes: design plan phase (docs/plans/), codebase, git state
+Produces: committed code on phase branch, phase outcome file (docs/executions/.phase-runs/)
+Requires: git, project build tools
+Side effects: creates git branches, modifies files, creates commits, writes outcome files
+Human gates: verification failure halts; [human]-tagged tasks in plan honored (never executed); scope violations halt
+
+## Context
+Typical workflows: audit-loop (after /design-plan, before /review)
+Pairs well with: design-plan, review, post-mortem, setup-worktree
+
 # /execute-phase — Dispatch Phases of a Design Plan
 
 ## Purpose
@@ -387,6 +398,21 @@ Print to chat:
   retro), then `/watch-ci` (post-PR-open: polls CI, applies bounded
   auto-fixes, runs `/security-review`, submits Approve when clean)."
 
+## Artifact Output
+
+When issue context is available (issue number known), write phase outcomes to:
+```
+docs/tasks/{issue-number}-{slug}/phase-{N}-outcome.md
+```
+
+When no issue context (executing from a plan without linked issue), fall back to:
+```
+docs/executions/.phase-runs/{date}-phase-{N}.md
+```
+
+The issue slug is derived from the issue title: lowercase, spaces to hyphens, max 40 chars.
+Example: issue #42 "Add user authentication" → `docs/tasks/42-add-user-authentication/phase-1-outcome.md`
+
 ## Output Format
 
 Standard markdown at
@@ -466,6 +492,35 @@ Claude: [preflight clean, branch refactor/phase-2-add-webhook created,
         (or /setup-worktree phase=2 to finish the human task
          in an isolated checkout)
 ```
+
+## Execution Profiles
+
+Profiles control HOW code is written during execution — they do not change the phase structure or verification gates.
+
+| Profile | Behavior | When to use |
+|---------|----------|-------------|
+| **normal** | Standard development. Clean code, reasonable tests, good commit messages. | Default for most work |
+| **caveman** | Simplest boring implementation. No abstractions, no cleverness, no premature optimization. Make it work with the most obvious approach. | When speed matters more than elegance; prototyping; when the user says "just make it work" |
+| **strict-tdd** | Every behavior change starts with a failing test. No implementation without a test. Red-green-refactor strictly enforced. | Bug fixes (mandatory), behavior-critical features, when user requests TDD |
+| **prototype** | Throwaway code. No tests, no docs, no polish. Prove the concept works, then discard. Mark with `// PROTOTYPE - do not merge` comments. | Spike/exploration, feasibility check, demo |
+| **safe** | Smaller commits, more verification steps, conservative changes. Each commit is independently revertable. Extra test runs between changes. | Production-critical code, unfamiliar codebase, high-risk changes |
+
+## Profile Selection
+
+Profiles are selected by (in priority order):
+1. Explicit user request ("use strict-tdd", "caveman this")
+2. Workflow context (workflow-debug always uses strict-tdd for the fix step)
+3. Issue labels (`prototype`, `spike` → prototype profile)
+4. Default: normal
+
+## Single-Issue Execution
+
+execute-phase supports both plan-phase execution and single-issue execution:
+
+**Plan-phase mode** (original): reads a phase from a design plan, creates branch, executes tasks
+**Single-issue mode**: reads a GitHub issue directly, creates branch from issue number, executes against acceptance criteria
+
+Single-issue mode is invoked by workflow-build-one when there's no design plan — just a ready issue with clear acceptance criteria.
 
 ## Tuning notes
 

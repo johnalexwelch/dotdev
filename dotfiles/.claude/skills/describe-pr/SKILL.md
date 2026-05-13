@@ -38,6 +38,17 @@ writes:
   - (optional, if `apply == true`) the PR body on GitHub via `gh pr edit`
 ---
 
+## Contract
+Consumes: git log, git diff, design plan (docs/plans/), phase-run outcome files (docs/executions/.phase-runs/), post-mortem (docs/executions/), issue/ticket refs, GitHub issues (via `gh issue view`)
+Produces: PR body markdown file (docs/executions/.pr-bodies/), optionally applied to GitHub PR
+Requires: gh, git
+Side effects: creates/updates PR body on GitHub (when apply=true), writes body file to docs/executions/.pr-bodies/
+Human gates: none
+
+## Context
+Typical workflows: audit-loop (after /post-mortem, before /watch-ci)
+Pairs well with: execute-phase, post-mortem, watch-ci, design-plan
+
 # /describe-pr — Deviation-Aware PR Description
 
 ## Purpose
@@ -82,6 +93,7 @@ Team flow: applies to the PR via `gh pr edit --body-file` when
    - PR permalink per file: `https://github.com/<owner>/<repo>/pull/<pr_number>/files#diff-<anchor>`.
    - If no PR: `https://github.com/<owner>/<repo>/compare/<base>...<branch>#diff-<anchor>`.
 5. **Ticket-reference detection (pluggable regex).** Scan commit messages and plan §5 Addresses for any of: `FIND-NN`, `REQ-NN`, `NEW-NN`, `GAP-NN`, `phase-N`, `[A-Z]+-\d+` (JIRA-style), `ENG-\d+`, `LL-\d+`, `#\d+` (GitHub issue/PR style). Collect unique references. Do not hardcode Linear-specific URL construction — link ticket refs only if the plan or a `.tickets.env` file declares a base URL.
+6. **Issue discovery.** Run the Issue Discovery pipeline (see § Issue Discovery) across all 7 sources. For each discovered issue, fetch title/state via `gh issue view`. Build the issue list that will feed into the disposition table in Step 3.
 
 ## Step 2: Dispatch deviation-review subagent
 
@@ -126,6 +138,21 @@ commits. Do not quote verbatim — summarize.>
   - Commits: <short-hash> <short-hash> ...
   - Evidence: `docs/executions/.phase-runs/<outcome file>`
 >
+
+## Issues
+
+<For each issue discovered by Issue Discovery (§ Issue Discovery),
+assign a disposition per § Issue Disposition Table rules:
+
+| Issue | Disposition | Rationale |
+|-------|-------------|-----------|
+| #N    | Closes / Fixes / Addresses / Refs / ... | Why this disposition |
+
+For auto-closing dispositions, add GitHub keywords after the table:
+Closes #N
+Fixes #N
+
+If no issues discovered: omit this section.>
 
 ## User-facing changes
 
@@ -236,6 +263,73 @@ Claude: [no PR for branch; text-only mode]
         deviations: 0, new findings: 0.
         Body: docs/executions/.pr-bodies/2026-04-21-pr-refactor-phase-0-preflight.md
 ```
+
+## Issue Discovery
+
+Discover related issues from these sources (checked in order during Step 1):
+
+1. **Branch name** — parse issue numbers from the branch name (e.g., `feat/123-add-auth` → `#123`, `fix/gh-45-crash` → `#45`). Regex: `(?:^|/)(?:gh-)?(\d+)[-_]` against the branch.
+2. **Commit messages** — scan `git log --oneline <base>..<branch>` for `#N` references. Collect unique issue numbers.
+3. **Design plan refs** — if executing a design plan, extract issue references (`#N`, ticket slugs) from plan §3 Goals, §5 phase Addresses entries, and §9 Open questions.
+4. **to-issues output** — if issues were created by `/to-issues`, the plan or issue bodies reference the parent PRD. Follow the link to collect the PRD issue number and all child issue numbers.
+5. **execute-phase outcomes** — read `.phase-runs/` outcome files for issue references in `## Commits`, `## Follow-ups`, and `## Scope violations` sections.
+6. **Post-mortems** — extract issue numbers from `docs/executions/<date>-post-mortem.md`, particularly from `## New findings` and `## Issues created` sections.
+7. **Explicit input** — user or calling workflow provides issue numbers directly (via prompt text or future `issues` input parameter).
+
+Deduplicate across all sources. For each discovered issue, fetch its title and status via `gh issue view <N> --json title,state,labels -q '{title,state,labels}'` (skip silently if `gh` is unavailable or the issue doesn't exist).
+
+## Issue Disposition Table
+
+When generating the PR body (Step 3), include an `## Issues` section immediately after `## Phases completed`. For each discovered issue, assign a disposition:
+
+### Disposition rules
+
+| Disposition | When to use | GitHub effect |
+|-------------|-------------|---------------|
+| **Closes** | ALL acceptance criteria fully met | Auto-closes on merge |
+| **Fixes** | Bug fully fixed with regression test | Auto-closes on merge |
+| **Resolves** | Issue fully addressed (non-bug) | Auto-closes on merge |
+| **Addresses** | Partial progress only | Does NOT close |
+| **Refs** | Related context, no direct work | Does NOT close |
+| **Follow-up created** | New work spawned during this PR | Does NOT close |
+| **Supersedes** | This PR replaces the issue's approach | Manual close needed |
+
+**Critical rule:** Never use Closes/Fixes/Resolves unless the issue is FULLY complete. Partial work uses "Addresses" only. When in doubt, prefer "Addresses" over "Closes".
+
+### Table format in the PR body
+
+```markdown
+## Issues
+
+| Issue | Disposition | Rationale |
+|-------|-------------|-----------|
+| #123 | Closes | All acceptance criteria met |
+| #124 | Fixes | Bug root cause addressed + regression test added |
+| #125 | Addresses | Partial progress — 3 of 5 criteria met |
+| #126 | Refs | Related context, no direct work done |
+| #127 | Follow-up created | New work discovered → #130 |
+| #128 | Supersedes | This approach replaces #128 |
+```
+
+### Disposition assignment logic
+
+To determine the correct disposition for each issue:
+
+1. If the issue was explicitly provided as "closes" by the user or workflow → **Closes** (trust the caller).
+2. If the issue has acceptance criteria, diff each criterion against the commits and changed files:
+   - All met → **Closes** (or **Fixes** if the issue is labeled `bug` and a test was added).
+   - Some met → **Addresses** with a rationale listing which criteria are met/unmet.
+   - None met → **Refs**.
+3. If the issue was discovered only from branch name or commit messages but no direct work maps to it → **Refs**.
+4. If a `NEW-NN` finding in the post-mortem created a follow-up issue → **Follow-up created** with a link to the new issue.
+5. If the plan explicitly states this approach replaces an earlier issue → **Supersedes**.
+
+### GitHub keyword placement
+
+For auto-closing dispositions (Closes/Fixes/Resolves), place the keyword in the PR body so GitHub recognizes it:
+- Use the exact format: `Closes #123`, `Fixes #124`, `Resolves #125` (one per line, outside the table).
+- Place these keywords in the `## Issues` section footer, after the table.
+- Non-closing dispositions use plain `#N` references only (no GitHub keyword prefix).
 
 ## Tuning notes
 

@@ -34,6 +34,17 @@ writes:
   - (optional) annotations appended to the referenced audit marking FIND-NN as addressed
 ---
 
+## Contract
+Consumes: executed design plan (docs/plans/), phase-run outcome files (docs/executions/.phase-runs/), CI-run outcome files (docs/executions/.ci-runs/), git history, audit report
+Produces: blameless retro document (docs/executions/<date>-post-mortem.md), NEW-NN finding IDs
+Requires: git
+Side effects: writes post-mortem file; optionally annotates referenced audit
+Human gates: none (audit annotation is opt-in, gated on user confirmation)
+
+## Context
+Typical workflows: audit-loop (after /review, before /describe-pr)
+Pairs well with: execute-phase, describe-pr, repo-audit
+
 # /post-mortem — Close the Loop
 
 ## Purpose
@@ -245,6 +256,15 @@ Present to the user in chat:
 - Top 3 most important items from "What I'd change" — these are the
   actionable takeaways.
 - Pointer: `See docs/executions/<date>-post-mortem.md`.
+
+## Artifact Output
+
+When issue context is available, write to:
+```
+docs/tasks/{issue-number}-{slug}/post-mortem.md
+```
+
+Fallback: `docs/executions/{date}-post-mortem.md`
 
 ## Output Format
 

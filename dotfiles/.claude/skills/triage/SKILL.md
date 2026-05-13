@@ -3,6 +3,17 @@ name: triage
 description: Triage issues through a state machine driven by triage roles. Use when user wants to create an issue, triage issues, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow.
 ---
 
+## Contract
+Consumes: issue list or specific issue from project issue tracker, codebase context
+Produces: labeled and classified issues, triage notes, agent briefs
+Requires: gh (or configured issue tracker CLI)
+Side effects: applies labels, posts comments, may close issues (wontfix)
+Human gates: classification presented for approval before applying; state transitions confirmed before acting
+
+## Context
+Typical workflows: issue-management (standalone entrypoint for incoming work)
+Pairs well with: grill-with-docs, to-issues, setup-skills
+
 # Triage
 
 Move issues on the project issue tracker through a small state machine of triage roles.

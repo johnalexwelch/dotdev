@@ -1,13 +1,51 @@
 ---
 name: grill-with-docs
-description: Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan against their project's language and documented decisions.
+description: Grilling session that handles both lightweight design interrogation and deep documentation-driven interviews. Challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan, get grilled on their design, poke holes in an idea, or challenge a decision. Triggers on "grill me", "stress test this", "poke holes", "challenge this", "grill me hard".
 ---
+
+## Modes
+
+### Auto-detection
+The skill auto-selects mode based on project state:
+
+| Condition | Mode |
+|-----------|------|
+| No CONTEXT.md + quick/simple topic | **Lightweight** |
+| CONTEXT.md present OR deep/complex topic OR user says "grill me hard" | **Full** |
+
+### Lightweight mode
+- One question at a time (not batches of five)
+- Skip CONTEXT.md and ADR updates
+- Focus on reaching shared understanding quickly
+- Good for: quick design decisions, simple feature scoping, sanity checks
+
+### Full mode (default when CONTEXT.md exists)
+- Questions in batches of five with recommended answers
+- Live CONTEXT.md updates as terms are defined
+- ADR creation for qualifying architectural decisions
+- Relentless interviewing until all decision branches resolved
+- Good for: new features, architectural decisions, refactoring plans, system design
+
+## Contract
+Consumes: topic/plan/design to stress-test, CONTEXT.md, ADRs (docs/adr/)
+Produces: shared understanding, updated CONTEXT.md terms, new ADR files (when decisions crystallize)
+Requires: none
+Side effects: may update CONTEXT.md and create ADR files in docs/adr/
+Human gates: every question batch (groups of five) requires user response before continuing
+
+## Context
+Typical workflows: pre-planning (before /design-plan or /to-prd), domain modeling
+Pairs well with: design-plan, to-prd, improve-codebase-architecture
 
 <what-to-do>
 
 Interview me relentlessly about every aspect of this plan until we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
 
-Ask the questions in groups of five, waiting for feedback on each question before continuing.
+**Mode selection:** Check for CONTEXT.md in the project and assess topic complexity. If neither exists (no CONTEXT.md, simple topic), use lightweight mode. Otherwise use full mode.
+
+**Lightweight mode:** Ask one question at a time. Skip CONTEXT.md and ADR updates. Focus on resolving each decision branch before moving to the next.
+
+**Full mode:** Ask the questions in groups of five, waiting for feedback on each question before continuing.
 
 If a question can be answered by exploring the codebase, explore the codebase instead.
 

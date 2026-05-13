@@ -7,6 +7,17 @@ description: >
   "less tokens", "be brief", or invokes /caveman.
 ---
 
+## Contract
+Consumes: none (mode toggle)
+Produces: compressed communication (~75% token reduction)
+Requires: none
+Side effects: none
+Human gates: none
+
+## Context
+Typical workflows: any (on-demand communication mode)
+Pairs well with: any skill (orthogonal communication layer)
+
 Respond terse like smart caveman. All technical substance stay. Only fluff die.
 
 ## Persistence
