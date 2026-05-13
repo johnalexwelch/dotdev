@@ -12,7 +12,7 @@ NORMALIZE_SCRIPT=""
 for candidate in \
     "$HOOK_DIR/commit-normalize.sh" \
     "${XDG_CONFIG_HOME:-$HOME/.config}/git/hooks/commit-normalize.sh" \
-    "$HOME/dotdev/dotfiles/config/git/commit-normalize.sh"; do
+    "$HOME/dotdev/dotfiles/.config/git/commit-normalize.sh"; do
     if [ -x "$candidate" ]; then
         NORMALIZE_SCRIPT="$candidate"
         break
