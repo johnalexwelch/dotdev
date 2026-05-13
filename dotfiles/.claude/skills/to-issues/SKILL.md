@@ -4,6 +4,7 @@ description: Break a plan, spec, or PRD into independently-grabbable issues on t
 ---
 
 ## Contract
+
 Consumes: plan, spec, PRD, or conversation context (may include issue reference)
 Produces: GitHub issues as independently-grabbable vertical slices
 Requires: gh (or configured issue tracker CLI)
@@ -11,6 +12,7 @@ Side effects: creates issues on the project issue tracker
 Human gates: slice breakdown presented for approval before publishing
 
 ## Context
+
 Typical workflows: planning-to-execution (after /design-plan or /to-prd)
 Pairs well with: design-plan, to-prd, triage, setup-skills
 

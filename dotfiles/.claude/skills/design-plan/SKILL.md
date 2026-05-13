@@ -47,6 +47,7 @@ writes:
 ---
 
 ## Contract
+
 Consumes: repo audit report (docs/audits/) or free-form brief (inline text, file path, or URL), target outcome, constraints
 Produces: phased execution plan (docs/plans/)
 Requires: git
@@ -54,6 +55,7 @@ Side effects: writes plan file to docs/plans/
 Human gates: plan review before execution; outcome and constraints questions asked if not provided
 
 ## Context
+
 Typical workflows: audit-loop (after /repo-audit, before /execute-phase), brief-mode (standalone entrypoint for bugs/features)
 Pairs well with: repo-audit, execute-phase, grill-with-docs
 
@@ -484,6 +486,7 @@ When invoked with "iterate" or on an existing plan:
 5. Mark changed sections clearly
 
 This prevents first-draft bias where a skill always starts from scratch. The iterate path is triggered when:
+
 - User says "update the plan" or "iterate on the plan"
 - A post-mortem references plan gaps
 - Execution feedback suggests plan revision

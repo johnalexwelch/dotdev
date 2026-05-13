@@ -53,6 +53,7 @@ gh run view <RUN_ID> --log | grep -B5 -A50 "error\|Error\|FAILED\|fatal"
 ```
 
 **For deploy failures**, also check:
+
 - The workflow file itself (`publish.yml`) to understand the pipeline stages
 - Recent commits on main that may have introduced the issue
 - Migration files if the failure is in the migration step
@@ -105,6 +106,7 @@ Fallback if worktrees unavailable: `git checkout -b fix/<description> origin/<re
 ## Step 5: Apply and Verify the Fix
 
 **CI fixes — verify with the same tool that failed:**
+
 ```bash
 # Lint
 cd backend && ruff check src/ tests/ --fix
@@ -120,6 +122,7 @@ cd frontend && npx vitest run
 ```
 
 **Deploy fixes — verify what you can locally:**
+
 ```bash
 # Migration: test against local DB
 cd backend && alembic upgrade head
@@ -166,12 +169,14 @@ gh pr create --base <target-branch> --head fix/<description> \
 ## Log excerpt
 
 ```
+
 <relevant error lines from the failure>
 ```
 
 Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 EOF
 )"
+
 ```
 
 ## Step 7: Comment on Original PR/Commit
@@ -193,6 +198,7 @@ gh pr comment <PR_NUMBER> --body "## CI/Deploy Failure Diagnosis
 ```
 
 For failures on main (deploy), comment on the merge commit:
+
 ```bash
 gh api repos/<owner>/<repo>/commits/<SHA>/comments \
   -f body="## Deploy Failure Diagnosis ..."

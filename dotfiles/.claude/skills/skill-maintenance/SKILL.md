@@ -4,6 +4,7 @@ description: Use when auditing, improving, creating, deduplicating, syncing, or 
 ---
 
 ## Contract
+
 Consumes: skill directory state (~/.claude/skills, ~/.codex/skills, project skill dirs)
 Produces: audit findings report, normalization recommendations, trigger-quality analysis
 Requires: none (CORA optional for deterministic findings)
@@ -11,6 +12,7 @@ Side effects: may rename/move/edit skill directories and files (after approval)
 Human gates: change plan presented for approval before any destructive operations (renames, moves, deletions)
 
 ## Context
+
 Typical workflows: skill library hygiene (standalone or periodic)
 Pairs well with: write-a-skill, repo-audit
 

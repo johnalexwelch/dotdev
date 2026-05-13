@@ -20,6 +20,7 @@ Drive a bug from report through diagnosis to verified fix. The cardinal rule: **
 ## Cardinal rule
 
 **Never route bugs to workflow-build-one**, even if the fix appears trivial. Bugs must go through diagnosis to:
+
 1. Confirm the root cause (not just the symptom)
 2. Produce evidence (the diagnosis artifact)
 3. Determine if the fix is AFK-safe
@@ -32,6 +33,7 @@ diagnose → triage → [tdd OR execute-phase] → workflow-review → [optional
 ```
 
 ### Step 1: Diagnose (diagnose)
+
 - Select mode based on bug characteristics:
   - Simple/clear reproduction → **quick** mode
   - Standard bug → **standard** mode
@@ -42,7 +44,9 @@ diagnose → triage → [tdd OR execute-phase] → workflow-review → [optional
 - Emit routing recommendation
 
 ### Step 2: Triage routing decision
+
 Based on diagnose routing output:
+
 - **direct-fix** → proceed to Step 3
 - **follow-up-issue** → create issue and STOP (bug needs more work than a single fix)
 - **architecture-review** → invoke improve-codebase-architecture and STOP
@@ -50,6 +54,7 @@ Based on diagnose routing output:
 - **unsafe-for-afk** → halt with artifact + fix plan
 
 ### Step 3: Implement fix
+
 Choose approach based on bug nature:
 
 | Condition | Approach |
@@ -62,15 +67,18 @@ Choose approach based on bug nature:
 In ALL cases: the regression test from the diagnosis artifact must be written.
 
 ### Step 4: Review (workflow-review)
+
 - Standard parallel review
 - Security reviewer mandatory if bug was in auth/data handling
 - If REQUEST CHANGES: iterate (max 2 rounds)
 
 ### Step 5: User Journey QA (optional)
+
 - Same trigger conditions as workflow-build-one
 - Additionally triggered if the bug was user-reported (not CI/automated)
 
 ### Step 6: Finalize (workflow-finalize)
+
 - PR description references the original bug report/issue
 - Includes link to diagnosis artifact in PR body
 - Issue disposition: Fixes #N

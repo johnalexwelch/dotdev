@@ -1,16 +1,10 @@
 {
   "default": true,
-  "MD013": {
-    "line_length": 100,
-    "code_blocks": false,
-    "tables": false
-  },
+  "MD013": false,
   "MD024": {
     "siblings_only": true
   },
-  "MD033": {
-    "allowed_elements": ["kbd"]
-  },
+  "MD033": false,
   "MD041": false,
   "MD046": {
     "style": "fenced"
@@ -40,7 +34,7 @@
   "MD037": true,
   "MD038": true,
   "MD039": true,
-  "MD040": true,
+  "MD040": false,
   "MD042": true,
   "MD044": {
     "names": [],

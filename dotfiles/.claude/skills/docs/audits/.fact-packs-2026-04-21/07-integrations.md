@@ -18,6 +18,7 @@ The skills directory contains 11 documented skills. **Five core skills directly 
 5. **ci-deploy-fix** — GitHub Actions (workflow logs, PR comments)
 
 The remaining six skills are **internal orchestration tools** (no external integrations):
+
 - repo-audit, design-plan, execute-phase, post-mortem, td-task-management, omc-reference
 
 **Key finding:** All integrations are **aspirational** (documented in SKILL.md) with **no implementation code** present. No Python, JavaScript, or shell scripts implement the workflows — only specification markdown exists.
@@ -28,23 +29,27 @@ The remaining six skills are **internal orchestration tools** (no external integ
 
 ### 1. slack-update — Slack API Integration
 
-**Service:** Slack (https://slack.com/api)
+**Service:** Slack (<https://slack.com/api>)
 
 **Auth method:** Bearer token via `SLACK_BOT_TOKEN`  
+
 - Environment variable lookup chain: `$SLACK_BOT_TOKEN` → `.env` file → fallback to `~/projects/iris/.env`
 - No OAuth flow documented; uses pre-provisioned bot token
 
 **Wired vs. aspirational:** **Aspirational**  
+
 - SKILL.md documents the workflow but contains no executable code
 - Pseudo-code example: Python httpx AsyncClient call to `https://slack.com/api/chat.postMessage`
 - Workflow orchestrated via GitHub channel mapping file: `~/.claude/slack-update-channels.json`
 
 **Failure mode:** **Hard fail with user notification**
+
 - Token not found → ask user interactively
 - API errors (e.g., invalid channel) → print error response, no retry
 - Network timeout (15s per SKILL.md) → timeout error surfaced to chat
 
 **Rate-limit handling:** **Not addressed**
+
 - No mention of Slack API rate limits (50 req/min for chat.postMessage)
 - No exponential backoff or queue
 - No retry logic specified
@@ -52,11 +57,13 @@ The remaining six skills are **internal orchestration tools** (no external integ
 **Verification:** Single-step — user confirmation before sending ("Send to #channel?")
 
 **Drift from specification to reality:**
+
 - SKILL.md prescribes `/chat.postMessage` API call with unfurl_links/unfurl_media flags
 - `conversations.info` call to resolve channel name (real-time lookup for display, not cached)
 - PR grouping heuristic (conventional commits + PR body scanning) is complex; no risk assessment for edge cases (malformed commit messages)
 
 **Load-bearing design choices:**
+
 - Mrkdwn formatting (asterisks for bold, no heading syntax)
 - Em dashes (—) vs. hyphens for separators
 - One-day lookback for merged PRs (UTC midnight-to-midnight)
@@ -70,10 +77,12 @@ The remaining six skills are **internal orchestration tools** (no external integ
 **Auth method:** None (filesystem ACL)
 
 **Wired vs. aspirational:** **Aspirational**
+
 - SKILL.md specifies `mkdir -p` + heredoc bash commands
 - No implementation code; intended as a skill subagent's workflow description, not automated
 
 **Failure mode:** **Graceful degrade + user prompt**
+
 - File exists → ask user: overwrite, append, or abort (check with `[ -f ... ]` test)
 - Missing parent directory → `mkdir -p` creates it (no error)
 - Filesystem permission error → silent skip per file, continue with rest
@@ -81,22 +90,26 @@ The remaining six skills are **internal orchestration tools** (no external integ
 **Rate-limit handling:** **N/A** (local filesystem)
 
 **Directory conventions documented:**
+
 - Briefings: `Chief of Staff/Briefings/[YYYY-MM]/[MM-DD]/`
 - Meeting notes: `Areas/dojo/Meeting Notes/`
 - Meal plans: `Areas/Family/Meal Planning/[YYYY]/[MM-month]/`
 - Inbox: `* Inbox/`
 
 **YAML frontmatter requirements:**
+
 - Mandatory: `created: YYYY-MM-DD`, `tags: [tag1, tag2]`
 - Optional: `week_start` (for meal plans)
 
 **Load-bearing design choices:**
+
 - Heredoc quoting: `<< 'OBSIDIAN_EOF'` (prevents shell expansion)
 - `>>` for append vs. `>` for overwrite
 - File naming: lowercase with hyphens (`morning-briefing.md`)
 - Date-stamped directories for recurring outputs
 
 **Specification gaps:**
+
 - No conflict resolution for simultaneous writes
 - No Obsidian-native API call (treats Obsidian as dumb vault)
 - Relies on filesystem mtime for "recent" sorting in Obsidian, not Obsidian metadata
@@ -108,15 +121,18 @@ The remaining six skills are **internal orchestration tools** (no external integ
 **Service:** GitHub API (via `gh` CLI and `git` commands)
 
 **Auth method:** GitHub CLI (OAuth or SSH; user pre-configured)  
+
 - No explicit token handling in SKILL.md
 - Assumes `gh` and `git` commands available and authenticated
 
 **Wired vs. aspirational:** **Aspirational**
+
 - SKILL.md documents the workflow; no implementation code
 - Pseudo-code: `gh pr view`, `gh pr edit --body-file`, `git log`, `git diff`, `git hash-object`
 - Subagent dispatch: "general-purpose Agent" (no hardcoded subagent type)
 
 **Failure mode:** **Graceful degrade to text-only**
+
 - `gh` CLI not installed and `pr_number == 0` → proceed in text-only mode; no PR actions attempted
 - No PR exists for branch → skip `apply` step, return body text only
 - `git remote get-url origin` not GitHub → omit diff permalinks, note in body
@@ -124,24 +140,29 @@ The remaining six skills are **internal orchestration tools** (no external integ
 - Deviation subagent returns empty → retry once with tighter prompt; if still empty, surface in body
 
 **Rate-limit handling:** **Not addressed**
+
 - GitHub API has 5,000 req/hr for authenticated users
 - No mention of rate-limit headers or backoff
 - `gh pr view` is a single call (low cost); but for large repos, `git log` is local
 
 **Verification:** Two-phase
+
 1. Pre-flight: confirm git repo, resolve plan/branch/PR
 2. Subagent review: deviation-analysis Agent compares plan vs. commits, surfaces drift
 
 **Integration points:**
+
 - Reads: `docs/plans/*.md`, `docs/executions/.phase-runs/*`, git log, `gh pr view`
 - Writes: `docs/executions/.pr-bodies/<date>-pr-<N>.md`, (optionally) PR body on GitHub
 
 **Load-bearing design choices:**
+
 - Ticket ref regex: `FIND-NN`, `NEW-NN`, `GAP-NN`, `phase-N`, `[A-Z]+-\d+` (JIRA-style)
 - Ticket URL construction: opt-in via `.tickets.env` base URL (no Linear-specific hardcoding)
 - Per-file diff anchors: `git hash-object --stdin` for 8-char prefix (not GitHub's native syntax)
 
 **Specification gaps:**
+
 - Deviation subagent brief is prescriptive but not autogenerated; relies on manual prompting
 - No caching of deviation analysis (subagent is stateless, re-runs on each invocation)
 - `§3 Goals` and `§5 Execution plan` parsing is manual (no structured extraction)
@@ -153,14 +174,17 @@ The remaining six skills are **internal orchestration tools** (no external integ
 **Service:** Git (local and remote)
 
 **Auth method:** User pre-authenticated (SSH or HTTPS git creds)  
+
 - No explicit credential handling
 - Assumes git is configured and has access to remote
 
 **Wired vs. aspirational:** **Aspirational**
+
 - SKILL.md documents `git worktree add`, `git show-ref`, file copy logic
 - No implementation code; intended for human execution or subagent delegation
 
 **Failure mode:** **Hard fail (no fallback)**
+
 - Path already exists → abort (would require `--force`, which is silently declined)
 - Branch conflict (in use by another worktree) → abort, report error, no auto-cleanup
 - Branch doesn't exist and is new name → create off current HEAD
@@ -170,21 +194,25 @@ The remaining six skills are **internal orchestration tools** (no external integ
 **Rate-limit handling:** **N/A** (local git)
 
 **Config files auto-copied:**
+
 - `.env`, `.env.local`, `.env.development`, `.env.production`, `.env.test`
 - `.envrc`, `.nvmrc`, `.python-version`, `.tool-versions`, `.ruby-version`, `.node-version`
 - `.claude/settings.local.json` (if `.claude/` exists in destination)
 
 **Copy strategy:**
+
 - Flat copy (not symlinks) to avoid dangling links on worktree removal
 - Best-effort per file; skip silently if parent dir missing in destination
 - No fingerprinting or mtime preservation
 
 **Load-bearing design choices:**
+
 - Branch naming: `refactor/phase-<N>-<phase-slug>` derived from plan
 - Worktree path: `~/wt/<repo>/phase-<N>/` convention
 - Phase slug derivation: lowercase, non-alphanum → `-`, cap 40 chars (matches `/execute-phase`)
 
 **Specification gaps:**
+
 - No validation that copied env files match source (one-way copy, no sync)
 - No post-copy `.gitignore` check (user responsible for `.gitignore` covering new paths)
 - Setup command is optional; no default (e.g., `npm install` not auto-run)
@@ -196,24 +224,29 @@ The remaining six skills are **internal orchestration tools** (no external integ
 **Service:** GitHub Actions (workflow logs and PR API)
 
 **Auth method:** GitHub CLI (pre-configured)  
+
 - Assumes `gh` available and authenticated
 - Reads workflow logs via `gh run view`
 
 **Wired vs. aspirational:** **Aspirational**
+
 - SKILL.md documents workflow; no implementation code
 - Pseudo-code: `gh run list`, `gh run view <RUN_ID> --log-failed`, `gh pr comment`, `gh api repos/<owner>/<repo>/commits/<SHA>/comments`
 
 **Failure mode:** **Diagnosis-only with escalation**
+
 - Infra/permissions issues (IAM, ECR login, runner availability) → diagnose only, escalate
 - CI fix available → create fix branch, apply fix, verify locally, open PR
 - Migration failures → user must fix and verify (test against local DB)
 - Skaffold/k8s deploy → verify YAML with `--dry-run`, note that actual deploy can't be verified locally
 
 **Rate-limit handling:** **Not addressed**
+
 - GitHub Actions logs are rate-limited (API calls to `gh run view`)
 - No mention of backoff or retry
 
 **Verification strategy:**
+
 - Lint/type errors → run lint/type tool locally before commit
 - Test failures → run test suite locally
 - Build failures → test build stage locally
@@ -221,16 +254,19 @@ The remaining six skills are **internal orchestration tools** (no external integ
 - Deploy failures → often not verifiable locally (k8s, Skaffold)
 
 **Load-bearing design choices:**
+
 - Failure classification: lint, type, test, build, migration, k8s, skaffold, infra, resource
 - Fix branch pattern: `fix/ci-<description>` or `fix/deploy-<description>`
 - Worktree isolation for CI fixes (convention from project)
 - PR body structure: Diagnosis, Root Cause, Fix, Verification (checkbox format)
 
 **Integration points:**
+
 - Reads: `gh run list`, workflow files (`.github/workflows/`), migration files
 - Writes: fix branch, PR (optionally), commit comment on original PR or merge commit
 
 **Specification gaps:**
+
 - Root-cause diagnosis is manual (no automated log analysis)
 - Fix branch creation uses worktrees if available; fallback to git checkout (no explicit condition)
 - Common patterns (ruff, Docker build errors, Trivy CVE) are documented as examples, not automated
@@ -255,6 +291,7 @@ These six skills are **internal orchestration** and do not integrate with extern
 ## Evidence
 
 ### File Structure
+
 ```
 /Users/alexwelch/.claude/skills/
 ├── slack-update/
@@ -302,6 +339,7 @@ These six skills are **internal orchestration** and do not integrate with extern
 ### External Service Details
 
 **Slack API (slack-update)**
+
 - Endpoint: `https://slack.com/api/chat.postMessage`
 - Parameters: `channel`, `text`, `unfurl_links`, `unfurl_media`
 - Token source: `SLACK_BOT_TOKEN` env var or `.env` file
@@ -309,18 +347,21 @@ These six skills are **internal orchestration** and do not integrate with extern
 - Timeout: 15 seconds (httpx AsyncClient)
 
 **GitHub (describe-pr, ci-deploy-fix)**
+
 - CLI: `gh` (user pre-authenticated)
 - Commands: `gh pr view`, `gh pr edit`, `gh run list`, `gh run view`, `gh pr comment`, `gh api`
 - Git commands: `git log`, `git diff`, `git remote get-url`, `git hash-object`, `git status`
 - No hardcoded OAuth or token handling (delegates to gh CLI)
 
 **Obsidian (write-to-obsidian)**
+
 - No API; filesystem only
 - Vault path: `~/Documents/Home/`
 - Access: `mkdir -p` and bash heredoc `cat >` commands
 - File format: Markdown with YAML frontmatter
 
 **Git (setup-worktree)**
+
 - Commands: `git worktree add`, `git show-ref`, `git checkout -b`
 - Auth: User pre-configured (SSH or HTTPS creds)
 - No credential handling in skill; assumes user has access
@@ -357,6 +398,7 @@ These six skills are **internal orchestration** and do not integrate with extern
 All external integrations in this skills directory are **aspirational** — documented in SKILL.md as workflows, with no executable implementation. The five skills that declare external service integration (Slack, Obsidian, GitHub, git) are designed as **skill specifications for human execution or subagent dispatch**, not as autonomous production code.
 
 **Integration quality:**
+
 - **Slack API:** Well-specified but no auto-retry or rate-limit handling; token lookup fallback is user-interactive.
 - **Obsidian:** Treats vault as dumb filesystem; no Obsidian API or conflict resolution.
 - **GitHub (CLI-based):** Delegates auth to user's pre-configured `gh` tool; no credential refresh; graceful-degrade to text-only if gh unavailable.
@@ -364,10 +406,10 @@ All external integrations in this skills directory are **aspirational** — docu
 - **GitHub Actions:** Diagnosis-only for infra issues; no auto-fix for deploy or k8s failures.
 
 **Gaps:**
+
 - No rate-limit handling documented across any integration.
 - No explicit error recovery or retry logic.
 - Specification relies on human judgment or subagent reasoning; not deterministic.
 - No implementation code to validate against.
 
 **Recommendation:** If these skills are intended for production use, implementation code and integration tests should be added, along with explicit rate-limit handling and retry strategies per service.
-

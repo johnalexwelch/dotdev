@@ -19,6 +19,7 @@
   - Files touched: none (read-only)
   - Subagent command: `/bin/ls -la /tmp/pilot-scratch/` (first attempt via plain `ls` returned only a bare filename; absolute-path invocation produced the full long listing — see `## Plan parse warnings` for the NEW-04 candidate this surfaced)
   - Listing (verbatim):
+
     ```
     total 8
     drwxr-xr-x@  3 alexwelch  wheel    96 Apr 21 11:07 .

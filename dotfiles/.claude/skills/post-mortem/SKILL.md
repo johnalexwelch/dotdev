@@ -35,6 +35,7 @@ writes:
 ---
 
 ## Contract
+
 Consumes: executed design plan (docs/plans/), phase-run outcome files (docs/executions/.phase-runs/), CI-run outcome files (docs/executions/.ci-runs/), git history, audit report
 Produces: blameless retro document (docs/executions/<date>-post-mortem.md), NEW-NN finding IDs
 Requires: git
@@ -42,6 +43,7 @@ Side effects: writes post-mortem file; optionally annotates referenced audit
 Human gates: none (audit annotation is opt-in, gated on user confirmation)
 
 ## Context
+
 Typical workflows: audit-loop (after /review, before /describe-pr)
 Pairs well with: execute-phase, describe-pr, repo-audit
 
@@ -260,6 +262,7 @@ Present to the user in chat:
 ## Artifact Output
 
 When issue context is available, write to:
+
 ```
 docs/tasks/{issue-number}-{slug}/post-mortem.md
 ```

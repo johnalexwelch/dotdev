@@ -26,6 +26,7 @@ Autonomously process a queue of `ready-for-agent` issues without human supervisi
 ## Flow
 
 ### Phase 1: Plan
+
 1. Query GitHub Issues: `gh issue list --label ready-for-agent --state open --json number,title,labels,body`
 2. Filter out issues marked `blocked`, `needs-human`, or `in-progress`
 3. Rank by:
@@ -45,7 +46,9 @@ Autonomously process a queue of `ready-for-agent` issues without human supervisi
 5. Present queue for approval (or auto-approve in AFK mode)
 
 ### Phase 2: Dispatch
+
 For each issue in queue order:
+
 1. Apply `in-progress` label
 2. Dispatch:
    - **Codex mode**: `omc team 1:codex` with issue context (title, body, acceptance criteria, repo)
@@ -53,6 +56,7 @@ For each issue in queue order:
 3. Each dispatch is independent — failure of one does not block others
 
 ### Phase 3: Monitor
+
 1. Poll PR status: `gh pr list --state open --json number,title,statusCheckRollup`
 2. For each completed dispatch:
    - PR merged → update issue label to `done`, remove `in-progress`
@@ -77,6 +81,7 @@ For each issue in queue order:
 ## State management
 
 All state lives in GitHub Issues (labels):
+
 - `ready-for-agent` → ready for pickup
 - `in-progress` → currently being worked
 - `done` → completed

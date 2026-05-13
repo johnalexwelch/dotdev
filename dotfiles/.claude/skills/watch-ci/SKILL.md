@@ -56,6 +56,7 @@ writes:
 ---
 
 ## Contract
+
 Consumes: PR number or branch, GitHub Actions output, phase-run outcome files
 Produces: CI status report (docs/executions/.ci-runs/), PR comment, optional auto-fix commits
 Requires: gh, git
@@ -63,6 +64,7 @@ Side effects: may push fix commits (max 3 attempts), posts PR comments, submits 
 Human gates: exhaustion halts with handoff artifact; out-of-scope failures (test-logic, build-infra, security, unknown) always halt
 
 ## Context
+
 Typical workflows: audit-loop (after /describe-pr, before human merge)
 Pairs well with: describe-pr, review, setup-worktree
 
@@ -117,6 +119,7 @@ gh pr checks <pr_number> --json name,bucket,workflow,event,description,detailsUr
 ```
 
 Branch on outcome:
+
 - **All checks pass** → jump to Step 4 (self-review on green).
 - **Any check fails** → continue to Step 2 (classify and fix).
 
@@ -197,6 +200,7 @@ Wait for both subagents (when both dispatched). Collect reports.
 ## Step 5: Halt path (for any halt reason)
 
 Halt reasons (any of):
+
 - No-progress detection (Step 3).
 - Max attempts hit (`M > max_attempts`).
 - Out-of-scope failure (`test-logic`, `build-infra`, `security`, `unknown`).
@@ -204,8 +208,10 @@ Halt reasons (any of):
 - CI poll exceeded 30-minute window.
 
 On halt:
+
 - Write the outcome file for attempt `M` with halt reason and full failure-class breakdown.
 - Post a single structured comment on the PR via `gh pr comment <pr_number> --body-file -`:
+
   ```
   ## /watch-ci halted
 
@@ -222,6 +228,7 @@ On halt:
 
   Re-invoke `/watch-ci pr_number=<N>` after resolving in your local checkout, or hand off to `/setup-worktree phase=<N>` for an isolated checkout.
   ```
+
 - Surface halt state to chat. Exit non-zero. **Do not submit Approve.**
 
 > **Explicit rule:** watch-ci never invokes diagnose. On exhaustion, it produces the handoff artifact and halts. The calling workflow is responsible for routing to diagnose.
@@ -258,12 +265,14 @@ If empty: "No auto-fixes needed — CI passed first try.">
 Post via `gh pr comment <pr_number> --body-file <path-to-comment-file>`.
 
 **Approve gate.** Submit Approve only when ALL of:
+
 - Security review (OMC `security-reviewer` agent) returned clean (no findings).
 - Either no auto-fix commits OR `/review` on auto-fix diff returned clean.
 - `no_approve == false`.
 - `no_review == false` (skipping review means we can't approve — human can override after manual inspection).
 
 If gate passes:
+
 ```
 gh pr review <pr_number> --approve --body "Approved by /watch-ci self-review pass."
 ```

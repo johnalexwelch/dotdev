@@ -1,4 +1,5 @@
 # Post-Mortem — Skills Updates (core-loop authoring)
+
 **Date:** 2026-04-21
 **Plan:** `~/.claude/skills/2026-04-21-skills-updates-design.md`
 **Audit:** n/a — plan §0 declares "no `/repo-audit` was run, because this is skill authoring, not a repo refactor." Uses a lightweight `GAP-NN` ID scheme instead of `FIND-NN`.

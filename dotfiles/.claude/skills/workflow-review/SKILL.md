@@ -32,16 +32,19 @@ Dispatch these in parallel (each gets the same diff/changeset):
 ## Process
 
 ### 1. Prepare context
+
 - Gather the diff (staged, committed, or PR)
 - Identify which files changed and their types
 - Determine which reviewers to activate (see "Skip when" column)
 
 ### 2. Dispatch reviewers
+
 - Launch each active reviewer as a parallel subagent (via OMC executor or direct dispatch)
 - Each reviewer receives: the diff, relevant file contents, CONTEXT.md if present
 - Each reviewer returns: list of findings with severity and confidence
 
 ### 3. Synthesize
+
 Merge all reviewer outputs. Deduplicate overlapping findings. Prioritize:
 
 ```markdown
@@ -61,6 +64,7 @@ Merge all reviewer outputs. Deduplicate overlapping findings. Prioritize:
 ```
 
 ### 4. Verdict
+
 - **APPROVE**: No must-fix items
 - **REQUEST CHANGES**: Has must-fix items
 - **NEEDS HUMAN**: Has human-gate items that block the decision

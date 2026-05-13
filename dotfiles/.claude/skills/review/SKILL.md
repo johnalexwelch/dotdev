@@ -12,6 +12,7 @@ persona: Reviewer subagent evaluating another engineer's diff — never the auth
 ---
 
 ## Contract
+
 Consumes: diff/changeset (via git or Conductor workspace)
 Produces: inline review comments (via Conductor DiffComment or markdown list in chat)
 Requires: git
@@ -19,6 +20,7 @@ Side effects: none (informational output only)
 Human gates: none
 
 ## Context
+
 Typical workflows: audit-loop (after /execute-phase, before /post-mortem), standalone code review
 Pairs well with: execute-phase, watch-ci, describe-pr
 

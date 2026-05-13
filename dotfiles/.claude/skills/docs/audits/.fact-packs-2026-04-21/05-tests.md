@@ -9,11 +9,13 @@
 ## Summary
 
 **No formal test suite or test runner exists.** The skills directory contains no:
+
 - Test files (`*_test.py`, `test_*.js`, `*_spec.*`)
 - Test configuration (`pytest.ini`, `jest.config.js`, `Makefile`, `.github/workflows/test.yml`)
 - Test runner commands (no `npm test`, `pytest`, `go test` analogues)
 
 **However:** Five execution-proof artifacts exist in `docs/executions/.phase-runs/` that serve as **meta-tests** — they document that two of the six core-loop skills were actually invoked and produced observable results:
+
 - Phase 0 (preflight): YAML parser verification on 6 SKILL.md files
 - Phase 1 (pilot): `/execute-phase` invoked on a contrived plan; 2 `[auto]` tasks ran; output files verified to exist
 - Phases 2–4: SKILL.md files expanded and edited; strict-YAML re-verified after each phase; cross-references checked via grep
@@ -36,9 +38,11 @@
 | Shell test harnesses (`.sh` scripts in project) | 0 | Not found |
 
 **Command run:**
+
 ```bash
 find /Users/alexwelch/.claude/skills -type f \( -name "*test*" -o -name "*spec*" -o -name "Makefile" -o -name "*.sh" \) 2>/dev/null | grep -v ".git"
 ```
+
 **Result:** No matches.
 
 ---
@@ -50,16 +54,18 @@ find /Users/alexwelch/.claude/skills -type f \( -name "*test*" -o -name "*spec*"
 **Claim:** Fact-pack 05 ("tests") is one of 13 parallel audit work streams.
 
 From SKILL.md frontmatter:
+
 ```
-description: Map-reduce state-of-the-repo audit. Fans out 13 parallel Explore 
-subagents to gather evidence across code, tests, docs, integrations, ops, 
+description: Map-reduce state-of-the-repo audit. Fans out 13 parallel Explore
+subagents to gather evidence across code, tests, docs, integrations, ops,
 CI/workflows, security, UX, and onboarding...
 ```
 
 From body (Step 3, fact-pack 05):
+
 ```
-| 05 | tests | Do tests actually run against current code? Run the test 
-command and report the real count, coverage, and any claims in docs that 
+| 05 | tests | Do tests actually run against current code? Run the test
+command and report the real count, coverage, and any claims in docs that
 don't match reality. |
 ```
 
@@ -74,11 +80,13 @@ don't match reality. |
 **Claim:** A plan's verification section includes test status.
 
 From body (Step 2, audit integration):
+
 ```
 - Current test status: run the test command; note pass/fail.
 ```
 
 From template example (§5.2, Phase 2 — Pilot):
+
 ```
 **Verification:** Tests pass on current main; no uncommitted files.
 ```
@@ -94,15 +102,17 @@ From template example (§5.2, Phase 2 — Pilot):
 **Claim:** Verification subagent evaluates test claims.
 
 From body (Step 7, Verification subagent):
+
 ```
-On UNVERIFIED load-bearing: halt for user call. Load-bearing includes: 
-core-system tests must pass, security-related tests must pass, regression 
+On UNVERIFIED load-bearing: halt for user call. Load-bearing includes:
+core-system tests must pass, security-related tests must pass, regression
 tests must pass, integrations with external systems must pass.
 ```
 
 From Error Handling table:
+
 ```
-| Test command fails | The tests fact-pack records the failure as a finding. 
+| Test command fails | The tests fact-pack records the failure as a finding.
 Do not block the phase. |
 ```
 
@@ -117,15 +127,17 @@ Do not block the phase. |
 **Claim:** PR description includes phase status and test status from phase-run outcome files.
 
 From body (Step 1.2):
+
 ```
-Read `.phase-runs/` first. If docs/executions/.phase-runs/ exists, glob 
-*-phase-*.md and read the outcome files whose **Plan:** header matches 
-plan_path. These are richer signal than raw git log — they include 
-commit-to-task mapping, pending-human items, scope-violation records, 
+Read `.phase-runs/` first. If docs/executions/.phase-runs/ exists, glob
+*-phase-*.md and read the outcome files whose **Plan:** header matches
+plan_path. These are richer signal than raw git log — they include
+commit-to-task mapping, pending-human items, scope-violation records,
 and NEW-NN candidates surfaced during execution.
 ```
 
 From template (Step 3):
+
 ```
 ## Phases completed
 - Phase 1: [status] | [commit] | [verification: pass/fail]
@@ -143,18 +155,21 @@ From template (Step 3):
 **Claim:** Post-mortem reads test status from outcome files and raw `git log`.
 
 From body (Step 1, added in Phase 4):
+
 ```
-Read .phase-runs/ first. If docs/executions/.phase-runs/ exists, glob 
+Read .phase-runs/ first. If docs/executions/.phase-runs/ exists, glob
 *-phase-*.md and read the outcome files...
 ```
 
 From body (Step 4):
+
 ```
-**Test status now.** Run the test command. Note pass/fail, and (if 
+**Test status now.** Run the test command. Note pass/fail, and (if
 available) coverage percentage.
 ```
 
 From body (Error Handling):
+
 ```
 | Test command fails | Note in §Summary; do not block post-mortem. |
 ```
@@ -170,14 +185,16 @@ From body (Error Handling):
 **Claim:** Worktree setup can include a setup command (e.g., running tests after env copy).
 
 From body (Step 3, Setup command):
+
 ```
-If setup_command is provided, run it (e.g., npm install, bun run setup). 
+If setup_command is provided, run it (e.g., npm install, bun run setup).
 The command inherits the worktree's environment and runs from the repo root.
 ```
 
 From example (Step 5):
+
 ```
-User: /setup-worktree branch=fix/flaky-test path=~/wt/myrepo/flaky 
+User: /setup-worktree branch=fix/flaky-test path=~/wt/myrepo/flaky
 setup_command="bun install"
 ```
 
@@ -232,6 +249,7 @@ execute-phase,describe-pr,post-mortem,setup-worktree}/SKILL.md
 ### File counts and paths
 
 **Core-loop skills directory structure:**
+
 ```
 /Users/alexwelch/.claude/skills/
 ├── repo-audit/SKILL.md         (313 lines)
@@ -244,12 +262,15 @@ execute-phase,describe-pr,post-mortem,setup-worktree}/SKILL.md
 ```
 
 **Test artifacts search:**
+
 ```bash
 find /Users/alexwelch/.claude/skills -type f \( -name "*test*" -o -name "*spec*" -o -name "Makefile" -o -name "*.sh" \) 2>/dev/null
 ```
+
 **Result:** No matches (excluding `.git/`).
 
 **Phase-run execution artifacts:**
+
 ```
 /Users/alexwelch/.claude/skills/docs/executions/.phase-runs/
 ├── 2026-04-21-phase-0.md          (125 lines, preflight + YAML check)
@@ -262,6 +283,7 @@ find /Users/alexwelch/.claude/skills -type f \( -name "*test*" -o -name "*spec*"
 ```
 
 **Tarball snapshots (indicating phased development):**
+
 ```
 /Users/alexwelch/.claude/skills.pre-2026-04-21.tgz
 /Users/alexwelch/.claude/skills.pre-phase-1.tgz
@@ -274,6 +296,7 @@ find /Users/alexwelch/.claude/skills -type f \( -name "*test*" -o -name "*spec*"
 ### Verification claims from phase-run files
 
 **Phase 0 (preflight):**
+
 ```
 ✓ Three existing SKILL.md files have structurally-valid frontmatter (open/close --- markers, readable name field).
 ✓ Three Desktop source files read, parse strictly, and cataloged.
@@ -286,6 +309,7 @@ OK  name=post-mortem        structural=ok  strict-fail(ParserError)  [FIXED in P
 ```
 
 **Phase 1 (pilot):**
+
 ```
 - [x] /tmp/pilot-plan.md exists with a well-formed §5.1 block.
 - [x] Running the skill produced an outcome file with the three-section shape specified.
@@ -297,6 +321,7 @@ Verification result: PASS with one deferred check (dry_run path unexercised).
 ```
 
 **Phase 2 (execute-phase production):**
+
 ```
 - [x] execute-phase/SKILL.md expanded from 152 lines to 527 lines.
 - [x] Strict-YAML parses.
@@ -308,6 +333,7 @@ Verification result: PASS pending human review and the one deferred dry_run exer
 ```
 
 **Phase 4 (tune design-plan, cross-skill docs):**
+
 ```
 [Strict-YAML parse (all 6 skills)]
 repo-audit         lines=314  strict-YAML OK
@@ -329,8 +355,9 @@ Verification result: PASS.
 Phase 5 (Integration dogfood) reached preflight but halted at Task 1: "Pick a small, real target repo with low-stakes pending changes."
 
 From `2026-04-21-phase-5.md`:
+
 ```
-The dogfood needs a real repo — /execute-phase creates branches and commits, 
+The dogfood needs a real repo — /execute-phase creates branches and commits,
 so the target must be a working git repo where:
 - You're comfortable letting the chain create refactor/phase-<N>-<slug> branches.
 - Tests are reasonable to run (the audit's test-status check is part of the flow).
@@ -357,12 +384,14 @@ The audit asks: "Do tests exist?"
 ### 3. **What is the delta between "skills claim to work" and "skills have been exercised end-to-end on a real repo"?**
 
 **Claims (from SKILL.md and docs):**
+
 - 6 skills form a closed loop: audit → plan → execute → describe PR → post-mortem.
 - Each skill reads outputs from prior skills and produces machine-consumable outputs for downstream skills.
 - The flow includes test-status observation and reporting at multiple checkpoints.
 - Verification subagents can halt a phase if test verification fails.
 
 **Exercised end-to-end:**
+
 - Phase 1 (pilot): `/execute-phase` invoked on a contrived plan with trivial tasks; produced an outcome file; subagent executed two `mkdir`/`printf` commands successfully.
 - Phases 2–4: Five additional skills designed and implemented; SKILL.md files created/edited; YAML parsing verified.
 - Phase 5: Never reached a real repo. Target-repo selection is still pending.
@@ -386,11 +415,13 @@ All five deferred checks would be naturally exercised by Phase 5 dogfood, which 
 ### 5. **What does "skills claim to work" mean operationally?**
 
 Each SKILL.md file makes claims like:
+
 - "This step dispatches a subagent to run `[auto]` tasks."
 - "This step verifies test status against the plan's Verification text."
 - "This step reads `.phase-runs/` outcome files and falls back to `git log`."
 
 **Evidence level:**
+
 - **Designed:** All claims exist as prose and pseudocode in the SKILL.md body.
 - **Partially validated:** YAML parsing, file creation, basic subagent dispatch (Phase 1 pilot).
 - **Not exercised:** Test-status reporting (all 6 skills), PR-body composition (`/describe-pr`), post-execution analysis (`/post-mortem`), worktree setup (`/setup-worktree`), dry-run mode (`/execute-phase`), cluster grouping heuristic (`/execute-phase`).
@@ -398,6 +429,7 @@ Each SKILL.md file makes claims like:
 ### 6. **What would it take to close these gaps?**
 
 **Minimal dogfood scenario (Phase 5, if unblocked):**
+
 1. Select a small real repo (e.g., a personal CLI, plugin, or scratch project).
 2. Run `/repo-audit` on it — this will exercise fact-pack 05 (test-status observation) and generate evidence that test commands can be run.
 3. Run `/design-plan` on the audit — this will confirm that test-status claims from the audit are readable and incorporated into planning.
@@ -418,4 +450,3 @@ Each step would surface real evidence (pass/fail) for the deferred checks. Phase
 **Critical gap:** Phase 5 integration dogfood (the planned end-to-end exercise on a real repo) was blocked at preflight when target-repo selection became a pending-human task. Without Phase 5 execution, claims about test-status reporting, PR-body generation, post-mortem analysis, and dry-run behavior remain **designed but unproven**.
 
 **Recommendation:** Unblock Phase 5 by selecting a target repo and running the full cycle. This will exercise all 6 skills against real test output, real commits, and real verification scenarios — closing the gap between design claims and operational evidence.
-

@@ -4,6 +4,7 @@ description: Turn the current conversation context into a PRD and publish it to 
 ---
 
 ## Contract
+
 Consumes: conversation context, codebase understanding, grilling output
 Produces: PRD issue on the project issue tracker
 Requires: gh (or configured issue tracker CLI)
@@ -11,6 +12,7 @@ Side effects: creates issue on the project issue tracker
 Human gates: module breakdown confirmed with user; PRD published with ready-for-agent label (user reviews post-publish)
 
 ## Context
+
 Typical workflows: feature ideation (after /grill-with-docs, before /to-issues)
 Pairs well with: grill-with-docs, to-issues, triage
 

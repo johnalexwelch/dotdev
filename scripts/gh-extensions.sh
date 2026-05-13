@@ -18,8 +18,8 @@ extensions=(
 installed_list="$(gh extension list 2>/dev/null || true)"
 
 for ext in "${extensions[@]}"; do
-    short_name="${ext##*/}"          # e.g. gh-dash
-    invoke_name="${short_name#gh-}"  # e.g. dash
+    short_name="${ext##*/}"         # e.g. gh-dash
+    invoke_name="${short_name#gh-}" # e.g. dash
 
     if printf '%s\n' "$installed_list" | grep -qE "[[:space:]]${ext}[[:space:]]"; then
         echo "↻ Upgrading gh ${invoke_name} (${ext})"

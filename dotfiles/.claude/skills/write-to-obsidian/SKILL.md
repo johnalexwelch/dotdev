@@ -6,6 +6,7 @@ codex-compatible: false
 ---
 
 ## Contract
+
 Consumes: content to save (briefings, meeting prep, notes, structured output)
 Produces: Obsidian vault file(s) at ~/Documents/Home/
 Requires: filesystem access to ~/Documents/Home/
@@ -13,6 +14,7 @@ Side effects: creates/appends files in Obsidian vault
 Human gates: none (checks for existing files and asks before overwriting)
 
 ## Context
+
 Typical workflows: output persistence (after any skill that produces notes, briefings, or structured content)
 Pairs well with: slack-update, any skill producing saveable output
 
@@ -60,11 +62,14 @@ OBSIDIAN_EOF
 2. **Use `<< 'OBSIDIAN_EOF'`** (quoted) to prevent shell variable expansion in content.
 3. **Include YAML frontmatter** with at least `created` date and relevant `tags`.
 4. **Never overwrite without asking.** Before writing, check if the file exists:
+
    ```bash
    [ -f ~/Documents/Home/path/to/file.md ] && echo "EXISTS" || echo "NEW"
    ```
+
    If it exists, ask the user whether to overwrite or append.
 5. **To append** instead of overwrite, use `>>` instead of `>`:
+
    ```bash
    cat >> ~/Documents/Home/path/to/file.md << 'OBSIDIAN_EOF'
 
@@ -106,6 +111,7 @@ OBSIDIAN_EOF
 ## NORA (Meal Planning) Conventions
 
 Directory: `Areas/Family/Meal Planning/[YYYY]/[MM-month]/`
+
 - `[MM-month]` uses zero-padded month + lowercase name: `03-march`, `11-november`
 
 | Output Type | Filename | Tags |

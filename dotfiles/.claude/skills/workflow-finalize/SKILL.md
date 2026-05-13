@@ -26,23 +26,27 @@ describe-pr → watch-ci → reconcile-issues → [optional] post-mortem
 ```
 
 ### Step 1: Describe PR (describe-pr)
+
 - Generate PR description with issue awareness
 - Include disposition table for all referenced issues
 - Push branch and open PR (or update existing)
 
 ### Step 2: Watch CI (watch-ci)
+
 - Monitor GitHub Actions
 - Auto-fix up to 3 attempts on failure
 - If exhausted: halt with handoff artifact for diagnose
 - If green: proceed
 
 ### Step 3: Reconcile Issues (reconcile-issues)
+
 - Check referenced issues against PR dispositions
 - Verify labels are consistent
 - Flag any drift before merge
 - If drift found: report but don't block (info-level)
 
 ### Step 4: Post-mortem (optional)
+
 - Triggered when:
   - CI required auto-fixes (something unexpected happened)
   - Implementation deviated significantly from plan
@@ -52,6 +56,7 @@ describe-pr → watch-ci → reconcile-issues → [optional] post-mortem
 ## Completion
 
 When all steps pass:
+
 - Enable auto-merge on the PR (if repo supports it)
 - Report final status to user
 

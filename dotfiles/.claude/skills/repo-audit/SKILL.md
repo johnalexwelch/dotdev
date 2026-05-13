@@ -31,6 +31,7 @@ writes:
 ---
 
 ## Contract
+
 Consumes: entire codebase (or scoped subtree via path param), README, CLAUDE.md, spec docs
 Produces: audit report with stable FIND-NN IDs (docs/audits/<date>-repo-audit.md)
 Requires: git
@@ -38,6 +39,7 @@ Side effects: writes audit file and intermediate fact-packs (fact-packs deleted 
 Human gates: none
 
 ## Context
+
 Typical workflows: audit-loop (entrypoint for refactor-scale work, before /design-plan)
 Pairs well with: design-plan, post-mortem, improve-codebase-architecture
 
@@ -119,6 +121,7 @@ below, substituting the question-specific text.
 > Output file: `docs/audits/.fact-packs-<date>[-<path-slug>]/<NN>-<slug>.md`
 >
 > Structure your fact-pack as:
+>
 > - `## Summary` (1 paragraph)
 > - `## Findings` (headed sub-sections with evidence)
 > - `## Evidence` (file paths, line counts, command outputs cited in findings)

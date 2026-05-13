@@ -6,6 +6,7 @@ codex-compatible: false
 ---
 
 ## Contract
+
 Consumes: merged PRs from prior day (via gh), project-to-channel mapping
 Produces: formatted Slack message summarizing PR activity
 Requires: gh, Slack MCP (or SLACK_BOT_TOKEN)
@@ -13,6 +14,7 @@ Side effects: sends Slack message to configured channel
 Human gates: message preview shown for approval before sending
 
 ## Context
+
 Typical workflows: daily engineering updates (standalone)
 Pairs well with: write-to-obsidian
 
@@ -44,6 +46,7 @@ Generate a formatted Slack update from merged PRs and send it via the Slack API.
 ### Step 3: Fetch merged PRs
 
 Run:
+
 ```bash
 gh pr list --state merged --search "merged:>=$(date -u -v-1d +%Y-%m-%d)" --json number,title,body,mergedAt --limit 50
 ```
@@ -67,6 +70,7 @@ Group PRs into thematic sections by analyzing conventional commit prefixes and P
 | :art: | Frontend | `feat`/`fix` touching frontend/ |
 
 Rules:
+
 - Only include sections that have PRs. Don't show empty sections.
 - Merge sections with only 1 PR into the closest related section if it makes sense.
 - Each PR is a bullet point: `• *Title* (<https://github.com/{owner}/{repo}/pull/{number}|#{number}>) — Description`
@@ -106,6 +110,7 @@ asyncio.run(send(token, channel_id, message_text))
 ## Formatting Reference
 
 Slack mrkdwn (NOT markdown):
+
 - Bold: `*text*` (single asterisks)
 - Italic: `_text_`
 - Code: `` `text` ``

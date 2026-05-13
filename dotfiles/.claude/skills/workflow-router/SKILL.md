@@ -12,6 +12,7 @@ The single routing authority for all incoming work. Classifies the task, runs pr
 ## Authority
 
 This skill is the **sole routing authority**. Per ADR-0002:
+
 - `workflows.md` is reference documentation only — it does not route
 - OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass this router intentionally — they are power-user shortcuts
 - All other work goes through this router
@@ -31,6 +32,7 @@ This skill is the **sole routing authority**. Per ADR-0002:
 ## Bug routing rule
 
 **Never route bugs to workflow-build-one**, even if the fix appears obvious. Bugs always go to workflow-debug, which enforces diagnosis-first. This prevents:
+
 - Fixing symptoms instead of root causes
 - Missing regression tests
 - Incorrect assumptions about "simple" bugs

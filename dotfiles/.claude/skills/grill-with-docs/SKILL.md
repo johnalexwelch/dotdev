@@ -6,6 +6,7 @@ description: Grilling session that handles both lightweight design interrogation
 ## Modes
 
 ### Auto-detection
+
 The skill auto-selects mode based on project state:
 
 | Condition | Mode |
@@ -14,12 +15,14 @@ The skill auto-selects mode based on project state:
 | CONTEXT.md present OR deep/complex topic OR user says "grill me hard" | **Full** |
 
 ### Lightweight mode
+
 - One question at a time (not batches of five)
 - Skip CONTEXT.md and ADR updates
 - Focus on reaching shared understanding quickly
 - Good for: quick design decisions, simple feature scoping, sanity checks
 
 ### Full mode (default when CONTEXT.md exists)
+
 - Questions in batches of five with recommended answers
 - Live CONTEXT.md updates as terms are defined
 - ADR creation for qualifying architectural decisions
@@ -27,6 +30,7 @@ The skill auto-selects mode based on project state:
 - Good for: new features, architectural decisions, refactoring plans, system design
 
 ## Contract
+
 Consumes: topic/plan/design to stress-test, CONTEXT.md, ADRs (docs/adr/)
 Produces: shared understanding, updated CONTEXT.md terms, new ADR files (when decisions crystallize)
 Requires: none
@@ -34,6 +38,7 @@ Side effects: may update CONTEXT.md and create ADR files in docs/adr/
 Human gates: every question batch (groups of five) requires user response before continuing
 
 ## Context
+
 Typical workflows: pre-planning (before /design-plan or /to-prd), domain modeling
 Pairs well with: design-plan, to-prd, improve-codebase-architecture
 
@@ -54,7 +59,7 @@ Question
 Your Recommendation
 Why this is important
 Alternatives Considered and the trade offs between them and the recommendation
-A visual delineator to seperate the questions for ease of reading. 
+A visual delineator to seperate the questions for ease of reading.
 
 An answer with 'a' or 'y' represent the user acceptance of the recommendation.
 

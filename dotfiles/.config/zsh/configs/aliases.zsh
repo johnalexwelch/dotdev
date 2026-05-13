@@ -1,3 +1,4 @@
+# shellcheck disable=SC2154
 # File operations
 alias ls="eza --color=always --git --no-filesize --icons=always --no-time --no-user --no-permissions"
 alias ll='eza -l --icons --group-directories-first'

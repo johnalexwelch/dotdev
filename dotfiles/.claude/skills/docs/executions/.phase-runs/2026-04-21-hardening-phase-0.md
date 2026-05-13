@@ -31,6 +31,7 @@
   - Status: done
   - Subagent command: `python3 -c "import yaml; …` per-file loop
   - Output: **11/11 pass**
+
     ```
     OK  ci-deploy-fix
     OK  describe-pr
@@ -50,12 +51,14 @@
   - Status: done
   - Subagent command: `git log --oneline -10`
   - Output (4 commits on `main`):
+
     ```
     2bae37c docs: land skills-updates post-mortem + broaden runtime gitignore
     552c8f2 docs: capture dogfood audit trail + resume note
     019414d chore: gitignore OMC runtime state
     b9a579e baseline: skills dir pre-dogfood
     ```
+
   - Notes: **Zero commits on the `phase-<N>:` schema yet.** All 4 are baseline-era commits (`docs:`, `chore:`, `baseline:`) — exempt per plan §5.0 Task 5 ("baseline commits are exempt"). This is the "nothing regresses from here" reference point. Going forward, phase commits from this plan must land as `phase-<N>: <Goal> (addresses <IDs>)`.
 
 - **Task 6** [cluster 1]: `mkdir -p docs/plans docs/executions/.phase-runs`.
@@ -136,6 +139,7 @@ Auto-proceed requires **no pending `[human]` task**. Phase 0 has one: Task 7 (gi
 → **HALT.** Chain cannot advance to Phase 1 until the user resolves Task 7.
 
 To continue after resolving:
+
 ```
 /execute-phase phase=1 auto_proceed=true plan_path=docs/plans/2026-04-21-design.md plan_slug=hardening
 ```

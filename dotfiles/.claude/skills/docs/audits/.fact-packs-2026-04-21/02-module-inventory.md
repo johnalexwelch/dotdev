@@ -7,6 +7,7 @@ The skills directory contains 11 skills (plus one empty `new-project/` dir) tota
 ## Findings
 
 ### Core-loop skills (6)
+
 | Skill | Lines | Inputs | Sections | Frontmatter |
 |---|---|---|---|---|
 | repo-audit | 313 | 3 (context, focus, path) | 11 | Complete |
@@ -19,6 +20,7 @@ The skills directory contains 11 skills (plus one empty `new-project/` dir) tota
 All 6 have explicit `reads:` and `writes:` blocks naming other skills' artifacts. Cross-reference graph forms the documented 4-skill core loop + side-car.
 
 ### Installed skills (5)
+
 | Skill | Lines | Role | Frontmatter |
 |---|---|---|---|
 | ci-deploy-fix | 219 | CI/deploy failure diagnosis | Minimal (no `triggers:` array; triggers in description) |
@@ -28,10 +30,12 @@ All 6 have explicit `reads:` and `writes:` blocks naming other skills' artifacts
 | omc-reference | 141 | Agent catalog lookup | `user_invocable: false`, no triggers |
 
 ### Stubs / gaps
+
 - **`new-project/`** — directory exists but is empty. No SKILL.md present. Either placeholder or removed-but-not-deleted.
 - **`td-task-management/references/`** subdirectory exists and contains support material; not otherwise referenced by other skills.
 
 ### Description-to-body alignment
+
 All 11 skills: descriptions accurately reflect body content. No deceptive descriptions. No "planned" descriptions with stub bodies.
 
 ## Evidence

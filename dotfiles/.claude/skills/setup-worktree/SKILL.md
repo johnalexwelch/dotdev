@@ -38,6 +38,7 @@ writes:
 ---
 
 ## Contract
+
 Consumes: plan phase number and/or branch name, repo state
 Produces: isolated git worktree directory with copied env/config files
 Requires: git
@@ -45,6 +46,7 @@ Side effects: creates worktree directory, creates git branch (if new), copies en
 Human gates: none
 
 ## Context
+
 Typical workflows: on-demand side-car (when /execute-phase halts at [human] gate, or for isolated branch review)
 Pairs well with: execute-phase, watch-ci, design-plan
 
@@ -71,7 +73,7 @@ filesystem isolation is human convenience).
 - Resolve inputs into a concrete `(branch, path, setup_command)` triple:
   - **If `branch` and `path` both set:** use them.
   - **Else if `plan_path` and `phase` set** (most common caller from `/execute-phase` halt):
-    - Open the plan, find `### §5.<N> Phase <N>`, extract the phase slug from the header text after `Phase <N> — ` (lowercase, non-alphanum → `-`, trim, cap 40 chars — same derivation `/execute-phase` uses).
+    - Open the plan, find `### §5.<N> Phase <N>`, extract the phase slug from the header text after `Phase <N> —` (lowercase, non-alphanum → `-`, trim, cap 40 chars — same derivation `/execute-phase` uses).
     - `branch = refactor/phase-<N>-<phase-slug>`
     - `path = ~/wt/<repo-dirname>/phase-<N>/` where `<repo-dirname>` is `basename $(git rev-parse --show-toplevel)`.
   - **Else if `plan_path` empty but `phase` non-zero:** fall back to newest `docs/plans/*.md` for `plan_path`, then derive as above.

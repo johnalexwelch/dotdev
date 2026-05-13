@@ -23,6 +23,7 @@ grill-with-docs → to-prd → to-issues → triage
 ```
 
 ### Step 1: Grill (grill-with-docs)
+
 - Interview the user about the feature idea
 - Resolve ambiguities, identify constraints, clarify scope
 - Update CONTEXT.md with new domain terms if discovered
@@ -30,18 +31,21 @@ grill-with-docs → to-prd → to-issues → triage
 - Output: shared understanding of what to build
 
 ### Step 2: PRD (to-prd)
+
 - Convert grilling output into a structured PRD
 - Publish to issue tracker as a reference document
 - Include: goal, non-goals, user stories, acceptance criteria, risks
 - Output: PRD issue on GitHub
 
 ### Step 3: Issues (to-issues)
+
 - Break PRD into vertical slices (tracer bullets)
 - Each slice is independently implementable and verifiable
 - Include dependency order and blocking relationships
 - Output: child issues under the PRD
 
 ### Step 4: Triage (triage)
+
 - Classify each issue: ready-for-agent vs needs-human
 - Apply labels, estimate complexity, assign priority
 - Flag issues that need additional context before an agent can grab them

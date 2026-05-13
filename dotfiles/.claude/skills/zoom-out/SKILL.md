@@ -13,6 +13,7 @@ Interrupt tunnel vision by offering three levels of perspective shift. When you'
 ## Modes
 
 ### Local mode
+
 **Scope:** Current module/file neighborhood
 
 - Map the module's callers and callees
@@ -23,6 +24,7 @@ Interrupt tunnel vision by offering three levels of perspective shift. When you'
 **Output:** Module map with incoming/outgoing dependencies, coupling assessment
 
 ### Domain mode
+
 **Scope:** Bounded context and domain language
 
 - Read CONTEXT.md for domain term definitions
@@ -34,6 +36,7 @@ Interrupt tunnel vision by offering three levels of perspective shift. When you'
 **Output:** Domain alignment assessment, term mapping, boundary violations
 
 ### Strategic mode
+
 **Scope:** Goal-level reframe from issue/PRD/plan
 
 - Read the originating issue, PRD, or design plan
@@ -47,6 +50,7 @@ Interrupt tunnel vision by offering three levels of perspective shift. When you'
 ## Usage
 
 Invoke without mode for auto-selection based on context:
+
 - Deep in a single file → local
 - Working across modules → domain
 - Feeling uncertain about direction → strategic

@@ -20,6 +20,7 @@ td usage --new-session  # Auto-rotation + see current state
 ```
 
 Output tells you:
+
 - Active work sessions and recent decisions
 - What issues are pending review (you can review these)
 - Highest priority open issues
@@ -79,6 +80,7 @@ td handoff <id> \
 ```
 
 Keys:
+
 - `--done` - What's actually complete (be honest)
 - `--remaining` - What's left (be specific)
 - `--decision` - Why you chose approach X
@@ -121,6 +123,7 @@ td context td-a1b2  # Refresh context when blocker resolves
 ## Commands by Category
 
 ### Checking Status
+
 - `td usage` - Current state, pending reviews, next steps
 - `td usage -q` - Compact view (after first read)
 - `td current` - What you're working on
@@ -129,6 +132,7 @@ td context td-a1b2  # Refresh context when blocker resolves
 - `td critical-path` - What unblocks most work
 
 ### Working on Issues
+
 - `td start <id>` - Begin work
 - `td unstart <id>` - Revert to open (undo accidental start)
 - `td log "msg"` - Track progress
@@ -138,16 +142,19 @@ td context td-a1b2  # Refresh context when blocker resolves
 - `td context <id>` - Full context for resuming
 
 ### Handing Off
+
 - `td handoff <id> --done "..." --remaining "..."` - Single issue
 - `td ws handoff` - Multi-issue work session
 
 ### Reviews
+
 - `td review <id>` - Submit for review
 - `td reviewable` - Issues you can review
 - `td approve <id>` - Approve (different session only)
 - `td reject <id> --reason "..."` - Reject
 
 ### Creating/Managing Issues
+
 - `td create "title" --type feature --priority P1` - Create
 - `td list` - List all
 - `td list --status in_progress` - Filter by status
@@ -157,10 +164,12 @@ td context td-a1b2  # Refresh context when blocker resolves
 - `td reviewable` - Issues you can review
 
 ### File Tracking
+
 - `td link <id> <files...>` - Track files with issue
 - `td files <id>` - Show file changes
 
 ### Other
+
 - `td context <id>` - Full context for resuming
 - `td monitor` - Live dashboard
 - `td session --new "name"` - Force new session
@@ -173,10 +182,13 @@ See [quick_reference.md](references/quick_reference.md) for full command listing
 ## Resources
 
 ### [quick_reference.md](references/quick_reference.md)
+
 Complete command reference organized by task type.
 
 ### [ai_agent_workflows.md](references/ai_agent_workflows.md)
+
 Detailed workflows for common AI agent scenarios:
+
 - Single-issue focus
 - Multi-issue work sessions
 - Handling blockers
@@ -204,6 +216,7 @@ open → in_progress → in_review → closed
 ## For AI Agents
 
 Always start conversation with:
+
 ```bash
 td usage --new-session
 ```

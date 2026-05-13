@@ -7,12 +7,14 @@ The repository is in a clean state with no half-refactored artifacts. Only 2 com
 ## Findings
 
 ### Clean state evidence
+
 - Zero `*.bak`, `*.old`, `*.orig`, or numbered-copy files
 - No tarballs inside the repo tree (the `skills.pre-phase-*.tgz` tarballs live one level up at `~/.claude/`, outside this repo)
 - No commented-out sections in SKILL.md files (grep for `<!--` finds zero matches in skill files)
 - 2 commits total: `b9a579e` (baseline) and `019414d` (gitignore OMC runtime state)
 
 ### Core-loop dependency chain (load-bearing)
+
 1. `/repo-audit` — FIND-NN producer (entry point)
 2. `/design-plan` — consumes FIND-NN, produces `§5.<N> Phase` blocks
 3. `/execute-phase` — consumes phases, writes `.phase-runs/` outcome files + branches + commits
@@ -23,7 +25,9 @@ The repository is in a clean state with no half-refactored artifacts. Only 2 com
 Each step is necessary. Removing any breaks the loop.
 
 ### No duplicated functionality
+
 Five installed skills are orthogonal:
+
 - `ci-deploy-fix` — single CI failure fix, no overlap with multi-phase orchestration
 - `slack-update` — PR-digest publisher, no overlap with plan/execute
 - `write-to-obsidian` — vault I/O, no overlap with repo state
@@ -31,7 +35,9 @@ Five installed skills are orthogonal:
 - `omc-reference` — read-only lookup reference, no state mutation
 
 ### No deprecation language
+
 Grep for "legacy", "deprecated", "superseded", "old", "refactor" across all SKILL.md files returns 27 matches, all contextual:
+
 - `/repo-audit` discovery question slug: `04 | legacy-vs-new` (the audit question itself)
 - `/execute-phase` tutorial examples referencing "legacy scripts"
 - `/design-plan` tuning notes mentioning "refactor" as a use case

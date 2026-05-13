@@ -5,6 +5,7 @@ disable-model-invocation: true
 ---
 
 ## Contract
+
 Consumes: project context (git remote, existing CLAUDE.md/AGENTS.md, docs layout)
 Produces: configured skill environment (Agent skills block in CLAUDE.md/AGENTS.md, docs/agents/ config files)
 Requires: gh (for GitHub issue tracker detection)
@@ -12,6 +13,7 @@ Side effects: edits CLAUDE.md or AGENTS.md, creates docs/agents/ configuration f
 Human gates: each configuration section (issue tracker, triage labels, domain docs) presented for user approval; draft reviewed before writing
 
 ## Context
+
 Typical workflows: project onboarding (run before first use of triage, to-issues, to-prd, diagnose, tdd)
 Pairs well with: triage, to-issues, to-prd, diagnose
 

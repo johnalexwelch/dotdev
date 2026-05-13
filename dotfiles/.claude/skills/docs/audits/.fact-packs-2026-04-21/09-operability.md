@@ -15,6 +15,7 @@ The skills directory has **no unified error observability layer**. Error handlin
 **Evidence:**
 
 Only 6 of 13 skills have formal `## Error Handling` tables:
+
 - ✓ `ci-deploy-fix`: No table (prescriptive steps only)
 - ✓ `describe-pr`: 6 rows — degraded behavior on missing files
 - ✓ `design-plan`: 8 rows — abort or infer, no logging
@@ -39,6 +40,7 @@ Only 6 of 13 skills have formal `## Error Handling` tables:
 | setup-worktree | 10 | YES — all concrete | NO |
 
 **Red flags:**
+
 - **No "Logging" or "Observability" rows** across any error table
 - **No retry counts, timing, or backoff** specified
 - **No distinction between human-actionable errors and silent failures**
@@ -49,21 +51,25 @@ Only 6 of 13 skills have formal `## Error Handling` tables:
 **Evidence from `.omc/state/`:**
 
 File: `mission-state.json`
+
 - Tracks **agent-level status** (`running`, `done`, `failed`) at 1-minute granularity
 - No **task-level failure detail** — a completed agent could have partial successes
 - Example: 13 agents running, 2 completed, 0 failed — but no insight into *which tasks failed in the 2 completed agents*
 
 File: `subagent-tracking.json`
+
 - Records `started_at`, `completed_at`, `duration_ms` per agent
 - **No error/failure details captured** — `status: "running"` or `status: "completed"` only
 - `total_failed: 0` but *could be wrong* if failures aren't recorded at spawn time
 
 File: `agent-replay-3067a9fb-3c3a-412d-b771-2493d025dadb.jsonl`
+
 - JSONL event log: `{"t":0,"agent":"...","event":"agent_start|agent_stop","success":true|false,"duration_ms":...}`
 - **Success/failure flag at agent level, not task level**
 - No root-cause data if `success: false`
 
 File: `last-tool-error.json`
+
 - **Captures only the most recent tool error**, not a log of errors
 - Example: `bash find` error with retry_count=3
 - **Not integrated into agent or task records** — orphaned singleton
@@ -78,12 +84,14 @@ File: `last-tool-error.json`
 **Scenario:** User invokes `/execute-phase plan_path=docs/plans/2026-04-21-design.md phase=0 auto_proceed=true` at 11pm. Phase 0 and 1 complete. Phase 2 has a scope violation on an unattended subagent cluster (writes to `src/forbidden.ts` outside granted scope).
 
 **What happens:**
+
 1. Step 5 (post-batch scope verification) detects violation
 2. Outcome file written: `.phase-runs/2026-04-21-phase-2.md` with `## Scope violations` populated
 3. **Halt: no commit, no auto-proceed** (Step 9 rule: "Scope violation → halt")
 4. **User asleep** — no chat surface, no Slack ping, no retry
 
-**Missing:** 
+**Missing:**
+
 - No error notification mechanism (no Slack hook, no email, no logged alert)
 - User discovers the halt 8 hours later when checking for progress
 - Phase 2 branch left checked out (`.git/HEAD` points to `refactor/phase-2-...`) — **blocks new work on main**
@@ -96,6 +104,7 @@ File: `last-tool-error.json`
 > "Preflight: draft mode — locate the audit... If none exists, stop and tell the user to run `/repo-audit` first."
 
 **What happens:**
+
 1. Code aborts, prints message to chat
 2. **No permanent record** of the abort in `.omc/state/`
 3. **Silent miss if user is not watching** (skill never entered main loop)
@@ -109,6 +118,7 @@ File: `last-tool-error.json`
 > "Phase-run outcomes: Glob `docs/executions/.phase-runs/*-phase-*.md` and filter to those whose `**Branch:**` header matches... For each matched outcome: read... If no outcome files match the branch range, degrade gracefully — produce the body from raw `git log` only, note in 'Deviations' that phase-run outcome files were unavailable so drift detection is weaker."
 
 **What happens:**
+
 1. Glob finds phases 0–3 but not 4–5
 2. PR body is generated from `git log` alone — **loses phase context**
 3. Reviewer sees commits but not which phase was blocked
@@ -134,11 +144,13 @@ Grep across all SKILL.md files for logging keywords:
 ```
 
 **What exists:**
+
 - `duration_ms` in `.omc/state/subagent-tracking.json` — agent-level only, not task-level
 - `last-tool-error.json` — singleton, not a log
 - `agent-replay-*.jsonl` — event log, but no nested task failures or error codes
 
 **What's missing:**
+
 - **No per-phase timing or slow-phase detection**
 - **No cumulative retry counts across a skill run**
 - **No error category classification** (timeout vs. permission vs. scope violation)
@@ -149,11 +161,13 @@ Grep across all SKILL.md files for logging keywords:
 **Evidence:**
 
 No mention of user notification in any error-handling table:
+
 - ✓ All tables say "abort", "halt", "warn", "surface to user in chat"
 - ✗ **ZERO** mention of Slack, email, SMS, or alerting APIs
 - ✗ **ZERO** mention of fallback notification if user not watching
 
 **Real-world gap:**
+
 - `/execute-phase` with `auto_proceed=true` halts at 3am on scope violation
 - User is asleep; Claude Code process runs on a personal machine (not a server)
 - **No one is notified**
@@ -186,11 +200,13 @@ No mention of user notification in any error-handling table:
 5. **Inconsistency undetected** — user is unaware of state/reality mismatch
 
 **Controls:**
+
 - No mention of atomic writes, transactions, or version checks in SKILL.md
 - No schema versioning in `.omc/` files
 - No integrity check before auto-proceed
 
 **Real-world impact:**
+
 - If user kills Claude Code process mid-write, state could be corrupted
 - Resuming `/execute-phase phase=X resume=true` could retry a completed phase or skip one
 
@@ -239,16 +255,19 @@ No mention of user notification in any error-handling table:
 For **immediate observability:**
 
 1. **Add structured error logging to `.omc/state/`** — append to `execution-errors.jsonl` on every skill error:
+
    ```json
    {"timestamp":"...", "skill":"execute-phase", "phase":2, "error_type":"scope_violation", "file":"src/forbidden.ts", "granted_scope":"src/tasks/**"}
    ```
 
 2. **Add failure notification on halt** — if `/execute-phase` halts due to verification FAIL or scope violation, emit a one-line summary to a `.omc/state/unresolved-halts.txt` file so a monitoring script can detect it:
+
    ```
    2026-04-21T03:45:22Z | execute-phase phase=2 | HALTED | scope_violation | src/forbidden.ts | branch=refactor/phase-2-...
    ```
 
 3. **Add retry instrumentation** — every SKILL.md error table should include a "Max retries" column (if applicable) and log attempts to `.omc/state/`:
+
    ```json
    {"skill":"repo-audit", "agent":"Explore:05", "retry_count":2, "max_retries":1, "status":"failed"}
    ```
@@ -264,4 +283,3 @@ For **robustness:**
 7. **Add timeout and backoff rules** — if a discovery agent (in `/repo-audit`) times out once, re-run with a longer timeout. If it times out twice, skip and note in the fact-pack.
 
 8. **Atomic writes for `.omc/state/`** — use temp file + rename pattern, or write to a new file and mv atomically.
-

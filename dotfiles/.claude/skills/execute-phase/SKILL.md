@@ -43,6 +43,7 @@ writes:
 ---
 
 ## Contract
+
 Consumes: design plan phase (docs/plans/), codebase, git state
 Produces: committed code on phase branch, phase outcome file (docs/executions/.phase-runs/)
 Requires: git, project build tools
@@ -50,6 +51,7 @@ Side effects: creates git branches, modifies files, creates commits, writes outc
 Human gates: verification failure halts; [human]-tagged tasks in plan honored (never executed); scope violations halt
 
 ## Context
+
 Typical workflows: audit-loop (after /design-plan, before /review)
 Pairs well with: design-plan, review, post-mortem, setup-worktree
 
@@ -135,7 +137,7 @@ Extract from the phase block:
 - **Deletes** — list under `**Deletes:**` (or "none").
 
 Compute the **phase slug** from the phase header: take the text after
-`Phase <N> — `, lowercase it, replace non-alphanumeric runs with `-`,
+`Phase <N> —`, lowercase it, replace non-alphanumeric runs with `-`,
 trim trailing `-`, cap at 40 chars. This feeds the branch name
 `<prefix>/phase-<N>-<slug>` (prefix derived in Step 0; default
 `refactor/`).
@@ -188,6 +190,7 @@ with this brief template:
 > <numbered list of the cluster's `[auto]` task text>
 >
 > **Constraints:**
+>
 > - Do not execute any `[human]` task even if you encounter one in
 >   context.
 > - Prefer absolute-path invocations for commands whose output is
@@ -216,6 +219,7 @@ subagent to verify scope discipline:
 > Run `git status --porcelain` and `git diff --name-only HEAD`.
 > Compare the changed-files set against the granted scopes of each
 > cluster that just ran (inlined below). Report:
+>
 > - Any file present in the diff but NOT covered by any cluster's
 >   granted scope → **scope violation**. Quote the file path and
 >   which cluster's scope it leaked from (if attributable).
@@ -224,6 +228,7 @@ subagent to verify scope discipline:
 > Do not modify anything. Return a structured report.
 >
 > Granted scopes:
+>
 > - Cluster 1: <paths/globs>
 > - Cluster 2: <paths/globs>
 > - ...
@@ -283,9 +288,11 @@ On verification PASS:
   granted scopes (scope verification already caught them; this is
   belt-and-suspenders).
 - Commit with message:
+
   ```
   phase-<N>: <phase Goal> (addresses <ID list>)
   ```
+
   IDs are echoed verbatim from the phase's Addresses line — `FIND-NN`,
   `REQ-NN`, `GAP-NN`, ticket slugs (`JIRA-123`, `#456`), or any
   combination. No scheme-specific normalization. Examples:
@@ -298,6 +305,7 @@ On verification PASS:
 ## Step 9: Auto-proceed or halt
 
 **Halt on any of:**
+
 - Verification FAIL.
 - Pending `[human]` task in phase N.
 - Scope violation.
@@ -401,11 +409,13 @@ Print to chat:
 ## Artifact Output
 
 When issue context is available (issue number known), write phase outcomes to:
+
 ```
 docs/tasks/{issue-number}-{slug}/phase-{N}-outcome.md
 ```
 
 When no issue context (executing from a plan without linked issue), fall back to:
+
 ```
 docs/executions/.phase-runs/{date}-phase-{N}.md
 ```
@@ -508,6 +518,7 @@ Profiles control HOW code is written during execution — they do not change the
 ## Profile Selection
 
 Profiles are selected by (in priority order):
+
 1. Explicit user request ("use strict-tdd", "caveman this")
 2. Workflow context (workflow-debug always uses strict-tdd for the fix step)
 3. Issue labels (`prototype`, `spike` → prototype profile)

@@ -39,6 +39,7 @@ writes:
 ---
 
 ## Contract
+
 Consumes: git log, git diff, design plan (docs/plans/), phase-run outcome files (docs/executions/.phase-runs/), post-mortem (docs/executions/), issue/ticket refs, GitHub issues (via `gh issue view`)
 Produces: PR body markdown file (docs/executions/.pr-bodies/), optionally applied to GitHub PR
 Requires: gh, git
@@ -46,6 +47,7 @@ Side effects: creates/updates PR body on GitHub (when apply=true), writes body f
 Human gates: none
 
 ## Context
+
 Typical workflows: audit-loop (after /post-mortem, before /watch-ci)
 Pairs well with: execute-phase, post-mortem, watch-ci, design-plan
 
@@ -111,6 +113,7 @@ Spawn one `general-purpose` `Agent` with this brief:
 > <list the .phase-runs/ files to read>
 >
 > **Your output (return, do not write files):**
+>
 > 1. Per-phase summary: for each phase header in plan §5, name what the PR actually did. One of: `as planned`, `drifted`, `skipped`, or `not this PR`.
 > 2. For each `drifted` phase: quote the specific task text that changed, cite the commit hash(es) that implemented the deviation, and flag whether the drift is benign (equivalent outcome) or material (scope/intent change).
 > 3. For each `skipped` phase: explain from the plan and outcome files whether the skip is intentional (deferred to a future plan per §9 Open questions) or an accidental miss.
@@ -201,6 +204,7 @@ URL construction by default.>
 ## Step 4: Apply (optional)
 
 If `apply == true` and a PR exists:
+
 - `gh pr edit <pr_number> --body-file docs/executions/.pr-bodies/<date>-pr-<N>.md`
 - Confirm success; record the command and the resulting `gh pr view --json url -q .url` in chat.
 
@@ -327,6 +331,7 @@ To determine the correct disposition for each issue:
 ### GitHub keyword placement
 
 For auto-closing dispositions (Closes/Fixes/Resolves), place the keyword in the PR body so GitHub recognizes it:
+
 - Use the exact format: `Closes #123`, `Fixes #124`, `Resolves #125` (one per line, outside the table).
 - Place these keywords in the `## Issues` section footer, after the table.
 - Non-closing dispositions use plain `#N` references only (no GitHub keyword prefix).

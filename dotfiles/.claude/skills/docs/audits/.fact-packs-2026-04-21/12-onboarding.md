@@ -140,8 +140,9 @@ In `/Users/alexwelch/.claude/skills/setup-worktree/SKILL.md` (line 65):
 In `/Users/alexwelch/.claude/skills/execute-phase/SKILL.md` (line 41, implicit via the `writes:` block):
 
 > writes:
->   - docs/executions/.phase-runs/<date>[-<plan-slug>]-phase-<N>.md
->   - new git branch `refactor/phase-<N>-<slug>` (off current HEAD)
+>
+> - docs/executions/.phase-runs/<date>[-<plan-slug>]-phase-<N>.md
+> - new git branch `refactor/phase-<N>-<slug>` (off current HEAD)
 
 The convention that worktrees live under `~/wt/` is documented in the `setup-worktree` SKILL.md, but not announced upfront. A user who hasn't read that skill has no warning they'll spawn directories under `~/wt/`.
 
@@ -234,7 +235,7 @@ This is **not documented in the skills directory itself**. A new contributor mig
 
 ## Evidence
 
-### File structure (root and subdirectories):
+### File structure (root and subdirectories)
 
 ```
 /Users/alexwelch/.claude/skills/
@@ -255,14 +256,16 @@ This is **not documented in the skills directory itself**. A new contributor mig
 └── other skills                          (5+ others, not part of core loop)
 ```
 
-### Key excerpts confirming findings:
+### Key excerpts confirming findings
 
 **From `/repo-audit/SKILL.md` (line 10):**
+
 ```yaml
 persona: Staff Engineer running a structured codebase audit
 ```
 
 **From `/design-plan/SKILL.md` (lines 58–65):**
+
 ```markdown
 - **draft**: locate the audit. If `audit_path` is set, use it.
   Otherwise, find the newest `docs/audits/*-repo-audit.md`. If none
@@ -270,11 +273,13 @@ persona: Staff Engineer running a structured codebase audit
 ```
 
 **From `setup-worktree/SKILL.md` (lines 14, 26, 65):**
+
 ```yaml
 description: Path to the design plan. If set with `phase`, derives the branch name from the plan's §5.<N> header and the worktree path from `~/wt/<repo>/phase-<N>/`.
 ```
 
 **From `2026-04-21-skills-updates-design.md` (§0, line 8):**
+
 ```markdown
 The end state is a four-skill core loop — `/repo-audit → /design-plan → /execute-phase → /describe-pr → /post-mortem` — plus `/setup-worktree` as an on-demand side-car.
 ```

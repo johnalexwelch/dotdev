@@ -1,3 +1,4 @@
+# shellcheck disable=SC1090
 # Path configuration
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"

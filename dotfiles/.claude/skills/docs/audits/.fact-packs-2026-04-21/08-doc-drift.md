@@ -29,19 +29,22 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
 ### CRITICAL-01: Pairing Diagrams Missing
 
 **Evidence:**
+
 - **Plan requirement:** 2026-04-21-skills-updates-design.md §5.4 Phase 4, tasks 5-8 (lines 202-208):
   - Task 5: "update the loop diagram to the 4-skill core + `/setup-worktree` side-car" in `design-plan/SKILL.md` pairing section
   - Task 6: "update to 4-skill core loop + `/setup-worktree` side-car" in `repo-audit/SKILL.md` pairing notes
   - Task 8: "update to 4-skill core loop + `/setup-worktree` side-car" in `post-mortem/SKILL.md` pairing diagram
 - **Actual state:** No pairing diagrams found in any of the three SKILL.md files. The files mention cross-skill integration in tuning notes and error-handling tables, but no visual or ASCII diagram of the topology.
-- **Impact:** High. The pairing diagram is explicitly referenced in 2026-04-21 Phase 4's Definition of Done (line 278) as a verification requirement: `"all reference the 4-skill core loop plus `/setup-worktree` side-car in their pairing diagrams."` This is a shipped deliverable gap.
+- **Impact:** High. The pairing diagram is explicitly referenced in 2026-04-21 Phase 4's Definition of Done (line 278) as a verification requirement: `"all reference the 4-skill core loop plus`/setup-worktree`side-car in their pairing diagrams."` This is a shipped deliverable gap.
 
 **Specific line citations in SKILL.md files:**
+
 - `repo-audit/SKILL.md`: Tuning notes section (lines 289-299) mentions `/design-plan`, `/post-mortem`, but no loop diagram.
 - `design-plan/SKILL.md`: Tuning notes mention `/execute-phase`, `/setup-worktree`, `/describe-pr` (line ~401), but no diagram.
 - `post-mortem/SKILL.md`: Tuning notes (lines 280-289) describe "the full core loop" and "Plus `/setup-worktree` as an on-demand side-car" but no ASCII or visual pairing diagram.
 
 **Example of expected output (from 2026-04-21 plan §11, page 322):**
+
 ```
 /repo-audit → /design-plan → /execute-phase → /describe-pr → /post-mortem
                                                                     ↑
@@ -52,6 +55,7 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
 ### MEDIUM-01: Brief-Mode Plan (2026-04-22) Execution Status Unknown
 
 **Evidence:**
+
 - **Plan file:** `2026-04-22-design-plan-brief-mode.md` exists, dated 2026-04-22, marked as "draft v1 (single gap, bounded surface — two phases)"
 - **Execution state:** The document describes Phase 1 tasks (lines 95-107) but contains no completion evidence:
   - No "Verification" section showing dogfood results
@@ -66,6 +70,7 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
   - No `{refactor,fix,feat}/phase-*` glob in post-mortem (only `refactor/phase-*` mentioned line 83)
 
 **Interpretation:** The brief-mode plan appears to be a design artifact without execution. It may be:
+
 - A planning document awaiting future work (in-scope for a future phase run)
 - An orphan (superseded by other work, never executed)
 - Awaiting Phase 1 execution (unclear from the document whether this is a "shipped" plan like v3 or a "to-do" plan)
@@ -73,7 +78,9 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
 ### MINOR-01: Directory Tree Accuracy
 
 **Evidence:**
+
 - **Plan claim (2026-04-21 §4, lines 65-82):** Post-plan structure shows:
+
   ```
   ~/.claude/skills/
   ├── repo-audit/SKILL.md
@@ -83,12 +90,14 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
   ├── describe-pr/SKILL.md
   └── post-mortem/SKILL.md
   ```
+
 - **Actual disk state:** Matches exactly. All six skill directories exist with SKILL.md files.
 - **Verdict:** PASS. No drift on directory structure.
 
 ### MINOR-02: Missing README at Repo Root
 
 **Evidence:**
+
 - **Plan context:** 2026-04-21 §4 (page 56) describes `/repo-audit` Step 0 preflight reading "README.md, CLAUDE.md, and any *_SPEC.md at repo root." This establishes a convention that all skills expect a README at repo root.
 - **Actual state:** No README.md or README.* file exists in `/Users/alexwelch/.claude/skills/`.
 - **Impact:** Low. The skills directory is not a user-facing project; it's a meta-directory of skill definitions. End users don't clone it. However, if the audit skill were run on this directory itself (unlikely but possible), it would look for README.md per Step 0 preflight logic.
@@ -97,6 +106,7 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
 ### MINOR-03: Cross-Skill Vocabulary — PASS
 
 **Evidence:**
+
 - **Plan requirement (2026-04-21 §7, line 245-246):** "The core 4-skill loop and the `/setup-worktree` side-car share three ID schemes: `FIND-NN` (audit), `NEW-NN` (post-mortem), phase numbers (plan)."
 - **Actual state:** All SKILL.md files correctly reference:
   - `repo-audit/SKILL.md` (line 234): "Findings carry stable `FIND-NN` IDs that downstream skills (`/design-plan`, `/post-mortem`) reference."
@@ -110,7 +120,8 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
 
 ## Evidence
 
-### Files examined:
+### Files examined
+
 - `/Users/alexwelch/.claude/skills/2026-04-21-skills-updates-design.md` (322 lines)
 - `/Users/alexwelch/.claude/skills/2026-04-22-design-plan-brief-mode.md` (196 lines)
 - `/Users/alexwelch/.claude/skills/repo-audit/SKILL.md` (first 300+ lines)
@@ -120,11 +131,13 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
 - `/Users/alexwelch/.claude/skills/describe-pr/SKILL.md` (first 100+ lines)
 - `/Users/alexwelch/.claude/skills/setup-worktree/SKILL.md` (first 100+ lines)
 
-### Search for pairing diagrams:
+### Search for pairing diagrams
+
 - Grep for "pairing|loop diagram|core loop" across all SKILL.md files: No matches in ASCII-art or markdown table format.
 - Tuning notes sections mention the 4-skill loop and side-car in prose, but no structured diagram.
 
-### Search for brief-mode edits:
+### Search for brief-mode edits
+
 - Grep for "REQ-NN|brief" in SKILL.md files: No matches (should appear in design-plan inputs and throughout other skills if Phase 1 was executed).
 - Grep for "refactor|fix|feat" (branch prefixes): Only `refactor/phase-*` found; no `fix/phase-*` or `feat/phase-*`.
 
@@ -151,4 +164,3 @@ The two root-level design docs (v3 shipped plan and v1 brief-mode follow-up) des
    - No undocumented skills on disk.
    - No referenced skills missing.
    - **Verdict:** PASS.
-

@@ -8,6 +8,7 @@ description: >
 ---
 
 ## Contract
+
 Consumes: none (mode toggle)
 Produces: compressed communication (~75% token reduction)
 Requires: none
@@ -15,6 +16,7 @@ Side effects: none
 Human gates: none
 
 ## Context
+
 Typical workflows: any (on-demand communication mode)
 Pairs well with: any skill (orthogonal communication layer)
 

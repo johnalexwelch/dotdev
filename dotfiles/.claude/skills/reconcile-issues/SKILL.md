@@ -20,6 +20,7 @@ Compare GitHub Issues, PRs, labels, execution outcomes, and post-mortems to dete
 ## Process
 
 ### 1. Gather state
+
 - Fetch open/recently-closed issues via `gh issue list`
 - Fetch recent merged PRs via `gh pr list --state merged`
 - Read PR bodies for issue references (Closes/Fixes/Resolves/Refs #N)
@@ -66,10 +67,12 @@ Output a structured markdown artifact:
 ### 4. Take action (with gates)
 
 **Automated (no approval needed):**
+
 - Remove stale `in-progress` label when no PR is open
 - Add `stale` label to issues with no activity >30 days
 
 **Requires approval:**
+
 - Closing issues
 - Creating follow-up issues
 - Removing `ready-for-agent` label

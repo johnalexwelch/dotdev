@@ -49,23 +49,28 @@ If `docs/agents/user-journeys.md` doesn't exist, the skill halts and asks the us
 ## Process
 
 ### 1. Identify affected journeys
+
 - Read the issue/PRD/PR description for claimed changes
 - Read `docs/agents/user-journeys.md` for the full journey list
 - Map changes to affected journeys (e.g., auth code changed → Authentication journeys)
 
 ### 2. Generate Playwright scripts
+
 For each affected journey step:
+
 - Generate a Playwright test that exercises the step through the browser
 - Use realistic test data
 - Include assertions for expected outcomes
 - Include screenshot capture on failure
 
 ### 3. Execute via Playwright MCP
+
 - Run generated scripts via the Playwright MCP server
 - Capture results (pass/fail per step)
 - On failure: capture screenshot, DOM state, console errors
 
 ### 4. Report
+
 ```markdown
 ## User Journey QA Report
 
