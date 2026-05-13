@@ -1,0 +1,10 @@
+# gh-dash configuration
+# Docs: https://www.gh-dash.dev/configuration/
+#
+# Companion integration: gh-enhance
+# Docs: https://www.gh-dash.dev/companions/enhance/dash-integration/
+keybindings:
+  prs:
+    - key: T
+      name: enhance pr
+      command: gh enhance -R {{.RepoName}} {{.PrNumber}}

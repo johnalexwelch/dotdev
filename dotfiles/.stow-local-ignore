@@ -1,0 +1,20 @@
+# Stow local ignore — replaces built-in defaults when present.
+# Patterns are unanchored Perl regexes matched against relative paths.
+
+# Stow internals
+^\.stow-local-ignore$
+
+# VCS (anchor to avoid matching .gitconfig, .gitignore_global, etc.)
+/\.git$
+^\.git$
+
+# macOS
+\.DS_Store
+
+# Editor swap/backup
+\#.*\#
+~$
+\.swp$
+
+# Build artifacts
+^\.cache$

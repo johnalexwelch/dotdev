@@ -1,0 +1,73 @@
+# shellcheck disable=SC2154
+# File operations
+alias ls="eza --color=always --git --no-filesize --icons=always --no-time --no-user --no-permissions"
+alias ll='eza -l --icons --group-directories-first'
+alias la='eza -la --icons --group-directories-first'
+alias lt='eza --tree --icons --group-directories-first'
+alias cat='bat'
+alias grep='rg'
+alias find='fd'
+alias j='z'
+alias top='htop'
+alias du='dust'
+alias df='duf'
+
+# Navigation
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+alias mkdir='mkdir -p'
+alias cp='cp -i'
+alias mv='mv -i'
+alias vim='nvim'
+
+# Configuration
+alias zshconfig="code ~/.zshrc"
+alias reload="source ~/.zshrc"
+
+alias ohmyzsh="code ~/.oh-my-zsh"
+
+# Directory shortcuts
+hash -d docs=~/Documents
+hash -d dl=~/Downloads
+hash -d code=~/Code
+
+# Add docker cleanup aliases
+alias dprune='docker system prune -af'
+alias dclean='docker rm -f $(docker ps -aq)'
+
+# Data tools
+alias redshift='lazysql "$REDSHIFT_URL"'
+
+# Add network tools
+alias myip='curl ifconfig.me'
+alias ports='netstat -tulanp'
+
+# Editor aliases
+alias code="cursor"  # Make 'code' command open Cursor
+alias cur="cursor"   # Shorter alias for Cursor
+
+# Projects
+alias dev='bash ~/dotdev/scripts/dev.sh'
+alias iris='bash ~/dotdev/scripts/dev.sh ~/projects/iris'
+alias iris-reset='bash ~/dotdev/scripts/dev.sh down'
+
+# Auto-launch dev layout when cd'ing into a project root
+_dev_auto_launch() {
+    # Only in cmux
+    [[ -z "$CMUX_WORKSPACE_ID" ]] && return
+    # Only at a git root (not a subdirectory)
+    [[ -d ".git" ]] || return
+    # Don't re-trigger for dotdev itself or home
+    [[ "$PWD" == "$HOME" || "$PWD" == "$HOME/dotdev" ]] && return
+    # One layout per project per boot — atomic file guard
+    local marker
+    marker="/tmp/.dev-layout-$(basename "$PWD")"
+    [[ -f "$marker" ]] && return
+    touch "$marker"
+    # Apply layout to current workspace in background
+    bash ~/dotdev/scripts/dev.sh here "$PWD" &>/dev/null &
+    disown
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd _dev_auto_launch

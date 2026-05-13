@@ -48,7 +48,7 @@
       "Bash(rm -rf / *)",
       "Bash(rm -rf ~*)"
     ],
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "auto"
   },
   "model": "opus[1m]",
   "hooks": {
@@ -59,42 +59,7 @@
           {
             "type": "command",
             "command": "bash ~/.claude/guardian/run.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cmux claude-hook session-start"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cmux claude-hook notification"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cmux claude-hook stop"
-          },
-          {
-            "type": "command",
-            "command": "python3 ~/.claude/hooks/langfuse_hook.py",
-            "timeout": 10
+            "timeout": 30
           }
         ]
       }
@@ -129,8 +94,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bunx -y ccstatusline@latest",
-    "padding": 0
+    "command": "node ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud.mjs"
   },
   "enabledPlugins": {
     "plugin-dev@claude-plugins-official": true,
@@ -154,18 +118,12 @@
     "skill-creator@claude-plugins-official": true,
     "figma@claude-plugins-official": true,
     "rpi@local": true,
-    "cmux-plugin@patchoutech-plugins": true,
     "data-engineering@claude-plugins-official": true,
     "git-cleanup@trailofbits": true,
-    "zeroize-audit@trailofbits": true
+    "zeroize-audit@trailofbits": true,
+    "oh-my-claudecode@omc": true
   },
   "extraKnownMarketplaces": {
-    "patchoutech-plugins": {
-      "source": {
-        "source": "github",
-        "repo": "hopchouinard/patchoutech-plugins"
-      }
-    },
     "trailofbits": {
       "source": {
         "source": "github",
@@ -177,8 +135,20 @@
         "source": "github",
         "repo": "agent-observability"
       }
+    },
+    "omc": {
+      "source": {
+        "source": "git",
+        "url": "https://github.com/Yeachan-Heo/oh-my-claudecode.git"
+      }
     }
   },
   "alwaysThinkingEnabled": true,
-  "skipDangerousModePermissionPrompt": true
+  "skipDangerousModePermissionPrompt": true,
+  "preferredNotifChannel": "ghostty",
+  "teammateMode": "tmux",
+  "remoteControlAtStartup": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true,
+  "inputNeededNotifEnabled": true
 }
