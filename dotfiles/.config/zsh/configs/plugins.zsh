@@ -7,7 +7,6 @@ ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=60'
 plugins=(
     git                     # Git aliases and functions
     gh                      # GitHub CLI
-    pyenv                   # Python version manager
     zsh-autocomplete       # Advanced auto-completion
     zsh-syntax-highlighting # Syntax highlighting
     zsh-autosuggestions    # Fish-like autosuggestions

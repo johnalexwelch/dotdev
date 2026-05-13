@@ -43,10 +43,6 @@ echo "Configuring app permissions..."
 chmod +x "$DOTFILES/scripts/macos/permissions.sh"
 "$DOTFILES/scripts/macos/permissions.sh"
 
-# Create symbolic links
-cd "$DOTFILES" || exit
-stow -v -R -t "$HOME" .config/
-
 # Initialize security tools
 echo "Setting up security tools..."
 bash "$DOTFILES/scripts/security-init.sh"

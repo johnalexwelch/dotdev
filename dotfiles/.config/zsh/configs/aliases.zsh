@@ -6,7 +6,7 @@ alias lt='eza --tree --icons --group-directories-first'
 alias cat='bat'
 alias grep='rg'
 alias find='fd'
-alias cd='z'
+alias j='z'
 alias top='htop'
 alias du='dust'
 alias df='duf'
@@ -34,6 +34,9 @@ hash -d code=~/Code
 # Add docker cleanup aliases
 alias dprune='docker system prune -af'
 alias dclean='docker rm -f $(docker ps -aq)'
+
+# Data tools
+alias redshift='lazysql "$REDSHIFT_URL"'
 
 # Add network tools
 alias myip='curl ifconfig.me'

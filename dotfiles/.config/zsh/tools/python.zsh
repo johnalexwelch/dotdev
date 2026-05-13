@@ -1,12 +1,11 @@
 # Python environment configuration
 # shellcheck disable=SC2154  # False positive from .gitignore pattern *$py.class
-export PYENV_ROOT="$HOME/.pyenv"
-export PATH="$PYENV_ROOT/bin:$PATH"
 
-# Initialize pyenv if installed
-if command -v pyenv 1>/dev/null 2>&1; then
-  eval "$(pyenv init -)"
-  eval "$(pyenv init --path)"
+# mise replaces pyenv (single binary -> 1-2 forks vs pyenv's 30+ forks per command).
+# Corporate EDR adds ~250ms per fork(2), making pyenv shims unusable (~10s per command).
+# See: ~/.config/starship.toml and the migration in this file.
+if command -v mise 1>/dev/null 2>&1; then
+  eval "$(mise activate zsh)"
 fi
 
 # Poetry configuration

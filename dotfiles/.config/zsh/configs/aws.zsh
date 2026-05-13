@@ -81,3 +81,26 @@ aws-profiles() {
         AWS_PROFILE=$profile aws sts get-caller-identity 2>/dev/null || echo "No session"
     done
 }
+
+# Print the most recent SSO access token from the local cache.
+# Skips registration files (clientId/clientSecret-only); only emits tokens.
+aws-sso-token() {
+    local f
+    for f in $(/bin/ls -t "$HOME/.aws/sso/cache"/*.json 2>/dev/null); do
+        local token
+        token=$(jq -r '.accessToken // empty' "$f" 2>/dev/null)
+        if [[ -n "$token" ]]; then
+            print -r -- "$token"
+            return 0
+        fi
+    done
+    echo "aws-sso-token: no cached SSO token — run 'awsl' first" >&2
+    return 1
+}
+
+# List SSO-accessible accounts using the cached token.
+aws-sso-accounts() {
+    local token
+    token=$(aws-sso-token) || return 1
+    aws sso list-accounts --access-token "$token" --region "${AWS_DEFAULT_REGION:-us-east-1}" | jq .
+}

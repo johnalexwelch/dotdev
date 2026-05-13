@@ -128,3 +128,6 @@ dotfiles/.ssh/authorized_keys
 .superpowers/
 .worktrees/
 .serena/
+
+# Claude local settings (per-project permissions)
+.claude/
