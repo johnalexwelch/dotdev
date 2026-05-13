@@ -18,6 +18,10 @@ bash "$DOTFILES/scripts/brew.sh"
 echo "Setting up GitHub SSH..."
 bash "$DOTFILES/scripts/github.sh"
 
+# Install GitHub CLI extensions (gh-dash, gh-enhance, ...)
+echo "Installing GitHub CLI extensions..."
+bash "$DOTFILES/scripts/gh-extensions.sh"
+
 # Create symbolic links from Library/Application Support to .config
 echo "Setting up application config symlinks..."
 mkdir -p "$HOME/Library/Application Support"
@@ -38,10 +42,6 @@ bash "$DOTFILES/scripts/macos/terminal.sh"
 echo "Configuring app permissions..."
 chmod +x "$DOTFILES/scripts/macos/permissions.sh"
 "$DOTFILES/scripts/macos/permissions.sh"
-
-# Create symbolic links
-cd "$DOTFILES" || exit
-stow -v -R -t "$HOME" .config/
 
 # Initialize security tools
 echo "Setting up security tools..."
