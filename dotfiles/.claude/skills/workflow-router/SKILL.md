@@ -28,6 +28,7 @@ This skill is the **sole routing authority**. Per ADR-0002:
 | "Audit the repo", large-scale analysis needed | **refactor/audit** | repo-audit → design-plan (Audit Loop) |
 | Research question, "investigate how..." | **research** | RPI Chain (research → plan → implement) |
 | "Review this", "review my changes" | **review** | workflow-review |
+| D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D** | dnd-workflow |
 
 ## Bug routing rule
 
@@ -60,6 +61,7 @@ Before dispatching, check the target workflow's `Requires` field:
 | CORA | Can't validate contracts | Skip contract validation, proceed normally |
 | `playwright-mcp` | Can't run UJ QA | Skip user-journey-qa step, note in PR |
 | Project test runner | Can't verify | Halt and request setup info |
+| Campaign docs | D&D skills degrade gracefully | dnd-grill works without docs; dnd-grill-with-canon falls back to lightweight mode |
 
 ## Process
 
