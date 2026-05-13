@@ -110,7 +110,8 @@ jspm_packages/
 
 # Project specific
 .dotfiles-backup/
-.stow-local-ignore
+# Root-level stow-local-ignore (not the one inside dotfiles/)
+/.stow-local-ignore
 
 # Claude guardian generated files
 dotfiles/.claude/guardian/node_modules/
