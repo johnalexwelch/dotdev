@@ -44,7 +44,12 @@ jobs:
       - name: Verify stow is available
         run: command -v stow || brew install stow
       - name: Dry-run stow
-        run: stow -nv -d "$GITHUB_WORKSPACE" -t "$HOME" -R dotfiles
+        env:
+          WORKSPACE: ${{ github.workspace }}
+          STOW_TARGET: ${{ runner.temp }}/fakehome
+        run: |
+          mkdir -p "$STOW_TARGET/.claude/skills" "$STOW_TARGET/.config"
+          stow -nv -d "$WORKSPACE" -t "$STOW_TARGET" -R dotfiles
   install-dry-run:
     name: Install dry run
     runs-on: macos-latest
