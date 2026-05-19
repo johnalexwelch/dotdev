@@ -13,7 +13,7 @@ This skill is for narrative pressure-testing, not writing the final content. It 
 ## Contract
 
 Consumes: rough campaign idea, session premise, encounter concept, NPC plan, mystery structure, faction move, or arc outline
-Produces: targeted questions, recommended answers, risks, alternatives, and concrete revision suggestions
+Produces: targeted questions, recommended answers, risks, alternatives, accepted-decision log entries, and concrete revision suggestions
 Requires: no campaign docs
 Side effects: none
 Human gates: ask one question at a time unless the user asks for a full batch
@@ -21,7 +21,7 @@ Human gates: ask one question at a time unless the user asks for a full batch
 ## Soft Context
 
 Typical workflows: rough idea → dnd-grill → dnd-lore-ingestion or dnd-grill-with-canon
-Pairs well with: dnd-grill-with-canon (upgrade when docs available), dnd-lore-ingestion (formalize accepted ideas)
+Pairs well with: decision-log, dnd-grill-with-canon (upgrade when docs available), dnd-lore-ingestion (formalize accepted ideas)
 
 ## When to Use
 
@@ -95,6 +95,7 @@ Each question must include:
 Acceptance shorthand:
 - `a`, `accept`, `yes`, or `y` means accept the recommendation
 - If accepted, treat it as settled for the rest of the session
+- If accepted, record it with `decision-log`, preserving the question, decision, alternatives considered, and tradeoffs accepted
 - If rejected, ask a follow-up that resolves the branch
 
 ### 4. Stress-test against D&D-specific failure modes
@@ -118,7 +119,7 @@ When enough branches are resolved, produce:
 # Revised Direction
 
 ## Settled Decisions
-- ...
+- ... (include decision-log entry titles or note entries created)
 
 ## Remaining Risks
 - ...

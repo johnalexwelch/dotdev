@@ -1,0 +1,227 @@
+---
+name: workflow-roadmap
+description: Use when creating a product and implementation roadmap from product goals, repo state, feature gaps, implementation gaps, architecture/infrastructure gaps, security hardening needs, or "what should we build next?" questions.
+---
+
+# Workflow Roadmap
+
+## Purpose
+
+Create an evidence-backed roadmap that connects product direction to implementation order. This workflow researches feature gaps, implementation gaps, architecture, infrastructure, security, reliability, hardening, and workflow readiness before recommending what to build next.
+
+This is a discovery and sequencing workflow. It does not create issues, write implementation plans, or modify code until the roadmap is approved.
+
+## Contract
+
+Consumes: product goals, repo state, decision log, existing PRDs/issues, audits, ADRs, `CONTEXT.md`
+Produces: roadmap artifact with milestones, evidence, dependencies, risks, hardening work, and next workflow per item
+Requires: git; subagent-dispatch for broad repo research; gh when inspecting issue/PR state
+Side effects: writes a roadmap artifact only after user approval
+Human gates: roadmap approval before creating PRDs, issues, implementation plans, or backlog runs
+
+## Context
+
+Typical workflows: strategic planning before `workflow-feature`, `to-prd`, `design-plan`, `to-issues`, or `workflow-autonomous-backlog`
+Pairs well with: repo-audit, improve-codebase-architecture, decision-log, grill-with-docs, prototype, security-reviewer, to-prd, design-plan, to-issues
+
+## When To Use
+
+Use when:
+
+- The user asks for a roadmap, sequencing, milestones, or "what should we build next?"
+- A product area needs deep discovery before PRDs or implementation plans.
+- Feature work, infrastructure, security, reliability, and hardening need to be ordered together.
+- Existing issues or PRDs feel like a pile rather than a coherent plan.
+- The repo may have hidden implementation gaps, incomplete features, or hardening debt.
+
+Do not use when:
+
+- There is one clear ready-for-agent issue.
+- The task is a narrow bug fix.
+- The user has an approved implementation plan and wants execution.
+- The user only wants a repo health audit; use `repo-audit`.
+- The user only wants module deepening opportunities; use `improve-codebase-architecture`.
+
+## Flow
+
+```text
+goals/context
+  -> research lanes
+  -> evidence synthesis
+  -> roadmap milestones
+  -> human approval
+  -> to-prd / design-plan / to-issues / prototype / needs-human
+```
+
+## Research Lanes
+
+Run the lanes that fit the request. For broad roadmap work, dispatch read-only subagents in parallel and require evidence, not vibes.
+
+### 1. Product And Feature Gaps
+
+Look for:
+
+- missing user flows
+- incomplete or inconsistent capabilities
+- unclear V1/V2 boundaries
+- missing empty, loading, error, permission, and recovery states
+- user journeys implied by docs but absent from code
+- feature requests or TODOs not represented in issues
+
+### 2. Implementation Gaps
+
+Look for:
+
+- partially implemented features
+- TODOs, dead paths, unused abstractions, and placeholder code
+- missing vertical slices across UI/API/data/tests
+- critical behavior without tests
+- migrations or data changes started but not completed
+- issue acceptance criteria not reflected in code
+
+### 3. Architecture And Infrastructure
+
+Use `improve-codebase-architecture` as the architecture lens when module quality matters.
+
+Look for:
+
+- shallow modules, fake seams, and over-coupled callers
+- unclear data ownership and public interfaces
+- CI/CD, deploy, environment, and rollback gaps
+- observability and operational support gaps
+- monorepo or service boundaries that obscure ownership
+
+### 4. Security And Hardening
+
+Use `security-reviewer` or a dedicated security pass when risk is meaningful.
+
+Look for:
+
+- authentication and authorization gaps
+- secrets/config handling problems
+- input validation and unsafe parsing
+- dependency or supply-chain risks
+- abuse, spam, fraud, rate-limit, and tenant-isolation concerns
+- missing audit logs or privileged-action safeguards
+
+### 5. Reliability And Operations
+
+Look for:
+
+- background job failure modes
+- retries, idempotency, and duplicate processing risks
+- migration safety and rollback paths
+- monitoring, alerting, and support diagnostics
+- failure handling for third-party integrations
+- data recovery and manual remediation paths
+
+### 6. Docs And Workflow Readiness
+
+Look for:
+
+- stale or missing ADRs
+- missing `docs/decision-log.md` entries for settled choices
+- unclear `CONTEXT.md` domain language
+- PRDs without issue breakdowns
+- issues not ready for AFK execution
+- missing handoffs, verification commands, or cleanup policy
+
+## Synthesis Rules
+
+Every roadmap item must include:
+
+- **Evidence:** file paths, issue refs, audit findings, or explicit user input.
+- **User or operational value:** why it matters.
+- **Work type:** feature, implementation gap, architecture, infrastructure, security, reliability, docs/process.
+- **Dependency relationship:** what must happen before it.
+- **Risk:** low, medium, high, or needs-human.
+- **Confidence:** high, medium, low.
+- **Accepted tradeoffs:** relevant `decision-log` entries or "none found."
+- **Recommended next workflow:** exactly one of:
+  - `prototype`
+  - `grill-with-docs`
+  - `to-prd`
+  - `design-plan`
+  - `to-issues`
+  - `repo-audit`
+  - `improve-codebase-architecture`
+  - `workflow-autonomous-backlog`
+  - `needs-human`
+
+Do not bury risk. If a roadmap item changes product behavior, public interfaces, data model, auth/payment behavior, infrastructure, rollout strategy, or security posture, mark a human gate.
+
+## Roadmap Artifact
+
+Default path:
+
+```text
+docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md
+```
+
+Use this structure:
+
+```markdown
+# Roadmap: {topic}
+
+## Executive Summary
+
+## Inputs And Scope
+
+## Decision Context
+- Relevant decision-log entries
+- ADRs or product decisions that constrain the roadmap
+
+## Current State
+
+## Feature Gaps
+
+## Implementation Gaps
+
+## Architecture And Infrastructure Gaps
+
+## Security And Hardening Gaps
+
+## Reliability And Operations Gaps
+
+## Milestones
+
+### Milestone 1: {name}
+Outcome:
+Why now:
+Feature work:
+Implementation work:
+Architecture/infrastructure work:
+Security/hardening work:
+Dependencies:
+Risks:
+Verification:
+Recommended next workflows:
+
+### Milestone 2: {name}
+...
+
+## Dependency Map
+
+## Human Gates
+
+## Not Doing Yet
+
+## Recommended Next Actions
+```
+
+## Approval Gate
+
+Before creating PRDs, issues, design plans, or autonomous backlog work:
+
+1. Present the roadmap summary, milestones, top risks, and recommended next actions.
+2. Ask for explicit approval or edits.
+3. Record accepted roadmap decisions in `docs/decision-log.md`.
+4. Only then invoke the downstream workflow for the approved next step.
+
+## Anti-Patterns
+
+- Do not turn every finding into a roadmap item. Sequence only the work that advances the stated outcome.
+- Do not create an infrastructure-first roadmap unless infrastructure is a real blocker.
+- Do not treat security/hardening as a final cleanup phase when it affects architecture or product trust.
+- Do not dispatch implementation agents from this workflow.
+- Do not re-run `repo-audit` wholesale when a scoped research lane is enough.

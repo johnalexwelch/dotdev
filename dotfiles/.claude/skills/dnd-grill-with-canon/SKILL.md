@@ -32,7 +32,7 @@ codex-compatible: false
 ## Contract
 
 Consumes: proposed D&D plan, campaign docs, canon files, prior session notes, NPC/faction/location docs, timelines, open-thread trackers
-Produces: canon-grounded critique, revised assumptions, resolved terminology, updated canon/context files, optional decision records
+Produces: canon-grounded critique, revised assumptions, accepted-decision log entries, resolved terminology, updated canon/context files, optional decision records
 Requires: readable campaign files or user-provided docs
 Side effects: may update `CAMPAIGN_CONTEXT.md`, `CANON.md`, `OPEN_THREADS.md`, and create files in `docs/campaign-decisions/`
 Human gates: every question batch requires user response before continuing
@@ -40,7 +40,7 @@ Human gates: every question batch requires user response before continuing
 ## Soft Context
 
 Typical workflows: dnd-grill → dnd-grill-with-canon → dnd-continuity-check → dnd-session-prep
-Pairs well with: dnd-continuity-check (verify after grilling), dnd-session-prep (build from accepted direction), dnd-lore-ingestion (formalize new canon)
+Pairs well with: decision-log, dnd-continuity-check (verify after grilling), dnd-session-prep (build from accepted direction), dnd-lore-ingestion (formalize new canon)
 
 ## Canon File Structure
 
@@ -160,6 +160,7 @@ Each question must use this format:
 Acceptance shorthand:
 - `a`, `accept`, `yes`, or `y` means accept the recommendation
 - If accepted, update the working assumptions
+- If accepted, record it with `decision-log`, preserving the question, decision, alternatives considered, and tradeoffs accepted
 - If canon changes, update the relevant file after acceptance
 
 ### 7. Update campaign context inline
@@ -170,7 +171,13 @@ Use [CAMPAIGN-CONTEXT-FORMAT.md](./CAMPAIGN-CONTEXT-FORMAT.md).
 
 Do not put every brainstorm into canon. Only write settled facts.
 
-### 8. Offer Campaign Decision Records sparingly
+### 8. Record accepted decisions
+
+Every accepted answer must be available in the campaign decision log. Use `docs/campaign-decisions/decision-log.md` when present, otherwise use the nearest repo-local `docs/decision-log.md`.
+
+Log entries are required even when a full Campaign Decision Record is not warranted. The log captures the lightweight "why"; CDRs are for durable campaign canon decisions that need their own record.
+
+### 9. Offer Campaign Decision Records sparingly
 
 Offer a decision record only when all three are true:
 
@@ -192,7 +199,7 @@ Examples that do not qualify:
 - A monster reskin
 - A clue placement that is easy to change
 
-### 9. End with resolved operating assumptions
+### 10. End with resolved operating assumptions
 
 After each batch or session, summarize:
 
@@ -200,7 +207,7 @@ After each batch or session, summarize:
 # Canon-Grounded Revision Summary
 
 ## Accepted Decisions
-- ...
+- ... (include decision-log entry titles or note entries created)
 
 ## Canon Updates Made
 - ...

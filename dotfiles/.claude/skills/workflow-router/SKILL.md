@@ -14,21 +14,35 @@ The single routing authority for all incoming work. Classifies the task, runs pr
 This skill is the **sole routing authority**. Per ADR-0002:
 
 - `workflows.md` is reference documentation only — it does not route
-- OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass this router intentionally — they are power-user shortcuts
+- OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass this router's classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `workflow-review`, and `workflow-finalize`.
 - All other work goes through this router
 
 ## Classification table
 
 | Signal | Classification | Routes to |
 |--------|---------------|-----------|
+| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details | **V1 idea discovery** | v1-idea-grill |
+| Approved `V1_IDEA_BRIEF`, "design the system for this V1", "turn this V1 brief into architecture", "system design for V1" | **V1 system design** | v1-system-design |
+| "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | workflow-roadmap |
+| "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog workflow** | workflow-autonomous-backlog |
 | Bug report, error, "it's broken", regression | **bug** | workflow-debug |
 | Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature |
 | Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-build-one |
+| Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
 | "Audit the repo", large-scale analysis needed | **refactor/audit** | repo-audit → design-plan (Audit Loop) |
 | Research question, "investigate how..." | **research** | RPI Chain (research → plan → implement) |
 | "Review this", "review my changes" | **review** | workflow-review |
+| "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
+| "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
+| "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **workflow effectiveness audit** | workflow-effectiveness-audit |
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D** | dnd-workflow |
+| Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
+| "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
+| "write an article", "blog post", "draft", "write about" | **writing** | writing-fragments → writing-shape or writing-beats → humanizer |
+| "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
+| "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
+| "generate prompt for", "prep for codex", "prep for AFK" | **prompt generation** | prompt-builder |
 
 ## Bug routing rule
 
@@ -37,6 +51,18 @@ This skill is the **sole routing authority**. Per ADR-0002:
 - Fixing symptoms instead of root causes
 - Missing regression tests
 - Incorrect assumptions about "simple" bugs
+
+## PRD vs backlog routing rule
+
+**Use `execute-prd` when issues have a parent PRD and dependencies between them.** Use `run-backlog` when issues are independent and can be processed in any order.
+
+| Signal | Route |
+|--------|-------|
+| "Execute PRD #N" / "implement all children" / parent issue with child task list | execute-prd |
+| "Run the backlog" / batch of independent `ready-for-agent` issues | run-backlog |
+| Single issue, no parent context | workflow-build-one |
+
+If unclear: check whether the issues reference a parent. If yes → execute-prd. If no → run-backlog.
 
 ## Preflight
 
@@ -52,16 +78,35 @@ Before dispatching, check the target workflow's `Requires` field:
    - Suggest installation or alternative
    - Do NOT proceed with the workflow
 
+### Worktree Baseline Gate
+
+Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, create or require a fresh isolated worktree from `origin/staging`:
+
+```bash
+git fetch origin --prune
+git worktree add -b <workflow-branch> <worktree-path> origin/staging
+```
+
+The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If `origin/staging` is missing, halt and ask the user for the replacement base.
+
+Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from `origin/staging`.
+
 ## Graceful degradation
+
+These fallbacks apply only when the target workflow does not list the
+missing tool in `Requires:` and does not define it as a blocking runtime
+gate. If a required dependency is missing, the preflight rule above wins:
+halt, report the missing requirement, and do not proceed.
 
 | Missing tool | Impact | Behavior |
 |--------------|--------|----------|
-| `gh` | Can't interact with GitHub | Flag finalization incomplete, work locally only |
-| OMC | Can't dispatch to Codex team | Fall back to direct Claude execution |
-| CORA | Can't validate contracts | Skip contract validation, proceed normally |
-| `playwright-mcp` | Can't run UJ QA | Skip user-journey-qa step, note in PR |
+| `gh` | Can't interact with GitHub | Local-only analysis is allowed only for non-shipping workflows that do not require `gh`; delivery workflows halt |
+| OMC | Can't dispatch to Codex team | Halt unless the selected workflow/mode explicitly allows Claude fallback and the user approves it |
+| CORA | Can't validate contracts | Skip CORA validation only; do not skip the target workflow's own gates |
+| `playwright-mcp` | Can't run UJ QA | For frontend/user-facing changes, halt for human waiver or setup; do not silently skip |
 | Project test runner | Can't verify | Halt and request setup info |
-| Campaign docs | D&D skills degrade gracefully | dnd-grill works without docs; dnd-grill-with-canon falls back to lightweight mode |
+| Campaign docs | D&D canon-specific review unavailable | `dnd-grill` may run without docs; `dnd-grill-with-canon` must halt or explicitly switch to lightweight `dnd-grill` with the user's consent |
+| Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-beats need a file to work from |
 
 ## Process
 
@@ -78,9 +123,11 @@ Before dispatching, check the target workflow's `Requires` field:
 
 Consumes: work description (user input, issue body, automated trigger)
 Produces: dispatched workflow invocation, preflight report (if failed)
-Requires: none (the router itself has no tool dependencies — target workflows do)
+Requires: none
 Side effects: none (routing is a decision, not an action)
 Human gates: ambiguous classification asks one clarifying question
+
+Runtime note: the router itself has no tool dependencies. Target workflows declare their own `Requires` fields.
 
 ## Context
 

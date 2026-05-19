@@ -9,3 +9,5 @@ Interview me relentlessly about every aspect of this plan untill we reach a shar
 Ask the questions one at a time.
 
 If a question can be answered by exploring the codebase, explore the codebase instead.
+
+For every accepted recommendation or user-edited answer, use `decision-log` to record the question, final decision, what else was considered, and tradeoffs accepted. Future planning workflows should consume that log instead of re-grilling settled decisions.

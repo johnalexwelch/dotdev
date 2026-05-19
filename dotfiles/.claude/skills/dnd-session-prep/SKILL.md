@@ -12,7 +12,7 @@ This skill emphasizes table usability: strong start, scenes, secrets/clues, NPCs
 
 ## Contract
 
-Consumes: session premise, prior session notes, canon, open threads, NPC/faction/location docs, desired table experience
+Consumes: session premise, decision log, prior session notes, canon, open threads, NPC/faction/location docs, desired table experience
 Produces: session prep document, scene list, secrets/clues, NPC notes, encounters, fallback paths, consequence map
 Requires: enough accepted direction to prep from
 Side effects: may create or update session prep files after user acceptance
@@ -21,7 +21,7 @@ Human gates: ask before writing canon-changing material
 ## Soft Context
 
 Typical workflows: dnd-grill-with-canon → dnd-continuity-check → dnd-session-prep → dnd-player-agency-review
-Pairs well with: dnd-player-agency-review (final check), dnd-open-thread-review (surface threads to weave in)
+Pairs well with: decision-log, dnd-player-agency-review (final check), dnd-open-thread-review (surface threads to weave in)
 
 ## Workflow
 
@@ -29,6 +29,7 @@ Pairs well with: dnd-player-agency-review (final check), dnd-open-thread-review 
 
 Review:
 - Previous session recap
+- Campaign decision log entries from recent grills
 - Current party location and objective
 - Active NPCs
 - Active factions
@@ -36,6 +37,8 @@ Review:
 - Player knowledge
 - Consequences from last session
 - Any accepted decisions from `dnd-grill-with-canon`
+
+Treat decision-log entries as settled prep constraints unless the user explicitly reopens them. Do not re-litigate accepted alternatives; use the logged tradeoffs to explain surprising prep choices.
 
 ### 2. Define session target
 
