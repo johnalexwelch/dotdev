@@ -55,21 +55,27 @@ Read in this order when available:
 ### 3. Audit across six axes
 
 #### Canon Truth
+
 Does the plan contradict objective GM truth?
 
 #### In-World Belief
+
 Does it confuse propaganda, myth, rumor, religion, or faction doctrine with objective truth?
 
 #### Timeline
+
 Could these people, events, and consequences coexist in time?
 
 #### NPC/Faction State
+
 Are motives, resources, relationships, and knowledge consistent?
 
 #### Player Knowledge
+
 Are players being asked to act on facts they do not have?
 
 #### Payoff and Setup
+
 Does this contradict prior foreshadowing, promises, or unresolved threads?
 
 ### 4. Rate findings

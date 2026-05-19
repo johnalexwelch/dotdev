@@ -28,6 +28,7 @@ Pairs well with: decision-log, dnd-player-agency-review (final check), dnd-open-
 ### 1. Retrieve current state
 
 Review:
+
 - Previous session recap
 - Campaign decision log entries from recent grills
 - Current party location and objective
@@ -101,6 +102,7 @@ Use this structure:
 ### 4. Preserve player agency
 
 For every major beat, include:
+
 - what happens if players engage
 - what happens if they ignore it
 - what happens if they solve it early
@@ -109,6 +111,7 @@ For every major beat, include:
 ### 5. Validate table readiness
 
 Check:
+
 - Can the opening be read and run quickly?
 - Does every scene have a purpose?
 - Are there at least 10 usable secrets/clues?

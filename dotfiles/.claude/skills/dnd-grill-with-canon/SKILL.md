@@ -158,6 +158,7 @@ Each question must use this format:
 ```
 
 Acceptance shorthand:
+
 - `a`, `accept`, `yes`, or `y` means accept the recommendation
 - If accepted, update the working assumptions
 - If accepted, record it with `decision-log`, preserving the question, decision, alternatives considered, and tradeoffs accepted
@@ -188,12 +189,14 @@ Offer a decision record only when all three are true:
 Use [CAMPAIGN-DECISION-FORMAT.md](./CAMPAIGN-DECISION-FORMAT.md).
 
 Examples that qualify:
+
 - The Phoenix Heart is propaganda for the Titan’s Heart
 - Avalor’s mages interpret magic as rational technology rather than divine mystery
 - A major antagonist is being manipulated rather than knowingly evil
 - A faction’s public doctrine intentionally contradicts its private agenda
 
 Examples that do not qualify:
+
 - A tavern name
 - A one-session NPC detail
 - A monster reskin

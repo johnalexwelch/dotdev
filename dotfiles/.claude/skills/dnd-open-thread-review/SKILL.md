@@ -28,6 +28,7 @@ Pairs well with: dnd-session-prep (weave active threads into prep), dnd-grill-wi
 ### 1. Gather threads
 
 Search for unresolved:
+
 - NPC promises
 - faction moves
 - mysteries
@@ -54,6 +55,7 @@ Search for unresolved:
 ### 3. Score each thread
 
 Rate 1-5:
+
 - Player memory
 - Emotional weight
 - Plot relevance

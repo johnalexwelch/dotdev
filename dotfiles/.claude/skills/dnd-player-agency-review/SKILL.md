@@ -28,6 +28,7 @@ Pairs well with: dnd-session-prep (review its output), dnd-node-builder (validat
 List the major choices players appear to have.
 
 For each choice, ask:
+
 - Is this actually a choice?
 - Do different choices lead to different consequences?
 - Are players given enough information to choose intentionally?
@@ -63,6 +64,7 @@ For each major scene, define:
 ### 4. Improve choice quality
 
 Good choices should have:
+
 - visible stakes
 - incomplete but useful information
 - real tradeoffs

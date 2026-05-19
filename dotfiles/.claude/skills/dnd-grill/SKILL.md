@@ -26,12 +26,14 @@ Pairs well with: decision-log, dnd-grill-with-canon (upgrade when docs available
 ## When to Use
 
 Use this skill when:
+
 - The user wants an idea challenged before building it out
 - The premise is still rough or docs are unavailable
 - The user asks for "grill", "stress test", "poke holes", "challenge", "what am I missing", or "make this stronger"
 - The topic is a single scene, single NPC, single session beat, or narrow arc question
 
 Do not use this skill when:
+
 - The user wants a final polished handout
 - The user wants canon consistency checked against documents
 - The user is asking for broad worldbuilding generation without critique
@@ -93,6 +95,7 @@ Each question must include:
 ```
 
 Acceptance shorthand:
+
 - `a`, `accept`, `yes`, or `y` means accept the recommendation
 - If accepted, treat it as settled for the rest of the session
 - If accepted, record it with `decision-log`, preserving the question, decision, alternatives considered, and tradeoffs accepted

@@ -80,6 +80,7 @@ Use this table:
 Investigations should move while players investigate.
 
 Define:
+
 - countdown clocks
 - faction reactions
 - NPC counter-moves
@@ -90,6 +91,7 @@ Define:
 ### 6. Validate agency
 
 Check:
+
 - Can players choose order of nodes?
 - Can they reach truth through different methods?
 - Does failure change the world rather than stop play?

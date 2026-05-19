@@ -39,6 +39,7 @@ Classify every extracted claim:
 ### 2. Extract structured entities
 
 Identify:
+
 - NPCs
 - factions
 - locations

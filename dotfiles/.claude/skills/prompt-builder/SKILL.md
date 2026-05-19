@@ -30,6 +30,7 @@ gh issue view <number> --json title,body,labels,assignees,milestone
 ```
 
 Extract:
+
 - Title and description
 - Acceptance criteria (look for checkboxes, "AC:", "Acceptance Criteria", numbered lists under a criteria heading)
 - Labels (bug, feature, ready-for-agent, security, frontend, etc.)
@@ -108,6 +109,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 ### 5. Adapt for target tool
 
 **For Codex (AFK):**
+
 - Be more explicit about file paths (Codex can't browse interactively)
 - Include the full acceptance criteria (no "see issue for details")
 - For root issues, include the exact mandatory per-issue worktree command before any code changes: `git fetch origin --prune && git worktree add -b <issue-branch> <issue-worktree-path> origin/staging`
@@ -124,6 +126,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 - **Always include handoff instruction:** append a section instructing the agent to produce a handoff artifact at `docs/executions/handoffs/<date>-<issue-slug>.md` before completing, summarizing what was done, what's left (if anything), and the PR link. This ensures context is preserved even when the Codex session ends.
 
 **For Claude (interactive):**
+
 - Can be slightly less verbose (Claude can ask the user)
 - Include "Ask the user if..." for genuinely ambiguous points
 - Reference skills by name (Claude has skill access)
@@ -132,6 +135,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 ### 6. Output
 
 Print the prompt to chat. Then offer:
+
 - `--attach`: post as a comment on the issue (useful for Codex pickup)
 - `--file <path>`: save to a file (useful for batch scripts)
 - `--clipboard`: copy to clipboard (useful for manual paste into Codex CLI)
