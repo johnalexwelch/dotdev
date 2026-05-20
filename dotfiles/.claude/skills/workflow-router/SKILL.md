@@ -30,7 +30,7 @@ This skill is the **sole routing authority**. Per ADR-0002:
 | Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-build-one |
 | Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
-| "Audit the repo", large-scale analysis needed | **refactor/audit** | repo-audit → design-plan (Audit Loop) |
+| "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
 | Research question, "investigate how..." | **research** | RPI Chain (research → plan → implement) |
 | "Review this", "review my changes" | **review** | workflow-review |
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
@@ -91,6 +91,15 @@ The workflow must run inside that worktree. Do not run mutating delivery workflo
 
 Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from `origin/staging`.
 
+## Audit Routing Rule
+
+`repo-audit` is an evidence-gathering input to the current workflow, not a separate default delivery loop.
+
+- For product or feature gaps found by audit: route to `workflow-roadmap`, then `grill-with-docs → decision-log → to-prd → to-issues → triage`.
+- For already-clear vertical implementation slices: route to `to-issues` or `triage`.
+- For repo-wide refactors, migrations, or multi-phase remediation that cannot be represented cleanly as issue slices yet: route to `design-plan`, then optionally `execute-phase`.
+- Do not route audits directly to `execute-phase`; a human-approved roadmap, PRD/issues, or design plan must exist first.
+
 ## Graceful degradation
 
 These fallbacks apply only when the target workflow does not list the
@@ -108,6 +117,26 @@ halt, report the missing requirement, and do not proceed.
 | Campaign docs | D&D canon-specific review unavailable | `dnd-grill` may run without docs; `dnd-grill-with-canon` must halt or explicitly switch to lightweight `dnd-grill` with the user's consent |
 | Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-beats need a file to work from |
 
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step. Use the exact step names from this skill and include conditional or optional steps.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
+```
+
+Rules:
+
+- Initialize every known step as `pending`; conditional steps remain `pending` until their trigger is evaluated.
+- As each step finishes or is skipped, update the ledger with the new status and evidence or reason.
+- A step may be `skipped` only when this skill explicitly makes it optional/conditional or a routing decision stops the workflow; record the exact reason.
+- Do not mark required gates as skipped. If a required gate cannot run, mark it `blocked` or `failed` and halt according to this workflow.
+- At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
+- The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
+
 ## Process
 
 ```
@@ -123,11 +152,11 @@ halt, report the missing requirement, and do not proceed.
 
 Consumes: work description (user input, issue body, automated trigger)
 Produces: dispatched workflow invocation, preflight report (if failed)
-Requires: none
+Requires: git
 Side effects: none (routing is a decision, not an action)
 Human gates: ambiguous classification asks one clarifying question
 
-Runtime note: the router itself has no tool dependencies. Target workflows declare their own `Requires` fields.
+Runtime note: the router itself only needs git-aware workspace context; target workflows declare their own `Requires` fields.
 
 ## Context
 

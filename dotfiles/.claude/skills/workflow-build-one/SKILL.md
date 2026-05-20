@@ -1,13 +1,13 @@
 ---
 name: workflow-build-one
-description: Implement one ready-for-agent issue end-to-end (preflight → execute → review → draft PR handoff)
+description: Implement one ready-for-agent issue end-to-end (preflight → execute → review → repo-policy-controlled PR handoff)
 ---
 
 # Workflow Build One
 
 ## Purpose
 
-Take a single `ready-for-agent` issue and drive it from implementation through draft PR handoff. This is the standard "build one thing" workflow — the workhorse for individual issue execution.
+Take a single `ready-for-agent` issue and drive it from implementation through repo-policy-controlled PR handoff. This is the standard "build one thing" workflow — the workhorse for individual issue execution.
 
 ## When to invoke
 
@@ -84,11 +84,13 @@ When triggered, this is a blocking gate. Proceed to `workflow-finalize` only whe
 
 - Load and run `workflow-finalize/SKILL.md`; do not replace it with direct PR creation commands.
 - `workflow-finalize` owns `describe-pr`, so the worker must preserve the generated PR body file path and `describe_pr` evidence in `WORKFLOW_FINALIZE_GATE`.
-- Open or update a **draft PR**
+- Open or update a PR according to the caller's `REPO_DELIVERY_POLICY` when supplied:
+  - `human-only` or no policy supplied: create/update a draft PR and leave final merge/mark-ready decisions to the user.
+  - `auto-merge-eligible`: after all required gates pass, allow `workflow-finalize` to mark the PR ready and enable GitHub auto-merge.
 - Resolve and respond to all reviewer comments: blockers, non-blockers, nits, questions, and declined suggestions
 - Monitor CI
 - Reconcile issues
-- Do **not** enable auto-merge; leave final merge/mark-ready decision to the user
+- Do **not** approve, directly merge, force-push, rebase, or perform destructive git. Auto-merge may be enabled only by `workflow-finalize` when `REPO_DELIVERY_POLICY.mode: auto-merge-eligible`.
 - Require the `WORKFLOW_FINALIZE_GATE` block before completion. If missing, auto-handoff with blocker: `workflow-finalize did not run to completion`.
 
 ## Iteration limits
@@ -101,10 +103,24 @@ When triggered, this is a blocking gate. Proceed to `workflow-finalize` only whe
 
 Every halt produces an auto-handoff. Every completion checks for follow-up work. No workflow exit should lose context.
 
+## Partial-Completion Contract
+
+Before exiting, the executor MUST be in ONE of these three states. This is binding regardless of remaining token budget:
+
+**A. Complete.** All changes committed and pushed to the remote branch.
+
+**B. WIP-paused.** Current progress committed with a `wip:` prefix in the subject line, naming exactly what remains. Pushed.
+
+**C. Rolled back.** `git reset --hard <baseline>` to leave the worktree clean.
+
+Verification before exit: run `git status --short`. If ANY line shows `M` or `??` for a source file in the project tree, the contract is not satisfied. Commit or reset, then re-run `git status --short` until the worktree satisfies A, B, or C.
+
+The final response and any handoff artifact must state which exit state was chosen, the commit pushed or baseline reset to, and the final `git status --short` result.
+
 ## Contract
 
 Consumes: GitHub issue (ready-for-agent, with acceptance criteria), codebase
-Produces: draft PR ready for human review/merge, updated issue state
+Produces: PR ready for human review/merge or auto-merge according to repo delivery policy, updated issue state
 Requires: gh, git, subagent-dispatch, project-test-runner
 Side effects: creates branch, commits, PR; may modify issue labels
 Human gates: unclear issue halts (with auto-handoff); NEEDS HUMAN review halts (with auto-handoff); user-journey QA failure/unavailability halts unless waived (with auto-handoff); CI exhaustion halts (with auto-handoff); review iteration limit halts (with auto-handoff)

@@ -9,6 +9,8 @@ description: Turn an ambiguous feature idea into ready-to-triage issues (stops b
 
 Transform a vague feature idea into well-defined, triaged issues ready for implementation. This workflow is the "thinking" phase — it explicitly stops before any code is written.
 
+All implementation issues produced by this workflow must be vertical slices of app behavior. Do not produce horizontal layer tickets such as database-only, API-only, UI-only, or tests-only work unless the ticket is independently demoable or system-verifiable.
+
 ## When to invoke
 
 - User has a feature idea but hasn't defined it clearly
@@ -22,6 +24,27 @@ Transform a vague feature idea into well-defined, triaged issues ready for imple
 grill-with-docs → decision-log → [prototype] → to-prd → to-issues → triage
                                   ^optional^
 ```
+
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step. Use the exact step names from this skill and include conditional or optional steps.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
+```
+
+Rules:
+
+- Initialize every known step as `pending`; conditional steps remain `pending` until their trigger is evaluated.
+- As each step finishes or is skipped, update the ledger with the new status and evidence or reason.
+- A step may be `skipped` only when this skill explicitly makes it optional/conditional or a routing decision stops the workflow; record the exact reason.
+- Do not mark required gates as skipped. If a required gate cannot run, mark it `blocked` or `failed` and halt according to this workflow.
+- At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
+- The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
+
 
 ### Step 1: Grill (grill-with-docs)
 
@@ -67,12 +90,14 @@ This gate applies to every feature regardless of perceived simplicity. "Simple" 
 - Convert grilling output into a structured PRD
 - Publish to issue tracker as a reference document
 - Include: goal, non-goals, user stories, acceptance criteria, risks
+- State how the work can be split into vertical slices; if it cannot, return to design before issue creation
 - Output: PRD issue on GitHub
 
 ### Step 3: Issues (to-issues)
 
 - Break PRD into vertical slices (tracer bullets)
-- Each slice is independently implementable and verifiable
+- Each slice is independently implementable and verifiable across the relevant layers of the app
+- Reject horizontal breakdowns and rewrite them as thin end-to-end behaviors before publishing
 - Include dependency order and blocking relationships
 - Output: child issues under the PRD
 

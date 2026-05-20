@@ -1,13 +1,13 @@
 ---
 name: workflow-finalize
-description: Universal delivery closure after review passes (draft PR → reviewer comments → CI → reconcile → human merge)
+description: Universal delivery closure after review passes (PR body → reviewer comments → CI → reconcile → repo-policy-controlled final action)
 ---
 
 # Workflow Finalize
 
 ## Purpose
 
-Close the delivery loop after workflow-review approves. Handles draft PR creation/description, reviewer-comment resolution, CI monitoring, issue reconciliation, and the conditional post-mortem gate. Does not duplicate review or testing logic and never enables auto-merge.
+Close the delivery loop after workflow-review approves. Handles PR creation/description, reviewer-comment resolution, CI monitoring, issue reconciliation, the conditional post-mortem gate, and repo-policy-controlled final PR actions. Does not duplicate review or testing logic.
 
 ## When to invoke
 
@@ -27,16 +27,43 @@ The delivery branch must also have `WORKTREE_BASELINE_GATE` evidence showing it 
 
 If the change is frontend or user-facing, `user-journey-qa` must also have returned PASS or have an explicit user waiver before finalization proceeds.
 
+When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
+
+- `human-only`: create/update a draft PR or preserve an existing non-draft PR, but do not mark ready, merge, or enable auto-merge.
+- `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer GitHub auto-merge over direct immediate merge.
+- Missing policy defaults to `human-only`.
+
 ## Flow
 
 ```
-[conditional post-mortem gate] → describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues → verification gate
+[conditional post-mortem gate] → describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues → verification gate → repo-policy final action
 ```
+
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step. Use the exact step names from this skill and include conditional or optional steps.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
+```
+
+Rules:
+
+- Initialize every known step as `pending`; conditional steps remain `pending` until their trigger is evaluated.
+- As each step finishes or is skipped, update the ledger with the new status and evidence or reason.
+- A step may be `skipped` only when this skill explicitly makes it optional/conditional or a routing decision stops the workflow; record the exact reason.
+- Do not mark required gates as skipped. If a required gate cannot run, mark it `blocked` or `failed` and halt according to this workflow.
+- At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
+- The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
+
 
 ### Step 0.5: Conditional Post-mortem Gate
 
-- Required before `describe-pr` for audit-loop work, multi-phase execution, significant drift, or `NEW-NN` findings.
-- The post-mortem output is consumed by `describe-pr`, so do not generate the PR body first for audit-loop or multi-phase work.
+- Required before `describe-pr` for design-plan/execute-phase work, audit-derived refactors, multi-phase execution, significant drift, or `NEW-NN` findings.
+- The post-mortem output is consumed by `describe-pr`, so do not generate the PR body first for design-plan, audit-derived, or multi-phase work.
 - Skip only for routine single-issue work with no meaningful drift, and record `not_applicable_with_reason` in `WORKFLOW_FINALIZE_GATE`.
 
 ### Step 1: Describe PR (describe-pr)
@@ -53,8 +80,8 @@ If the change is frontend or user-facing, `user-journey-qa` must also have retur
 
 - Push the branch to origin.
 - If a PR exists, update the body with the file from `describe-pr`.
-- If no PR exists, create one as draft with `gh pr create --draft --body-file <pr-body-path>`.
-- If an existing PR is not draft, continue but do not mark it ready or enable auto-merge automatically.
+- If no PR exists, create one as draft with `gh pr create --draft --body-file <pr-body-path>`. `auto-merge-eligible` PRs are still created as draft until verification, review-comment resolution, CI, and issue reconciliation pass.
+- If an existing PR is not draft, continue but do not mark it ready or enable auto-merge until Step 8.
 - Record PR number and URL before proceeding. Do not run `receive-review` until a PR exists.
 
 ### Step 2: Resolve PR Reviewer Comments (receive-review)
@@ -96,7 +123,7 @@ This gate applies to bot and human review comments. A green CI run does not over
 
 ### Step 6: Verify before handoff
 
-Before declaring the PR ready for human review/merge, run a verification gate:
+Before declaring the PR ready for final action, run a verification gate:
 
 1. **Run repo verification commands** — execute the project's test/build/lint suite one final time against the PR branch. Check `package.json` scripts, `Makefile` targets, or CI workflow definitions for the canonical commands.
 2. **Confirm verification passes** — do not claim "tests pass" without running them. If any command fails, halt and fix before proceeding.
@@ -114,18 +141,31 @@ If the PR has been open >24 hours or has accumulated >5 review comments:
 - Use the Cursor `babysit` skill pattern: triage all unresolved comments, sync with base branch if conflicts exist, and fix any new CI issues from the sync
 - This step is skipped for fresh PRs that go straight through
 
+### Step 8: Final PR Action (repo-policy-controlled)
+
+After all previous gates pass:
+
+- `human-only` or missing policy: leave the PR in draft mode unless the user explicitly asks to mark it ready for review. Do not merge or enable auto-merge.
+- `auto-merge-eligible`: mark the PR ready and enable GitHub auto-merge. Use the repo's configured merge method. If auto-merge cannot be enabled because branch protection, permissions, required checks, or merge queue configuration block it, halt with auto-handoff instead of direct-merging.
+- Direct immediate merge is allowed only when the repo requires it and the user explicitly requested direct merge for this run.
+- Record the action in `WORKFLOW_FINALIZE_GATE.merge_or_ready_action_taken`.
+
 ## Completion
 
 When all steps pass:
 
-- Leave the PR in draft mode unless the user explicitly asks to mark it ready for review
-- Do **not** enable auto-merge
+- Leave or advance the PR according to `REPO_DELIVERY_POLICY`
 - Report final status to user with **evidence** (test output, CI link, verification command results, comment-resolution summary)
 - Include the required `WORKFLOW_FINALIZE_GATE` block in the final response and any handoff artifact
 - When invoked by `run-backlog`, `workflow-autonomous-backlog`, Codex, or any AFK worker, always write a per-issue handoff artifact even when no follow-up work remains. Include PR URL, all gate blocks, verification evidence, review-comment resolution, CI status, issue reconciliation, and residual risks.
+- Enforce the Partial-Completion Contract before exit:
+  - Complete: all changes committed and pushed to the remote branch.
+  - WIP-paused: current progress committed with a `wip:` prefix in the subject line, naming exactly what remains, then pushed.
+  - Rolled back: `git reset --hard <baseline>` leaves the worktree clean.
+- Run `git status --short` before exit. If any source file shows `M` or `??`, the contract is not satisfied; commit or reset and re-check before reporting completion or handoff.
 - If follow-up work was discovered (NEW-NN findings, post-mortem action items, reconciliation drift): **auto-handoff** (exit_reason: completion with follow-ups, remaining: the follow-up items with prompt-builder outputs)
 - If no remaining work and this was not an AFK/backlog/Codex run: skip handoff
-- After human merge or explicit abandonment, use `cleanup-delivery` to remove stale local worktrees/branches and reconcile ticket residue. Do not run cleanup before the human merge/abandonment decision.
+- After merge or explicit abandonment, use `cleanup-delivery` to remove stale local worktrees/branches and reconcile ticket residue. Do not run cleanup before the merge/abandonment decision.
 
 ## Required Gate Block
 
@@ -137,13 +177,16 @@ WORKFLOW_FINALIZE_GATE:
   workflow_review_gate: APPROVE
   post_mortem: completed|not_applicable_with_reason
   describe_pr: body_file=<docs/executions/.pr-bodies/...>; mode=plan_backed|phase_run_backed|issue_only; issues=<refs|none>; phase_evidence=matched|not_applicable|waived
-  pr_state: draft|existing_non_draft_not_modified
+  repo_delivery_policy: human-only|auto-merge-eligible
+  pr_state: draft|existing_non_draft_not_modified|ready_auto_merge_enabled
   pr_number: <number>
   review_comments: all_resolved|human_waived
   ci: green
   issue_reconciliation: complete
   verification: passed
-  merge_or_ready_action_taken: false
+  partial_completion: complete_pushed|wip_pushed|rolled_back
+  final_git_status_short: clean
+  merge_or_ready_action_taken: false|marked_ready_and_auto_merge_enabled|direct_merge_user_requested
 ```
 
 If this block is absent or incomplete, parent workflows must treat `workflow-finalize` as not run. `required_but_missing` is a halt state, never a completion value. A PR body, green CI, resolved comments, or a draft PR URL alone is not a valid finalization.
@@ -153,12 +196,12 @@ If this block is absent or incomplete, parent workflows must treat `workflow-fin
 ## Contract
 
 Consumes: approved review verdict, committed code on branch, issue references, PR reviewer comments
-Produces: draft PR ready for human review/merge, reconciliation report
-Requires: gh, git, subagent-dispatch, project-test-runner
-Side effects: creates/updates draft PR, pushes commits (review/CI fixes), posts comments
-Human gates: missing workflow-review dispatch evidence; missing/failed user-journey QA for frontend or user-facing changes unless waived; unresolved reviewer comments; CI exhaustion halts for diagnose; post-mortem presented for review
+Produces: PR ready for human review/merge or auto-merge according to repo delivery policy, reconciliation report
+Requires: gh, git
+Side effects: creates/updates PR, pushes commits (review/CI fixes), posts comments, may mark ready and enable GitHub auto-merge when repo policy allows
+Human gates: missing workflow-review dispatch evidence; missing/failed user-journey QA for frontend or user-facing changes unless waived; unresolved reviewer comments; CI exhaustion halts for diagnose; post-mortem presented for review; auto-merge setup failure on auto-merge-eligible repos
 
 ## Context
 
-Typical workflows: workflow-build-one (final step), workflow-debug (final step), workflow-autonomous-backlog (per-issue draft PR handoff)
+Typical workflows: workflow-build-one (final step), workflow-debug (final step), workflow-autonomous-backlog (per-issue repo-policy-controlled PR handoff)
 Pairs well with: workflow-review (precondition), describe-pr, receive-review, watch-ci, reconcile-issues, cleanup-delivery, post-mortem, handoff (auto-invoked at halt or completion-with-follow-ups), split-to-prs (Cursor built-in, for large diffs), babysit (Cursor built-in, for long-lived PRs), run-backlog

@@ -1,6 +1,6 @@
 ---
 name: workflow-autonomous-backlog
-description: Orchestrates autonomous module discovery into PRDs/issues and AFK backlog execution with outage controls. Use when the user wants agents to find module opportunities, create PRDs/issues, or run a ready-for-agent backlog unattended without auto-merging or bypassing delivery gates.
+description: Orchestrates autonomous module discovery into PRDs/issues and AFK backlog execution with outage controls. Use when the user wants agents to find module opportunities, create PRDs/issues, or run a ready-for-agent backlog unattended without bypassing delivery gates.
 ---
 
 # Workflow Autonomous Backlog
@@ -10,7 +10,7 @@ description: Orchestrates autonomous module discovery into PRDs/issues and AFK b
 Run the full autonomous loop:
 
 ```text
-module discovery -> module grilling -> decision log -> PRD/issues -> triage -> AFK execution -> draft PR handoff
+module discovery -> module grilling -> decision log -> PRD/issues -> triage -> AFK execution -> repo-policy-controlled PR handoff
 ```
 
 This workflow coordinates existing skills. It does not replace their gates.
@@ -18,10 +18,10 @@ This workflow coordinates existing skills. It does not replace their gates.
 ## Contract
 
 Consumes: repo state, module discovery brief or backlog request, decision log, GitHub Issues, existing PRDs/issues
-Produces: module PRDs, implementation issues, AFK backlog run handoff, draft PRs ready for human review
+Produces: module PRDs, implementation issues, AFK backlog run handoff, PRs handled according to repo delivery policy
 Requires: gh, git, omc, subagent-dispatch, project-test-runner
 Side effects: creates GitHub issues, dispatches implementation work, creates branches/PRs through child workflows, writes handoff artifacts
-Human gates: module design summary approval; AFK queue approval unless explicitly requested unattended; high-risk outage categories halt; final release remains human-only
+Human gates: module design summary approval; AFK queue approval unless explicitly requested unattended; high-risk outage categories halt; final release remains human-only only for repos classified `human-only` by `run-backlog/references/repo-delivery-policy.md`
 
 ## Flow
 
@@ -157,7 +157,7 @@ Required summary fields:
 
 ### 5. Prepare AFK queue
 
-Invoke `run-backlog` only after loading `run-backlog/references/outage-risk-policy.md`.
+Invoke `run-backlog` only after loading `run-backlog/references/outage-risk-policy.md` and `run-backlog/references/repo-delivery-policy.md`.
 
 The queue must exclude:
 
@@ -168,6 +168,11 @@ The queue must exclude:
 - dependency-conflicting issues in the same wave
 
 AFK approval is valid only when the user explicitly requested unattended backlog execution in the current invocation. Otherwise present the queue and halt.
+
+The run must record `REPO_DELIVERY_POLICY` before dispatch:
+
+- `human-only`: final output is draft PR handoff or existing non-draft PR preservation; never mark ready, merge, or enable auto-merge.
+- `auto-merge-eligible`: after all required gates pass, `run-backlog` may mark PRs ready and enable GitHub auto-merge.
 
 ### 6. Execute backlog
 
@@ -186,7 +191,7 @@ Dependent issues may continue before the parent PR is merged only through a cont
   `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
 - The stack handoff records merge order and retargeting instructions after the parent lands.
 
-If any parent gate is missing, stale, or not clean, the dependent issue remains `blocked` or `needs-human`. Stacked development does not permit marking PRs ready, approving, merging, enabling auto-merge, force-pushing, rebasing, or using destructive git.
+If any parent gate is missing, stale, or not clean, the dependent issue remains `blocked` or `needs-human`. Stacked development follows `REPO_DELIVERY_POLICY`: `human-only` stacks do not permit marking PRs ready, approving, merging, enabling auto-merge, force-pushing, rebasing, or using destructive git; `auto-merge-eligible` stacks may mark ready and enable GitHub auto-merge only after gates pass and the child PR targets the parent branch.
 
 No issue can enter finalization until `workflow-review` emits `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`. No issue can be marked successful until `workflow-finalize` emits a complete `WORKFLOW_FINALIZE_GATE`.
 
@@ -197,7 +202,7 @@ Required gates per PR:
 - `user-journey-qa` when triggered
 - `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`
 - `WORKFLOW_FINALIZE_GATE`
-- draft PR handoff (`pr_state: draft` or `existing_non_draft_not_modified` in the finalization gate)
+- repo-policy-controlled PR handoff (`pr_state: draft`, `existing_non_draft_not_modified`, or `ready_auto_merge_enabled` in the finalization gate)
 
 Missing gate evidence marks the item `needs-human`; it is not a successful AFK item.
 
@@ -210,19 +215,19 @@ At completion, write a handoff with:
 - PRDs/issues created
 - AFK queue and explicit approval evidence
 - per-issue status
-- draft PR links
+- PR links and repo delivery policy outcome
 - all gate blocks or missing-gate blockers
 - failed/retryable prompts
-- human release decisions still required
+- human release decisions still required for `human-only`, blocked, or failed items
 
-Never mark ready, approve, merge, enable auto-merge, force-push, rebase, or perform destructive git from this workflow.
+Never approve, force-push, rebase, or perform destructive git from this workflow. Mark ready and enable GitHub auto-merge only when `run-backlog` resolved `REPO_DELIVERY_POLICY.mode: auto-merge-eligible` and all required gates passed.
 
 ## Completion Criteria
 
 This workflow completes only when:
 
 - every created issue is triaged
-- every dispatched issue has a terminal status: draft PR handoff, `needs-human`, `blocked`, or failed with handoff
+- every dispatched issue has a terminal status: repo-policy-controlled PR handoff, `needs-human`, `blocked`, or failed with handoff
 - `run-backlog` reconciliation has run
 - no issue is marked `done` without merged PR plus all required gate evidence
 
