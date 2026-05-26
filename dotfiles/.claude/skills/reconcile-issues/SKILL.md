@@ -39,7 +39,18 @@ The trigger is repo-agnostic — no hardcoded list of repos, no per-repo opt-in.
 For the merged PR:
 
 1. Fetch the PR body: `gh pr view <N> --json body -q .body`
-2. Parse closing-keyword references with regex `(?i)(closes|fixes|resolves) #(\d+)` — case-insensitive, multi-ref aware, **PR body only** (not commit messages, not linked-via-UI). `Addresses`, `Refs`, and `See` are intentionally non-closing per GitHub semantics and are not parsed.
+2. **Parse closing references** — match GitHub's native auto-close grammar: case-insensitive, multi-ref aware, **PR body only** (not commit messages, not linked-via-UI). For each closing-keyword anchor (`closes`, `fixes`, `resolves`), capture every `#<digits>` token that follows in a comma- and/or-`and`-separated list until the next non-issue-ref token. `Addresses`, `Refs`, and `See` are intentionally non-closing per GitHub semantics and are not parsed.
+
+   Forms the parser must handle:
+
+   - Single-keyword form: `Closes #99` → matches `#99`
+   - Multi-issue comma form: `Closes #46, #48` → matches `#46` and `#48`
+   - Multi-issue "and" form: `Closes #46 and #48` → matches `#46` and `#48`
+   - Multi-issue mixed-conjunction form: `Closes #46, #48, and #50` → matches `#46`, `#48`, and `#50`
+   - Mixed-keyword form: `closes #46 Fixes #48` → matches `#46` under `closes`, `#48` under `Fixes`
+   - Non-closing form: `Refs #99` / `Addresses #99` / `See #99` → no match
+
+   **Implementation note**: a naive single regex of the form `(?i)(closes|fixes|resolves) #(\d+)` matches only the first `#N` after each keyword and is insufficient. Executors must either (a) extend the regex to capture trailing `(?:\s*(?:,|\band\b)\s*#(\d+))*` clauses, or (b) implement a two-pass parse — find keyword anchors, then for each anchor consume the comma- and `and`-separated `#N` list that follows. Both yield the same set of issue numbers.
 3. For each unique referenced issue:
    - Fetch state: `gh issue view <N> --json state -q .state`
    - If state is `CLOSED` → skip the close call, emit log line with `action=skipped reason=already-closed`
@@ -47,7 +58,7 @@ For the merged PR:
      - `gh issue close <N> --reason completed --comment "<comment-template>"` (template below)
      - `gh issue edit <N> --remove-label ready-for-agent` (ignore failure if the label is absent)
      - Emit log line with `action=closed`
-4. Honor `RECONCILE_DRY_RUN=1` — print the intended `gh issue close`/`edit` invocations to stdout, do not execute, emit log line with `action=dry-run`.
+4. Honor `RECONCILE_DRY_RUN=1` — print the intended `gh issue close`/`gh issue edit` invocations to stdout in the `DRY-RUN: <command>` format shown in Example 4 below, do not execute the mutating calls, **and** emit one structured log line per referenced issue with `action=dry-run reason=dry-run-mode`. The stdout print and the structured log line are both emitted in dry-run mode.
 5. **Approval-bypass scope**: this trigger is the only path in this skill that closes issues without human approval. All other close paths (drift checks 1-9 in the process below) remain approval-gated per `### 4. Take action (with gates)`.
 6. **gh-account-flip retry**: when running across personal and work GitHub accounts on the same host, `gh` occasionally resolves to the wrong account and fails with `Could not resolve to a Repository`. On any error matching that string, run `gh auth switch --user johnalexwelch` once, then retry the failed call with an explicit `--repo <owner>/<repo>` flag. If retry still fails, emit log line with `action=skipped reason=gh-auth-error` and continue to the next referenced issue.
 
@@ -55,8 +66,8 @@ For the merged PR:
 
 The comment posted on each auto-closed issue must use this template verbatim. Do not improvise wording — every auto-closed issue should be auditably uniform.
 
-```
-This issue was referenced by PR #<N> (squash SHA <sha7>) which merged into
+```text
+This issue was referenced by PR #<N> (merge SHA <sha7>) which merged into
 `<baseRefName>`. GitHub's native auto-close (Closes/Fixes/Resolves keywords)
 only fires for merges into the default branch (`<defaultBranch>`), so this
 issue did not close automatically.
@@ -64,12 +75,14 @@ issue did not close automatically.
 Closed by reconcile-issues (workflow-finalize Step 4) as a fallback.
 ```
 
-Substitutions:
+Substitutions (executors MUST validate each value against the expected character class before interpolating into the template; reject and skip with `reason=invalid-substitution` on mismatch):
 
-- `<N>` — the merged PR number
-- `<sha7>` — first 7 chars of the squash-merge commit SHA (`gh pr view <N> --json mergeCommit -q .mergeCommit.oid | cut -c1-7`)
-- `<baseRefName>` — the PR's base ref (e.g. `staging`)
-- `<defaultBranch>` — the repo's default branch (e.g. `main`)
+- `<N>` — the merged PR number, integer (`[0-9]+`)
+- `<sha7>` — first 7 chars of the merge commit SHA, regardless of merge strategy (`gh pr view <N> --json mergeCommit -q .mergeCommit.oid | cut -c1-7`); expected hex (`[0-9a-f]{7}`). If `mergeCommit.oid` is null (rare immediate-post-merge race), skip the issue with `reason=merge-sha-unavailable`.
+- `<baseRefName>` — the PR's base ref (e.g. `staging`); expected refname (`[A-Za-z0-9/_.-]+`)
+- `<defaultBranch>` — the repo's default branch (e.g. `main`); expected refname (`[A-Za-z0-9/_.-]+`)
+
+The template wording uses "merge SHA" rather than "squash SHA" so the comment remains accurate across squash-merge, merge-commit, and rebase strategies. Repos that strictly squash-merge see no functional difference.
 
 ### Structured log format (locked)
 
@@ -79,12 +92,20 @@ Emit exactly one line per referenced issue, regardless of outcome. The format is
 [reconcile-staging] issue=#<N> action=<closed|skipped|dry-run> pr=#<M> sha=<sha7> reason=<short-reason>
 ```
 
-`reason` should be one short hyphen-cased token:
+`reason` is one short hyphen-cased token from this fixed enum. New reasons require a spec edit, not an executor improvisation.
 
 - `auto-close-didnt-fire` — for `action=closed`
 - `already-closed` — for `action=skipped` when the issue was already `CLOSED`
-- `gh-auth-error` — for `action=skipped` when both auth-flip retries failed
+- `gh-auth-error` — for `action=skipped` when the auth-flip retry also failed
+- `issue-not-found` — for `action=skipped` when `gh issue view` returns 404 (issue deleted or never existed)
+- `label-remove-failed` — for `action=skipped` on `gh issue edit --remove-label` failures that are NOT "label absent" (the absent case is silent on the edit call but emits a normal `action=closed` line; this token captures rate-limit / permission / API errors only)
+- `merge-sha-unavailable` — for `action=skipped` when `mergeCommit.oid` is null
+- `invalid-substitution` — for `action=skipped` when any substitution value fails its character-class validation
 - `dry-run-mode` — for `action=dry-run`
+
+When the PR body contains no closing-keyword refs at all, the fallback emits **no log lines** — silent inactivity is the correct signal when there is nothing to reconcile. (To audit "the fallback ran but found nothing", consult the parent `workflow-finalize` Step 4 invocation log, not this skill's structured-log output.)
+
+Issues referenced by a PR are processed **sequentially in regex-match order**. A failure on one issue does not abort processing of the remaining issues; each issue gets its own independent log line.
 
 ### Golden examples
 
@@ -198,6 +219,45 @@ DRY-RUN: gh issue edit 99 --remove-label ready-for-agent
 - Case-insensitive regex matches both `closes` and `Fixes` keywords
 - Two independent sequences (close + remove-label) — one per issue
 - Two log lines, one per issue
+
+#### Example 7 — gh-account-flip retry exhausted → skip with `gh-auth-error`
+
+**Input**
+
+- PR #100 merged
+- `baseRefName`: `staging`
+- Body: `Closes #99`
+- Issue #99 state: `OPEN`
+- First `gh issue close 99 ...` call fails with `Could not resolve to a Repository`
+- After `gh auth switch --user johnalexwelch`, the retry call with `--repo johnalexwelch/dotdev` also fails with `Could not resolve to a Repository`
+
+**Expected behavior**
+
+- No final `gh issue close` mutation (both attempts errored)
+- No `gh issue edit --remove-label` (skipped because the close itself failed)
+- Continue to the next referenced issue if any
+
+**Expected log**
+
+```text
+[reconcile-staging] issue=#99 action=skipped pr=#100 sha=abc1234 reason=gh-auth-error
+```
+
+#### Example 8 — non-closing refs only → no-op (no log lines)
+
+**Input**
+
+- PR #100 merged
+- `baseRefName`: `staging`
+- Body: `Refs #99 and Addresses #100. See also #101.`
+- Issues #99, #100, #101 all `OPEN`
+
+**Expected behavior**
+
+- Regex matches zero closing-keyword anchors (`Refs`, `Addresses`, `See` are explicitly non-closing per GitHub semantics)
+- No `gh issue close`, no `gh issue edit`
+- **No log lines emitted** by this fallback (silent inactivity is the correct signal when there is nothing to reconcile; cf. the reason-enum note above)
+- GitHub's own auto-close also leaves all three issues open — this fallback matches that behavior intentionally
 
 ## Process
 
