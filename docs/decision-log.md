@@ -26,7 +26,7 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Date**: 2026-05-26
 **Context**: PRD #52 — `reconcile-issues` non-default-branch close fallback; grill phase of workflow-feature run for #53
 **Question**: The `reconcile-issues` skill currently lists "Closing issues" as `Requires approval`. Should the new staging-target fallback bypass that approval gate, or should it still prompt y/n inside `workflow-finalize`?
-**Decision**: Bypass the approval gate, but only for this specific narrow trigger: `pr.merged == true AND pr.baseRefName != defaultBranchRef.name AND issue is referenced by Closes/Fixes/Resolves in PR body AND issue is OPEN`. All other close paths in the skill (drift checks 1-9, partial-completion drift, duplicate/superseded) remain approval-gated.
+**Decision**: Bypass the approval gate, but only for this specific narrow trigger: `pr.merged == true AND pr.baseRefName != defaultBranchRef.name AND issue is referenced by Closes/Fixes/Resolves in PR body AND issue is OPEN`. All other close paths in the skill (every entry in the drift-detection table, partial-completion drift, duplicate/superseded) remain approval-gated.
 **Alternatives considered**:
 
 - *Keep approval gate, just prompt automatically* — Doesn't eliminate drift. Humans miss prompts, run AFK, same outcome as the current manual-close pattern.

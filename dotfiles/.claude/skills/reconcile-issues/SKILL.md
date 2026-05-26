@@ -53,13 +53,14 @@ For the merged PR:
    **Implementation note**: a naive single regex of the form `(?i)(closes|fixes|resolves) #(\d+)` matches only the first `#N` after each keyword and is insufficient. Executors must either (a) extend the regex to capture trailing `(?:\s*(?:,|\band\b)\s*#(\d+))*` clauses, or (b) implement a two-pass parse — find keyword anchors, then for each anchor consume the comma- and `and`-separated `#N` list that follows. Both yield the same set of issue numbers.
 3. For each unique referenced issue:
    - Fetch state: `gh issue view <N> --json state -q .state`
-   - If state is `CLOSED` → skip the close call, emit log line with `action=skipped reason=already-closed`
+   - If the call returns 404 (issue does not exist or was deleted) → skip and emit log line with `action=skipped reason=issue-not-found`
+   - Else if state is `CLOSED` → skip the close call, emit log line with `action=skipped reason=already-closed`
    - Otherwise:
      - `gh issue close <N> --reason completed --comment "<comment-template>"` (template below)
-     - `gh issue edit <N> --remove-label ready-for-agent` (ignore failure if the label is absent)
+     - `gh issue edit <N> --remove-label ready-for-agent` (ignore failure when the label is absent; emit `action=skipped reason=label-remove-failed` for any other failure mode, but still treat the issue as closed since the close call succeeded — the log line is informational about the edit failure only)
      - Emit log line with `action=closed`
 4. Honor `RECONCILE_DRY_RUN=1` — print the intended `gh issue close`/`gh issue edit` invocations to stdout in the `DRY-RUN: <command>` format shown in Example 4 below, do not execute the mutating calls, **and** emit one structured log line per referenced issue with `action=dry-run reason=dry-run-mode`. The stdout print and the structured log line are both emitted in dry-run mode.
-5. **Approval-bypass scope**: this trigger is the only path in this skill that closes issues without human approval. All other close paths (drift checks 1-9 in the process below) remain approval-gated per `### 4. Take action (with gates)`.
+5. **Approval-bypass scope**: this trigger is the only path in this skill that closes issues without human approval. All other close paths in the drift-detection table below remain approval-gated per `### 4. Take action (with gates)`.
 6. **gh-account-flip retry**: when running across personal and work GitHub accounts on the same host, `gh` occasionally resolves to the wrong account and fails with `Could not resolve to a Repository`. On any error matching that string, run `gh auth switch --user johnalexwelch` once, then retry the failed call with an explicit `--repo <owner>/<repo>` flag. If retry still fails, emit log line with `action=skipped reason=gh-auth-error` and continue to the next referenced issue.
 
 ### Comment template (locked)
@@ -315,9 +316,9 @@ Output a structured markdown artifact:
 
 **Requires approval:**
 
-- Closing issues
+- Closing issues *(except via the non-default-branch close fallback documented in `## Non-default-branch close fallback` above, which auto-acts on a narrow trigger without approval)*
 - Creating follow-up issues
-- Removing `ready-for-agent` label
+- Removing `ready-for-agent` label *(except via the non-default-branch close fallback above, which auto-removes this label as part of its bookkeeping)*
 
 ## Constraints (what this skill does NOT do)
 
