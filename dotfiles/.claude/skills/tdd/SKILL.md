@@ -7,9 +7,13 @@ description: Test-driven development with red-green-refactor loop. Use when user
 
 Consumes: behavior specification (user-confirmed interface + behaviors), codebase
 Produces: tests and implementation code (red-green-refactor cycles)
-Requires: project test runner
+Requires: project-test-runner
 Side effects: creates/modifies source and test files
 Human gates: planning phase (interface and behavior confirmation before any code)
+
+Runtime note: a project test runner or executable verification harness is required to execute the red-green loop and is discovered from repo files or CI workflows. If none exists, halt before implementation.
+
+For AFK or workflow-driven usage, the planning gate is satisfied only when the issue acceptance criteria or diagnosis artifact explicitly name the public interface and behaviors to test. Otherwise halt for human clarification before writing tests or code.
 
 ## Context
 

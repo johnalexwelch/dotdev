@@ -1,0 +1,107 @@
+council: worldbuilding-council
+
+required:
+  - cartographer
+  - anthropologist
+  - historian
+  - political-scientist
+
+optional:
+  - economist
+  - ecologist
+  - linguist
+  - theologian
+  - military-strategist
+
+limits:
+  min_experts: 3
+  max_experts: 9
+
+round_1_dispatch: waves
+
+waves:
+  - name: A
+    description: "Foundational layers — terrain, biology, culture, economy. No dependencies."
+    members: [cartographer, ecologist, anthropologist, economist]
+  - name: B
+    description: "Historical and linguistic layers — depend on terrain + culture + economy."
+    members: [historian, linguist]
+  - name: C
+    description: "Religion and politics — depend on history, culture, economy."
+    members: [theologian, political-scientist]
+  - name: D
+    description: "Military — depends on politics + economy + terrain + history."
+    members: [military-strategist]
+
+post_process:
+  humanizer: false        # preserve persona voice; fiction is not analysis
+  domain_cleaner: null    # no slop-cleaning of expert reads
+
+recommend_round_3: true
+
+overlays:
+  cartographer: |
+    Stress-test travel times against the work's stated pace.
+    Flag rivers that don't drain, cities far from water, capitals
+    in indefensible terrain, and trade routes without chokepoints.
+
+  ecologist: |
+    Treat fantastic creatures with respect — they can exist if
+    they have an energy source. Flag forests with no rainfall,
+    apex predators with no prey base, and megafauna in territories
+    too small to feed them.
+
+  anthropologist: |
+    Surface kinship structures, status hierarchies, taboos, and
+    food / commensality. Flag monocultures and modern-Western
+    family assumptions imported into pre-modern or alien settings.
+
+  economist: |
+    Pre-industrial surplus is small. Flag standing armies too
+    large for the agricultural base, cities too large for the
+    surrounding farmland, trade volumes inconsistent with
+    described distance + chokepoint friction.
+
+  historian: |
+    Every present-tense institution has an origin event. Surface
+    schisms, successions, demographic shocks, and the boundary
+    between living memory and myth. Flag "time immemorial" as a
+    refusal to do the work.
+
+  linguist: |
+    Real conlangs have phoneme inventories and phonotactic rules.
+    Flag apostrophe-soup names, mixed-family phoneme inventories,
+    and single-language worlds without dialect or register.
+    Use web_fetch when researching real-language patterns.
+
+  theologian: |
+    Religions organize calendar, marriage, death, taboo, and
+    political legitimacy. Flag religions described as pure
+    aesthetics or pure cynicism. All real religions have internal
+    factions and regional variants.
+
+  political-scientist: |
+    Every ruler runs on a coalition. Flag lone-ruler tropes and
+    monolithic factions. Name the selectorate, the winning
+    coalition, the succession rule, and at least 2 internal
+    factions per polity.
+
+  military-strategist: |
+    Logistics decide more battles than valor. Flag forces
+    described without supply tails, terrain that doesn't favor
+    the stated doctrine, and magical forces unintegrated with
+    conventional doctrine.
+
+dispatch_signals:
+  # Keyword triggers for smart-picking optional personas in
+  # default mode. Orchestrator scans the user's invocation text.
+  ecologist:
+    keywords: [forest, ecosystem, predator, fauna, climate, biome, megafauna]
+  economist:
+    keywords: [trade, market, currency, economy, gold, taxes, tribute, merchants]
+  linguist:
+    keywords: [language, name, dialect, tongue, conlang, etymology]
+  theologian:
+    keywords: [god, religion, faith, priest, ritual, temple, sacred, heresy]
+  military-strategist:
+    keywords: [war, battle, army, siege, raid, soldiers, military, conflict]

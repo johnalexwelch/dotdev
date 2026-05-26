@@ -29,18 +29,29 @@ The skill auto-selects mode based on project state:
 - Relentless interviewing until all decision branches resolved
 - Good for: new features, architectural decisions, refactoring plans, system design
 
+### Autonomous module-grill drafting mode
+
+Used only when called by `workflow-autonomous-backlog`.
+
+- Produces recommended answers, uncertainty notes, and evidence references for a module candidate.
+- Uses full-mode question batches when `CONTEXT.md` exists or the module is architecturally significant.
+- May draft `CONTEXT.md` / ADR updates when terms or decisions crystallize.
+- Does not satisfy the normal human response gate by itself.
+- Does not approve PRD creation. Human approval remains required unless the same invocation explicitly pre-authorized low-risk autonomous module acceptance.
+- Feeds its output into `MODULE_GRILL_CONSENSUS`, where a critic subagent validates evidence quality.
+
 ## Contract
 
 Consumes: topic/plan/design to stress-test, CONTEXT.md, ADRs (docs/adr/)
-Produces: shared understanding, updated CONTEXT.md terms, new ADR files (when decisions crystallize)
-Requires: none
+Produces: shared understanding, decision-log entries for accepted grill answers, updated CONTEXT.md terms, new ADR files (when decisions crystallize)
+Requires: git
 Side effects: may update CONTEXT.md and create ADR files in docs/adr/
-Human gates: every question batch (groups of five) requires user response before continuing
+Human gates: every question batch (groups of five) requires user response before continuing; autonomous module-grill drafting mode may draft recommended answers but does not satisfy human approval for PRD creation
 
 ## Context
 
 Typical workflows: pre-planning (before /design-plan or /to-prd), domain modeling
-Pairs well with: design-plan, to-prd, improve-codebase-architecture
+Pairs well with: decision-log, design-plan, to-prd, improve-codebase-architecture
 
 <what-to-do>
 
@@ -52,7 +63,11 @@ Interview me relentlessly about every aspect of this plan until we reach a share
 
 **Full mode:** Ask the questions in groups of five, waiting for feedback on each question before continuing.
 
+**Autonomous module-grill drafting mode:** When invoked by `workflow-autonomous-backlog`, draft the question batch, recommended answers, uncertainty notes, and evidence references without treating the draft as user approval. The parent workflow must run critic consensus and still preserve human approval gates.
+
 If a question can be answered by exploring the codebase, explore the codebase instead.
+
+**Decision log requirement:** Use `decision-log` for every accepted recommendation or user-edited answer. A grill output is incomplete until accepted decisions are available in `docs/decision-log.md` or the repo's established equivalent. Each entry must include the question, decision, what else was considered, and tradeoffs accepted. Draft recommendations, rejected answers, and unresolved questions stay out of the log.
 
 Output should follow the below:
 Question

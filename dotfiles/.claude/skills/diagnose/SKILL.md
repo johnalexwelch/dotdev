@@ -7,9 +7,11 @@ description: Disciplined diagnosis loop for hard bugs and performance regression
 
 Consumes: bug report (user description or issue body), codebase access, CONTEXT.md, ADRs
 Produces: structured diagnosis artifact (markdown), routing recommendation
-Requires: git, project test runner
+Requires: git, project-test-runner-or-reproduction-harness
 Side effects: may create temporary debug instrumentation (tagged, cleaned in Phase 6)
-Human gates: Phase 3 hypothesis list presented before testing; Phase 6 cleanup confirmed
+Human gates: missing reproduction loop; production instrumentation or risky probes require approval; human domain input may re-rank Phase 3 hypotheses but does not block AFK progress
+
+Runtime note: the project test runner or equivalent reproduction harness is required for verification and is discovered from repo files, CI workflows, or the bug report.
 
 ## Context
 

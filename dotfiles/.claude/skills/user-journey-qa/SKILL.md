@@ -69,7 +69,7 @@ For each affected journey step:
 - Capture results (pass/fail per step)
 - On failure: capture screenshot, DOM state, console errors
 
-### 4. Report
+### 4. Report And Gate
 
 ```markdown
 ## User Journey QA Report
@@ -88,6 +88,8 @@ For each affected journey step:
 ### Verdict: PASS / FAIL / PARTIAL
 ```
 
+Calling workflows must treat `FAIL` or `PARTIAL` as blocking for user-facing changes unless the user explicitly waives the risk. A missing `docs/agents/user-journeys.md`, unavailable app URL, or unavailable Playwright MCP is also a human gate; do not silently skip QA for frontend/user-facing changes.
+
 ## Limitations
 
 - Cannot verify subjective UX quality (only functional correctness)
@@ -100,9 +102,9 @@ Consumes: issue/PRD/PR description, project user-journeys.md, running applicatio
 Produces: UX verification report with pass/fail per journey step, screenshots on failure
 Requires: playwright-mcp
 Side effects: none (read-only browser interaction against running app)
-Human gates: none (informational output only — does not block merge)
+Human gates: missing journey definitions, unavailable app URL, unavailable Playwright MCP, or FAIL/PARTIAL verdict blocks calling workflow until fixed or explicitly waived
 
 ## Context
 
-Typical workflows: workflow-build-one (optional gate), workflow-debug (after fix)
+Typical workflows: workflow-build-one (conditional blocking gate), workflow-debug (conditional blocking gate after fix)
 Pairs well with: execute-phase, workflow-review, workflow-finalize
