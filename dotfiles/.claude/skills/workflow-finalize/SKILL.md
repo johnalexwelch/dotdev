@@ -73,7 +73,7 @@ Rules:
 - Pass the resolved `branch`, `base`, discovered `pr_number` if one exists, and `apply=false` when no PR exists yet. If a PR already exists, either pass `apply=true` or apply the returned body file in Step 1.5.
 - The generated body must include issue awareness and a disposition table for all referenced issues when issues are discovered.
 - Record describe-pr evidence for the final gate: body file path, mode (`plan_backed`, `phase_run_backed`, or `issue_only`), issue refs discovered, phase evidence status, and deviation/new-finding counts when applicable.
-- If `describe-pr` halts because required phase evidence is missing for audit-loop or multi-phase work, halt finalization. Do not create a draft PR with a replacement body unless the user explicitly waives phase evidence.
+- If `describe-pr` halts because required phase evidence is missing for plan-backed or multi-phase work, halt finalization. Do not create a draft PR with a replacement body unless the user explicitly waives phase evidence.
 - For routine single-issue work with no design plan or phase-run files, `describe-pr` must run in issue-only mode using git log/diff plus issue discovery; absence of a design plan is not a reason to skip `describe-pr`.
 
 ### Step 1.5: Ensure Draft PR Exists

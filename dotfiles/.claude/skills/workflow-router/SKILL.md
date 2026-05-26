@@ -17,6 +17,17 @@ This skill is the **sole routing authority**. Per ADR-0002:
 - OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass this router's classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `workflow-review`, and `workflow-finalize`.
 - All other work goes through this router
 
+## Audit Loop Retirement Rule
+
+The old "Audit Loop" is not an execution route. If a prompt, transcript, repo doc, or agent memory says to run the Audit Loop, translate it into the workflow system:
+
+- Code review gate → `workflow-review`
+- Delivery closure, PR body, reviewer comments, CI, reconciliation, and final PR action → `workflow-finalize`
+- Broad repo evidence gathering → `repo-audit`, then route findings through `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan`
+- Multi-phase refactor execution → `design-plan` / `execute-phase`, then `workflow-review` and `workflow-finalize`
+
+Do not dispatch `/review`, `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
+
 ## Classification table
 
 | Signal | Classification | Routes to |
@@ -116,26 +127,6 @@ halt, report the missing requirement, and do not proceed.
 | Project test runner | Can't verify | Halt and request setup info |
 | Campaign docs | D&D canon-specific review unavailable | `dnd-grill` may run without docs; `dnd-grill-with-canon` must halt or explicitly switch to lightweight `dnd-grill` with the user's consent |
 | Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-beats need a file to work from |
-
-## Workflow Progress Reporting
-
-At the start of every run, display a step ledger before executing or dispatching any step. Use the exact step names from this skill and include conditional or optional steps.
-
-```markdown
-WORKFLOW_STEPS:
-| Step | Required? | Status | Evidence / Skip Reason |
-|------|-----------|--------|------------------------|
-| <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
-```
-
-Rules:
-
-- Initialize every known step as `pending`; conditional steps remain `pending` until their trigger is evaluated.
-- As each step finishes or is skipped, update the ledger with the new status and evidence or reason.
-- A step may be `skipped` only when this skill explicitly makes it optional/conditional or a routing decision stops the workflow; record the exact reason.
-- Do not mark required gates as skipped. If a required gate cannot run, mark it `blocked` or `failed` and halt according to this workflow.
-- At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
-- The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
 
 ## Process
 

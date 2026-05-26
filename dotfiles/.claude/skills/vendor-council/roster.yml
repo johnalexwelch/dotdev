@@ -1,0 +1,75 @@
+council: vendor-council
+
+required:
+  - economist
+  - decision-scientist
+  - governance-reviewer
+  - ops-analyst
+
+optional:
+  - skeptical-data-scientist
+  - counterfactual-check
+  - exec-audience-stand-in
+  - statistician
+
+limits:
+  min_experts: 3
+  max_experts: 6
+
+round_1_dispatch: parallel
+
+post_process:
+  humanizer: true
+  domain_cleaner: analysis-slop-cleaner
+
+recommend_round_3: false
+
+overlays:
+  economist: |
+    Compute total cost of ownership including switching cost,
+    integration cost, and the option value of NOT buying. Test
+    the vendor's pricing model against scale assumptions —
+    per-row, per-seat, per-query pricing behave very differently
+    at 10x growth.
+
+  decision-scientist: |
+    Vendor commitments are typically one-way doors. Force the
+    framing: what does choosing this vendor close off? What does
+    NOT choosing close off? What's the path to reverse the
+    decision if it goes wrong, and how expensive?
+
+  governance-reviewer: |
+    For ClassDojo: any vendor touching under-13 user data needs
+    COPPA-compliant DPA, named subprocessor list, deletion
+    workflow, parental-consent flow integration. Flag vendors
+    whose contract language is silent on these.
+
+  ops-analyst: |
+    Who runs this vendor day-to-day? What's the on-call burden,
+    the SLA the vendor offers vs. what we need, the integration
+    maintenance cost? "Buy" doesn't mean "no ops cost" — name
+    the actual ongoing work.
+
+  skeptical-data-scientist: |
+    Stress-test any quantified claims the vendor makes about
+    their product — "30% lift," "5x faster," "99.9% uptime."
+    What's the denominator? What's their sample?
+
+  counterfactual-check: |
+    What's the explicit counterfactual? If we don't buy this:
+    (a) build internally, (b) pick the alternate vendor,
+    (c) stay status quo, (d) accept the gap. Each has costs.
+    The vendor decision should be the best of these, not the
+    only one considered.
+
+  exec-audience-stand-in: |
+    How will the board / ELT read this decision in 12 months?
+    What's the "we should have known" risk if the vendor fails?
+    What's the optics if a competitor uses the same vendor
+    and gets a better result?
+
+  statistician: |
+    For vendors making A/B-tested or experimental claims about
+    their product's impact, evaluate the rigor of their
+    evidence. Most vendor case studies are uncontrolled
+    selection.

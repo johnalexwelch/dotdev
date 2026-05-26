@@ -1,6 +1,6 @@
 ---
 name: post-mortem
-description: "After executing some or all of a design plan, produce a blameless retro that compares planned vs. actual, tracks which audit findings (FIND-NN) were addressed, captures new findings discovered during execution, and feeds forward into the next audit cycle. Closes the loop between /repo-audit and /design-plan. In the Audit Loop this skill is loaded by a dedicated post-mortem subagent (dispatched via `Agent` with `subagent_type: general-purpose` or `oh-my-claudecode:writer`) separate from the executor and reviewer subagents — the retro author should have no code-writing or approval bias from the phases under review."
+description: "After executing a design plan, multi-phase refactor, significant drift, or work that produced NEW-NN findings, write a blameless retro that compares planned vs. actual, tracks which FIND-NN/REQ-NN/ticket items were addressed, and feeds lessons back into roadmap, PRD, issue, or audit evidence. Use as a conditional retro gate in workflow-finalize, not as a separate default audit loop."
 triggers:
   - "post-mortem"
   - "retro the refactor"
@@ -34,6 +34,15 @@ writes:
   - (optional) annotations appended to the referenced audit marking FIND-NN as addressed
 ---
 
+## Deprecation Status
+
+Status: standalone use deprecated. This skill remains loadable only because `workflow-finalize conditional post-mortem gate` may invoke it as an implementation helper.
+
+- Workflow owner: `workflow-finalize conditional post-mortem gate`
+- Reason: Retro work is conditional, not a standalone default audit loop.
+- Date: 2026-05-21
+
+
 ## Contract
 
 Consumes: executed design plan (docs/plans/), phase-run outcome files (docs/executions/.phase-runs/), CI-run outcome files (docs/executions/.ci-runs/), git history, audit report
@@ -44,19 +53,20 @@ Human gates: none (audit annotation is opt-in, gated on user confirmation)
 
 ## Context
 
-Typical workflows: audit-loop (after /review, before /describe-pr)
-Pairs well with: execute-phase, describe-pr, repo-audit
+Typical workflows: conditional retro gate in `workflow-finalize` for design-plan, multi-phase, drift-heavy, or NEW-NN work
+Pairs well with: execute-phase, workflow-review, workflow-finalize, describe-pr, repo-audit
 
 # /post-mortem — Close the Loop
 
 ## Purpose
 
-The audit/plan pipeline is only a loop if someone writes down what
-actually happened. This skill compares the plan to the git history,
-tracks which `FIND-NN` findings were resolved, captures anything new
-that emerged during execution, and produces a post-mortem that seeds
-the next audit cycle. Blameless in tone — the goal is learning, not
-grading.
+The delivery pipeline only learns if someone writes down what actually
+happened when work was planned, phased, or drifted. This skill compares
+the plan or issue intent to git history, tracks which `FIND-NN`,
+`REQ-NN`, ticket, or phase items were resolved, captures anything new
+that emerged during execution, and produces a post-mortem that can feed
+roadmaps, PRDs, issues, or a future repo audit. Blameless in tone — the
+goal is learning, not grading.
 
 ## Step 0: Preflight
 
@@ -83,43 +93,9 @@ grading.
 
 ## Step 1: Gather execution evidence
 
-**Read `.phase-runs/` first.** If `docs/executions/.phase-runs/`
-exists, glob `*-phase-*.md` and read the outcome files whose
-`**Plan:**` header matches `plan_path`. These are richer signal than
-raw `git log` — they include commit-to-task mapping, pending-human
-items, scope-violation records, and `NEW-NN` candidates surfaced
-during execution. Fall back to `git log` alone only when `.phase-runs/`
-is absent or its records don't cover the commit range (e.g. the plan
-was executed manually without `/execute-phase`).
-
-**Then read `.ci-runs/` if present.** If `docs/executions/.ci-runs/`
-exists, glob `*-pr-*-attempt-*.md` and read any outcome files whose
-PR or branch references match this plan's phase branches. These
-record `/watch-ci`'s history: failed CI runs, classifier verdicts,
-auto-fix commits, no-progress halts, and self-review comments. Per
-`/watch-ci`'s Follow-ups block, these are an additional source of
-`NEW-NN` candidates (e.g. flaky tests surfaced during CI watching,
-deps that needed pinning, security findings deferred). Add them to
-§"New findings" with `Source:` cited as the relevant `.ci-runs/`
-attempt file.
-
-Collect the ground truth from git and the working tree:
-
-1. **Commits in range.** `git log --oneline <since>..HEAD` and note
-   the count. Also collect commit messages — they reveal intent drift.
-2. **Files changed.** `git diff --stat <since>..HEAD`. Note line
-   counts added/deleted. Compare to the plan's delete list.
-3. **Phase branches.** `git branch -a | grep -E '(refactor|fix|feat)/phase-'` and
-   `git log --oneline <since>..HEAD --grep="phase-"`. For each
-   phase branch that exists: merged? still open? deleted? Note which
-   prefix was used (`refactor/` for audit-mode, `fix/` or `feat/`
-   for brief-mode).
-4. **Test status now.** Run the test command. Note pass/fail, and
-   whether coverage is materially different from the audit's report.
-5. **Files deleted.** `git log --diff-filter=D --name-only
-   <since>..HEAD`. Compare to the plan's §8 Delete list.
-6. **CLAUDE.md and docs changes.** `git log --oneline <since>..HEAD
-   -- '*.md'`. Did documentation keep up?
+Load `references/evidence-checklist.md` and follow it exactly. It
+defines the `.phase-runs/` first, `.ci-runs/` second, git fallback,
+test status, deletion, and documentation evidence checklist.
 
 ## Step 2: Map plan → reality
 
@@ -151,83 +127,14 @@ load-bearing column.
 
 ## Step 3: Identify new findings
 
-Execution almost always surfaces things the audit missed. Look for:
-
-- Commits that mention "fix" or "workaround" without a phase tag —
-  often signal a rough patch that needs a follow-up.
-- Files added that aren't in the plan — undocumented scope expansion.
-- Tests added in one phase that reveal problems in another.
-- `TODO` / `HACK` / `FIXME` comments added during execution.
-- Comments in PR descriptions or commit messages naming concerns
-  ("punting on X for now," "found Y, not fixing here").
-- Rollbacks that happened — the phase succeeded on paper but had to
-  be reverted once, then redone.
-
-Each new finding gets a placeholder ID of the form `NEW-01`,
-`NEW-02`, ... These are intended to be promoted to full `FIND-NN`
-IDs the next time `/repo-audit` runs.
+Load `references/new-findings-rules.md`. Use it to detect and classify
+`NEW-NN` findings, including discoveries from phase-run and CI-run
+outcome files.
 
 ## Step 4: Draft the post-mortem
 
-Save to `docs/executions/<date>-post-mortem.md` using this structure:
-
-```
-# Post-Mortem — <repo or effort name>
-**Date:** <YYYY-MM-DD>
-**Plan:** <relative path to plan>
-**Audit:** <relative path to audit>
-**Git range:** <since_commit>..HEAD (<N> commits)
-**Scope:** complete | partial
-
-## Summary
-<One paragraph. What the plan set out to do, what actually got done,
-what didn't, and whether the overall state improved. Blameless tone.>
-
-## Findings addressed
-<Finding-by-finding table per Step 2. If the audit lacked IDs, replace
-with a phase-by-phase resolution summary.>
-
-## What went as planned
-<Phases completed on scope and intent. Brief — one bullet per phase.>
-
-## What drifted
-<Phases that deviated. For each:
-  - **Phase N — <name>**
-  - Planned: <one line>
-  - Actual: <one line>
-  - Why: <one line>
-  - Cost: <time, scope, rework — one line>
-Don't sanitize. Drift isn't failure — it's information.>
-
-## New findings (NEW-NN)
-<Things discovered during execution that the audit missed. For each:
-  - **NEW-NN — <title>**
-  - Source: <commit hash / file / conversation>
-  - Severity: critical | high | medium | low
-  - Impact: one sentence
-  - Recommendation: promote to FIND in next /repo-audit, fix inline,
-    defer.>
-
-## Outstanding work
-<Findings and tasks still open. Includes:
-  - FIND-NN not yet addressed (with a recommendation: re-plan,
-    deprioritize, or drop).
-  - Phases skipped or deferred.
-  - §9 Open questions from the plan that didn't get answered.>
-
-## What I'd change in the next plan
-<Concrete lessons about the plan itself. E.g.:
-  - "Pilot phase was too small — didn't surface FIND-04 until Phase 3."
-  - "Two phases should have been one — the split caused rework."
-  - "[human] markers were too conservative — most were fine to [auto]."
-Feeds the next /design-plan invocation.>
-
-## Recommendations for next audit
-<What to look for in the next /repo-audit cycle. Usually:
-  - Re-audit the areas where NEW-NN findings clustered.
-  - Run scoped audit on <path> if drift was concentrated there.
-  - Add a focus=<slug> if new findings suggest a weak area.>
-```
+Load `references/retro-output-template.md` and save to
+`docs/executions/<date>-post-mortem.md` using that structure.
 
 ## Step 5: (Optional) annotate the audit
 
@@ -316,6 +223,12 @@ Claude: [finds docs/plans/2026-04-20-design.md]
         Full report: docs/executions/2026-04-20-post-mortem.md
 ```
 
+## Output format
+
+The primary artifact is always the markdown report at `docs/executions/`. When running in Cursor IDE, also produce a **canvas** (`.canvas.tsx`) for the retro summary — the planned-vs-actual table, drift analysis, and NEW-NN findings render better as an interactive artifact. Use the Cursor `canvas` skill pattern: create a `canvases/<date>-post-mortem.canvas.tsx` with the structured retro data.
+
+Skip the canvas when running headless (Codex AFK, CI, non-IDE context).
+
 ## Tuning notes
 
 - Run `/post-mortem` with `scope=partial` after each major phase lands
@@ -327,22 +240,13 @@ Claude: [finds docs/plans/2026-04-20-design.md]
   Feed those into the next `/repo-audit` as a `focus=` hint.
 - Post-mortems should be short. If the file is >500 lines, the audit
   was too coarse or the plan was too ambitious. Fix upstream.
-- Pair with the full core loop: `/repo-audit` (optional —
-  brief-mode skips it) → `/design-plan` → `/execute-phase` →
-  `/review` → `/post-mortem` (this skill) → `/describe-pr` →
-  `/watch-ci` (post-PR-open) → human merge. The post-mortem runs
-  **before** `/describe-pr` so the PR body can cite `NEW-NN`
-  entries and drift analysis directly from the retro, and human
-  reviewers see the retro context before merging. Plus
-  `/setup-worktree` as an on-demand side-car. All seven skills
-  share ID vocabulary (`FIND-NN`, `REQ-NN`, `NEW-NN`, ticket slugs,
-  phase numbers) and directory conventions (`docs/audits/`,
-  `docs/plans/`, `docs/executions/` including the `.phase-runs/`
-  subdir written by `/execute-phase` and the `.ci-runs/` subdir
-  written by `/watch-ci`), and a blameless tone. This skill
-  consolidates new findings from two sources: `/execute-phase`'s
-  outcome-file `## Follow-ups` blocks (in-loop discoveries) and
-  `/watch-ci`'s `.ci-runs/` outcome files (post-PR discoveries —
-  flaky tests, deps that needed pinning, security findings
-  deferred). Both feed forward as `NEW-NN` entries recommended for
-  promotion to `FIND-NN` in the next `/repo-audit` cycle.
+- Pair with the current delivery workflow as a conditional retro gate:
+  - Routine issue work: usually skip, with `not_applicable_with_reason`
+    in `WORKFLOW_FINALIZE_GATE`.
+  - Multi-phase/refactor work: run before `describe-pr` so the PR body
+    can cite drift and `NEW-NN` entries.
+  - Audit-derived work: use the retro to feed follow-up roadmap, PRD,
+    issue, or future `repo-audit` evidence.
+  This skill consolidates new findings from `/execute-phase` outcome
+  files and `watch-ci` `.ci-runs/` outcome files, but it is no longer a
+  standalone audit-loop requirement for every delivery.

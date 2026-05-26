@@ -1,6 +1,6 @@
 ---
 name: describe-pr
-description: Generate a deviation-aware PR description for a branch produced by /execute-phase. Reads the design plan, the phase-run outcome files, the post-mortem (in the Audit Loop), and the commit history; dispatches a general-purpose subagent to compare planned vs. actual; produces a PR body that lists phases completed, cites FIND-NN / REQ-NN / NEW-NN / ticket slugs / phase numbers with commit hashes, and flags any drift from the plan. Works on solo-to-main workflows (returns body text) and team workflows (optionally applies via `gh pr edit`). Followed by /watch-ci which polls CI, applies bounded auto-fixes, and runs self-review post-PR-open.
+description: Generate the only valid PR description artifact for workflow-finalize. For plan/execute-phase branches, reads the design plan, phase-run outcomes, post-mortem, graphify evidence when available, and commit history, then dispatches a general-purpose subagent to compare planned vs. actual. For routine single-issue branches, runs in issue-only mode from git log/diff, issue discovery, and optional graphify evidence. Produces a PR body file plus a concrete describe_pr evidence line; hand-written PR bodies, GitHub defaults, copied issue text, or current-agent summaries do not satisfy finalization.
 triggers:
   - "/describe-pr"
   - "describe pr"
@@ -23,33 +23,44 @@ inputs:
   - name: apply
     type: boolean
     default: false
-    description: If true, apply the generated body to the PR via `gh pr edit <pr_number> --body-file <path>`. If false, return the body text and write it to docs/executions/ for review.
+    description: If true, apply the generated body to the PR via `gh pr edit <pr_number> --body-file <path>`. If false, return the body text and write it to docs/executions/.pr-bodies/ for review.
   - name: base
     type: string
     default: "main"
     description: Base branch for the PR (used for diff range and URL construction).
 reads:
+  - graphify-out/graph.json when present (queried for PR context; never rebuilt by this skill)
   - docs/plans/<date>-design.md (newest unless `plan_path` is set)
   - docs/executions/.phase-runs/<date>[-<plan-slug>]-phase-<N>.md (all phases whose branches contributed to this PR)
-  - docs/executions/<date>-post-mortem.md (the retro written by the post-mortem subagent; /describe-pr runs AFTER it in the Audit Loop and cites its `NEW-NN` + drift findings directly in the PR body)
+  - docs/executions/<date>-post-mortem.md (when required by `workflow-finalize`; cites `NEW-NN` and drift findings directly in the PR body)
   - git log, git diff, `gh pr view` (if gh CLI is available)
 writes:
   - docs/executions/.pr-bodies/<date>-pr-<N>.md (the generated body, for review or for `gh pr edit --body-file`)
+  - describe_pr evidence line for workflow-finalize
   - (optional, if `apply == true`) the PR body on GitHub via `gh pr edit`
 ---
 
+## Deprecation Status
+
+Status: standalone use deprecated. This skill remains loadable only because `workflow-finalize` may invoke it as an implementation helper.
+
+- Workflow owner: `workflow-finalize`
+- Reason: PR body generation is owned by workflow-finalize; this skill is an implementation helper only.
+- Date: 2026-05-21
+
+
 ## Contract
 
-Consumes: git log, git diff, design plan (docs/plans/), phase-run outcome files (docs/executions/.phase-runs/), post-mortem (docs/executions/), issue/ticket refs, GitHub issues (via `gh issue view`)
-Produces: PR body markdown file (docs/executions/.pr-bodies/), optionally applied to GitHub PR
+Consumes: git log, git diff, optional graphify-out/graph.json evidence, optional design plan (docs/plans/), optional phase-run outcome files (docs/executions/.phase-runs/), optional post-mortem (docs/executions/), issue/ticket refs, GitHub issues (via `gh issue view`)
+Produces: PR body markdown file (docs/executions/.pr-bodies/), concrete `describe_pr` evidence line for workflow-finalize, optionally applied to GitHub PR
 Requires: gh, git
 Side effects: creates/updates PR body on GitHub (when apply=true), writes body file to docs/executions/.pr-bodies/
 Human gates: none
 
 ## Context
 
-Typical workflows: audit-loop (after /post-mortem, before /watch-ci)
-Pairs well with: execute-phase, post-mortem, watch-ci, design-plan
+Typical workflows: workflow-finalize before draft PR creation; design-plan or audit-derived finalization after /post-mortem
+Pairs well with: execute-phase, post-mortem, workflow-finalize, design-plan
 
 # /describe-pr — Deviation-Aware PR Description
 
@@ -63,18 +74,49 @@ reads the plan, the phase-run outcome files, and the commits, then
 dispatches one `general-purpose` subagent to produce a deviation-aware
 PR body.
 
+For routine single-issue branches that have no design plan or phase-run
+outcomes, this skill still owns the PR body. Run in `issue_only` mode:
+use git log/diff, issue discovery, and the issue disposition rules, and
+mark phase/deviation sections as not applicable instead of inventing
+plan evidence.
+
+This skill is a finalization gate, not a writing convenience. A PR body is
+valid for `workflow-finalize` only when it was generated by this skill,
+written under `docs/executions/.pr-bodies/`, and surfaced with the
+`describe_pr` evidence line defined below. A hand-written PR body, GitHub
+default body, copied issue body, or current-agent summary is invalid even
+if the prose looks complete.
+
 Solo-to-main: returns body text, writes it to
 `docs/executions/.pr-bodies/` for review, does not touch any PR.
 Team flow: applies to the PR via `gh pr edit --body-file` when
 `apply == true`.
+
+## Required describe_pr Evidence
+
+Every successful run must emit one evidence line for `workflow-finalize`:
+
+```markdown
+describe_pr: body_file=<docs/executions/.pr-bodies/...>; mode=plan_backed|phase_run_backed|issue_only; issues=<refs|none>; phase_evidence=matched|not_applicable|waived; graphify=queried|not_available_with_reason|not_applicable; applied_to_pr=true|false
+```
+
+If this line is absent, incomplete, or refers to a PR body file not produced
+by this run, parent workflows must treat `describe-pr` as not run.
 
 ## Step 0: Preflight
 
 - Confirm a git repo.
 - Resolve `branch`: if empty, use `git rev-parse --abbrev-ref HEAD`.
   Abort if still empty.
-- Resolve `plan_path`: if empty, use the newest `docs/plans/*.md`.
-  Abort if no plan exists (nothing to compare against).
+- Resolve `plan_path`: if empty, use the newest `docs/plans/*.md` when
+  one exists. If no plan exists, continue in `issue_only` mode unless
+  the branch, commits, or caller indicate design-plan, audit-derived, multi-phase, or
+  `/execute-phase` work.
+- Classify mode:
+  - `plan_backed`: design plan exists and phase evidence is optional or not expected.
+  - `phase_run_backed`: design plan plus matching phase-run outcomes exist.
+  - `issue_only`: no design plan or phase-run outcomes are expected; routine single-issue finalization.
+  - `required_phase_evidence_missing`: plan-backed, multi-phase, or `/execute-phase` work lacks matching phase-run outcomes; halt unless the user explicitly waives phase evidence.
 - Resolve `pr_number`: if 0, try
   `gh pr view --json number -q .number 2>/dev/null`. If still 0,
   set `apply = false` (no PR to apply to) and proceed — the output
@@ -83,123 +125,57 @@ Team flow: applies to the PR via `gh pr edit --body-file` when
 - Compute the diff range:
   - If PR exists: use `gh pr view <pr_number> --json baseRefName -q .baseRefName` as base, `<branch>` as head.
   - Else: use `<base>` (default `main`) as base.
+- Check graph evidence without rebuilding:
+  - If `graphify-out/graph.json` exists at the repo root, run one focused
+    `graphify query` for PR context, e.g. "What architecture, workflow, or
+    cross-file context is relevant to summarizing branch `<branch>`?"
+  - Record the exact query and concise result as `graphify: queried`.
+  - If the graph does not exist, record `graphify: not_available_with_reason`
+    with the checked path.
+  - Do not run `/graphify`, `graphify extract`, or any expensive rebuild from
+    this skill. Rebuilds are explicit `/graphify` work.
 
 ## Step 1: Gather inputs
 
-1. **Plan sections.** Read the plan's `## §3 Goals`, `## §5 Execution plan`, and any phase-header Addresses entries. Build a map `phase_N → [FIND-NN, GAP-NN, ...]`.
-2. **Phase-run outcomes.** Glob `docs/executions/.phase-runs/*-phase-*.md` and filter to those whose `**Branch:**` header matches a branch that merged into this PR — trace via `git log --format=%H <base>..<branch> --grep "^phase-"` and `git branch --list '{refactor,fix,feat}/phase-*'` for stacked branches. For each matched outcome: read `## Commits`, `## Scope violations`, `## Follow-ups`, `## Chain state`.
+1. **Plan sections.** In `plan_backed` or `phase_run_backed` mode, read the plan's `## §3 Goals`, `## §5 Execution plan`, and any phase-header Addresses entries. Build a map `phase_N → [FIND-NN, GAP-NN, ...]`. In `issue_only` mode, record `plan: not_applicable`.
+2. **Phase-run outcomes.** Glob `docs/executions/.phase-runs/*-phase-*.md` and filter to those whose `**Branch:**` header matches a branch that merged into this PR — trace via `git log --format=%H <base>..<branch> --grep "^phase-"` and `git branch --list '{refactor,fix,feat}/phase-*'` for stacked branches. For each matched outcome: read `## Commits`, `## Scope violations`, `## Follow-ups`, `## Chain state`. In `issue_only` mode, record `phase_evidence: not_applicable`.
 3. **Commits.** `git log --oneline <base>..<branch>` and `git diff --stat <base>..<branch>`. Note which commits use the `phase-<N>: ...` schema and which don't.
-4. **Diff URLs.** Generate per-file GitHub diff anchors (inline, no external script):
-   - `git remote get-url origin` → parse `github.com:<owner>/<repo>.git` → `https://github.com/<owner>/<repo>`.
-   - For each changed file: `printf '%s' "<path>" | git hash-object --stdin` → use first 8 chars as the diff anchor.
-   - PR permalink per file: `https://github.com/<owner>/<repo>/pull/<pr_number>/files#diff-<anchor>`.
-   - If no PR: `https://github.com/<owner>/<repo>/compare/<base>...<branch>#diff-<anchor>`.
-5. **Ticket-reference detection (pluggable regex).** Scan commit messages and plan §5 Addresses for any of: `FIND-NN`, `REQ-NN`, `NEW-NN`, `GAP-NN`, `phase-N`, `[A-Z]+-\d+` (JIRA-style), `ENG-\d+`, `LL-\d+`, `#\d+` (GitHub issue/PR style). Collect unique references. Do not hardcode Linear-specific URL construction — link ticket refs only if the plan or a `.tickets.env` file declares a base URL.
-6. **Issue discovery.** Run the Issue Discovery pipeline (see § Issue Discovery) across all 7 sources. For each discovered issue, fetch title/state via `gh issue view`. Build the issue list that will feed into the disposition table in Step 3.
+4. **Graphify evidence.** Include the Step 0 graph evidence in the input
+   bundle. Use it as context only; it does not replace git diff, issue
+   discovery, plans, phase runs, or post-mortems.
+5. **Diff URLs.** Load `references/diff-url-guidance.md` and use it
+   to generate per-file GitHub diff anchors, or fall back to the
+   whole PR/compare URL when anchors are unavailable.
+6. **Ticket-reference detection (pluggable regex).** Scan commit messages and, when a plan exists, plan §5 Addresses for any of: `FIND-NN`, `REQ-NN`, `NEW-NN`, `GAP-NN`, `phase-N`, `[A-Z]+-\d+` (JIRA-style), `ENG-\d+`, `LL-\d+`, `#\d+` (GitHub issue/PR style). Collect unique references. Do not hardcode Linear-specific URL construction — link ticket refs only if the plan or a `.tickets.env` file declares a base URL.
+7. **Issue discovery.** Run the Issue Discovery pipeline (see § Issue Discovery) across all 7 sources. For each discovered issue, fetch title/state via `gh issue view`. Build the issue list that will feed into the disposition table in Step 3.
 
 ## Step 2: Dispatch deviation-review subagent
 
-Spawn one `general-purpose` `Agent` with this brief:
+In `plan_backed` or `phase_run_backed` mode, load
+`references/deviation-review-prompt.md` and dispatch one
+`general-purpose` `Agent` with that brief, substituting the current
+plan, branch, base, commit log, and phase-run outcome files.
 
-> You are reviewing a PR against its design plan. Your job is to flag deviations — tasks added, tasks skipped, scope changed mid-phase, rollback invoked, plan sections unimplemented.
->
-> **Plan:** <plan_path>
-> **Branch:** <branch>
-> **Base:** <base>
-> **Commits in PR:**
-> <git log --oneline <base>..<branch>>
->
-> **Phase-run outcomes (richer than raw git log — prefer these as evidence):**
-> <list the .phase-runs/ files to read>
->
-> **Your output (return, do not write files):**
->
-> 1. Per-phase summary: for each phase header in plan §5, name what the PR actually did. One of: `as planned`, `drifted`, `skipped`, or `not this PR`.
-> 2. For each `drifted` phase: quote the specific task text that changed, cite the commit hash(es) that implemented the deviation, and flag whether the drift is benign (equivalent outcome) or material (scope/intent change).
-> 3. For each `skipped` phase: explain from the plan and outcome files whether the skip is intentional (deferred to a future plan per §9 Open questions) or an accidental miss.
-> 4. Any `## Scope violations` or `## Follow-ups` (NEW-NN) across the outcome files — elevate to the PR body's risk section.
->
-> Be concrete. Cite commit short-hashes. Do not invent drift that isn't in the evidence.
+In `issue_only` mode, skip the deviation-review subagent. Record:
+`deviations: not_applicable`, `new_findings: not_applicable`, and
+`mode: issue_only`.
 
-Wait for the subagent to return. Record the report.
+When a deviation-review subagent is dispatched, wait for it to return
+and record the report. In `issue_only` mode, record that deviation
+analysis was intentionally skipped because no plan evidence exists.
 
 ## Step 3: Compose the PR body
 
-Write to `docs/executions/.pr-bodies/<date>-pr-<N>.md` (or `<date>-pr-<branch>.md` if no PR) using this template:
+Load `references/pr-body-template.md` and write to
+`docs/executions/.pr-bodies/<date>-pr-<N>.md` (or
+`<date>-pr-<branch>.md` if no PR). For the `## Issues` section, load
+`references/issue-disposition-rules.md`.
 
-```
-## What this PR does
-
-<One paragraph. Drawn from plan §3 Goals + the overall pattern of
-commits. Do not quote verbatim — summarize.>
-
-## Phases completed
-
-<For each phase with at least one commit in this PR:
-- **Phase <N> — <plan Goal>** — addresses <FIND-NN, ...>
-  - Status: as planned | drifted | skipped
-  - Commits: <short-hash> <short-hash> ...
-  - Evidence: `docs/executions/.phase-runs/<outcome file>`
->
-
-## Issues
-
-<For each issue discovered by Issue Discovery (§ Issue Discovery),
-assign a disposition per § Issue Disposition Table rules:
-
-| Issue | Disposition | Rationale |
-|-------|-------------|-----------|
-| #N    | Closes / Fixes / Addresses / Refs / ... | Why this disposition |
-
-For auto-closing dispositions, add GitHub keywords after the table:
-Closes #N
-Fixes #N
-
-If no issues discovered: omit this section.>
-
-## User-facing changes
-
-<Bulleted list, one per observable change. Each item ends with a
-per-file diff permalink from Step 1.4. Skip if the PR is purely
-internal (tests, refactors, docs).>
-
-## How I implemented it
-
-<Walkthrough by phase, not by file. For each phase: one paragraph
-on approach, with 2-3 per-file permalinks for the meatiest files.
-Keep this under ~300 words.>
-
-## Deviations from the plan
-
-<Verbatim from the deviation-review subagent's report. If no
-deviations: "Plan followed as written." If any `## Scope violations`
-surfaced: list them here with attribution.>
-
-## New findings surfaced during execution
-
-<NEW-NN entries from `## Follow-ups` across phase-run outcome files.
-For each: title, severity, recommendation (promote to FIND-NN in
-next /repo-audit / fix inline / defer). If none: omit this section.>
-
-## How to verify
-
-<From the plan's Verification blocks for each phase in this PR,
-plus the phase-run outcome files' `## Verification` overall
-PASS/FAIL. Cite any UNVERIFIED load-bearing claim as a reviewer
-focus item.>
-
-## Changelog entry
-
-<One line, imperative mood, conventional-commit style:
-`feat(scope): <outcome>` or `refactor(scope): <outcome>`. Omit if
-this is a purely internal change.>
-
-## References
-
-<Ticket refs collected in Step 1.5, as a flat list. Only linkify
-when a base URL is declared (see Tuning notes). No Linear-specific
-URL construction by default.>
-```
+The PR body must be generated from the gathered inputs in this run. Do not
+copy the issue body, reuse a stale PR body, or write a free-form summary.
+Include enough provenance in the body for a reviewer to see whether it was
+`plan_backed`, `phase_run_backed`, or `issue_only`, and whether graphify
+evidence was queried or unavailable.
 
 ## Step 4: Apply (optional)
 
@@ -207,21 +183,30 @@ If `apply == true` and a PR exists:
 
 - `gh pr edit <pr_number> --body-file docs/executions/.pr-bodies/<date>-pr-<N>.md`
 - Confirm success; record the command and the resulting `gh pr view --json url -q .url` in chat.
+- Set `applied_to_pr=true` in the required `describe_pr` evidence line.
 
-If `apply == false` (default): skip.
+If `apply == false` (default): skip and set `applied_to_pr=false`.
 
-## Step 5: Surface
+## Step 5: Record Review Expectations
+
+If a PR exists, record whether expected review bots are pending, present, or timed out. Do not fetch, classify, reply to, or fix review comments in this skill.
+
+Review-comment resolution belongs to `workflow-finalize` via `receive-review` and `watch-ci`. `describe-pr` only creates or applies the PR body.
+
+## Step 6: Surface
 
 Print to chat:
 
 - One-sentence summary: "PR body for branch `<branch>` generated — <K> phases documented, <M> deviations flagged, <N> new findings."
 - PR URL if one exists.
 - Pointer to the body file: `docs/executions/.pr-bodies/<date>-pr-<N>.md`.
+- Required `describe_pr` evidence line.
 - If `apply == true`: confirmation that the PR body was updated.
+- If expected review bots have not responded yet: note that `workflow-finalize` must handle the review-comment gate.
 
 ## Output Format
 
-Markdown body text at `docs/executions/.pr-bodies/<date>-pr-<N>.md`, structured per Step 3. Optionally applied to a GitHub PR via `gh pr edit`.
+Markdown body text at `docs/executions/.pr-bodies/<date>-pr-<N>.md`, structured per Step 3, plus the required `describe_pr` evidence line. Optionally applied to a GitHub PR via `gh pr edit`.
 
 ## Error Handling
 
@@ -229,12 +214,19 @@ Markdown body text at `docs/executions/.pr-bodies/<date>-pr-<N>.md`, structured 
 |---------|----------|
 | Not in a git repo | Abort. |
 | `gh` CLI not installed and `pr_number == 0` | Proceed in text-only mode; no PR actions attempted. |
-| No plan at `plan_path` / no newest plan | Abort. Tell the user to run `/design-plan` first or pass `plan_path`. |
+| No plan at `plan_path` / no newest plan | For routine single-issue work, continue in `issue_only` mode. For plan-backed, multi-phase, or `/execute-phase` work, halt and tell the user to pass `plan_path` or explicitly waive plan/phase evidence. |
 | No `.phase-runs/` files matching the branch range | Degrade gracefully — produce the body from raw `git log` only, note in "Deviations" that phase-run outcome files were unavailable so drift detection is weaker. |
 | Deviation subagent returns empty | Retry once with a tighter prompt; if still empty, surface in the body that deviation analysis was unavailable. |
 | `gh pr edit` fails at apply step | Keep the body file; surface the `gh` error; tell the user to apply manually with `gh pr edit <N> --body-file <path>`. |
 | `git hash-object` unavailable (unlikely) | Omit per-file diff permalinks; use the compare-view URL for the whole PR. |
 | `git remote get-url origin` not GitHub | Omit diff permalinks; link the outcome files instead. Note in body that repo is not on GitHub. |
+| Bot reviews don't arrive within 10 minutes | Record the timeout in the body/handoff and let `workflow-finalize` decide whether to halt, wait, or require an explicit waiver. |
+| Bot review comment is ambiguous or conflicting | Out of scope for this skill. Route to `receive-review` through `workflow-finalize`. |
+| `gh` CLI not installed and `workflow-finalize` invoked this skill | Halt. Draft PR creation and issue verification require `gh`; text-only mode is allowed only for standalone `describe-pr` usage outside delivery finalization. |
+| No `.phase-runs/` files for plan-backed, multi-phase, or `/execute-phase` work | Halt unless the user explicitly waives phase evidence. Raw `git log` fallback is allowed only for routine non-`execute-phase` branches, which must be marked `issue_only`. |
+| `graphify-out/graph.json` missing | Continue and record `graphify: not_available_with_reason`; do not rebuild automatically. |
+| `graphify query` fails despite graph existing | Continue only if git/issue/plan evidence is sufficient; record `graphify: not_available_with_reason` with the command failure. |
+| Caller supplies an existing hand-written PR body | Ignore it as source material unless it is explicitly cited as prior context; generate a fresh body file and evidence line from this skill's inputs. |
 
 ## Example Invocation
 
@@ -253,6 +245,7 @@ Claude: [preflight — branch refactor/phase-2-skill-scaffolding,
         2 new findings.
         PR: https://github.com/org/repo/pull/142
         Body: docs/executions/.pr-bodies/2026-04-21-pr-142.md
+        describe_pr: body_file=docs/executions/.pr-bodies/2026-04-21-pr-142.md; mode=phase_run_backed; issues=#123,#124; phase_evidence=matched; graphify=queried; applied_to_pr=false
         (pass apply=true to push to GitHub)
 ```
 
@@ -266,6 +259,22 @@ Claude: [no PR for branch; text-only mode]
         PR body generated (no PR exists yet). Phases: 1,
         deviations: 0, new findings: 0.
         Body: docs/executions/.pr-bodies/2026-04-21-pr-refactor-phase-0-preflight.md
+        describe_pr: body_file=docs/executions/.pr-bodies/2026-04-21-pr-refactor-phase-0-preflight.md; mode=plan_backed; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason; applied_to_pr=false
+```
+
+Routine single-issue branch, no design plan:
+
+```
+User: /describe-pr branch=fix/123-settings-crash
+Claude: [no plan or phase-run evidence expected]
+        [issue_only mode]
+        [runs git log/diff and issue discovery]
+        [writes docs/executions/.pr-bodies/2026-04-21-pr-fix-123-settings-crash.md]
+
+        PR body generated — issue-only mode, 1 issue discovered,
+        phase/deviation sections marked not applicable.
+        Body: docs/executions/.pr-bodies/2026-04-21-pr-fix-123-settings-crash.md
+        describe_pr: body_file=docs/executions/.pr-bodies/2026-04-21-pr-fix-123-settings-crash.md; mode=issue_only; issues=#123; phase_evidence=not_applicable; graphify=queried; applied_to_pr=false
 ```
 
 ## Issue Discovery
@@ -280,68 +289,24 @@ Discover related issues from these sources (checked in order during Step 1):
 6. **Post-mortems** — extract issue numbers from `docs/executions/<date>-post-mortem.md`, particularly from `## New findings` and `## Issues created` sections.
 7. **Explicit input** — user or calling workflow provides issue numbers directly (via prompt text or future `issues` input parameter).
 
-Deduplicate across all sources. For each discovered issue, fetch its title and status via `gh issue view <N> --json title,state,labels -q '{title,state,labels}'` (skip silently if `gh` is unavailable or the issue doesn't exist).
+Deduplicate across all sources. For each discovered issue, fetch its title and status via `gh issue view <N> --json title,state,labels -q '{title,state,labels}'`. If lookup fails, record the failure, do not use `Closes`, `Fixes`, or `Resolves` for that issue, and mark the disposition as `Refs` or `Needs human verification`.
 
 ## Issue Disposition Table
 
-When generating the PR body (Step 3), include an `## Issues` section immediately after `## Phases completed`. For each discovered issue, assign a disposition:
-
-### Disposition rules
-
-| Disposition | When to use | GitHub effect |
-|-------------|-------------|---------------|
-| **Closes** | ALL acceptance criteria fully met | Auto-closes on merge |
-| **Fixes** | Bug fully fixed with regression test | Auto-closes on merge |
-| **Resolves** | Issue fully addressed (non-bug) | Auto-closes on merge |
-| **Addresses** | Partial progress only | Does NOT close |
-| **Refs** | Related context, no direct work | Does NOT close |
-| **Follow-up created** | New work spawned during this PR | Does NOT close |
-| **Supersedes** | This PR replaces the issue's approach | Manual close needed |
-
-**Critical rule:** Never use Closes/Fixes/Resolves unless the issue is FULLY complete. Partial work uses "Addresses" only. When in doubt, prefer "Addresses" over "Closes".
-
-### Table format in the PR body
-
-```markdown
-## Issues
-
-| Issue | Disposition | Rationale |
-|-------|-------------|-----------|
-| #123 | Closes | All acceptance criteria met |
-| #124 | Fixes | Bug root cause addressed + regression test added |
-| #125 | Addresses | Partial progress — 3 of 5 criteria met |
-| #126 | Refs | Related context, no direct work done |
-| #127 | Follow-up created | New work discovered → #130 |
-| #128 | Supersedes | This approach replaces #128 |
-```
-
-### Disposition assignment logic
-
-To determine the correct disposition for each issue:
-
-1. If the issue was explicitly provided as "closes" by the user or workflow → **Closes** (trust the caller).
-2. If the issue has acceptance criteria, diff each criterion against the commits and changed files:
-   - All met → **Closes** (or **Fixes** if the issue is labeled `bug` and a test was added).
-   - Some met → **Addresses** with a rationale listing which criteria are met/unmet.
-   - None met → **Refs**.
-3. If the issue was discovered only from branch name or commit messages but no direct work maps to it → **Refs**.
-4. If a `NEW-NN` finding in the post-mortem created a follow-up issue → **Follow-up created** with a link to the new issue.
-5. If the plan explicitly states this approach replaces an earlier issue → **Supersedes**.
-
-### GitHub keyword placement
-
-For auto-closing dispositions (Closes/Fixes/Resolves), place the keyword in the PR body so GitHub recognizes it:
-
-- Use the exact format: `Closes #123`, `Fixes #124`, `Resolves #125` (one per line, outside the table).
-- Place these keywords in the `## Issues` section footer, after the table.
-- Non-closing dispositions use plain `#N` references only (no GitHub keyword prefix).
+When generating the PR body (Step 3), load
+`references/issue-disposition-rules.md`. Include an `## Issues`
+section immediately after `## Phases completed` when issues are
+discovered, and use that reference to assign dispositions and place
+GitHub auto-closing keywords.
 
 ## Tuning notes
 
 - **Prefer phase-run outcome files over raw `git log`.** They have
   the plan-to-actual mapping already; the deviation subagent's job
   is easier when given rich evidence. Fall back to `git log` only
-  when outcome files are absent or mismatched.
+  for non-`execute-phase` branches. If the branch appears phase-based
+  or `workflow-finalize` expects phase evidence, halt until phase-run
+  outcomes exist or the user explicitly waives that evidence.
 
 - **Ticket URL construction is opt-in.** By default, ticket refs
   like `ENG-1234` are listed but not linked — avoids hardcoding
@@ -360,26 +325,34 @@ For auto-closing dispositions (Closes/Fixes/Resolves), place the keyword in the 
   the body file before pushing. Useful even without a PR — the
   body file becomes a compressed changelog entry.
 
-- **Follow with `/watch-ci`.** Once the PR is opened (manually via
-  `gh pr create` with the body this skill produced, or
-  automatically by `/watch-ci` if no PR exists yet), `/watch-ci`
-  polls GitHub Actions, classifies failures, applies bounded
-  auto-fixes (max 3 attempts, halt on no-progress), runs
-  `/security-review` on green, and submits Approve when clean.
-  `/describe-pr` produces the body; `/watch-ci` runs the loop.
+- **Graphify evidence is opportunistic, not a rebuild trigger.** If
+  `graphify-out/graph.json` exists, query it and record the evidence. If it
+  does not exist, record `not_available_with_reason` and continue from git,
+  issue, plan, and phase evidence. Never run extraction from this skill.
+
+- **Fail closed in workflow-finalize.** `workflow-finalize` may create or
+  update a PR only from the body file and `describe_pr` evidence produced by
+  this skill. A nice-looking ad-hoc PR body is still missing evidence.
+
+- **Review-comment ownership.** `/describe-pr` produces the body only.
+  `workflow-finalize` owns reviewer-comment resolution through
+  `receive-review` and `watch-ci`.
+
+- **Follow with `workflow-finalize`.** `workflow-finalize` owns draft PR
+  creation, reviewer-comment resolution, `watch-ci`, reconciliation,
+  and final handoff. Do not skip around it from this skill.
 
 - **Ported from** `~/Desktop/skills/describe-pr/SKILL.md`. Drops:
   `implementation-reviewer` subagent type (→ `general-purpose`
   with an explicit deviation-analysis brief), external
-  `scripts/pr_diff_urls.sh` (inlined git-remote-parse + `git
-  hash-object` logic), `.humanlayer/tasks/<slug>/pr-description.md`
-  output path (→ `docs/executions/.pr-bodies/`),
-  Linear-specific `linear get-issue-v2` call and hardcoded Linear
-  URL assembly (→ pluggable regex + opt-in base URL),
-  `{SKILLBASE}/references/pr_description_template.md` and
-  `{SKILLBASE}/references/describe_pr_final_answer.md` (inlined).
-  Adds: `## Phases completed` section mapping commits to plan §5
-  phase numbers, `## New findings surfaced during execution` from
+  `scripts/pr_diff_urls.sh` (→ `references/diff-url-guidance.md`),
+  `.humanlayer/tasks/<slug>/pr-description.md` output path (→
+  `docs/executions/.pr-bodies/`), and Linear-specific
+  `linear get-issue-v2` calls plus hardcoded Linear URL assembly (→
+  pluggable regex + opt-in base URL). Keeps reusable PR-body and
+  deviation-review material in this skill's bundled `references/`
+  files. Adds: `## Phases completed` section mapping commits to plan
+  §5 phase numbers, `## New findings surfaced during execution` from
   phase-run outcome files' `## Follow-ups`, `.phase-runs/`-first
   evidence preference with `git log` fallback.
 
@@ -392,17 +365,12 @@ For auto-closing dispositions (Closes/Fixes/Resolves), place the keyword in the 
      ↓
 /execute-phase  →  docs/executions/.phase-runs/*.md          ({refactor,fix,feat}/
      ↓                                                        phase-* branches)
-/review         →  inline reviewer comments (workspace)      (in-loop, fresh subagent)
+/workflow-review → review synthesis with dispatch evidence   (in-loop, fresh subagents)
      ↓
 /post-mortem    →  docs/executions/<date>-post-mortem.md     (NEW-NN, drift)
      ↓
-/describe-pr    →  PR body / docs/executions/.pr-bodies/*.md (this skill;
-     ↓                                                        cites NEW-NN from retro)
-[human gh pr create]
-     ↓
-/watch-ci       →  docs/executions/.ci-runs/*.md             (poll, auto-fix,
-                                                              /security-review,
-                                                              approve when clean)
+/workflow-finalize → describe-pr, draft PR, receive-review,
+                     watch-ci, reconcile, draft handoff
      ↓
 [human merge]
 

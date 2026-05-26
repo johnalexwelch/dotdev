@@ -1,6 +1,6 @@
 ---
 name: design-plan
-description: Use when turning a repo-audit report, free-form brief, bug, feature request, or existing plan revision into an executable phased plan with FIND-NN/REQ-NN anchors, [auto]/[human] tasks, pilot/canary coverage, rollback, and sync gates.
+description: Use when turning a repo-audit report, refactor-scale brief, migration, or existing plan revision into an executable phased plan with FIND-NN/REQ-NN anchors, [auto]/[human] tasks, pilot/canary coverage, rollback, and sync gates. Do not use as the default feature workflow; use grill-with-docs → decision-log → to-prd → to-issues → triage for product work.
 triggers:
   - "write a design doc"
   - "create a refactor plan"
@@ -20,7 +20,7 @@ inputs:
   - name: brief
     type: string
     default: ""
-    description: Free-form brief for bug/feature/investigation work: inline string, `@path/to/file`, or URL. Mutually exclusive with `audit_path`.
+    description: Refactor-scale, migration, or investigation brief: inline string, `@path/to/file`, or URL. Mutually exclusive with `audit_path`. Product features should use the PRD/issues workflow instead.
   - name: existing_plan
     type: string
     default: ""
@@ -50,18 +50,25 @@ writes:
 
 ## Purpose
 
-Turn a `/repo-audit` report or free-form brief into an executable plan a
+Turn a `/repo-audit` report or refactor-scale brief into an executable plan a
 fresh contributor can run: ordered phases with `FIND-NN` / `REQ-NN` / ticket
 anchors, `[auto]` and `[human]` task markers, pilot/canary coverage when scope
 warrants it, per-phase rollback, a delete list, sync-gate mechanics, and a
 falsifiable definition of done.
+
+This is the specialized phase-plan lane inside the current workflow. It is
+for repo-wide refactors, migrations, and complex remediation where issue
+slices are not enough yet. For normal product/feature work, route through
+`grill-with-docs → decision-log → to-prd → to-issues → triage` instead.
+
+Every development phase must be a vertical slice of app behavior. Do not create horizontal phases such as "database layer," "API layer," "frontend shell," "tests," or "cleanup" unless each phase still delivers independently verifiable end-to-end behavior.
 
 Runs in `draft` mode for new plans and `revise` mode for evidence-checked
 updates to an existing plan.
 
 ## Contract
 
-Consumes: repo audit report or brief, decision log, target outcome, constraints
+Consumes: repo audit report or refactor-scale brief, decision log, target outcome, constraints
 Produces: phased execution plan in `docs/plans/`
 Requires: git
 Side effects: writes or revises one plan file
@@ -97,8 +104,10 @@ Load only the references needed for the invocation:
 ## Required Behaviors
 
 - Preserve stable ID vocabulary: `FIND-NN`, `REQ-NN`, `NEW-NN`, ticket slugs, and phase numbers.
-- Brief-mode skips `/repo-audit`; audit-mode is the refactor-scale entrypoint.
+- Brief-mode is only for refactor-scale or migration briefs. Product features should use `workflow-feature`/`to-prd`/`to-issues`.
+- Audit-mode is the refactor-scale evidence path after `repo-audit`.
 - Phase count flexes with scope: 1 phase for bugs, 2-3 for small features, 4-6 for refactors.
+- Each phase must name the vertical behavior it makes real and the layers it crosses. Rewrite horizontal layer phases before presenting the plan.
 - Pilot/canary is required for feature/refactor plans unless explicitly waived with reasoning; for bug fixes, the fix itself is the pilot.
 - Canary comes before deletion.
 - No file is deleted before its replacement is live and verified.

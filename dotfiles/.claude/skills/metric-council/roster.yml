@@ -1,0 +1,65 @@
+council: metric-council
+
+required:
+  - skeptical-data-scientist
+  - decision-scientist
+  - governance-reviewer
+
+optional:
+  - statistician
+  - economist
+  - ops-analyst
+  - exec-audience-stand-in
+  - causal-reasoner
+
+limits:
+  min_experts: 3
+  max_experts: 6
+
+round_1_dispatch: parallel
+
+post_process:
+  humanizer: true
+  domain_cleaner: analysis-slop-cleaner
+
+recommend_round_3: false
+
+overlays:
+  skeptical-data-scientist: |
+    Stress-test the denominator stability across time. Check the
+    metric's sensitivity to instrument changes, sample selection,
+    and how it behaves under known edge cases. Flag if the metric
+    requires extensive caveats that the eventual consumer won't read.
+
+  decision-scientist: |
+    The metric exists to inform a decision. What decision is it
+    actually shaping? Is the metric specific enough to drive it,
+    or so broad it can support any narrative? Flag if the metric
+    becomes a target and Goodhart's Law applies.
+
+  governance-reviewer: |
+    Surface the data-classification level of inputs. For ClassDojo
+    metrics: is this aggregating under-13 data? Is the cell-size
+    threshold sufficient? Is the metric exposable to schools /
+    districts / external parties as-defined?
+
+  statistician: |
+    Evaluate variance, sampling distribution, and the metric's
+    detectability of change vs. natural noise. A metric whose
+    week-over-week variance is ±15% can't detect a 5% effect.
+
+  economist: |
+    For metrics tied to economic outcomes — pricing, retention,
+    unit economics — check for substitution effects, Goodhart
+    gaming via cheap substitutes, and whether the metric tracks
+    the actual economic value or a proxy.
+
+  ops-analyst: |
+    Who maintains this metric? What's the cost to keep it healthy
+    quarter-over-quarter? Will the metric definition drift as the
+    product evolves, and who notices?
+
+  exec-audience-stand-in: |
+    Will execs read this metric correctly with the comparator and
+    framing provided? Will it provoke the wrong fixation? Is the
+    headline framing robust to year-over-year change?

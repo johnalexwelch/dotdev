@@ -44,7 +44,7 @@ Used only when called by `workflow-autonomous-backlog`.
 
 Consumes: topic/plan/design to stress-test, CONTEXT.md, ADRs (docs/adr/)
 Produces: shared understanding, decision-log entries for accepted grill answers, updated CONTEXT.md terms, new ADR files (when decisions crystallize)
-Requires: none
+Requires: git
 Side effects: may update CONTEXT.md and create ADR files in docs/adr/
 Human gates: every question batch (groups of five) requires user response before continuing; autonomous module-grill drafting mode may draft recommended answers but does not satisfy human approval for PRD creation
 

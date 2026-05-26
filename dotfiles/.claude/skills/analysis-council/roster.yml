@@ -1,0 +1,77 @@
+council: analysis-council
+
+required:
+  - skeptical-data-scientist
+  - decision-scientist
+
+optional:
+  - statistician
+  - causal-reasoner
+  - counterfactual-check
+  - governance-reviewer
+  - exec-audience-stand-in
+  - ops-analyst
+  - economist
+
+limits:
+  min_experts: 2
+  max_experts: 5
+
+round_1_dispatch: parallel
+
+post_process:
+  humanizer: true
+  domain_cleaner: analysis-slop-cleaner
+
+recommend_round_3: true
+
+overlays:
+  skeptical-data-scientist: |
+    User context: CDO at ClassDojo (edu-tech, K-8, child users).
+    Weight COPPA, FERPA, and under-13 consent lenses heavily.
+    Flag analyses that depend on under-13 user data without
+    parent-consent context, or that conflate teacher-segment
+    behavior with parent-segment or student-segment behavior.
+
+  decision-scientist: |
+    User is a CDO making decisions that frequently touch:
+    - Data platform / instrumentation investment (often one-way doors)
+    - Org structure / hiring (one-way doors)
+    - Metric definition changes (one-way doors for trend continuity)
+    Bias toward flagging reversibility explicitly when the topic
+    touches any of these.
+
+  governance-reviewer: |
+    Activate when topic mentions: child data, under-13 users,
+    parent consent, FERPA, COPPA, GDPR, student records,
+    teacher-as-data-controller, school district contracts.
+
+  exec-audience-stand-in: |
+    Activate when topic is being prepared for: board, ELT, CEO,
+    school district customers, investors. Read the topic as
+    that audience would — what they'll fixate on, what will
+    confuse them, what they'll push back on.
+
+  economist: |
+    Activate for: pricing decisions, vendor build-vs-buy,
+    unit economics, cohort LTV/CAC, expansion/churn drivers,
+    international pricing, free-vs-paid conversion.
+
+dispatch_signals:
+  # Topic-keyword heuristics for smart-picking optional personas
+  # in default mode. Orchestrator scans the user's invocation
+  # text for these signals.
+  statistician:
+    keywords: [cohort, retention, sample, p-value, significance, segment, lift, AB test, experiment]
+  causal-reasoner:
+    keywords: [caused, drove, led to, because, due to, attributable, drivers of]
+  counterfactual-check:
+    keywords: [would have, if we hadn't, counterfactual, alternative]
+  governance-reviewer:
+    keywords: [child, COPPA, FERPA, GDPR, parent consent, under 13, student data, privacy]
+  exec-audience-stand-in:
+    keywords: [board, ELT, CEO, investor, district, exec, leadership]
+  ops-analyst:
+    keywords: [SLA, ops, process, throughput, latency, incident, on-call]
+  economist:
+    keywords: [pricing, LTV, CAC, unit economics, vendor, build vs buy, ROI, cost]

@@ -7,7 +7,7 @@ description: Break a plan, spec, or PRD into independently-grabbable issues on t
 
 Consumes: plan, spec, PRD, decision log, or conversation context (may include issue reference)
 Produces: GitHub issues as independently-grabbable vertical slices
-Requires: gh (or configured issue tracker CLI)
+Requires: gh
 Side effects: creates issues on the project issue tracker
 Human gates: slice breakdown presented for approval before publishing
 
@@ -19,6 +19,8 @@ Pairs well with: decision-log, design-plan, to-prd, triage, setup-skills
 # To Issues
 
 Break a plan into independently-grabbable issues using vertical slices (tracer bullets).
+
+This is a hard constraint: implementation issues must be vertical slices of app behavior, not horizontal layers. Reject or rewrite issue breakdowns that produce separate tickets for only schema, only backend routes, only UI shell, only tests, or only refactoring unless that ticket is a complete, independently verifiable behavior slice.
 
 The issue tracker and triage label vocabulary should have been provided to you — run `/setup-skills` if not.
 
@@ -42,6 +44,7 @@ Slices may be 'HITL' or 'AFK'. HITL slices require human interaction, such as an
 - Each slice delivers a narrow but COMPLETE path through every layer (schema, API, UI, tests)
 - A completed slice is demoable or verifiable on its own
 - Prefer many thin slices over few thick ones
+- Horizontal work belongs inside a slice as implementation detail; it should not become its own issue unless it has standalone user-visible or system-verifiable behavior
 </vertical-slice-rules>
 
 ### 4. Quiz the user
@@ -66,6 +69,7 @@ Ask the user:
 - Are outage-risk classifications and rollback expectations correct?
 - For module work, did the module grill answer the interface, seam, adapter, migration, and testing questions deeply enough?
 - Are the relevant decision-log entries present so implementation agents can see alternatives and accepted tradeoffs?
+- Are any proposed issues horizontal layer work? If yes, rewrite them before publishing.
 
 Iterate until the user approves the breakdown.
 

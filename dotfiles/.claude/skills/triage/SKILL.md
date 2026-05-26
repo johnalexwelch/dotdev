@@ -52,6 +52,21 @@ These are canonical role names — the actual label strings used in the issue tr
 
 State transitions: an unlabeled issue normally goes to `needs-triage` first; from there it moves to `needs-info`, `ready-for-agent`, `ready-for-human`, or `wontfix`. `needs-info` returns to `needs-triage` once the reporter replies. The maintainer can override at any time — flag transitions that look unusual and ask before proceeding.
 
+`ready-for-agent` is allowed only when the issue has:
+
+- clear acceptance criteria
+- dependency status
+- verification commands
+- rollback expectation
+- AFK/HITL classification
+- outage-risk classification
+- mandatory per-issue `origin/staging` worktree policy
+- exact gate requirement: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
+- review/finalize policy
+- any required module grill evidence
+
+PRD/spec parent issues are not implementation issues and must not be labeled `ready-for-agent`.
+
 ## Invocation
 
 The maintainer invokes `/triage` and describes what they want in natural language. Interpret the request and act. Examples:
@@ -82,7 +97,7 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 4. **Grill (if needed).** If the issue needs fleshing out, run a `/grill-with-docs` session.
 
 5. **Apply the outcome:**
-   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)).
+   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)) that includes the exact `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>` requirement.
    - `ready-for-human` — same structure as an agent brief, but note why it can't be delegated (judgment calls, external access, design decisions, manual testing).
    - `needs-info` — post triage notes (template below).
    - `wontfix` (bug) — polite explanation, then close.
@@ -91,7 +106,7 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 
 ## Quick state override
 
-If the maintainer says "move #42 to ready-for-agent", trust them and apply the role directly. Confirm what you're about to do (role changes, comment, close), then act. Skip grilling. If moving to `ready-for-agent` without a grilling session, ask whether they want to write an agent brief.
+If the maintainer says "move #42 to ready-for-agent", trust the requested direction but still verify the readiness fields above before applying the role. If required fields are missing, present the gap and ask whether to add an agent brief or use `needs-human` instead. Do not label PRD/spec parents, HITL slices, high-risk/excluded slices, blocked issues, or ungrilled module work as `ready-for-agent` by override.
 
 ## Needs-info template
 

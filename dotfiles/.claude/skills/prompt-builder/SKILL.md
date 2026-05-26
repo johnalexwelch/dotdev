@@ -93,6 +93,8 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 - Must run `workflow-finalize` and include a complete `WORKFLOW_FINALIZE_GATE`
 - Must create or update only a draft PR unless an existing non-draft PR already exists
 - Must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git
+- Must satisfy the Partial-Completion Contract before exit: complete with all changes committed and pushed; WIP-paused with a pushed `wip:` commit whose subject names exactly what remains; or rolled back with `git reset --hard <baseline>` and a clean worktree
+- Must run `git status --short` before exit; if any source file shows `M` or `??`, commit or reset and re-check before exiting
 - TDD required (bug label)
 - Must not break existing API contract (referenced in CONTEXT.md)
 - Security-sensitive: human review gate before merge
@@ -119,6 +121,11 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 - Require `workflow-review` with a real `WORKFLOW_REVIEW_GATE` and `verdict: APPROVE`; green CI, GitHub reviews, Claude Code Review, Bugbot, or Codex review do not substitute for this gate.
 - Require `workflow-finalize` with a complete `WORKFLOW_FINALIZE_GATE`.
 - Require draft PR handoff only; do not mark ready, approve, merge, enable auto-merge, force-push, rebase, or use destructive git.
+- Require the Partial-Completion Contract before exit. The worker must end in exactly one state:
+  - Complete: all changes committed and pushed to the remote branch.
+  - WIP-paused: current progress committed with a `wip:` subject that names exactly what remains, then pushed.
+  - Rolled back: `git reset --hard <baseline>` leaves the worktree clean.
+- Require final verification with `git status --short`. If any source file shows `M` or `??`, the prompt must instruct the worker to commit or reset, then re-check before exiting.
 - Do not ask clarifying questions inside the generated prompt. If ambiguity affects behavior, scope, security, data, UX, or acceptance criteria, halt prompt generation and mark the issue `needs-human` instead of dispatching Codex.
 - Conservative assumptions are allowed only for non-behavioral implementation details; record them explicitly.
 - Include relevant decision-log entries when they explain why the issue asks for a particular approach. Do not make the worker rediscover accepted alternatives.

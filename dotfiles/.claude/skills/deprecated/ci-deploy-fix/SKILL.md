@@ -3,6 +3,15 @@ name: ci-deploy-fix
 description: Use when a GitHub Actions CI or deployment workflow has failed and needs diagnosis, code fixes, and a PR with the solution. Triggers on "CI failed", "build broke", "deploy failed", "fix the red check", "pipeline is failing", "CI is red". Covers lint, type errors, test failures, build failures, migration errors, k8s manifest issues, and deploy-time problems.
 ---
 
+## Deprecation Status
+
+Status: deprecated. Historical reference only; do not route new work here.
+
+- Replaced by: `workflow-debug for failures; workflow-finalize -> watch-ci for PR CI; receive-review for reviewer feedback`
+- Reason: Old CI/deploy repair lane bypasses current workflow gates.
+- Date: 2026-05-21
+
+
 # CI & Deploy Failure Fix
 
 Diagnose CI/deployment failures, fix code/config/manifests, and open a PR with structured reasoning.

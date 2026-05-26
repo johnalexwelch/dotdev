@@ -23,7 +23,9 @@ Compare GitHub Issues, PRs, labels, execution outcomes, and post-mortems to dete
 
 - Fetch open/recently-closed issues via `gh issue list`
 - Fetch recent merged PRs via `gh pr list --state merged`
+- Fetch recent closed PRs that were not merged when checking premature close or abandoned-review drift
 - Read PR bodies for issue references (Closes/Fixes/Resolves/Refs #N)
+- Read PR reviews and inline comments for unresolved or unanswered reviewer feedback
 - Read execute-phase outcome files if present (docs/executions/.phase-runs/)
 - Read post-mortems if present
 
@@ -40,6 +42,7 @@ Compare GitHub Issues, PRs, labels, execution outcomes, and post-mortems to dete
 | 7 | Orphaned issues | No assignee, no label, no recent activity |
 | 8 | Duplicate/superseded issues | Multiple issues describing same work, or later issue supersedes earlier |
 | 9 | Stale labels | Labels like `in-progress`, `needs-review` on issues with no recent activity |
+| 10 | PR merged or closed with unresolved reviewer feedback | Review comments contain blockers/questions/suggestions with no later fix commit, reply, or explicit waiver |
 
 ### 3. Produce drift report
 
@@ -62,6 +65,7 @@ Output a structured markdown artifact:
 - [ ] Reopen #N (PR #M was reverted)
 - [ ] Create follow-up issue for [description]
 - [ ] Remove stale label from #N
+- [ ] Reopen or follow up on PR #N review comment: [summary]
 ```
 
 ### 4. Take action (with gates)
@@ -76,6 +80,8 @@ Output a structured markdown artifact:
 - Closing issues
 - Creating follow-up issues
 - Removing `ready-for-agent` label
+- Reopening PRs/issues because of unresolved reviewer feedback
+- Creating follow-up work from unresolved reviewer comments
 
 ## Constraints (what this skill does NOT do)
 
@@ -83,14 +89,47 @@ Output a structured markdown artifact:
 2. **Does not** override GitHub's auto-close semantics (Closes/Fixes/Resolves)
 3. **Does not** mark partial work as complete
 4. **Does not** infer product completion without evidence
+5. **Does not** treat green CI or auto-merge as evidence that review comments were addressed
+
+## Reviewer Comment Reconciliation
+
+For each recently merged or closed PR, inspect:
+
+```
+gh api repos/<owner>/<repo>/pulls/<pr_number>/reviews
+gh api repos/<owner>/<repo>/pulls/<pr_number>/comments
+```
+
+Flag reviewer-comment drift when an actionable comment has no evidence of resolution:
+
+- No later commit appears to address the cited file/line
+- No inline reply explains why the comment was declined or deferred
+- No linked follow-up issue captures valid out-of-scope work
+- No explicit human waiver is recorded
+
+Classify findings:
+
+| Severity | Condition |
+|----------|-----------|
+| Critical | Merged PR has unresolved blocker or requested-changes comment |
+| Warning | Merged PR has unanswered non-blocking suggestion or question |
+| Info | Bot review timed out or expected bot never reviewed before merge |
+
+Recommended actions should be conservative: create follow-up issues, reopen only with approval, and never rewrite PR history.
+
+## Output format
+
+The primary artifact is always the drift report markdown. When running in Cursor IDE, also produce a **canvas** (`.canvas.tsx`) for the drift dashboard — the checks table, recommended actions, and issue state summary benefit from interactive rendering. Use the Cursor `canvas` skill pattern: create a `canvases/<date>-drift-report.canvas.tsx` with the structured drift data.
+
+Skip the canvas when running headless (Codex AFK, CI, non-IDE context).
 
 ## Contract
 
-Consumes: GitHub Issues state, merged PRs with bodies, execute-phase outcome files, post-mortems, label state
-Produces: structured drift report (markdown), recommended actions list
+Consumes: GitHub Issues state, merged/closed PRs with bodies and review comments, execute-phase outcome files, post-mortems, label state
+Produces: structured drift report (markdown), recommended actions list, optional canvas artifact
 Requires: gh
 Side effects: may add/remove labels (automated subset only); may create follow-up issues (with approval)
-Human gates: issue closure, follow-up creation, ready-for-agent removal
+Human gates: issue closure, follow-up creation, ready-for-agent removal, reopening PRs/issues due to unresolved review feedback
 
 ## Context
 

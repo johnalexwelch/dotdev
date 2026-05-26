@@ -7,7 +7,7 @@ description: Turn the current conversation context into a PRD and publish it to 
 
 Consumes: conversation context, codebase understanding, grilling output, decision log
 Produces: PRD issue on the project issue tracker
-Requires: gh (or configured issue tracker CLI)
+Requires: gh
 Side effects: creates issue on the project issue tracker
 Human gates: module breakdown confirmed with user; PRD published as spec/reference only; implementation readiness is decided by child issues from to-issues
 
@@ -20,13 +20,15 @@ This skill takes the current conversation context and codebase understanding and
 
 The issue tracker and triage label vocabulary should have been provided to you — run `/setup-skills` if not.
 
+Every development path described by the PRD must be decomposable into vertical slices of app behavior. Do not structure the PRD around horizontal layer work such as "database first," "API first," "frontend later," or "tests at the end." Horizontal work can appear only as implementation detail inside a vertical slice.
+
 ## Process
 
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the PRD, and respect any decision log entries and ADRs in the area you're touching.
 
 Before synthesizing the PRD, read `docs/decision-log.md` or the repo's established equivalent if it exists. Treat logged decisions as settled context unless the user explicitly reopens them. If the PRD relies on grill output that has not been logged, reconstruct decision-log entries for the accepted answers before continuing.
 
-2. Sketch out the major modules you will need to build or modify to complete the implementation. Actively look for opportunities to extract deep modules that can be tested in isolation.
+2. Sketch out the major modules you will need to build or modify to complete the implementation. Actively look for opportunities to extract deep modules that can be tested in isolation, but keep the delivery plan vertical: each implementation issue must produce a narrow end-to-end behavior, not a layer-only milestone.
 
 A deep module (as opposed to a shallow module) is one which encapsulates a lot of functionality in a simple, testable interface which rarely changes.
 
@@ -83,6 +85,7 @@ A list of implementation decisions that were made. Include decision-log entry ti
 - Specific interactions
 - Outage-risk classification and rollback expectations
 - Alternatives considered and tradeoffs accepted when no separate decision-log entry exists
+- Vertical slice boundaries: the first end-to-end behavior, layers it crosses, and horizontal work explicitly deferred
 
 Do NOT include specific file paths or code snippets. They may end up being outdated very quickly.
 
@@ -99,6 +102,8 @@ A list of testing decisions that were made. Include:
 ## AFK Readiness
 
 State whether this PRD can produce AFK-safe issues. Include required verification commands, expected `user-journey-qa` coverage when applicable, and the implementation policy that all code work starts from a fresh `origin/staging` worktree with `WORKTREE_BASELINE_GATE` evidence.
+
+State explicitly that child implementation issues must be vertical slices. If the work cannot yet be sliced vertically, mark the PRD as needing more design before issue creation.
 
 ## Out of Scope
 

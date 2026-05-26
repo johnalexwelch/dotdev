@@ -40,20 +40,22 @@ Human gates: none
 
 ## Context
 
-Typical workflows: audit-loop (entrypoint for refactor-scale work, before /design-plan)
-Pairs well with: design-plan, post-mortem, improve-codebase-architecture
+Typical workflows: evidence-gathering lane for `workflow-roadmap`, `to-prd`, `to-issues`, `triage`, and refactor-scale `design-plan`
+Pairs well with: workflow-roadmap, to-prd, to-issues, triage, design-plan, improve-codebase-architecture
 
 # /repo-audit — Map-Reduce State-of-the-Repo Investigation
 
 ## Purpose
 
 Give the user an evidence-based picture of where a repo (or a subtree of a
-monorepo) actually is — not what its docs claim. Built for projects in
-transition (mid-refactor, inherited codebases, systems that have been
-running unattended). The audit is structured as map-reduce: thirteen
-parallel discovery agents each produce an auditable fact-pack, then one
-synthesizer validates the evidence and produces judgment — findings with
-stable IDs, risks, patterns, and recommended next steps.
+monorepo) actually is — not what its docs claim. The audit is an input to
+the current workflow, not a separate default delivery loop: findings should
+feed `workflow-roadmap`, `grill-with-docs → decision-log → to-prd → to-issues
+→ triage`, or refactor-scale `design-plan` only when a phased plan is the
+right shape. The audit is structured as map-reduce: thirteen parallel
+discovery agents each produce an auditable fact-pack, then one synthesizer
+validates the evidence and produces judgment — findings with stable IDs,
+risks, patterns, and recommended next steps.
 
 ## Step 0: Preflight
 
@@ -80,56 +82,13 @@ tool calls** (fewer if `focus` is set). Do not serialize them. Each agent
 is scoped to one question and one path, and writes its findings to
 `docs/audits/.fact-packs-<date>[-<path-slug>]/<NN>-<slug>.md`.
 
-For each agent, use thoroughness `very thorough` and the prompt template
-below, substituting the question-specific text.
+For each agent, use thoroughness `very thorough` and assemble the prompt
+from `references/audit-lanes/index.md`:
 
-**Shared preamble for every agent:**
-
-> You are one of thirteen parallel investigators auditing this repo. Your
-> scope is narrow — investigate ONLY the question below, and ONLY within
-> the subtree `<path>`. Do not investigate files outside `<path>`. Do not
-> attempt the whole audit. Be concrete — cite file paths (relative to
-> repo root), line counts, and commands run. Output your findings as
-> structured markdown (headers + prose, not bullet walls) to the exact
-> file path given. Do not speculate beyond what you can observe. Context:
-> <context>
-
-**The thirteen discovery questions:**
-
-| N | Slug | Scope |
-|---|------|-------|
-| 01 | built-vs-planned | What's built vs. what's planned. Read every planning/spec doc at root and compare to actual directory contents in `<path>`. List the delta — planned but missing, built but undocumented, phases incomplete. |
-| 02 | module-inventory | Major modules/components inside `<path>`: for each, lines, maturity, quality, dependencies, whether spec matches code. |
-| 03 | entry-points | What's a user actually meant to run? Which entry points work, which are stubs, which are abandoned? Include slash commands, CLIs, scripts, cron/launchd jobs. |
-| 04 | legacy-vs-new | Anything in a half-refactored state? Which code is load-bearing vs. superseded-but-not-deleted? Identify the critical path for core workflows. |
-| 05 | tests | Do tests actually run against current code? Run the test command and report the real count, coverage, and any claims in docs that don't match reality. |
-| 06 | config-secrets | Anything committed that shouldn't be (tokens, keys, .env)? Machine-specific paths hardcoded? Secrets referenced vs. embedded? Check `.env.example` drift. |
-| 07 | integrations | External services this talks to. For each: auth method, wired vs. aspirational, failure mode, rate-limit handling. |
-| 08 | doc-drift | Every doc at repo root and in `docs/`. Flag contradictions, stale claims, and docs that describe a future that isn't reality. |
-| 09 | operability | How do you know when this is broken? Where do errors and logs go? What happens on dependency failure — graceful degrade, silent miss, or cascade? What runs unattended, and who is notified on failure? |
-| 10 | security-depth | Beyond config-secrets: PII in logs or artifacts, token scope minimization, dependency pinning and known vulns, data retention policy, permissions model. Check git history for previously-committed secrets (`git log -p -- '*.env'` and similar). |
-| 11 | user-surface | Full list of user-facing commands/UIs. Do they behave consistently on errors? Is the voice/style coherent across them? What does a user see when something fails? |
-| 12 | onboarding | If someone new cloned this repo tomorrow, how long until they could run the core workflow? What's undocumented but load-bearing — hardcoded paths, unwritten norms, tribal knowledge, required machine-local state? |
-| 13 | ci-workflows | CI/CD pipeline, build scripts, pre-commit hooks, release process. Inspect `.github/workflows/`, `.gitlab-ci.yml`, `Makefile`, `package.json` scripts, `.pre-commit-config.yaml`, etc. Flag: required checks that don't run, secrets in CI env, stale runner images, flaky jobs, missing deploy rollback, manual release steps that should be automated. |
-
-**Prompt template (fill in per agent):**
-
-> <shared preamble>
->
-> Your question: **<question scope text from table>**
->
-> Output file: `docs/audits/.fact-packs-<date>[-<path-slug>]/<NN>-<slug>.md`
->
-> Structure your fact-pack as:
->
-> - `## Summary` (1 paragraph)
-> - `## Findings` (headed sub-sections with evidence)
-> - `## Evidence` (file paths, line counts, command outputs cited in findings)
-> - `## Open questions` (things you couldn't determine)
->
-> Do not editorialize about overall repo quality — that's the synthesizer's
-> job. Report only what falls inside your question's scope and within
-> `<path>`.
+- Load `references/audit-lanes/shared-preamble.md` for every agent.
+- Load the matching `references/audit-lanes/<NN>-<slug>.md` file for the
+  question-specific text.
+- Use the prompt assembly and output structure in the index.
 
 If `focus` was set, drop agents whose questions don't apply.
 
@@ -220,10 +179,29 @@ Spawn a single `Agent` (general-purpose) subagent with this prompt:
 > <What's the best-built piece in this repo, and what pattern should
 > new work follow? Cite the specific example.>
 >
+> ## Module candidates
+> <Evidence-backed candidates for new or extracted modules. For each:
+>   - Candidate ID: MOD-NN
+>   - Classification: discard | needs-human | research-spike | module-prd-ready
+>   - Current pain and evidence
+>   - Affected areas
+>   - Proposed ownership boundary
+>   - Public interface shape
+>   - Testability opportunity
+>   - Migration, rollout risk, and rollback expectation
+>   - Confidence: high | medium | low
+>   - Provenance evidence: fact-pack filenames plus concrete file/line or command evidence
+>   - Why it is or is not ready for `workflow-autonomous-backlog`.
+> Do not invent candidates without fact-pack evidence.>
+>
 > ## Recommended next steps
 > <Priority-ordered list. Each item: what to do, which FIND-NN it
-> addresses, rough effort. No more than 8 items — action list, not
-> wishlist.>
+> addresses, rough effort, vertical slice path, and recommended next
+> workflow. Prefer `workflow-roadmap`, `grill-with-docs`, `to-prd`,
+> `to-issues`, or `triage`. Recommend `design-plan` only for repo-wide
+> refactors, migrations, or multi-phase remediation that cannot yet be
+> expressed as independently verifiable vertical issue slices. No more
+> than 8 items — action list, not wishlist.>
 >
 > ## Open questions / unverified claims
 > <Anything the evidence-validation pass couldn't confirm. Also anything
@@ -258,8 +236,8 @@ chat output.
 
 **Final report:** standard markdown with the structure defined in Step 3,
 saved to `docs/audits/<date>[-<path-slug>]-repo-audit.md`. Findings
-carry stable `FIND-NN` IDs that downstream skills (`/design-plan`,
-`/post-mortem`) reference.
+carry stable `FIND-NN` IDs that downstream skills reference in roadmaps,
+PRDs, issues, triage notes, design plans, and retros.
 
 **Intermediate fact-packs:** one markdown file per discovery question
 in `docs/audits/.fact-packs-<date>[-<path-slug>]/`. Deleted by default.
@@ -313,6 +291,12 @@ User: /repo-audit path=apps/web
 Claude: [writes docs/audits/2026-04-20-apps-web-repo-audit.md]
 ```
 
+## Output format
+
+The primary artifact is always the markdown report at `docs/audits/`. When running in Cursor IDE, also produce a **canvas** (`.canvas.tsx`) for the audit summary — the findings table, severity breakdown, and risk heatmap render significantly better as an interactive artifact than as a markdown table in chat. Use the Cursor `canvas` skill pattern: create a `canvases/<date>-repo-audit.canvas.tsx` file with the structured findings data.
+
+Skip the canvas when running headless (Codex AFK, CI, non-IDE context).
+
 ## Tuning notes
 
 - For repos under ~20K lines, consider dropping parallel agents by
@@ -329,23 +313,12 @@ Claude: [writes docs/audits/2026-04-20-apps-web-repo-audit.md]
   focus that adds performance and cost questions.
 - For libraries and SDKs, add a question about top API rough edges a
   new consumer would hit.
-- Pair this skill with the rest of the core loop:
-  `/design-plan` (turns findings into a phased plan; also accepts
-  a `brief` for bug/feature-scale work without an audit),
-  `/execute-phase` (runs each phase with scoped subagents, commits
-  with ID citations from any scheme — `FIND-NN`, `REQ-NN`, ticket
-  slugs), `/review` (workspace reviewer subagent, in-loop fresh
-  context), `/post-mortem` (closes the loop with a retro citing
-  `NEW-NN` discoveries — runs before `/describe-pr` so the PR body
-  can cite the retro), `/describe-pr` (produces deviation-aware PR
-  bodies), and `/watch-ci` (post-PR-open: polls CI, applies bounded
-  auto-fixes, runs `/security-review`, submits Approve when clean).
-  Plus `/setup-worktree` as an on-demand side-car for resolving
-  `[human]` gates in isolated checkouts. `/repo-audit` is the
-  refactor-scale entrypoint; brief-mode `/design-plan` is the
-  bug/feature entrypoint and skips this skill. All seven share ID
-  vocabulary (`FIND-NN`, `REQ-NN`, `NEW-NN`, ticket slugs, phase
-  numbers) and artifact conventions under `docs/audits/`,
-  `docs/plans/`, and `docs/executions/` (including the hidden
-  `.phase-runs/` subdir written by `/execute-phase` and `.ci-runs/`
-  written by `/watch-ci`).
+- Pair this skill with the current workflow:
+  - Product/feature gaps: `workflow-roadmap` → `grill-with-docs` →
+    `decision-log` → `to-prd` → `to-issues` → `triage`.
+  - Clear implementation slices: `to-issues` or `triage` directly.
+  - Refactor-scale or migration work that needs phases: `design-plan`
+    → `execute-phase` → `workflow-review` → `post-mortem` →
+    `workflow-finalize`.
+  `/repo-audit` supplies evidence and `FIND-NN` IDs. It does not choose
+  the old phase-execution lane by default.
