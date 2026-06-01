@@ -18,8 +18,8 @@ Human gates: confirm core truth before building final node map
 
 ## Soft Context
 
-Typical workflows: core truth → dnd-node-builder → dnd-continuity-check → dnd-player-agency-review → dnd-session-prep
-Pairs well with: dnd-continuity-check (validate node web), dnd-player-agency-review (ensure real player choice)
+Typical workflows: core truth → dnd-node-builder → dnd-review (continuity) → dnd-review (agency) → dnd-session-prep
+Pairs well with: dnd-review (continuity) (validate node web), dnd-review (agency) (ensure real player choice)
 
 ## Workflow
 

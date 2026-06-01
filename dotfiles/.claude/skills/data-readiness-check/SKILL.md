@@ -1,6 +1,6 @@
 ---
 name: data-readiness-check
-description: Before starting an analysis or building a metric, checks whether the data needed actually exists, is fresh enough, is correctly grained, and is governed for the intended use. Catches analyses that quietly assume data that's missing, stale, or off-limits. Use as the first check in `analysis-design`, or whenever you're about to depend on a data source you haven't recently verified.
+description: "Before an analysis or metric, checks whether the needed data exists, is fresh, correctly grained, and governed for the use. Catches analyses that assume missing/stale/off-limits data. Use as the first check in analysis-design or before depending on an unverified source."
 ---
 
 # Data Readiness Check
@@ -109,7 +109,7 @@ If the analysis joins multiple sources, do the join keys exist and behave consis
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Planned sources**: each source's freshness contract, owner, consent classification

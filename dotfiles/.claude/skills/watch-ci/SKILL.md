@@ -1,6 +1,7 @@
 ---
 name: watch-ci
-description: Post-draft-PR CI watcher, reviewer-feedback monitor, and bounded auto-fix loop. Creates or watches draft PRs, polls CI, incorporates all reviewer-agent feedback, posts structured status comments, and leaves mark-ready/merge decisions to workflow-finalize or the user.
+description: Manual slash-only CI polling and bounded fix helper for existing pull requests. Auto-routing disabled; workflow-finalize may call it internally.
+disable-model-invocation: true
 triggers:
   - "/watch-ci"
   - "watch ci"
@@ -170,7 +171,7 @@ After each successful fix commit, `git push origin <branch>` and append the comm
 
 When checks pass, load `references/approve-and-review-gates.md`.
 
-- If `no_review == true`, require either an explicit user waiver or a complete `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review. If neither exists, halt.
+- If `no_review == true`, require either an explicit user waiver or a complete `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review. If neither exists, halt.
 - If `no_review == true`, skip self-review agents only after that evidence/waiver is recorded, and still monitor and resolve any existing PR comments.
 - Otherwise run the always-on OMC `security-reviewer` pass.
 - Run `/review` on auto-fix commits and on any reviewer-feedback fix commits created by this skill.

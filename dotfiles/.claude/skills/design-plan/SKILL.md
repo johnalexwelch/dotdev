@@ -20,7 +20,7 @@ inputs:
   - name: brief
     type: string
     default: ""
-    description: Refactor-scale, migration, or investigation brief: inline string, `@path/to/file`, or URL. Mutually exclusive with `audit_path`. Product features should use the PRD/issues workflow instead.
+    description: 'Refactor-scale, migration, or investigation brief: inline string, `@path/to/file`, or URL. Mutually exclusive with `audit_path`. Product features should use the PRD/issues workflow instead.'
   - name: existing_plan
     type: string
     default: ""
@@ -32,7 +32,7 @@ inputs:
   - name: constraints
     type: string
     default: ""
-    description: Free-text constraints: solo vs. team, deadlines, API budgets, production risk tolerance, rollback tolerance.
+    description: 'Free-text constraints: solo vs. team, deadlines, API budgets, production risk tolerance, rollback tolerance.'
   - name: output_path
     type: string
     default: "docs/plans/<date>[-<slug>]-design.md"
@@ -47,6 +47,11 @@ writes:
 ---
 
 # /design-plan
+
+## Effort
+
+**Think hard** before drafting — this is planning work, and reasoning depth here prevents expensive rework downstream. Run on the strongest available session model.
+
 
 ## Purpose
 

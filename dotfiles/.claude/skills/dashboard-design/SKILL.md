@@ -137,7 +137,7 @@ Explicitly list what users might expect that this dashboard does NOT include —
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Existing dashboards for the same decision or audience** — duplication candidates

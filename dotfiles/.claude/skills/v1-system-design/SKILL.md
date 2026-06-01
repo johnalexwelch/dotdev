@@ -5,6 +5,11 @@ description: Designs a technical system to support an approved V1 product brief.
 
 # V1 System Design
 
+## Effort
+
+**Think hard** before proposing structure — system-design decisions are expensive to reverse. Favor reasoning depth over speed.
+
+
 ## Contract
 
 Consumes: approved `V1_IDEA_BRIEF`, decision log, repo context when building in an existing codebase, constraints

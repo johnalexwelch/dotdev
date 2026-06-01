@@ -125,7 +125,7 @@ Output the audit:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Character's prior appearances** — every scene / chapter with the character's state at that point

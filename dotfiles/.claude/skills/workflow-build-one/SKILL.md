@@ -5,6 +5,18 @@ description: Implement one ready-for-agent issue end-to-end (preflight → execu
 
 # Workflow Build One
 
+## Model selection
+
+Run implementation steps on **Sonnet** (`model: sonnet`); reserve **Opus** for the design/review reasoning around them.
+
+
+## Output discipline (during execution only)
+
+While running the mechanical execution/implementation loop, compress **routine progress narration** to caveman style — drop articles, filler, and pleasantries; prefer `[thing] [action] [reason]. [next].` This cuts scroll and output tokens during the grind.
+
+Snap back to **full prose** for anything that needs judgment: findings, scope violations, blockers, `NEEDS_HUMAN` gates, decisions/tradeoffs, and the final summary/handoff. The terseness is scoped to the loop — it ends when execution ends; do not carry it into the review or handoff that follows. See `caveman` for the full compression rules.
+
+
 ## Purpose
 
 Take a single `ready-for-agent` issue and drive it from implementation through repo-policy-controlled PR handoff. This is the standard "build one thing" workflow — the workhorse for individual issue execution.
@@ -60,9 +72,9 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 ### Step 3: Review (workflow-review)
 
 - Load and run `workflow-review/SKILL.md` explicitly. Do not treat tests, green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, or resolved PR comments as satisfying this step.
-- Dispatch parallel reviewers on the diff
-- Require dispatch evidence from `workflow-review`: active lanes, subagent types, skipped-with-reason conditional lanes, and synthesized verdict
-- Require the `WORKFLOW_REVIEW_GATE` block with `verdict: APPROVE`. If the block is missing or incomplete, treat review as not run and halt.
+- Select a risk-sized `review_profile` in `workflow-review`: `fast` for small low-risk changes, `standard` for normal issue work, `full` for broad or high-risk changes
+- Require independent review evidence from `workflow-review`: review profile, active lanes, independent reviewer context/subagent types, skipped-with-reason conditional lanes, and synthesized verdict
+- Require the `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. If the block is missing or incomplete, treat review as not run and halt.
 - If APPROVE: proceed to finalize
 - If REQUEST CHANGES: iterate (max 2 rounds, then **auto-handoff** with review findings and halt)
 - If NEEDS HUMAN: **auto-handoff** (exit_reason: halt, blocker: what the reviewer flagged and what decision is needed) and halt

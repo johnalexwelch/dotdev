@@ -1,6 +1,6 @@
 ---
 name: setup-worktree
-description: Create an isolated git worktree from `origin/staging` for a design-plan phase, issue, or workflow run. Defaults the worktree path to `~/wt/<repo>/phase-<N>/` and creates a new branch derived from the plan phase or explicit branch input. Auto-copies common config files (.env*, .envrc, .nvmrc, .python-version, .tool-versions). Used before workflow execution and on-demand when a workflow halts at a human gate.
+description: "Create an isolated git worktree from origin/staging for a plan phase, issue, or workflow run; defaults path ~/wt/<repo>/phase-<N>/, derives the branch, auto-copies .env*/.tool-versions etc. Used before workflow execution and at human-gate halts."
 triggers:
   - "/setup-worktree"
   - "setup worktree"
@@ -249,7 +249,7 @@ Claude: [git fetch origin --prune]
      ↓
 /execute-phase ({refactor,fix,feat}/phase-* branches)
      ↓
-/workflow-review (specialist subagents with dispatch evidence)
+/workflow-review (risk-sized independent review evidence)
      ↓
 /post-mortem (NEW-NN, drift)
      ↓

@@ -52,6 +52,7 @@ Report only issues the author should fix. Do not list generic best practices, st
 | Dependency/Supply-Chain Reviewer | `references/reviewer-briefs/dependency-supply-chain-reviewer.md` |
 | Product/Acceptance Reviewer | `references/reviewer-briefs/product-acceptance-reviewer.md` |
 | Frontend/UX/A11y Reviewer | `references/reviewer-briefs/frontend-ux-a11y-reviewer.md` |
+| Integrated Reviewer | `references/reviewer-briefs/integrated-reviewer.md` |
 
 ## Loading Rule
 

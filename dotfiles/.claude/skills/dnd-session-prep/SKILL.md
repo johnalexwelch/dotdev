@@ -1,129 +1,87 @@
 ---
 name: dnd-session-prep
-description: Builds practical, table-ready D&D session prep from accepted campaign direction, prior session notes, open threads, NPC/faction state, and desired table experience. Use after grilling or continuity review.
-codex-compatible: false
+description: Turns a designed situation or current campaign state into a table-ready D&D session — a clear session goal, secrets/clues/leads, active timers, encounters that are situations (not just fights), meaningful decisions with visible stakes, spotlight moments, a variety/pacing plan, delegation, and narration prep. Use whenever the user wants to prep, plan, or get ready to *run* a session — "prep my next session," "what should happen at the table," "I'm running D&D tomorrow," "turn this into a session," "I don't know what to prep" — especially after an adventure has been designed. Engagement-and-execution focused (Angry GM + DM David); pairs with dnd-adventure-design (structure) upstream.
+metadata:
+  codex-compatible: false
 ---
 
-## Purpose
+# dnd-session-prep
 
-Turn settled campaign direction into runnable session prep.
+Turn a settled direction — a designed situation, a campaign in motion, or "we left off here" — into material you can actually run *next session*. Where `dnd-adventure-design` builds the situation's architecture (nodes, clues, factions), this skill makes that architecture playable at the table: what the players will care about, what they can do, how the world pushes back, and how to keep it moving.
 
-This skill emphasizes table usability: strong start, scenes, secrets/clues, NPCs, locations, encounters, consequences, and flexible improvisation support.
+Two schools drive this skill. **The Angry GM** — make players *care*: investment, stakes, consequences, meaningful decisions, clear narration (full reference in `references/angry-gm-principles.md`). **DM David** — run it *smoothly*: prepare secrets/clues/leads not scenes, prep only what's needed, delegate, keep momentum, manage spotlight and pacing (full reference in `references/dm-david-principles.md`). Read whichever you need the reasoning from; the workflow below is enough to run.
 
-## Contract
-
-Consumes: session premise, decision log, prior session notes, canon, open threads, NPC/faction/location docs, desired table experience
-Produces: session prep document, scene list, secrets/clues, NPC notes, encounters, fallback paths, consequence map
-Requires: enough accepted direction to prep from
-Side effects: may create or update session prep files after user acceptance
-Human gates: ask before writing canon-changing material
-
-## Soft Context
-
-Typical workflows: dnd-grill-with-canon → dnd-continuity-check → dnd-session-prep → dnd-player-agency-review
-Pairs well with: decision-log, dnd-player-agency-review (final check), dnd-open-thread-review (surface threads to weave in)
+## The two questions that govern prep
+- **Prepare what you'll actually use.** Players only ever experience what reaches the table, and the DM is usually the slowest part of it. Prep the *likely* next content — the situations, NPCs, and locations they'll probably hit — not six sessions of contingency. The best input here is what the players said they'd do at the end of last session; if you don't have it, infer the two or three most probable directions and prep those.
+- **Prepare situations, not encounters.** A situation survives player choice; a scripted encounter shatters the moment they negotiate, sneak, or invent something. Frame every prepped beat as a situation with goals and pressures the players can engage any way they like — not a fixed event that must play out.
 
 ## Workflow
 
-### 1. Retrieve current state
+1. **Anchor in where things stand.** If campaign files exist, read `CAMPAIGN_MAP.md` first (it points to canon), then pull what's live: recent session notes, `TIMELINE.md`, `OPEN_THREADS.md`, `PLAYER_KNOWLEDGE.md`, and the relevant `npcs/**`, `factions/**`, `locations/**`. Capture two things explicitly: **what changed last session**, and **what the players said they'd do next.** If a designed situation exists (from `dnd-adventure-design`), start from it. Don't re-read the whole archive.
 
-Review:
+2. **Set one clear session goal.** Players need to know what they're trying to accomplish, and so do you. Make it achievable, understandable, and measurable — "stop the ritual before the full moon," not "deal with the cult somehow." This anchors pacing: when play drifts, the goal tells you what to reassert.
 
-- Previous session recap
-- Campaign decision log entries from recent grills
-- Current party location and objective
-- Active NPCs
-- Active factions
-- Open threads
-- Player knowledge
-- Consequences from last session
-- Any accepted decisions from `dnd-grill-with-canon`
+3. **Name the investment, and put it in the room.** State why *this* party cares right now — the emotional anchor (an NPC they love, a place they've bled for, a personal stake). Make the anchor *present and active* this session, not a quest-giver behind a desk: let the party see the frightened person, the empty cot, the threatened place, early. If the upcoming material has none, build one in — a named, vulnerable person tied to this session's problem and on the same clock beats any lore. Note one personal thread per PC so the investment isn't carried by a single character. Investment is the difference between players making choices and players spectating.
 
-Treat decision-log entries as settled prep constraints unless the user explicitly reopens them. Do not re-litigate accepted alternatives; use the logged tradeoffs to explain surprising prep choices.
+4. **Lay out secrets, clues, and leads.** List the **secrets** (truths in the world relevant this session), the **clues** that let players uncover each (with the Three Clue Rule in mind — no single point of failure), and the **leads** that point them onward so they're never stranded without a next move. Players assemble the sequence; you supply the information. Mind the line between **public belief** and **GM truth**: check what the party already knows (`PLAYER_KNOWLEDGE.md` if it exists) so a clue advances them rather than restating what they have — or accidentally handing over a secret they haven't earned.
 
-### 2. Define session target
+5. **Advance the clocks.** Note every **active timer** moving this session — villain plans, faction maneuvers, rituals, political events — and where each stands. The world changes whether or not the players act; surface that pressure so their choices carry weight and urgency.
 
-State these explicitly:
+6. **Build encounters as decisions with visible stakes.** Remember an "encounter" is *any* meaningful situation needing a decision — negotiation, chase, investigation, trap, social conflict, or combat — not just a fight. For each, give it the three things a real decision needs: **information** (players can see enough to choose on purpose), **stakes** (state what success, failure, and cost each mean), and **tradeoffs** (every option gives something up). Keep risks *visible* up front — known danger creates tension; hidden "gotcha" lethality breaks trust. Never present a threat the party can't defeat, outwit, or avoid.
 
-```md
-## Session Target
+7. **Plan spotlight and variety.** Earmark at least one moment per player where their abilities, backstory, or choices matter — don't leave the spotlight to chance. Then check the mix: vary combat, investigation, exploration, and social beats so the session doesn't run as one repeated note.
 
-**Primary experience:** ...
-**Primary question:** ...
-**Likely climax:** ...
-**Session should end with:** ...
-```
+8. **Plan pacing and momentum.** Predict where players might stall (a stuck investigation, an unclear goal, analysis paralysis) and prep the lever that restores motion: new information, a new threat, a ticking clock, a consequence. Momentum dies in uncertainty; clarity and a fresh choice restore it.
 
-### 3. Build prep in runnable sections
+9. **Offload table logistics.** You don't have to run everything. Decide what to delegate — initiative tracking, condition/HP tracking, the session journal, map/mini setup — so you stay focused on situations and narration instead of bookkeeping.
 
-Use this structure:
+10. **Prep narration for the key scenes.** For the two or three beats that matter most, prep *actionable* description, not mood-poetry: what exists, what matters, and what players can interact with ("three stone altars, one slick with fresh blood" — not "an old, mysterious room"). Visualize the space first so positions and objects stay consistent. At the table, run resolution as **Declare → Determine → Describe**: the player states an action, you resolve it, you narrate the result — clean and in order.
+
+11. **Close the loop.** End the prep with the **consequences** that are queued: how the world will visibly shift depending on what the players do. After the session, update `TIMELINE.md` / `OPEN_THREADS.md` once outcomes are known (only after the DM confirms). For a final pre-table safety check, route to `dnd-review` (agency + continuity).
+
+## Output format
+Produce a runnable prep doc. Lead with the goal and what's live; keep beats as situations, not a script.
 
 ```md
-# Session {N}: {Title}
+# Session Prep: {session title / date}
+**Session goal:** {achievable, understandable, measurable}
+**Why the party cares:** {emotional anchor / personal stake live this session}
 
-## Strong Start
+## Where we left off
+- **Changed last session:** …
+- **Players said they'd:** …  → **so I'm prepping:** {the 2–3 likely directions}
 
-## Current Situation
+## Active timers (moving whether or not they act)
+- {Clock} — currently at … → next beat if unchecked …
 
-## Key NPCs
+## Secrets · Clues · Leads
+### Secret: {truth in the world}
+- Clue ({where/how}): …   · Clue ({where/how}): …   · Clue ({where/how}): …
+- Lead onward: …
 
-| NPC | Wants | Knows | Will Do If Ignored |
-|-----|-------|-------|--------------------|
+## Situations this session
+### {Situation} — type: {social / investigation / exploration / combat}
+- **The decision it poses:** … **Success / Failure / Cost:** … **Visible risks:** …
+- **Ways in** (negotiate / sneak / fight / investigate / avoid): …
 
-## Locations / Nodes
+## Spotlight & variety
+- {PC} → their moment: … (repeat per player) · Beat mix check: …
 
-## Secrets and Clues
+## Pacing plan
+- Likely stall point: … → momentum lever: …
 
-1. ...
-2. ...
-3. ...
+## Table logistics to delegate
+- {task} → {player}
 
-## Scenes
+## Key-scene narration notes
+- {Scene}: what exists / what matters / what's interactable …
 
-### Scene: {Name}
+## Consequences queued
+- If they {do X} → world shifts to … (per likely outcome)
 
-**Purpose:** ...
-**Setup:** ...
-**Pressure:** ...
-**Choices:** ...
-**Outcomes:** ...
-
-## Encounters
-
-## Treasure / Rewards
-
-## Consequences
-
-## Improvisation Safety Net
-
-## End-State Options
+## Pre-table check
+{route to dnd-review — agency + continuity}
 ```
 
-### 4. Preserve player agency
-
-For every major beat, include:
-
-- what happens if players engage
-- what happens if they ignore it
-- what happens if they solve it early
-- what happens if they choose violence/diplomacy/deception/magic
-
-### 5. Validate table readiness
-
-Check:
-
-- Can the opening be read and run quickly?
-- Does every scene have a purpose?
-- Are there at least 10 usable secrets/clues?
-- Are NPC goals active?
-- Are stakes visible?
-- Is there a flexible ending?
-
-## Rules
-
-- Do not over-script dialogue.
-- Do not force a single path.
-- Prefer bullets, tables, and usable prompts.
-- Keep boxed text short.
-- Make NPCs active, not static lore dispensers.
-- Include consequences for inaction.
+## Output rules
+Prep for *use*, not for show — favor what the players will probably touch over exhaustive coverage, and favor momentum over simulation detail. Keep every beat a situation that survives unexpected player choices; if you've written a fixed sequence of events, you've written a script, so turn it back into a situation with goals and pressures. Make stakes and risks explicit and visible. Protect player trust: consistent rulings, logical consequences, honest NPCs, no information hidden just to spring a "gotcha." Cite canon file paths when you lean on them, and never update campaign docs until the DM confirms outcomes.

@@ -89,7 +89,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 [Any constraints extracted from labels, related issues, or project conventions]
 - Must create a fresh per-issue worktree from `origin/staging` before starting implementation and include `WORKTREE_BASELINE_GATE` in the handoff
 - For dependent stacked work, may instead create a fresh per-issue worktree from the clean parent branch only when the parent PR has complete gates; include `STACKED_WORKTREE_GATE` and target the PR at the parent branch
-- Must run `workflow-review` and include `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`
+- Must run `workflow-review` with a risk-sized `review_profile` and include `WORKFLOW_REVIEW_GATE` with `independent_review: true` and `verdict: APPROVE`
 - Must run `workflow-finalize` and include a complete `WORKFLOW_FINALIZE_GATE`
 - Must create or update only a draft PR unless an existing non-draft PR already exists
 - Must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git
@@ -118,7 +118,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 - For root issues, require final handoff evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <path>`
 - For stacked dependent work, do not include the root `origin/staging` worktree command as the implementation command. Include the parent-gate precondition, create the child worktree from the parent branch with `git worktree add -b <child-branch> <child-worktree-path> <parent-branch>`, target the child PR at the parent branch, and require final handoff evidence:
   `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
-- Require `workflow-review` with a real `WORKFLOW_REVIEW_GATE` and `verdict: APPROVE`; green CI, GitHub reviews, Claude Code Review, Bugbot, or Codex review do not substitute for this gate.
+- Require `workflow-review` with a real `WORKFLOW_REVIEW_GATE`, `review_profile`, `independent_review: true`, and `verdict: APPROVE`; green CI, GitHub reviews, Claude Code Review, Bugbot, or Codex review do not substitute for this gate.
 - Require `workflow-finalize` with a complete `WORKFLOW_FINALIZE_GATE`.
 - Require draft PR handoff only; do not mark ready, approve, merge, enable auto-merge, force-push, rebase, or use destructive git.
 - Require the Partial-Completion Contract before exit. The worker must end in exactly one state:
@@ -152,7 +152,7 @@ Print the prompt to chat. Then offer:
 - Never fabricate acceptance criteria. If criteria are absent or materially ambiguous, halt AFK prompt generation and mark the issue `needs-human`. `[inferred]` criteria are allowed only for planning briefs, not execution prompts.
 - Never generate a root execution prompt that omits mandatory per-issue worktree creation from `origin/staging`. If the issue cannot name a safe branch/worktree convention, include placeholders and require the worker to resolve them before coding.
 - Never generate a stacked execution prompt unless the parent PR gate evidence is complete and the prompt tells the worker to target the child PR at the parent branch.
-- Never generate an execution prompt that omits `workflow-review`, `WORKFLOW_REVIEW_GATE`, `workflow-finalize`, `WORKFLOW_FINALIZE_GATE`, draft-only PR handoff, and no mark-ready/merge/auto-merge/destructive-git constraints.
+- Never generate an execution prompt that omits `workflow-review`, risk-sized `review_profile`, `WORKFLOW_REVIEW_GATE`, `workflow-finalize`, `WORKFLOW_FINALIZE_GATE`, draft-only PR handoff, and no mark-ready/merge/auto-merge/destructive-git constraints.
 - Never assume the test runner. Check the project for package.json scripts, Makefile targets, or pytest.ini before suggesting test commands.
 - If the issue is blocked by another issue, say so in the prompt. Do not generate a prompt that will lead to wasted work.
 - Keep prompts under 500 lines. The point is focused context, not a novel.

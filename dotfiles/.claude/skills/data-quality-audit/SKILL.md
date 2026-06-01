@@ -1,6 +1,6 @@
 ---
 name: data-quality-audit
-description: Audits a table, model, or pipeline for data quality issues — NULL rates, duplicates, schema drift, distribution shifts, referential integrity, late-arriving data, freshness drift. Produces a prioritized findings list with severity and recommended action. Use for periodic audits, after suspect data flows in, or when an analysis turned up a weird number.
+description: "Audits a table, model, or pipeline for data-quality issues: NULL rates, duplicates, schema drift, distribution shifts, referential integrity, late-arriving data, freshness drift. Produces a prioritized findings list with severity. Use for periodic audits or when an analysis turned up a weird number."
 ---
 
 # Data Quality Audit
@@ -118,7 +118,7 @@ For each finding:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Target tables / columns**: schema-drift history, prior NULL-rate spikes, prior duplicate findings

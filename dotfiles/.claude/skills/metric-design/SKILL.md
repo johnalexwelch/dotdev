@@ -141,7 +141,7 @@ If the gaming paths are easy, the metric is fragile. Either accept the risk, des
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Existing metrics with overlapping definitions** — avoid duplicate-with-drift

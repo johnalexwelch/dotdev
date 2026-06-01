@@ -1,6 +1,6 @@
 ---
 name: strategic-analysis-review
-description: Reviews executive-facing analyses for argument strength, weaknesses, Pyramid/SCQA structure, insight quality, wording, and what to add, cut, or reframe. Use when reviewing strategy memos, analytical narratives, board/ELT updates, recommendations, business performance analyses, drafts that need sharper executive language, or when the user says "review this memo", "pressure-test this recommendation", or "make this board update sharper".
+description: "Reviews executive-facing analyses for argument strength, Pyramid/SCQA structure, insight quality, and wording. Use for strategy memos, board/ELT updates, recommendations, or \"review this memo\", \"pressure-test this recommendation\", \"make this board update sharper\"."
 ---
 
 # Strategic Analysis Review

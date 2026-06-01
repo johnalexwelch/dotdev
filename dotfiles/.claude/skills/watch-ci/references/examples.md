@@ -81,7 +81,7 @@ Claude: [preflight: branch feat/phase-1-dark-mode, no PR exists]
      |
 /execute-phase ({refactor,fix,feat}/phase-* branches)
      |
-/workflow-review (specialist subagents with dispatch evidence)
+/workflow-review (risk-sized independent review evidence)
      |
 /post-mortem (writes retro citing NEW-NN)
      |

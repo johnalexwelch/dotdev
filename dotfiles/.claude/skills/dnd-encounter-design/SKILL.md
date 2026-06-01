@@ -1,6 +1,6 @@
 ---
 name: dnd-encounter-design
-description: Designs a D&D combat or tactical encounter using the military-strategist persona as the core lens. Outputs tactical objective (beyond "kill the monsters"), terrain features that matter, force composition for both sides, intel asymmetry, escape routes, victory conditions, narrative hooks, and mechanical balance check. Use when planning a combat encounter, set-piece battle, or any tactical scenario for a session.
+description: "Designs a D&D combat/tactical encounter via a military-strategist lens: tactical objective, terrain, force composition, intel asymmetry, escape routes, victory conditions, hooks, balance check. Use when planning a combat or set-piece battle for a session."
 ---
 
 # D&D Encounter Design
@@ -18,7 +18,7 @@ Most combat encounters fail at design time: no objective beyond "reduce HP to 0,
 
 Routing:
 - Whole-session prep → `dnd-session-prep`
-- Player agency / railroad audit → `dnd-player-agency-review`
+- Player agency / railroad audit → `dnd-review (agency)`
 - Stress-test the encounter narrative → `dnd-grill`
 - Generalized narrative pacing → `pacing-review`
 
@@ -192,7 +192,7 @@ Run quickly through the standard D&D 5e encounter-difficulty math (or whatever s
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Location**: prior session events here, terrain canon, who controls it now
@@ -215,4 +215,4 @@ Human gates: none — DM reviews before running
 ## Context
 
 Typical workflows: pre-session encounter design, mid-arc set-piece planning
-Pairs well with: dnd-session-prep (broader prep), dnd-grill (stress-test the design), dnd-player-agency-review (audit for railroading), military-strategist persona (the core lens of this skill)
+Pairs well with: dnd-session-prep (broader prep), dnd-grill (stress-test the design), dnd-review (agency) (audit for railroading), military-strategist persona (the core lens of this skill)

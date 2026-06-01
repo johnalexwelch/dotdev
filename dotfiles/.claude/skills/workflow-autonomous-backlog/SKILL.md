@@ -184,7 +184,7 @@ Each issue must create its own fresh worktree before work starts. Worktree creat
 
 Dependent issues may continue before the parent PR is merged only through a controlled stacked flow:
 
-- The parent issue PR must have `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`, a complete `WORKFLOW_FINALIZE_GATE`, green CI, and no unresolved reviewer comments.
+- The parent issue PR must have `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`, a complete `WORKFLOW_FINALIZE_GATE`, green CI, and no unresolved reviewer comments.
 - The child issue creates its own fresh worktree from the parent branch, not from the primary checkout.
 - The child PR targets the parent branch, not `staging`.
 - The child handoff records:
@@ -193,14 +193,14 @@ Dependent issues may continue before the parent PR is merged only through a cont
 
 If any parent gate is missing, stale, or not clean, the dependent issue remains `blocked` or `needs-human`. Stacked development follows `REPO_DELIVERY_POLICY`: `human-only` stacks do not permit marking PRs ready, approving, merging, enabling auto-merge, force-pushing, rebasing, or using destructive git; `auto-merge-eligible` stacks may mark ready and enable GitHub auto-merge only after gates pass and the child PR targets the parent branch.
 
-No issue can enter finalization until `workflow-review` emits `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`. No issue can be marked successful until `workflow-finalize` emits a complete `WORKFLOW_FINALIZE_GATE`.
+No issue can enter finalization until `workflow-review` emits `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. No issue can be marked successful until `workflow-finalize` emits a complete `WORKFLOW_FINALIZE_GATE`.
 
 Required gates per PR:
 
 - `WORKTREE_BASELINE_GATE` or valid `STACKED_WORKTREE_GATE`
 - local verification evidence
 - `user-journey-qa` when triggered
-- `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`
+- `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`
 - `WORKFLOW_FINALIZE_GATE`
 - repo-policy-controlled PR handoff (`pr_state: draft`, `existing_non_draft_not_modified`, or `ready_auto_merge_enabled` in the finalization gate)
 

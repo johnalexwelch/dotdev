@@ -1,6 +1,6 @@
 ---
 name: runbook-author
-description: Authors or updates an operational runbook from an incident retro, a known recurring failure mode, or a process that needs to be made executable by an on-call responder at 2 AM. Produces a stepwise runbook with prereqs, signals, decision points, rollback, and escalation paths. Use after an incident-retro produces a "shorten" or "detect" action, or proactively for known failure modes.
+description: "Authors or updates an operational runbook from an incident retro, a recurring failure mode, or a process to make executable by on-call at 2 AM. Produces stepwise prereqs, signals, decision points, rollback, and escalation. Use after incident-retro or proactively."
 ---
 
 # Runbook Author
@@ -147,7 +147,7 @@ Once the system is recovered:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Existing runbooks** for related scenarios — avoid duplication, identify discriminator

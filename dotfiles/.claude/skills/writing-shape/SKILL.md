@@ -1,68 +1,46 @@
 ---
 name: writing-shape
-description: Take a markdown file of raw material and shape it into an article through a conversational session — drafting candidate openings, growing the piece paragraph by paragraph, arguing about format (lists, tables, callouts, quotes) at each step. Use when the user has a pile of notes, fragments, or a rough draft and wants help turning it into something publishable.
+description: Take a markdown file of raw material and shape it into an article through a conversational session. Two rhythms — shape (grow paragraph by paragraph as an argument, picking format at each step) and beats (build beat by beat, choose-your-own-adventure narrative style). Use when the user has notes, fragments, or a rough draft to turn into something publishable.
 codex-compatible: false
 ---
 
 # Writing Shape
 
-Take raw material and shape it into an article through collaborative paragraph-by-paragraph construction.
+Turn a pile of raw material into a finished article through collaborative, incremental construction. Pick the rhythm that fits the piece:
+
+- **shape** (default, argument-first) — grow the article paragraph by paragraph, arguing about format at each step. Best for essays, explainers, posts that carry an argument.
+- **beats** (narrative-first) — build beat by beat, choose-your-own-adventure: write one beat, then offer 2–3 directions to pivot to next. Best when the piece is a journey rather than a thesis.
+
+Auto-detect from the user's framing ("walk me through it / make the argument" → shape; "let's see where it goes / tell it as a journey" → beats); honor an explicit request.
 
 ## Contract
+Consumes: a markdown file of raw material (fragments, notes, rough draft). Produces: a separate article file, built incrementally. Requires: none. Side effects: creates/appends the article file at a user-specified path (ask once, remember it). Human gates: the user picks the opening/starting beat, approves each block, and decides when it's done.
 
-Consumes: markdown file of raw material (fragments, notes, rough draft)
-Produces: separate article file, grown paragraph by paragraph
-Requires: none
-Side effects: creates article file at user-specified path
-Human gates: user picks opening, approves each paragraph, decides when done
+## Shared rules (both rhythms)
+- The raw material file is **read-only** — never edit it. Treat it as a quarry: pull a fragment, rework it to fit, place it; split/merge/paraphrase as needed.
+- Append each agreed block to the article file immediately — don't batch. **Re-read the file from disk before every write** (the user may have edited between turns).
+- If the pile lacks something the piece needs, name the gap explicitly rather than inventing material: "We need an example here and the pile doesn't have one — give me one or we cut this."
+- Don't add publishing frontmatter the user didn't ask for.
 
-## Soft Context
+## Mode: shape (paragraph by paragraph)
+1. Read the pile end-to-end; form a sense of what's in it.
+2. Draft 2–3 candidate openings, each implying a different thesis/angle. Make the user pick or compose a hybrid — the opening defines what the rest must do.
+3. Grow paragraph by paragraph: "given this opening, what does the reader need next?" Pull from the pile. Argue about format out loud:
+   - prose vs list (prose carries argument; lists carry parallel items)
+   - inline vs callout (callouts only if the aside would derail the main line)
+   - table vs repeated structure (same shape 3+ times with same fields → table)
+   - quote vs paraphrase (quote when the wording is the point)
+   - code block vs inline code
+4. Keep pushing: "What does this paragraph do that the last didn't?" "If I cut this, what breaks?" "The opening promised X; we've drifted to Y — re-thread or change the opening." Refuse weak transitions.
+5. Loop until the user says it's done.
 
-Typical workflows: second stage of writing pipeline (after writing-fragments), standalone article shaping
-Pairs well with: writing-fragments (produces the input file), humanizer (terminal polish on finished article), write-to-obsidian (persist to vault)
+## Mode: beats (choose-your-own journey)
+1. Write 2–3 candidate **starting beats** from the pile, each a different entry point; preview where each might lead. Show them before writing to the file.
+2. Once the user picks, write **only that beat** to the file. Stop.
+3. Re-read the file, then offer 2–3 candidate **next beats** — directions the journey could pivot to from here.
+4. Loop 2–3 until it reaches a natural end. The user can say "cut the last beat", "rewrite it sharper", or "go back to the fork" anytime.
 
-## Process
+A **beat** does one thing (sets a scene, lands a point, asks a question, drops an aside, twists the angle) then stops — sized by need (a sentence, a short paragraph, or a self-contained vignette). If a beat needs five paragraphs and subheadings, it's two beats — split it. Don't impose whole-article structure; it emerges from the choices.
 
-1. Read the input pile end-to-end. Form a sense of what is in it.
-2. Draft 2-3 candidate openings. Each implies a different thesis or angle. Force the user to pick or compose a hybrid. The chosen opening defines what the rest must do.
-3. Grow paragraph by paragraph. After the opening lands, ask "given this opening, what does the reader need to hear next?" Pull material from the pile. Argue about format (prose vs list vs table vs callout vs quote vs code block).
-4. Append to the article file as you go. Don't batch. Write each agreed block immediately.
-5. Loop step 3 until the article is done. The user decides when.
-
-## Conversational feel
-
-This is a grilling session inverted. The question is "what is this article actually arguing, and in what order does the reader need to hear it?" Push back. Refuse to let weak transitions slide.
-
-Specific moves to keep using:
-
-- "What does this paragraph do for the reader that the previous one didn't?"
-- "If I cut this, what breaks?"
-- "Is this prose, or should it be a list? Why prose?"
-- "This sentence is doing two jobs — split it or pick one."
-- "The opening promised X. We've drifted to Y. Either re-thread it or change the opening."
-
-## Pulling from the pile
-
-Treat the raw material as a quarry, not a script. Pull a fragment, rework it to fit the surrounding paragraph, and place it. A fragment may be split across multiple paragraphs, merged with another, or paraphrased.
-
-If the pile lacks something the article needs, name the gap explicitly: "We need an example here and the pile doesn't have one — give me one now or we cut this section."
-
-## Format arguments
-
-When choosing how to render a beat, weigh these tradeoffs out loud:
-
-- Prose vs. list: Prose carries argument; lists carry parallel items
-- Inline vs. callout: Tips and asides go in callouts only if they'd genuinely derail the main argument inline
-- Table vs. repeated structure: If the same shape repeats 3+ times with the same fields, table
-- Quote vs. paraphrase: Quote when the original wording is the point
-- Code block vs. inline code: Multi-line or runnable -> block; single token -> inline
-
-## Writing rhythm
-
-Append to the article file as each block is agreed. Re-read the file from disk before every write. Never overwrite blindly. If the user wants a paragraph rewritten, edit that specific paragraph in place.
-
-## Rules
-
-- Do not edit the raw material file. It is read-only.
-- Do not mine for new fragments that aren't in the pile. If the pile is incomplete, name the gap.
-- Do not add publishing frontmatter the user didn't ask for.
+## Pairs with
+writing-fragments (produces the input pile), humanizer (terminal prose polish), write-to-obsidian (persist to vault).

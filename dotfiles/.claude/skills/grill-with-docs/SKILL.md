@@ -1,8 +1,12 @@
 ---
 name: grill-with-docs
-description: Grilling session that handles both lightweight design interrogation and deep documentation-driven interviews. Challenges your plan against the existing domain model, sharpens terminology, and updates documentation (CONTEXT.md, ADRs) inline as decisions crystallise. Use when user wants to stress-test a plan, get grilled on their design, poke holes in an idea, or challenge a decision. Triggers on "grill me", "stress test this", "poke holes", "challenge this", "grill me hard".
+description: "Design interrogation and doc-driven interview: challenges your plan against the domain model, sharpens terms, updates CONTEXT.md/ADRs inline. Use to stress-test a plan or design. Triggers: \"grill me\", \"stress test this\", \"poke holes\", \"challenge this\"."
 ---
 
+
+## Effort
+
+**Think hard** between questions — surfacing the right next question and its tradeoffs is the whole value here. Favor reasoning depth over speed.
 ## Modes
 
 ### Auto-detection

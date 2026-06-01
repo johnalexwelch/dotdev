@@ -1,6 +1,6 @@
 ---
 name: worldbuilding-deep-dive
-description: Single-element deep dive on one piece of a fictional world — a culture, a city, a polity, a religion, a magic system, a faction, a geography. Goes deeper than `worldbuilding-council` (which is multi-lens breadth) by interrogating one element from many angles, including its history, internal contradictions, lived experience, and how it connects to neighbors. Use when the user wants to develop a single piece of a world thoroughly.
+description: "Single-element deep dive on one piece of a fictional world (a culture, city, polity, religion, magic system, faction). Interrogates that element from many angles: history, contradictions, lived experience, connections. Deeper and narrower than worldbuilding-council."
 ---
 
 # Worldbuilding Deep Dive

@@ -81,7 +81,7 @@ Return the cleaned text with a brief change-log:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Prior cleaned analyses** in this domain — style consistency, recurring slop patterns previously found

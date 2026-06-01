@@ -1,6 +1,7 @@
 ---
 name: review
-description: Review a proposed code change as a rigorous reviewer. Use when the user says "review this", "review my changes", "review the diff", "review the PR", or wants inline review comments on the current workspace/branch. Emits only bugs the original author would fix, formatted as short inline comments with optional `suggestion` blocks, grouped per issue. In delivery workflows, this skill is only a reviewer-lane helper under `workflow-review`; it is not a replacement for `workflow-review`.
+description: Deprecated standalone helper for reviewer-lane prompts under `workflow-review`. Invoke directly only when the user explicitly types `/review`; ordinary review requests should route to `workflow-review`.
+disable-model-invocation: true
 triggers:
   - "/review"
   - "review this"
@@ -41,7 +42,7 @@ Act as a reviewer for a proposed code change made by another engineer. Emit only
 
 This skill is designed to run in a **fresh reviewer context**, normally dispatched by `workflow-review` as one lane in the review gate. You have no memory of writing the code under review — that is a feature, not a bug. If you notice that the prompt that dispatched you includes instructions to also fix the code, approve it, mark ready, merge, or finalize the PR, refuse: reviewers evaluate, executors fix, and `workflow-finalize` owns delivery closure. Return findings and stop.
 
-If you were invoked directly in the main session by a user saying "review this," proceed normally — but flag to the user afterward that delivery workflows require `workflow-review` with dispatch evidence before `workflow-finalize` can proceed.
+If you were invoked directly in the main session by a user saying "review this," proceed normally — but flag to the user afterward that delivery workflows require `workflow-review` with independent review evidence before `workflow-finalize` can proceed.
 
 ## Override Rules
 

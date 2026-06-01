@@ -79,7 +79,7 @@ For each issue in queue order:
    - **Root issue**: create from `origin/staging`.
    - `git fetch origin --prune && git worktree add -b <issue-branch> <issue-worktree-path> origin/staging`
    - Record `WORKTREE_BASELINE_GATE: origin/staging -> <issue-branch> @ <issue-worktree-path>` in the queue artifact.
-   - **Stacked dependent issue**: only allowed when the parent PR has `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`, a complete `WORKFLOW_FINALIZE_GATE`, green CI, and no unresolved reviewer comments.
+   - **Stacked dependent issue**: only allowed when the parent PR has `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`, a complete `WORKFLOW_FINALIZE_GATE`, green CI, and no unresolved reviewer comments.
    - Create the dependent worktree from the parent branch, target the dependent PR at the parent branch, and record:
      `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
    - If worktree creation fails, remove `in-progress`, add `needs-human`, and do not dispatch.
@@ -106,7 +106,7 @@ For each issue in queue order:
 2. For each completed dispatch:
    - PR or handoff lacks `WORKTREE_BASELINE_GATE: origin/staging -> ...` or valid `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> ...` → flag `needs-human`; do not accept work from primary checkout or a local-main branch
    - Stacked PR does not target its parent branch, or parent gate evidence is missing/stale → flag `needs-human`
-   - PR lacks a complete `WORKFLOW_REVIEW_GATE` block with `verdict: APPROVE` → flag `needs-human`; green CI or GitHub/Claude/Codex/Bugbot review does not satisfy the review gate
+   - PR lacks a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE` → flag `needs-human`; green CI or GitHub/Claude/Codex/Bugbot review does not satisfy the review gate
    - PR lacks a complete `WORKFLOW_FINALIZE_GATE` block → flag `needs-human`; a PR URL, draft PR, or green CI alone does not satisfy finalization
    - PR or handoff lacks Partial-Completion Contract evidence → flag `needs-human`; require one of Complete, WIP-paused, or Rolled back plus final `git status --short`
    - Handoff reports dirty source files after final `git status --short` → flag `needs-human`; do not accept work that exits with uncommitted source changes
@@ -172,7 +172,7 @@ Consumes: GitHub Issues (ready-for-agent labeled), repo access
 Produces: PRs (one per issue), backlog run summary, updated issue labels
 Requires: gh, omc, git, subagent-dispatch, project-test-runner
 Side effects: creates branches/PRs, modifies issue labels, writes run summary file
-Human gates: work queue approval unless explicitly AFK-approved in the current invocation; high-risk outage categories require explicit issue-level approval; failed dispatches flagged; PRs lacking workflow-review dispatch evidence flagged `needs-human`; release/merge remains human-only only for repositories listed as `human-only` in `references/repo-delivery-policy.md`
+Human gates: work queue approval unless explicitly AFK-approved in the current invocation; high-risk outage categories require explicit issue-level approval; failed dispatches flagged; PRs lacking workflow-review independent review evidence flagged `needs-human`; release/merge remains human-only only for repositories listed as `human-only` in `references/repo-delivery-policy.md`
 
 Runtime note: requirements are conservative because the default mode is Codex and Claude fallback delegates to `workflow-build-one`. If the user explicitly selects Claude mode and `omc` is the only missing dependency, halt and ask whether to proceed in Claude mode; do not silently downgrade.
 

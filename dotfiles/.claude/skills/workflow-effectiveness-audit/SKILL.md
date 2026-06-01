@@ -73,7 +73,7 @@ For each workflow invocation, derive the expected trace from the skill:
 | Workflow | Required trace |
 |----------|----------------|
 | `workflow-autonomous-backlog` | improve-codebase-architecture discovery evidence -> optional repo-audit supporting evidence -> candidate classification -> grill-with-docs module grill with recommended answers and CONTEXT/ADR updates -> MODULE_GRILL_CONSENSUS -> scoped second-pass decision -> module design summary approval for every module PRD -> to-prd -> to-issues -> triage -> AFK queue approval evidence -> run-backlog -> repo-policy-controlled PR handoff |
-| `workflow-review` | worktree baseline evidence -> parallel specialist subagents -> dispatch evidence -> synthesized verdict |
+| `workflow-review` | worktree baseline evidence -> risk-sized review_profile -> independent reviewer evidence -> synthesized verdict |
 | `workflow-finalize` | worktree baseline evidence -> optional post-mortem -> describe-pr -> ensure draft PR -> receive-review -> watch-ci -> reconcile-issues -> verification gate -> repo-policy final action |
 | `describe-pr` | PR body -> issue disposition -> record review expectations only |
 | `watch-ci` | draft PR -> CI poll -> bounded fixes -> security review -> reviewer-comment gate -> draft handoff gate |
@@ -96,7 +96,7 @@ Produce a scorecard with these dimensions:
 |-----------|-----------------|
 | Routing accuracy | Did the router pick the right workflow for the user request? |
 | Step compliance | Were required workflow steps completed or explicitly skipped? |
-| Review coverage | Did `workflow-review` launch required specialist subagents? |
+| Review coverage | Did `workflow-review` choose the right `review_profile` and produce independent review evidence for required lanes? |
 | Review resolution | Were PR review comments fixed, replied to, waived, or followed up before merge? |
 | Issue hygiene | Were Closes/Fixes/Addresses dispositions used correctly? |
 | Verification quality | Were tests/CI/lints actually run and evidenced? |
@@ -114,8 +114,8 @@ Use a simple rating:
 
 Always check for these:
 
-1. `workflow-review` claimed completion but no subagent dispatch evidence exists.
-2. `WORKFLOW_REVIEW_GATE` missing, incomplete, self-reported, or not backed by subagent outputs.
+1. `workflow-review` claimed completion but no independent review evidence exists.
+2. `WORKFLOW_REVIEW_GATE` missing, incomplete, self-reported by the author, missing `review_profile`, missing `independent_review: true`, or not backed by the selected profile's required reviewer outputs.
 3. `workflow-finalize` claimed completion but no `WORKFLOW_FINALIZE_GATE` exists.
 4. Mutating issue work lacks a fresh per-issue `WORKTREE_BASELINE_GATE: origin/staging -> ...` or valid `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> ...` created before implementation.
 5. PR was approved, auto-merged, merged, or closed while actionable review comments were unanswered.

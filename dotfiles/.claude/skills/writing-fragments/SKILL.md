@@ -19,7 +19,7 @@ Human gates: asks once where to save; otherwise appends silently
 ## Soft Context
 
 Typical workflows: first stage of writing pipeline (fragments -> shape or beats -> humanizer)
-Pairs well with: writing-shape (takes fragment file as input), writing-beats (takes fragment file as input), humanizer (terminal polish), write-to-obsidian (persist to vault)
+Pairs well with: writing-shape (takes fragment file as input), writing-shape (beats mode) (takes fragment file as input), humanizer (terminal polish), write-to-obsidian (persist to vault)
 
 ## Process
 
@@ -81,4 +81,4 @@ The user can say "cut the last one", "rewrite that one sharper", "merge those tw
 
 - Do not impose structure. No outlines, no sections, no argument maps.
 - Do not evaluate whether there are "enough" fragments. That is the user's call.
-- Do not suggest "organizing" the fragments. That is what writing-shape and writing-beats are for.
+- Do not suggest "organizing" the fragments. That is what writing-shape and writing-shape (beats mode) are for.

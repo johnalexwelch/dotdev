@@ -1,6 +1,6 @@
 ---
 name: prototype
-description: Build a throwaway prototype to answer a design question before committing to it. Routes between two branches - a runnable terminal app for state/business-logic questions, or several radically different UI variations toggleable from one route. Use when the user wants to prototype, sanity-check a data model or state machine, mock up a UI, explore design options, or says "prototype this", "let me play with it", "try a few designs".
+description: "Build a throwaway prototype to answer a design question: a runnable terminal app for state/logic questions, or toggleable UI variations. Use to prototype, sanity-check a data model/state machine, or explore UI options. Triggers: \"prototype this\", \"try a few designs\"."
 codex-compatible: true
 ---
 

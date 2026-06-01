@@ -1,6 +1,6 @@
 ---
 name: workflow-executive-doc
-description: Orchestrates executive-facing document creation and review across research, domain analysis, memo drafting, adversarial critique, revision, and polish. Use when writing or reviewing executive memos, board updates, strategy docs, organizational analyses, product engagement analyses, leadership recommendations, or any decision document that needs multiple expert perspectives.
+description: "Orchestrates executive-doc creation and review across research, domain analysis, drafting, adversarial critique, revision, and polish. Use for executive memos, board updates, strategy docs, org/product analyses, or any decision document needing multiple expert perspectives."
 ---
 
 # Workflow Executive Doc

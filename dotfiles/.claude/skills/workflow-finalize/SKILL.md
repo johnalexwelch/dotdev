@@ -11,17 +11,17 @@ Close the delivery loop after workflow-review approves. Handles PR creation/desc
 
 ## When to invoke
 
-- workflow-review returns APPROVE verdict with dispatch evidence
+- workflow-review returns APPROVE verdict with independent review evidence
 - After any successful implementation plus explicit workflow-review cycle
 - Explicitly when work is done and needs to ship
 
 ## Precondition
 
-workflow-review must have returned APPROVE with dispatch evidence. If it hasn't run, lacks dispatch evidence, or returned REQUEST CHANGES / NEEDS HUMAN, halt and direct back to review.
+workflow-review must have returned APPROVE with independent review evidence. If it hasn't run, lacks review-profile evidence, or returned REQUEST CHANGES / NEEDS HUMAN, halt and direct back to review.
 
 Do not accept substitutes for this precondition. Green CI, passing tests, GitHub reviews, Claude Code Review, Bugbot, Codex review, resolved PR comments, or `receive-review` output are not enough unless the `workflow-review` synthesis exists and says APPROVE.
 
-The precondition is satisfied only by a complete `WORKFLOW_REVIEW_GATE` block from `workflow-review` with `verdict: APPROVE`. If the block is absent, incomplete, or self-reported without real subagent dispatch, halt. Do not reconstruct it from prose.
+The precondition is satisfied only by a complete `WORKFLOW_REVIEW_GATE` block from `workflow-review` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. If the block is absent, incomplete, or self-reported by the author without an independent reviewer context, halt. Do not reconstruct it from prose.
 
 The delivery branch must also have `WORKTREE_BASELINE_GATE` evidence showing it was cut from `origin/staging`, or valid `STACKED_WORKTREE_GATE` evidence showing it was cut from a clean parent branch and targets that parent branch. If the work was done in the primary checkout, on a branch based on local `main`/`staging`, or in a stacked child that targets `staging` directly, halt and require a valid worktree.
 
@@ -91,7 +91,7 @@ Rules:
 - Invoke `receive-review` on every unresolved reviewer comment
 - Address accepted blockers, non-blockers, and nits; reply to declined or clarified comments with evidence
 - Push review-fix commits and re-check review threads
-- If any code changes were pushed after the incoming `WORKFLOW_REVIEW_GATE`, rerun `workflow-review` on the updated diff and require a new `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE` before continuing
+- If any code changes were pushed after the incoming `WORKFLOW_REVIEW_GATE`, rerun `workflow-review` on the updated diff and require a new `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` before continuing
 - If any blocker, unresolved human disagreement, or unanswered reviewer question remains: **halt** with auto-handoff
 
 This gate applies to bot and human review comments. A green CI run does not override unresolved review feedback.
@@ -100,7 +100,7 @@ This gate applies to bot and human review comments. A green CI run does not over
 
 - Monitor GitHub Actions
 - Auto-fix up to 3 attempts on failure
-- If any CI auto-fix changes code after the latest `WORKFLOW_REVIEW_GATE`, rerun `workflow-review` on the updated diff and require a new `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE` before continuing
+- If any CI auto-fix changes code after the latest `WORKFLOW_REVIEW_GATE`, rerun `workflow-review` on the updated diff and require a new `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` before continuing
 - If exhausted: **auto-handoff** (exit_reason: halt, remaining: CI diagnosis needed, include CI logs and what was tried) then halt
 - If green: proceed
 
@@ -199,7 +199,7 @@ Consumes: approved review verdict, committed code on branch, issue references, P
 Produces: PR ready for human review/merge or auto-merge according to repo delivery policy, reconciliation report
 Requires: gh, git
 Side effects: creates/updates PR, pushes commits (review/CI fixes), posts comments, may mark ready and enable GitHub auto-merge when repo policy allows
-Human gates: missing workflow-review dispatch evidence; missing/failed user-journey QA for frontend or user-facing changes unless waived; unresolved reviewer comments; CI exhaustion halts for diagnose; post-mortem presented for review; auto-merge setup failure on auto-merge-eligible repos
+Human gates: missing workflow-review independent review evidence; missing/failed user-journey QA for frontend or user-facing changes unless waived; unresolved reviewer comments; CI exhaustion halts for diagnose; post-mortem presented for review; auto-merge setup failure on auto-merge-eligible repos
 
 ## Context
 

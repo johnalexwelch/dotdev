@@ -103,8 +103,9 @@ In ALL cases: the regression test from the diagnosis artifact must be written.
 ### Step 4: Review (workflow-review)
 
 - Load and run `workflow-review/SKILL.md` explicitly
-- Standard parallel review with dispatch evidence: active lanes, subagent types, skipped-with-reason conditional lanes, and synthesized verdict
-- Require the `WORKFLOW_REVIEW_GATE` block with `verdict: APPROVE`. If missing or incomplete, review has not run.
+- Risk-sized review with independent review evidence: `standard` by default for bug fixes, `full` when the root cause touches auth/data/infra/concurrency/broad behavior, and `fast` only for narrow test-only or non-production fixes
+- Require review profile, active lanes, independent reviewer context/subagent types, skipped-with-reason conditional lanes, and synthesized verdict
+- Require the `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. If missing or incomplete, review has not run.
 - Security reviewer mandatory if bug was in auth/data handling
 - If REQUEST CHANGES: iterate (max 2 rounds)
 - Do not treat tests, green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, or resolved PR comments as satisfying this step

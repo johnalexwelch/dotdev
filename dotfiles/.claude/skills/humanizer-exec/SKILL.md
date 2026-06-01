@@ -1,114 +1,70 @@
 ---
 name: humanizer-exec
-description: Executive-tuned variant of humanizer. Strips AI-writing tells while preserving (and sharpening) executive-strategic register — confident verbs, concrete numbers, audience-aware compression, decision-driven prose. Use as post-process for decision-memo, strategic-analysis-review output, and any board/ELT/CEO-facing draft.
+description: Executive-tuned humanizer — strips AI-writing tells and sharpens exec register (active verbs, concrete numbers, lead-with-the-answer, compression). Use as the final polish on any board/ELT/CEO/customer-facing draft, or after decision-memo or strategic-analysis-review. Trigger on "make this exec-ready", "tighten for the board", "de-AI this memo", or any LLM-drafted memo, board update, or deck narrative.
 ---
 
 # Humanizer (Executive Variant)
 
-## Purpose
+Final polish for exec/board/customer drafts that were LLM-written. Does everything the base `humanizer` does, plus tunes for the voice that survives a 15-minute skim. It **sharpens** a draft; it doesn't re-architect it (see Scope).
 
-The base `humanizer` removes generic AI patterns (em-dash overuse, rule-of-three, filler phrases, etc.). This variant does that AND additionally tunes for executive register — the voice and shape that survives a 15-minute skim by a busy decision-maker.
+## Dependencies (all optional — degrade gracefully)
 
-Use this when the audience is exec/board/customer and the draft was LLM-generated or LLM-assisted.
+- `humanizer` — its `references/pattern-catalog.md` holds the 29 base AI-writing patterns this extends. If absent, use the common-tells list below.
+- `graph-first` — optional voice/audience context; auto-detects a knowledge graph and skips silently if none (`--graph` forces ingestion, `--no-graph` skips).
+- `slop-cleaner (analysis mode)` — run *before* this on analytical drafts: it removes analytical tells (false precision, generic frameworks), this handles prose register.
+- `decision-memo` / `strategic-analysis-review` — common upstream producers of the drafts you'll polish (not called by this skill).
 
-## When to invoke
-
-- Post-process for `decision-memo`, `strategic-analysis-review`, executive deck narrative, board memos
-- User says "make this exec-ready," "tighten this for the board," "de-AI this memo"
-- After `analysis-slop-cleaner` (analysis-slop-cleaner runs first to remove analytical tells; this runs second for prose-register)
-
-## What it does beyond base humanizer
-
-Base humanizer fixes prose-level tells:
-- Em-dash overuse, semicolon overuse
-- "It's worth noting," "it's important to understand"
-- Rule of three pattern ("X, Y, and Z" everywhere)
-- "Significance inflation" ("critical," "essential," "comprehensive")
-- AI vocabulary ("delve," "leverage," "robust," "navigate")
-
-This skill **additionally** tunes for exec register:
+## Exec-register patterns (beyond the base 29)
 
 | Pattern | Fix |
-|---------|-----|
-| Passive verbs ("was conducted," "is being explored") | Active: "we did," "we will" |
-| Throat-clearing openers ("This memo explores...") | Cut. Lead with the answer. |
-| Adverbial hedging ("relatively," "somewhat," "potentially") | Specify or cut |
-| Conjunction stacking ("and furthermore," "additionally also") | Pick one |
-| Sentence soup (40+ word sentences) | Break to ≤25 words for headline sentences |
-| Bullet bloat (5+ bullets in a row) | Compress to 3 or convert to prose |
-| Defensive scaffolding ("of course," "it's worth acknowledging") | Cut unless it's load-bearing |
-| Conclusion-as-summary (the end restates the start) | Replace with the ask or implication |
-| Headline-buried-in-paragraph-3 | Move to paragraph 1, sentence 1 |
-| Symmetric weighting ("on one hand X, on the other Y") | Pick a position or remove |
-| "We" without specificity | Name the actor (team, person, function) when it matters |
+|---|---|
+| Passive verbs ("was conducted") | Active: "we did", "we will" |
+| Throat-clearing openers ("This memo explores…") | Cut. Lead with the answer. |
+| Adverbial hedging ("relatively", "somewhat", "potentially") | Specify or cut |
+| Conjunction stacking ("and furthermore", "additionally also") | Pick one |
+| Sentence soup (40+ words) | Break headline sentences to ≤25 words |
+| Bullet bloat (5+ in a row) | Compress to 3, or convert to prose |
+| Defensive scaffolding ("of course", "it's worth acknowledging") | Cut unless load-bearing |
+| Conclusion that restates the start | Replace with the ask or implication |
+| Headline buried in paragraph 3 | Move to paragraph 1, sentence 1 |
+| Symmetric weighting ("on one hand… on the other…") | Take a position, or cut the framing |
+| "We" with no actor | Name the team/person/function when it matters |
+
+Base tells most common in exec drafts: em-dash/semicolon overuse, "it's worth noting", rule-of-three, significance inflation ("critical", "comprehensive"), AI vocabulary ("delve", "leverage", "robust"). Full list: `humanizer/references/pattern-catalog.md`.
+
+## Scope — sharpen, don't reorganize
+
+This is the one rule that, left fuzzy, makes the skill behave inconsistently:
+
+- **MAY:** relocate a buried headline to the top; turn a summary-conclusion into the ask. These sharpen the existing structure.
+- **MAY NOT:** merge, reorder, split, or drop sections, or change the argument flow (Pyramid / SCQA — Situation, Complication, Question, Answer), unless asked. If the draft came through `decision-memo`, that structure was deliberate.
+
+Same skeleton, sharper muscle.
 
 ## Process
 
-### 1. Read the draft
+1. **Read** the draft; identify the headline answer. If there's none at all, halt and ask — don't fabricate one (see Gate).
+2. **Base pass:** run the base AI-writing tells (load the catalog for non-trivial drafts), then a quick self-audit — "what still reads as obviously AI?" — and fix it.
+3. **Exec pass:** apply the table above. Highest leverage: the opening leads with the answer, the close is the ask (not a summary), each heading answers "so what?". If a graph is present, check voice against prior memos by the author/audience and tag findings `[GRAPH-VOICE]`.
+4. **Compress** ~20% — never at the cost of a real caveat or a stated confidence basis.
 
-Identify the headline answer (or note its absence). Note the audience signal in the doc.
+## Output
 
-### 2. Apply base humanizer patterns
-
-Run the base 29-pattern check from `humanizer`. Fix prose-level tells.
-
-### 3. Apply exec-tuned patterns
-
-Run the 11 additional patterns above. Pay special attention to:
-- The opening sentence (must lead with the answer)
-- The closing (must be the ask, not a summary)
-- The headline of each section (must be a complete sentence answering "so what")
-
-### 4. Compress
-
-Aim to cut ~20% of word count without losing content. Most LLM exec drafts can lose 20% without losing meaning.
-
-### 5. Output
-
-```markdown
+```
 ## Cleaned text
-<the rewritten draft>
+<rewritten draft>
 
 ## Changes
-- Headline moved to sentence 1
-- Compressed: <original word count> → <new word count> (–X%)
-- 4 passive constructions → active
-- 6 adverbial hedges removed
-- 3 paragraphs compressed to 1 each
-- <other notable changes>
+- Headline moved to sentence 1; words <X> → <Y> (–Z%)
+- <N passives → active; hedges cut; paragraphs compressed; etc.>
 ```
 
 ## Rules
 
-- Do NOT strip real uncertainty. "Medium confidence because of X" is exec-grade; "we are confident" without basis is slop.
-- Do NOT remove load-bearing caveats. A regulatory or governance caveat must stay.
-- Do NOT impose a personal voice — match the author's tone if discernible.
-- Preserve the structure (Pyramid / SCQA / Headline-first) — don't restructure unless asked.
-- If the draft has no headline answer, flag it and route back to `decision-memo` rather than fabricating one.
-
-## Graph context (GRAPH-FIRST — default behavior)
-
-See `_graph-first/SKILL.md` for the canonical protocol.
-
-For this skill, query the graph for:
-- **Prior memos by the same author** — voice patterns, recurring constructions, established register
-- **Prior memos to the same audience** — what cadence / vocabulary / framing they've seen before
-- **Established team / org idioms** — words that mean specific things internally
-- **Brand or voice guidelines** if in graph
-
-Insertion point: step 3 (apply exec-tuned patterns) — graph context informs which patterns to preserve vs. strip. Tag voice-consistency findings as `[GRAPH-VOICE]`.
-
-`--no-graph` skips (use for one-off / external-facing docs). `--graph` forces graphify on `memos/` first.
+- Keep real uncertainty ("medium confidence, because X") and load-bearing caveats (regulatory/governance/risk) even when they cost words. Only cut confidence claims with **no** stated basis.
+- Match the author's tone; don't impose your own.
+- Honor Scope.
 
 ## Contract
 
-Consumes: LLM-drafted or LLM-assisted exec-bound text
-Produces: cleaned, exec-register text + change-log
-Requires: nothing
-Side effects: none
-Human gates: if the draft has no clear recommendation, halts and asks rather than fabricating
-
-## Context
-
-Typical workflows: final-step polish before sending exec-bound material
-Pairs well with: analysis-slop-cleaner (run before this), decision-memo (upstream), strategic-analysis-review (deeper structural review)
+Consumes LLM-drafted exec-bound text → produces cleaned text + a change log. Requires nothing hard (siblings and graph used when present, skipped when not). No side effects unless editing a file in place. **Gate:** if there's no clear recommendation/headline, halt and ask (or route to `decision-memo`); never fabricate one.

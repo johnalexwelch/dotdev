@@ -142,7 +142,7 @@ Re-read the retro before sharing. For each decision in the chain: was the person
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Prior retros** in this system / area — surface lessons not learned, pattern of failure

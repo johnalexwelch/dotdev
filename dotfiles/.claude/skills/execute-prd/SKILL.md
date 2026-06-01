@@ -1,10 +1,22 @@
 ---
 name: execute-prd
-description: Execute a parent PRD issue tree end-to-end. Analyzes the issue tree, orders children by dependency, generates focused execution briefs, creates isolated worktrees, implements unblocked slices, opens PRs, runs review/CI loops, reconciles issues against the parent, and writes handoff artifacts. Use when the user says "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree".
+description: "Execute a parent PRD issue tree end-to-end: orders children by dependency, generates execution briefs, creates worktrees, implements unblocked slices, opens PRs, runs review/CI, reconciles, writes handoff. Use for \"execute this PRD\", \"implement all children of #N\"."
 codex-compatible: true
 ---
 
 # Execute PRD
+
+## Model selection
+
+Dispatch per-slice implementation workers on **Sonnet** (`model: sonnet`); reserve **Opus** for planning, review/CI reasoning, and reconciliation. Escalate a worker to Opus only for genuinely hard logic.
+
+
+## Output discipline (during execution only)
+
+While running the mechanical execution/implementation loop, compress **routine progress narration** to caveman style — drop articles, filler, and pleasantries; prefer `[thing] [action] [reason]. [next].` This cuts scroll and output tokens during the grind.
+
+Snap back to **full prose** for anything that needs judgment: findings, scope violations, blockers, `NEEDS_HUMAN` gates, decisions/tradeoffs, and the final summary/handoff. The terseness is scoped to the loop — it ends when execution ends; do not carry it into the review or handoff that follows. See `caveman` for the full compression rules.
+
 
 Drive a parent PRD issue tree from analysis through delivery. Unlike `run-backlog` (independent issues in batch), this skill handles **dependent, ordered, parent-aware** execution where child issues have relationships and must be sequenced.
 
@@ -14,7 +26,7 @@ Consumes: parent PRD issue number (or URL), optional child issue list, optional 
 Produces: PRs (one per child issue), child execution briefs, reconciliation updates, parent handoff artifact
 Requires: gh, git, subagent-dispatch, project-test-runner
 Side effects: creates worktrees, branches, PRs; modifies issue labels/comments; writes handoff artifacts
-Human gates: blocked children halt (with auto-handoff); not-AFK-safe children halt (with auto-handoff); missing workflow-review dispatch evidence halts; review iteration exhaustion halts (with auto-handoff)
+Human gates: blocked children halt (with auto-handoff); not-AFK-safe children halt (with auto-handoff); missing workflow-review independent review evidence halts; review iteration exhaustion halts (with auto-handoff)
 
 ## Soft Context
 
@@ -109,7 +121,7 @@ For each child (parallel within a wave, sequential across waves):
    ```
    preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
    ```
-5. **Enforce the workflow-review gate** — the child may not proceed to `workflow-finalize`, PR creation, CI monitoring, reconcile, or clean handoff unless `workflow-review` emitted a complete `WORKFLOW_REVIEW_GATE` block with `verdict: APPROVE`. Do not substitute green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, resolved PR comments, or prose claims that review happened.
+5. **Enforce the workflow-review gate** — the child may not proceed to `workflow-finalize`, PR creation, CI monitoring, reconcile, or clean handoff unless `workflow-review` emitted a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. Do not substitute green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, resolved PR comments, or prose claims that review happened.
 6. **Keep scope tight** — only files relevant to this child
 7. **Let workflow-finalize own PR/CI/reviewer-comment closure** — do not duplicate or skip around its `describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues` flow. The child is not complete until `workflow-finalize` emits a complete `WORKFLOW_FINALIZE_GATE` block.
 8. **Enforce the Partial-Completion Contract** before the child exits. The child executor must be in exactly one state:

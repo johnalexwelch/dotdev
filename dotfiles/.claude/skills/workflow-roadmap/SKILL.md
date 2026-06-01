@@ -11,11 +11,13 @@ Create an evidence-backed roadmap that connects product direction to implementat
 
 This is a discovery and sequencing workflow. It does not create issues, write implementation plans, or modify code until the roadmap is approved.
 
+Development roadmap items must lead toward vertical slices of app behavior. Do not recommend horizontal sequencing such as "build all data models," "then all APIs," "then all UI" unless those are explicitly reframed into independently verifiable end-to-end slices.
+
 ## Contract
 
 Consumes: product goals, repo state, decision log, existing PRDs/issues, audits, ADRs, `CONTEXT.md`
 Produces: roadmap artifact with milestones, evidence, dependencies, risks, hardening work, and next workflow per item
-Requires: git; subagent-dispatch for broad repo research; gh when inspecting issue/PR state
+Requires: git, gh
 Side effects: writes a roadmap artifact only after user approval
 Human gates: roadmap approval before creating PRDs, issues, implementation plans, or backlog runs
 
@@ -52,6 +54,27 @@ goals/context
   -> human approval
   -> to-prd / design-plan / to-issues / prototype / needs-human
 ```
+
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step. Use the exact step names from this skill and include conditional or optional steps.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
+```
+
+Rules:
+
+- Initialize every known step as `pending`; conditional steps remain `pending` until their trigger is evaluated.
+- As each step finishes or is skipped, update the ledger with the new status and evidence or reason.
+- A step may be `skipped` only when this skill explicitly makes it optional/conditional or a routing decision stops the workflow; record the exact reason.
+- Do not mark required gates as skipped. If a required gate cannot run, mark it `blocked` or `failed` and halt according to this workflow.
+- At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
+- The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
+
 
 ## Research Lanes
 
@@ -137,11 +160,12 @@ Every roadmap item must include:
 - **Risk:** low, medium, high, or needs-human.
 - **Confidence:** high, medium, low.
 - **Accepted tradeoffs:** relevant `decision-log` entries or "none found."
+- **Vertical slice path:** the first end-to-end behavior this item should make real, or why the item is not yet ready for PRD/issues.
 - **Recommended next workflow:** exactly one of:
   - `prototype`
   - `grill-with-docs`
   - `to-prd`
-  - `design-plan`
+  - `design-plan` (only for refactor-scale, migration, or multi-phase remediation that cannot yet be expressed as vertical issue slices)
   - `to-issues`
   - `repo-audit`
   - `improve-codebase-architecture`

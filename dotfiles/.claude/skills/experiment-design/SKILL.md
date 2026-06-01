@@ -1,6 +1,6 @@
 ---
 name: experiment-design
-description: Designs a controlled experiment (A/B test, multivariate, switchback, holdout) — hypothesis, primary metric, MDE, sample size, randomization unit, duration, guardrails, and stopping rules. Catches under-powered tests, peek-then-decide, missing guardrails, and confounded designs. Use before launching any experiment whose result will drive a decision.
+description: "Designs a controlled experiment (A/B, multivariate, switchback, holdout): hypothesis, primary metric, MDE, sample size, randomization unit, duration, guardrails, stopping rules. Catches under-powered tests, peeking, missing guardrails, confounding. Use before launching any decision-driving experiment."
 ---
 
 # Experiment Design
@@ -173,7 +173,7 @@ Up to 5 segments where heterogeneous effects are plausible. Pre-register or they
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Prior experiments** in this feature area — outcomes, MDEs that proved insufficient, what was learned

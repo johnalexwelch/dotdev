@@ -1,13 +1,21 @@
 ---
 name: decision-log
-description: Use when grill, design, PRD, D&D prep, or implementation workflows need to record or consume accepted decisions, alternatives considered, and tradeoffs.
+description: Use when grilling, design, PRD, planning, or implementation workflows need to record or consume accepted decisions, alternatives considered, and tradeoffs.
 ---
 
 # Decision Log
 
 ## Purpose
 
-Keep the "why" behind accepted decisions available to future workflows. Grill outputs are not complete until their accepted answers are captured in a decision log.
+Keep the "why" behind accepted decisions available to future workflows. All grilling sessions must capture a decision log entry for each accepted decision, including the question, the answer, alternatives considered, and tradeoffs accepted.
+
+## Contract
+
+Consumes: accepted decisions, questions asked, alternatives considered, tradeoffs, source conversations or docs
+Produces: decision-log entries in the project or domain decision log
+Requires: git
+Side effects: may create or append to decision-log files after a decision is accepted
+Human gates: only record accepted decisions; do not log unresolved recommendations or reopen settled decisions unless the user explicitly does so
 
 ## Canonical Location
 
@@ -17,17 +25,19 @@ Prefer the repo-local log:
 docs/decision-log.md
 ```
 
-For D&D campaigns, use the campaign-local equivalent when the repo already has one:
+For non-code or domain-specific work, use the established local equivalent when one already exists. Examples:
 
 ```text
+docs/decisions/decision-log.md
+docs/domain-decisions/decision-log.md
 docs/campaign-decisions/decision-log.md
 ```
 
-If an ADR or Campaign Decision Record is warranted, create it too, but still add a short decision-log entry that points to the record.
+If an ADR, domain decision record, or other durable decision artifact is warranted, create it too, but still add a short decision-log entry that points to the record.
 
 ## Required Entry Shape
 
-Every accepted grill decision must preserve:
+Every accepted decision from any grilling session must preserve:
 
 ```markdown
 ## YYYY-MM-DD - {short decision title}
@@ -50,6 +60,7 @@ Every accepted grill decision must preserve:
 Use this when a workflow asks questions that settle direction:
 
 - Record only accepted decisions. Draft recommendations and unresolved questions do not belong in the log.
+- During all grilling sessions, maintain enough notes to record the decision question, accepted answer, rejected alternatives, and accepted tradeoffs before leaving the grill.
 - If the user replies `a`, `y`, `yes`, or `accept`, translate the accepted recommendation into a log entry.
 - If the user edits the recommendation, log the edited decision, not the original default.
 - Preserve alternatives and tradeoffs from the grill answer. Add newly surfaced tradeoffs from user discussion.

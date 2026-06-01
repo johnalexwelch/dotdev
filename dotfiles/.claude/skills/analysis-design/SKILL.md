@@ -115,7 +115,7 @@ If you can't name 3, you don't understand the question yet. Iterate.
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Prior analyses** on the same question or close neighbors — has this been answered before

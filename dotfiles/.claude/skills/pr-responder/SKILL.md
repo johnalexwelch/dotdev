@@ -1,6 +1,6 @@
 ---
 name: pr-responder
-description: Reads through all open PR review comments (blockers, non-blockers, nits, questions), decides which to action, drafts code changes for the ones to action, and posts replies for the ones to acknowledge or push back on. Distinct from `receive-review` (which evaluates whether to agree with feedback) — pr-responder is the actioning step after evaluation, including drafting the actual code edits and replies. Use when a PR has accumulated review comments that need processing in bulk.
+description: "Processes open PR review comments in bulk: decides which to action, drafts the code edits, and posts replies for the rest. The actioning step after receive-review. Use when a PR has accumulated review comments to work through."
 ---
 
 # PR Responder
@@ -129,7 +129,7 @@ For each comment, post the drafted reply via `gh pr review` or `gh api`.
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Files and modules touched** by the PR — their owners, dependencies, prior bug history

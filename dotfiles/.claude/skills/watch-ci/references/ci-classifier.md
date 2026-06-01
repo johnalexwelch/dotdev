@@ -56,4 +56,4 @@ If `sig == prior_signature`, halt for no-progress. Do not dispatch another fix a
 | OMC `security-reviewer` agent fails or times out | Treat as `Changes requested`; do not hand back as clean. Surface to human. |
 | Reviewer-comment gate finds unanswered comments | Invoke `receive-review` if actionable; otherwise halt with the unresolved comment list. |
 | `dry_run == true` | Poll and classify only. Outcome file written with `dry_run`. No commits or comments. |
-| `no_review == true` | Require explicit user waiver, or complete `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE` plus explicit user waiver for skipping `/watch-ci` self-review. Record the waiver/evidence in the outcome file. Existing PR comments still must be resolved before clean handoff. |
+| `no_review == true` | Require explicit user waiver, or complete `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` plus explicit user waiver for skipping `/watch-ci` self-review. Record the waiver/evidence in the outcome file. Existing PR comments still must be resolved before clean handoff. |

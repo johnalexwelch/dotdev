@@ -1,179 +1,61 @@
 ---
 name: dnd-grill
-description: Lightweight D&D planning interrogation. Stress-tests a session idea, arc, NPC, encounter, mystery, faction move, or scene, using existing lore/campaign notes when available but not requiring them. Use when the user says "grill this", "stress test", "poke holes", "challenge this", or wants hard questions before prep.
+description: D&D planning interrogation that stress-tests a session, arc, mystery, NPC, faction move, encounter, or lore idea. Runs lightweight (no docs) or canon-grounded against campaign files, open threads, timelines, and player knowledge. Use for "grill this", "stress test", "poke holes", "challenge this", "grill with canon", or "check continuity while grilling".
 codex-compatible: false
 ---
 
-## Purpose
+# dnd-grill
 
-Challenge a D&D idea before it becomes session prep or canon, grounding the critique in existing lore when that lore is available.
+Challenge a D&D idea before it becomes prep or canon. Expose weak assumptions, missing stakes, thin NPC motives, railroading, brittle clue paths, and table-experience problems. This is pressure-testing, not writing the final content.
 
-This skill is for narrative pressure-testing, not writing the final content. It should expose weak assumptions, missing stakes, weak NPC motivations, railroading risks, thin clue paths, and table-experience problems.
-
-## Contract
-
-Consumes: rough campaign idea, session premise, encounter concept, NPC plan, mystery structure, faction move, or arc outline
-Produces: targeted questions, recommended answers, risks, alternatives, accepted-decision log entries, and concrete revision suggestions
-Requires: no campaign docs, but must inspect and use relevant lore/campaign docs when they exist
-Side effects: none
-Human gates: ask one question at a time unless the user asks for a full batch
-
-## Soft Context
-
-Typical workflows: rough idea → dnd-grill → dnd-lore-ingestion or dnd-grill-with-canon
-Pairs well with: decision-log, dnd-grill-with-canon (upgrade when continuity/canon audit matters), dnd-lore-ingestion (formalize accepted ideas)
-
-## Modes
-
-### Auto-detection
+## Modes (auto-detect, or honor an explicit request)
 
 | Condition | Mode |
 |-----------|------|
-| No lore/campaign docs found + simple topic | **Lightweight** |
-| Lore/campaign docs found + narrow topic | **Lore-aware lightweight** |
-| User asks for canon consistency, continuity, timelines, player knowledge, or "with docs/canon" | Use `dnd-grill-with-canon` |
+| No campaign docs found, or a quick/narrow topic | **Lightweight** — ask one question at a time, don't touch files |
+| Campaign docs found, or user says "with canon/docs", "grill hard", "check continuity" | **Canon** — retrieve docs, ask in batches of five, update canon on acceptance |
 
-### Lightweight mode
-
-- Ask one question at a time
-- Grill the idea on table experience, agency, stakes, clues, NPC motives, and pacing
-- Do not update lore or canon files
-
-### Lore-aware lightweight mode
-
-- Retrieve only the lore needed for the current question branch
-- Use existing names, facts, unresolved threads, NPC states, factions, and timeline constraints in recommendations
-- Call out contradictions between the proposal and existing lore before asking the next question
-- Do not update lore or canon files; accepted changes can be formalized later with `dnd-lore-ingestion`
-
-## When to Use
-
-Use this skill when:
-- The user wants an idea challenged before building it out
-- The premise is still rough, whether or not campaign docs exist
-- The user asks for "grill", "stress test", "poke holes", "challenge", "what am I missing", or "make this stronger"
-- The topic is a single scene, single NPC, single session beat, or narrow arc question
-- Existing lore can inform the critique but the user is not asking for a full canon audit
-
-Do not use this skill when:
-- The user wants a final polished handout
-- The user wants canon consistency checked exhaustively against documents
-- The user is asking for broad worldbuilding generation without critique
-
-Use `dnd-grill-with-canon` instead when continuity, timeline correctness, player knowledge, or campaign-document updates are central to the request.
+Lightweight can be *lore-aware*: if a few relevant notes exist, use them as constraints without doing a full canon audit. Escalate to Canon mode when continuity, timeline correctness, player knowledge, or campaign-document updates become central.
 
 ## Workflow
 
-### 1. Check for relevant lore
-
-Before asking questions, quickly inspect likely campaign sources if they exist:
-
-- `CAMPAIGN_MAP.md`, `CAMPAIGN_CONTEXT.md`, `CANON.md`, `OPEN_THREADS.md`, `TIMELINE.md`, `PLAYER_KNOWLEDGE.md`
-- `campaigns/**`, `sessions/**`, `npcs/**`, `factions/**`, `locations/**`, `mysteries/**`, `lore/**`
-- Recently attached or open campaign notes
-
-If relevant lore is found, use it as constraints and source material for recommendations. If no relevant lore is found, proceed normally in lightweight mode.
-
-Do not read the whole campaign archive by default. Pull just enough context to make the next question sharper.
-
-### 2. Identify the object under review
-
-Classify what is being grilled:
-
-| Object | Primary risks |
-|--------|---------------|
-| Session premise | weak opening, unclear objective, poor pacing |
-| Mystery | single-point clue failure, reveal pacing, false agency |
-| NPC | weak agenda, inconsistent behavior, shallow voice |
-| Faction move | poor incentives, unclear consequences, static world |
-| Encounter | tactical blandness, stakes mismatch, no story movement |
-| Location | no interactivity, thin secrets, weak affordances |
-| Arc | vague promise, weak escalation, payoff mismatch |
-
-### 3. Establish the intended table experience
-
-Before critique, infer or ask what the scene should feel like:
-
-- Tense investigation
-- Political pressure
-- Wonder and discovery
-- Horror or unease
-- Tactical danger
-- Emotional payoff
-- Moral dilemma
-- Comic relief
-- Player empowerment
-
-If unclear, ask one question: "What table experience are you aiming for?"
-
-### 4. Interrogate one decision branch at a time
-
-Ask one question at a time by default.
-
-Each question must include:
+1. **Gather context (just enough).** Inspect likely sources if they exist — `CAMPAIGN_MAP.md` (read first; it says where canon lives), `CANON.md`, `CAMPAIGN_CONTEXT.md`, `OPEN_THREADS.md`, `TIMELINE.md`, `PLAYER_KNOWLEDGE.md`, and `campaigns/**`, `npcs/**`, `factions/**`, `locations/**`, `mysteries/**`, `lore/**`. Pull only what sharpens the next question; don't read the whole archive.
+2. **Identify the object** (session premise, mystery, NPC, faction move, encounter, location, arc, lore decision) and its primary risks.
+3. **Establish the intended table experience** (tense investigation, political pressure, wonder, horror, tactical danger, emotional payoff, moral dilemma, etc.). If unclear, ask: "What table experience are you aiming for?"
+4. **Interrogate one branch at a time** (Lightweight) or **in batches of five** (Canon), each question in this format:
 
 ```md
 ## Question {N}
-
-**Question:** {The pointed question}
-
-**My Recommendation:** {A strong default answer}
-
-**Why this matters:** {What breaks if unresolved}
-
+**Question:** {pointed question}
+**My Recommendation:** {a strong default}
+**Why this matters:** {continuity / agency / pacing / payoff / prep concern}
 **Alternatives:**
-- {Alternative A}: {tradeoff}
-- {Alternative B}: {tradeoff}
-
+- {A}: {tradeoff}
+- {B}: {tradeoff}
 ---
 ```
 
-Acceptance shorthand:
-- `a`, `accept`, `yes`, or `y` means accept the recommendation
-- If accepted, treat it as settled for the rest of the session
-- If accepted, record it with `decision-log`, preserving the question, decision, alternatives considered, and tradeoffs accepted
-- If rejected, ask a follow-up that resolves the branch
+Acceptance shorthand: `a`/`accept`/`yes`/`y` accepts the recommendation; treat it as settled, and record it with `decision-log` (question, decision, alternatives, tradeoffs). Reject → ask a resolving follow-up.
 
-### 5. Stress-test against D&D-specific failure modes
+5. **Always stress-test the D&D failure modes:** agency (real choices vs breadcrumbs), information (≥3 ways to learn crucial facts), motivation (why NPCs act now), consequence (what changes on failure/ignore), escalation, spotlight (which PCs have hooks), table usability, improvisation survival, and lore fit (what existing canon strengthens or contradicts this).
 
-Always consider:
+### Canon-mode extras
+- **Challenge canon language** immediately when a term conflicts with established usage (propaganda vs truth, public myth vs GM truth). Ask whether it's in-world framing or a canon change.
+- **Sharpen fuzzy terms** into canonical language ("cult" → "cell/order/devotional faction"; "magic problem" → "leyline instability/ritual contamination").
+- **Invent concrete table scenarios** that expose weak structure (players ignore the hook, accuse the wrong NPC, ally with the antagonist, solve the chain early, bypass with magic, fail publicly, kill/spare a key NPC).
+- **Update canon inline** in `CAMPAIGN_CONTEXT.md`/`CANON.md` only after acceptance — settled facts only, never brainstorm.
+- **Offer a Campaign Decision Record** only when the change is hard to reverse, surprising-without-context, and has real trade-offs (e.g., "the Phoenix Heart is propaganda for the Titan's Heart"). Skip for tavern names, one-session NPCs, monster reskins, easily-moved clues.
 
-- **Agency:** Are players making meaningful choices, or just following breadcrumbs?
-- **Information:** Are there at least three ways to learn crucial facts?
-- **Motivation:** Why do NPCs act now instead of waiting?
-- **Consequence:** What changes if the players ignore or fail this?
-- **Escalation:** How does pressure increase during the session?
-- **Spotlight:** Which PCs have hooks into this material?
-- **Table usability:** Can the DM run this without rereading a wall of prose?
-- **Improvisation:** What flexible pieces survive unexpected player action?
-- **Lore fit:** What existing lore, NPC state, faction pressure, or prior session fact strengthens or contradicts this?
-
-### 6. End with a concise revision summary
-
-When enough branches are resolved, produce:
+6. **Close with a revision summary:**
 
 ```md
 # Revised Direction
-
-## Settled Decisions
-- ... (include decision-log entry titles or note entries created)
-
-## Remaining Risks
-- ...
-
+## Settled Decisions   (include decision-log entry titles)
+## Canon Updates Made   (Canon mode only)
+## Remaining Risks / Continuity Risks
 ## Strongest Version
-- ...
-
-## Next Prep Step
-- ...
+## Next Prep Step   (dnd-session-prep / dnd-node-builder / dnd-review)
 ```
 
-## Output Rules
-
-- Be direct.
-- Do not flatter the idea.
-- Recommend a path instead of staying neutral.
-- Do not write final prose unless asked.
-- Prefer concrete table-facing fixes over abstract theory.
-- Preserve player agency.
-- Avoid generic fantasy filler.
+## Output rules
+Be direct; don't flatter the idea. Recommend a path, don't stay neutral. Cite file paths when referencing canon; never overwrite canon without acceptance; never invent canon when docs are silent (mark proposals). Prefer concrete table-facing fixes and campaign-specific language over generic fantasy filler. Keep DM table-usability in view. Preserve player agency.

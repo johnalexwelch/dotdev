@@ -9,7 +9,7 @@ Load this reference when CI is green, before posting a green summary comment or 
 If `no_review == true`, skip launching self-review agents only when one of these is recorded in the outcome file:
 
 - explicit user waiver accepting the risk
-- complete `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review
+- complete `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review
 
 If neither exists, halt. Existing PR review comments still must be monitored and incorporated or resolved before handoff.
 
@@ -86,7 +86,7 @@ If any comment is `Unanswered` or `Blocker unresolved`, do not hand back as clea
 
 Hand the draft PR back as clean only when all conditions are true:
 
-- Security review returned clean, or `no_review=true` has an explicit user waiver, or a complete `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review.
+- Security review returned clean, or `no_review=true` has an explicit user waiver, or a complete `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review.
 - Either there are no auto-fix/reviewer-feedback commits, or `/review` on those commits returned clean.
 - Reviewer-comment gate passed: no unanswered comments and no unresolved blockers remain.
 - The active monitoring loop observed no new actionable feedback for `review_quiet_minutes`.

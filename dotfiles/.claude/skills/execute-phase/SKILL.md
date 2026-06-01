@@ -59,6 +59,18 @@ Pairs well with: design-plan, review, post-mortem, setup-worktree
 
 # /execute-phase — Dispatch Phases of a Design Plan
 
+## Model selection
+
+Dispatch `[auto]` implementation workers on **Sonnet** (`model: sonnet`) — mechanical implementation rarely needs a frontier model. Reserve **Opus** for planning, review, and synthesis. Escalate a single worker to Opus only for genuinely hard logic.
+
+
+## Output discipline (during execution only)
+
+While running the mechanical execution/implementation loop, compress **routine progress narration** to caveman style — drop articles, filler, and pleasantries; prefer `[thing] [action] [reason]. [next].` This cuts scroll and output tokens during the grind.
+
+Snap back to **full prose** for anything that needs judgment: findings, scope violations, blockers, `NEEDS_HUMAN` gates, decisions/tradeoffs, and the final summary/handoff. The terseness is scoped to the loop — it ends when execution ends; do not carry it into the review or handoff that follows. See `caveman` for the full compression rules.
+
+
 ## Purpose
 
 `/design-plan` produces a phased plan with `[auto]`/`[human]` markers,

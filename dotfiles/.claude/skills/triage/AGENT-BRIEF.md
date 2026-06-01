@@ -70,7 +70,7 @@ Be specific about edge cases and error conditions.
 - The agent must create a fresh per-issue worktree from `origin/staging` before changing code.
 - Required evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
 - The agent must not work from the primary checkout, local `main`, local `staging`, or another issue's worktree.
-- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`.
+- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
 - The agent must run `workflow-finalize` and produce a complete `WORKFLOW_FINALIZE_GATE`.
 - The PR must remain draft unless it was already non-draft before the agent touched it.
 - The agent must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git.
@@ -122,7 +122,7 @@ and append "..." to indicate truncation.
 - The agent must create a fresh per-issue worktree from `origin/staging` before changing code.
 - Required evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
 - The agent must not work from the primary checkout, local `main`, local `staging`, or another issue's worktree.
-- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`.
+- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
 - The agent must run `workflow-finalize` and produce a complete `WORKFLOW_FINALIZE_GATE`.
 - The PR must remain draft unless it was already non-draft before the agent touched it.
 - The agent must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git.
@@ -177,7 +177,7 @@ checked for matches.
 - The agent must create a fresh per-issue worktree from `origin/staging` before changing code.
 - Required evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
 - The agent must not work from the primary checkout, local `main`, local `staging`, or another issue's worktree.
-- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE`.
+- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
 - The agent must run `workflow-finalize` and produce a complete `WORKFLOW_FINALIZE_GATE`.
 - The PR must remain draft unless it was already non-draft before the agent touched it.
 - The agent must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git.

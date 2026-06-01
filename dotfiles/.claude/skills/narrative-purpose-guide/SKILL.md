@@ -1,6 +1,6 @@
 ---
 name: narrative-purpose-guide
-description: Produces a "mission card" for a single narrative unit (scene, chapter, act, sequence) — what it must accomplish, what the reader should know/feel after it, what's at risk if it fails. Three modes — `--from-outline` (batch up-front from a story outline), `--unit` (single card), `--check` (post-draft audit against the card). Embedded in scene-craft. Use to keep individual units anchored to the larger work's purpose.
+description: "Produces a \"mission card\" for one narrative unit (scene, chapter, act): what it must accomplish, what the reader should feel, what's at risk. Modes: --from-outline, --unit, --check. Embedded in scene-craft; keeps units anchored to the larger work."
 ---
 
 # Narrative Purpose Guide
@@ -151,7 +151,7 @@ Output the check as a report with concrete fixes.
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Surrounding units' mission cards** (if any exist in `.council/missions/`)

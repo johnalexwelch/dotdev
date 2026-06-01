@@ -1,6 +1,6 @@
 ---
 name: doc-slop-cleaner
-description: Strips AI-generated documentation tells — over-explained obvious code, generic "best practices" warnings, redundant inline + block comments, "this function does X" docstrings that restate the signature, bloated examples that don't add information, and "comprehensive guide" framing. Use as a final pass on LLM-drafted technical documentation, README files, runbooks, or code comments.
+description: "Strips AI-generated documentation tells: over-explained obvious code, generic best-practices warnings, redundant comments, signature-restating docstrings, bloated examples, 'comprehensive guide' framing. Use as a final pass on LLM-drafted docs, READMEs, runbooks, or code comments."
 ---
 
 # Doc Slop Cleaner
@@ -95,7 +95,7 @@ Don't strip examples that are doing real work. Don't cut warnings that protect a
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **In-repo documentation conventions** — established README structure, docstring style, comment density

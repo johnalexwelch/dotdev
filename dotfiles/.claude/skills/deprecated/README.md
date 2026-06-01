@@ -1,6 +1,9 @@
 # Deprecated Skills
 
 These skills are kept for historical visibility only. Do not route new work to them.
+The concrete retired `SKILL.md` files are normalized as top-level directories
+(`../ci-deploy-fix/`, `../td-task-management/`, `../grill-me/`) so skill sync
+tooling can validate them without nested-path exceptions.
 
 ## Fully Retired
 

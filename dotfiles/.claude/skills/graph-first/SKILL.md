@@ -1,11 +1,21 @@
 ---
-name: _graph-first
-description: Canonical graph-first protocol — shared protocol that every skill leverages to auto-load context from `graphify-out/` when present. Loaded by reference from all council, constructive, audit, incident, and fiction skills. Never invoked directly. Defines the detection paths, query shape, context-block format, fallback behavior, and the `--no-graph` / `--graph` flag semantics.
+name: graph-first
+description: Canonical graph-first reference protocol for loading context from graphify-out when present. Loaded by council, constructive, audit, incident, and fiction skills. Never invoked directly.
+user-invocable: false
+disable-model-invocation: true
 ---
 
 # Graph-First Protocol (Foundation)
 
 This is a **library**, not a workflow. Every skill that benefits from prior context references this protocol. If you're invoking it directly, you probably want a specific skill instead.
+
+## Contract
+
+Consumes: existing graphify-out directories, optional caller-provided `--graph` or `--no-graph` intent
+Produces: graph context-loading protocol, query shape, context block format, and fallback rules for consuming skills
+Requires: graphify output only when the caller opts into graph context; otherwise none
+Side effects: none unless the consuming skill explicitly runs graphify after `--graph`
+Human gates: none
 
 ## Detection paths
 
@@ -80,6 +90,6 @@ Skills that produce fresh artifacts with no meaningful prior context (e.g., a on
 
 ## Composition with council scaffolding
 
-For council-style skills (`analysis-council`, `worldbuilding-council`, etc.), the graph query happens at step 2.5 of the dispatch process — after roster resolution, before round 1 dispatch — so the context block is included in every persona's prompt. See `_council-scaffolding/SKILL.md` for the council process steps.
+For council-style skills (`analysis-council`, `worldbuilding-council`, etc.), the graph query happens at step 2.5 of the dispatch process — after roster resolution, before round 1 dispatch — so the context block is included in every persona's prompt. See `council-scaffolding/SKILL.md` for the council process steps.
 
 For non-council skills, the graph step happens at the natural "load context" moment in that skill's process (often step 1.5 or before the first analytical step).

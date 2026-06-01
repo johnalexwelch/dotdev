@@ -28,6 +28,21 @@ The old "Audit Loop" is not an execution route. If a prompt, transcript, repo do
 
 Do not dispatch `/review`, `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
 
+## Agent Budget Rule
+
+Choose the smallest execution shape that preserves quality:
+
+| Budget | Use when | Default review profile |
+|--------|----------|------------------------|
+| `direct` | Trivial ops, single-command answers, simple docs/wording edits, or small local inspections with no delivery gate | none |
+| `one-reviewer` | Normal single-issue work, narrow code edits, and most skill/config changes | `fast` or `standard` |
+| `multi-lane` | Auth, data, infra, migrations, public APIs, dependencies, broad refactors, concurrency/state, user-facing UX, or large diffs | `full` |
+| `team` | Two or more independent workstreams benefit from parallel execution more than coordination costs | per child workflow |
+
+Independence matters more than agent count. Do not use multiple agents merely
+because a workflow says "review"; use `workflow-review`'s risk-sized
+`review_profile`.
+
 ## Classification table
 
 | Signal | Classification | Routes to |
@@ -50,7 +65,7 @@ Do not dispatch `/review`, `/post-mortem`, `/describe-pr`, or `/watch-ci` as a s
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D** | dnd-workflow |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
 | "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
-| "write an article", "blog post", "draft", "write about" | **writing** | writing-fragments → writing-shape or writing-beats → humanizer |
+| "write an article", "blog post", "draft", "write about" | **writing** | writing-fragments → writing-shape or writing-shape (beats mode) → humanizer |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
 | "generate prompt for", "prep for codex", "prep for AFK" | **prompt generation** | prompt-builder |
@@ -125,8 +140,8 @@ halt, report the missing requirement, and do not proceed.
 | CORA | Can't validate contracts | Skip CORA validation only; do not skip the target workflow's own gates |
 | `playwright-mcp` | Can't run UJ QA | For frontend/user-facing changes, halt for human waiver or setup; do not silently skip |
 | Project test runner | Can't verify | Halt and request setup info |
-| Campaign docs | D&D canon-specific review unavailable | `dnd-grill` may run without docs; `dnd-grill-with-canon` must halt or explicitly switch to lightweight `dnd-grill` with the user's consent |
-| Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-beats need a file to work from |
+| Campaign docs | D&D canon-specific review unavailable | `dnd-grill` may run without docs; `dnd-grill (canon mode)` must halt or explicitly switch to lightweight `dnd-grill` with the user's consent |
+| Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-shape (beats mode) need a file to work from |
 
 ## Process
 

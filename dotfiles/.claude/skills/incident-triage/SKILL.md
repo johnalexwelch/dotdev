@@ -1,6 +1,6 @@
 ---
 name: incident-triage
-description: During an active data or system incident — establishes the facts, scope, blast radius, and current responder state in a structured way so the response can be coordinated. NOT a full incident-management replacement; complements existing incident process by providing a clear triage card. Use when an incident is active and the responder needs to think clearly under pressure.
+description: "During an active data/system incident, establishes facts, scope, blast radius, and responder state as a structured triage card. Not a full incident-management replacement. Use when an incident is active and the responder must think clearly under pressure."
 ---
 
 # Incident Triage
@@ -135,7 +135,7 @@ What can be tested next? Ordered by:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Affected systems / services / metrics** named in the symptom — full lineage and ownership

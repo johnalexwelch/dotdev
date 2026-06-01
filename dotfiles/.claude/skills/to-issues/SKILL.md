@@ -106,7 +106,7 @@ Avoid specific file paths or code snippets — they go stale fast. Exception: if
 - Decision log: relevant entries linked / not applicable
 - User-journey QA: required / not applicable, with reason
 - Worktree policy: this issue must create its own fresh worktree from `origin/staging` before implementation starts and report `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
-- Review/finalize policy: PR handoff requires `WORKFLOW_REVIEW_GATE` with `verdict: APPROVE` and a complete `WORKFLOW_FINALIZE_GATE`
+- Review/finalize policy: PR handoff requires `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`, plus a complete `WORKFLOW_FINALIZE_GATE`
 
 ## Blocked by
 

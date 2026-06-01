@@ -18,8 +18,8 @@ Human gates: user approves what becomes canon
 
 ## Soft Context
 
-Typical workflows: brainstorm → dnd-lore-ingestion → dnd-grill-with-canon (validate against canon)
-Pairs well with: dnd-grill (ideas to ingest), dnd-grill-with-canon (canon-check ingested material)
+Typical workflows: brainstorm → dnd-lore-ingestion → dnd-grill (canon mode) (validate against canon)
+Pairs well with: dnd-grill (ideas to ingest), dnd-grill (canon mode) (canon-check ingested material)
 
 ## Workflow
 

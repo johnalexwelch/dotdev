@@ -1,9 +1,16 @@
 ---
-name: _council-scaffolding
-description: Foundational pattern for council-style skills. Loaded by sibling skills (analysis-council, worldbuilding-council, metric-council, vendor-council, narrative-council). Never invoked directly — defines persona schema, dispatch contract, output schema, persistence layout, post-process pipeline, and verify mode.
+name: council-scaffolding
+description: Foundational reference pattern for council-style skills. Loaded by sibling skills such as analysis-council, worldbuilding-council, metric-council, vendor-council, and narrative-council. Never invoked directly.
+user-invocable: false
+disable-model-invocation: true
 ---
 
 # Council Scaffolding (Foundation)
+
+## Model selection
+
+Judgment personas and the synthesis run on **Opus** (persona `default_model: opus`); reserve **Sonnet/Haiku** for narrow, mechanical lenses. If the synthesis is delegated to a subagent rather than the main session, use **Opus**.
+
 
 This skill is a **library**, not a workflow. Council skills (`analysis-council`, `worldbuilding-council`, etc.) reference it for shared mechanics. If you are invoking it directly, you probably want `analysis-council` instead.
 
@@ -105,7 +112,7 @@ A council orchestrator (the `SKILL.md` of `analysis-council`, etc.) does the fol
    - Disagreements section (what experts split on)
    - Per-expert sections, 80-line cap each
    - Confidence overall: derived from per-expert confidence + agreement
-6. **Post-process**: run `humanizer` and the council's `domain_cleaner` (e.g., `analysis-slop-cleaner`) per `post_process` config.
+6. **Post-process**: run `humanizer` and the council's `domain_cleaner` (e.g., `slop-cleaner (analysis mode)`) per `post_process` config.
 7. **Persist**: write to `.council/<sub>/<YYYY-MM-DD>-<slug>.md` with a JSON sidecar.
 
 ## Verify mode (`--verify`)
@@ -145,4 +152,4 @@ Human gates: none by default — council is fire-and-read
 ## Context
 
 Typical workflows: invoked by sibling council skills, not by users directly
-Pairs well with: graphify, humanizer, analysis-slop-cleaner, doc-slop-cleaner
+Pairs well with: graphify, humanizer, slop-cleaner (analysis mode), slop-cleaner (docs mode)

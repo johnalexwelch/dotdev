@@ -109,7 +109,7 @@ For each child:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Target asset**: full upstream chain (≥5 hops), full downstream chain (≥5 hops), owner edges, freshness edges

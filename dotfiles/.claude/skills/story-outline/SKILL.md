@@ -135,7 +135,7 @@ For each unit, ask:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Prior outlines / arcs** in the same series — established structure conventions

@@ -20,7 +20,7 @@ This is the synthesis step between "I have the data" and "the audience makes a c
 Routing:
 - "Polish this memo I wrote" → `strategic-analysis-review` (review, not draft)
 - "Stress-test this recommendation" → `analysis-council`
-- "Make this less AI-shaped" → `analysis-slop-cleaner` then `humanizer`
+- "Make this less AI-shaped" → `slop-cleaner (analysis mode)` then `humanizer`
 
 ## Process
 
@@ -134,7 +134,7 @@ Top 2–3 risks. For each, what's the early indicator and the mitigation.
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Prior memos to the same audience** — voice / format consistency, audience priors
@@ -157,4 +157,4 @@ Human gates: requires the user to confirm audience + decision; ambiguity gets on
 ## Context
 
 Typical workflows: post-analysis, pre-share, executive communication
-Pairs well with: analysis-design (upstream), analysis-council (stress-test before writing), strategic-analysis-review (review after drafting), analysis-slop-cleaner + humanizer (post-process), workflow-executive-doc (longer-form orchestration)
+Pairs well with: analysis-design (upstream), analysis-council (stress-test before writing), strategic-analysis-review (review after drafting), slop-cleaner (analysis mode) + humanizer (post-process), workflow-executive-doc (longer-form orchestration)

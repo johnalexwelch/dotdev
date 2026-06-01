@@ -6,61 +6,19 @@ codex-compatible: true
 
 # Humanizer
 
-You are a writing editor that identifies and removes signs of AI-generated text to make writing sound more natural and human. This guide is based on Wikipedia's "Signs of AI writing" page, maintained by WikiProject AI Cleanup.
+Edit text to remove the tells of AI-generated writing so it reads as natural and human. Based on Wikipedia's "Signs of AI writing" guide (WikiProject AI Cleanup). Preserve the author's meaning and intended tone; the goal is to strip AI-isms and add genuine personality, not to rewrite the message.
 
-## Contract
+## References — load only what the request needs
 
-Consumes: text to humanize (inline, file path, or clipboard), optional writing sample for voice calibration
-Produces: humanized text (draft → self-audit → final version)
-Requires: none
-Side effects: overwrites target file if editing in-place
-Human gates: none (but presents draft before final for review)
+- `references/pattern-catalog.md` — the 29 patterns, watch-words, before/after examples. Load it as your checklist for any non-trivial text.
+- `references/voice-calibration.md` — load when the user gives a writing sample, asks for voice-matching, or the draft reads clean but lifeless.
+- `references/final-audit.md` — the final anti-AI pass, output format, and a worked example. Load before the final rewrite on anything longer than a quick line edit.
 
-## Soft Context
+Keeping this file light is deliberate: most jobs only need one reference, so loading on demand keeps each run cheap.
 
-Typical workflows: post-production polish on any text output (PR descriptions, documentation, Obsidian notes, Slack updates, PRDs)
-Pairs well with: describe-pr, write-to-obsidian, to-prd, writing-shape, writing-beats
+## How to work
 
-## Reference Loading
-
-Keep this file light. Read only the bundled references needed for the request:
-
-- `references/pattern-catalog.md` - the 29 AI-writing patterns, watch words, and before/after examples. Load when scanning non-trivial text or when you need a checklist.
-- `references/voice-calibration.md` - writing-sample analysis and personality/soul guidance. Load when the user provides a sample, asks for voice matching, or the draft feels sterile.
-- `references/final-audit.md` - final anti-AI pass, output format, full worked example, and source note. Load before the final rewrite for longer or higher-stakes text.
-
-## Your Task
-
-When given text to humanize:
-
-1. **Identify AI patterns** - Scan for obvious tells. For non-trivial text, read `references/pattern-catalog.md` and use it as the checklist.
-2. **Rewrite problematic sections** - Replace AI-isms with natural alternatives.
-3. **Preserve meaning** - Keep the core message intact.
-4. **Maintain voice** - Match the intended tone (formal, casual, technical, etc.). If the user provides a sample or asks for voice matching, read `references/voice-calibration.md` first.
-5. **Add soul** - Don't just remove bad patterns; inject actual personality. Use `references/voice-calibration.md` if the writing is clean but lifeless.
-6. **Do a final anti-AI pass** - For anything longer than a quick line edit, read `references/final-audit.md`, ask "What makes the below so obviously AI generated?", answer briefly with remaining tells, then ask "Now make it not obviously AI generated." and revise.
-
-## Process
-
-1. Read the input text carefully.
-2. Load only the reference files needed for the job.
-3. Identify all relevant AI-writing tells.
-4. Rewrite each problematic section.
-5. Ensure the revised text:
-   - Sounds natural when read aloud
-   - Varies sentence structure naturally
-   - Uses specific details over vague claims
-   - Maintains appropriate tone for context
-   - Uses simple constructions (is/are/has) where appropriate
-6. Present a draft humanized version.
-7. Run the final anti-AI audit when warranted.
-8. Present the final version revised after the audit.
-
-## Output Format
-
-Provide:
-
-1. Draft rewrite
-2. "What makes the below so obviously AI generated?" (brief bullets, when the final audit is warranted)
-3. Final rewrite
-4. A brief summary of changes made (optional, if helpful)
+1. Read the input. For non-trivial text, load `pattern-catalog.md` and scan against it.
+2. Produce a **draft** rewrite: replace AI-isms with natural phrasing, vary sentence length, prefer specific detail over vague claims, keep the core message.
+3. For anything beyond a line edit, run the final audit (`final-audit.md`): ask "What still makes this read as AI-generated?", note the remaining tells, then revise into a **final** version.
+4. Return the draft, the brief list of tells found, and the final rewrite.
