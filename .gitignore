@@ -138,3 +138,6 @@ dotfiles/.claude/skills/.skill-observations/
 
 # Claude local settings (per-project permissions)
 /.claude/
+
+# OMC runtime state at repo root (sessions, project-memory, state)
+/.omc/

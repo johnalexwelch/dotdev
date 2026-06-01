@@ -52,7 +52,6 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -123,7 +122,8 @@
     "data-engineering@claude-plugins-official": true,
     "git-cleanup@trailofbits": true,
     "zeroize-audit@trailofbits": true,
-    "oh-my-claudecode@omc": true
+    "oh-my-claudecode@omc": true,
+    "remember@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "trailofbits": {
@@ -146,11 +146,13 @@
     }
   },
   "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
+  "advisorModel": "opus",
   "skipDangerousModePermissionPrompt": true,
   "preferredNotifChannel": "ghostty",
   "teammateMode": "tmux",
   "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "inputNeededNotifEnabled": true
+  "skipAutoPermissionPrompt": true
 }
