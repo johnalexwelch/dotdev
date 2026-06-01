@@ -9,6 +9,8 @@ description: Audits a draft, outline, or arc for pacing — scene rhythm, escala
 
 Audit a work for pacing — the moment-to-moment rhythm and the macro escalation curve. Most "this is dragging" problems have a structural cause: scenes in the same emotional register, stalled escalation, repeated beats, or breathing room placed in the wrong spot.
 
+**Mechanics:** follow `review-scaffolding` for the review discipline, severity vocabulary, and report-contract skeleton. The criteria and output shape below are pacing-specific; pacing keeps graph-first and `.writing/audits/` persistence.
+
 ## When to invoke
 
 - User says the draft "drags" or "feels rushed"
@@ -98,7 +100,7 @@ Sketch the escalation curve: stakes over time. Look for:
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Full work structure** as a graph — scenes / chapters / acts with their relationships

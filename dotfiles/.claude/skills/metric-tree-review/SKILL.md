@@ -1,6 +1,6 @@
 ---
 name: metric-tree-review
-description: Audits a metric tree (or a candidate addition) for definitional clarity, math consistency, cross-tree coherence, and whether the tree actually decomposes the parent metric. Catches double-counted leaves, missing components, conflated influences-vs-components, and "metric soup" trees that don't compose. Use when adding to or restructuring metric trees.
+description: "Audits a metric tree (or candidate addition) for definitional clarity, math consistency, cross-tree coherence, and whether it actually decomposes the parent. Catches double-counted leaves, missing components, conflated influences-vs-components, and metric-soup trees. Use when adding to or restructuring trees."
 ---
 
 # Metric Tree Review
@@ -8,6 +8,8 @@ description: Audits a metric tree (or a candidate addition) for definitional cla
 ## Purpose
 
 A metric tree should let an executive look at the parent metric and walk down through its drivers to find what changed. Many trees fail this — they list metrics by topic ("engagement metrics," "retention metrics") without composing. This skill catches the structural problems.
+
+**Mechanics:** follow `review-scaffolding` for the review discipline, severity vocabulary, and confidence/report skeleton. The checks, the decomposition test, and the output below are metric-tree-specific.
 
 ## When to invoke
 
@@ -111,7 +113,7 @@ If the same metric appears in another tree, do the definitions match? Same SQL, 
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Full tree structure** as a graph (parents, children, claimed math relationships)

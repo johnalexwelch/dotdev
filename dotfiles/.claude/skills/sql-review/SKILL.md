@@ -1,6 +1,6 @@
 ---
 name: sql-review
-description: Reviews a SQL query, view, or model for correctness, performance, and clarity. Catches join cardinality issues, window-function pitfalls, NULL handling, time-zone bugs, fanout, missing GROUP BY columns, unsafe DELETE / UPDATE, and Redshift / BigQuery / Snowflake-specific gotchas. Use when reviewing analyst SQL, dbt models, ad-hoc queries before they hit production data.
+description: "Reviews a SQL query, view, or dbt model for correctness, performance, and clarity: join cardinality, window pitfalls, NULL handling, time-zone bugs, fanout, missing GROUP BY, unsafe DELETE/UPDATE, and warehouse-specific gotchas. Use before queries hit production."
 ---
 
 # SQL Review
@@ -8,6 +8,8 @@ description: Reviews a SQL query, view, or model for correctness, performance, a
 ## Purpose
 
 Stress-test a SQL query before it's run on production data or merged into a model. Most SQL bugs are silent — they return numbers that *look* right but are subtly wrong (joined wrong, double-counted, off by a time zone). This skill is the second pair of eyes.
+
+**Mechanics:** follow `review-scaffolding` for the review discipline (lead with what changes results, a concrete fix per finding, raise the unsure as an open question, state confidence) and severity vocabulary. The checks, grain-tracing process, and bug/smell/perf/clarity output below are SQL-specific; the DELETE/UPDATE-without-WHERE halt is a hard gate.
 
 ## When to invoke
 
@@ -109,7 +111,7 @@ If the user mentions Redshift / BigQuery / Snowflake / Postgres, run dialect-spe
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **Tables / models referenced** by the query — their grain, owner, freshness

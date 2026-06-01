@@ -9,6 +9,8 @@ description: Reviews an existing dashboard for decision-fit, clarity, chart-type
 
 Audit an existing dashboard against the question "does this support a real decision?" Most "unused" dashboards aren't unused because the audience is lazy — they're unused because they don't answer a question someone actually has.
 
+**Mechanics:** follow `review-scaffolding` for the review discipline and confidence/report skeleton. The checks, the keep/sharpen/demote/remove verdicts, and the chart-by-chart output below are dashboard-specific.
+
 ## When to invoke
 
 - "Review this dashboard"
@@ -107,7 +109,7 @@ What chart *should* be here that isn't? The "what's NOT here" gap is often the b
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
-See `_graph-first/SKILL.md` for the canonical protocol.
+See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
 - **The dashboard** as a node — what charts it has, what metrics they consume
