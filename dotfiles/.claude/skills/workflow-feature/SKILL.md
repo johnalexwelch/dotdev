@@ -21,8 +21,8 @@ All implementation issues produced by this workflow must be vertical slices of a
 ## Flow
 
 ```
-grill-with-docs → decision-log → [prototype] → workflow-roadmap (approval gate) → to-prd → to-issues → triage
-                                  ^optional^
+Load and run `grill-with-docs` → follow `decision-log` → [prototype] → Load and run `workflow-roadmap` (approval gate) → Load and run `to-prd` → Load and run `to-issues` → Load and run `triage`
+                                                         ^optional^
 ```
 
 ## Workflow Progress Reporting
@@ -46,7 +46,9 @@ Rules:
 - The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
 
 
-### Step 1: Grill (grill-with-docs)
+### Step 1: Grill
+
+Load and run `grill-with-docs/SKILL.md` to:
 
 - Interview the user about the feature idea
 - Resolve ambiguities, identify constraints, clarify scope
@@ -57,11 +59,11 @@ Rules:
 
 ### Step 1.5: Prototype (optional)
 
-Trigger when grilling surfaces a question that reasoning alone cannot answer:
+Load and run `prototype/SKILL.md` when grilling surfaces a question that reasoning alone cannot answer:
 
-- "Does this state model handle the case where X then Y?" → prototype (logic branch)
-- "What should this look like?" → prototype (UI branch)
-- "I need to feel out the API shape before committing" → prototype (logic branch)
+- "Does this state model handle the case where X then Y?" → logic branch
+- "What should this look like?" → UI branch
+- "I need to feel out the API shape before committing" → logic branch
 
 Skip when the grilling output is clear enough to write a PRD directly.
 
@@ -89,7 +91,7 @@ This gate applies to every feature regardless of perceived simplicity. "Simple" 
 
 **Do NOT proceed to PRD/issue creation until there is an approved roadmap artifact.**
 
-Before running `to-prd`, run `workflow-roadmap` (or confirm an equivalent current roadmap exists) and capture:
+Load and run `workflow-roadmap/SKILL.md` (or confirm an equivalent current roadmap exists) and capture:
 
 - roadmap artifact path (`docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md`)
 - explicit user approval evidence
@@ -98,7 +100,9 @@ Before running `to-prd`, run `workflow-roadmap` (or confirm an equivalent curren
 
 If no roadmap exists, create one and stop for approval. If one exists but is stale or lacks the target vertical slice, update it and re-approve before continuing.
 
-### Step 2: PRD (to-prd)
+### Step 2: PRD
+
+Load and run `to-prd/SKILL.md` to:
 
 - Convert grilling output into a structured PRD
 - Publish to issue tracker as a reference document
@@ -106,7 +110,9 @@ If no roadmap exists, create one and stop for approval. If one exists but is sta
 - State how the work can be split into vertical slices; if it cannot, return to design before issue creation
 - Output: PRD issue on GitHub
 
-### Step 3: Issues (to-issues)
+### Step 3: Issues
+
+Load and run `to-issues/SKILL.md` to:
 
 - Break PRD into vertical slices (tracer bullets)
 - Each slice is independently implementable and verifiable across the relevant layers of the app
@@ -114,7 +120,9 @@ If no roadmap exists, create one and stop for approval. If one exists but is sta
 - Include dependency order and blocking relationships
 - Output: child issues under the PRD
 
-### Step 4: Triage (triage)
+### Step 4: Triage
+
+Load and run `triage/SKILL.md` to:
 
 - Classify each issue: ready-for-agent vs needs-human
 - Apply labels, estimate complexity, assign priority
