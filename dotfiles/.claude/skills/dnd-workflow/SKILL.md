@@ -14,8 +14,10 @@ Consumes: user intent, campaign context clues. Produces: routed pipeline executi
 | Signal | Pipeline |
 |--------|----------|
 | "prep a session", "next session", "what should happen next" | **Session** |
+| "session recap", "close the session", "post-session", "what happened", "recap loop" | **Recap** |
 | "design/build an adventure", "prep a situation not a plot", "Three Clue Rule", "node map" | **Adventure design** |
 | "mystery", "investigation", "intrigue", "clue web" | **Mystery** |
+| "NPC reveal", "planted detail", "click", "revelation arc", "layered reveal" | **NPC Arc** |
 | "I have an idea", "brainstorm", "rough concept", "what if" | **Ideation** |
 | "check continuity", "does this contradict", "open threads", "loose ends", "is this railroady" | **Review** |
 | "ingest", "formalize", "these notes", "from ChatGPT" | **Lore Ingestion** |
@@ -31,6 +33,10 @@ Entry points: step 1 for raw ideas, the canon-grill step if already grilled+logg
 **Adventure design / Mystery:** dnd-grill (premise) → **dnd-adventure-design** (situation, active factions, node map, revelations w/ Three Clue Rule, timelines, stakes) → decision-log → dnd-node-builder (detail the clue web) → dnd-review *continuity* + *agency* → dnd-session-prep.
 
 **Ideation:** dnd-grill → decision-log → dnd-lore-ingestion → dnd-grill *canon mode*.
+
+**Recap:** dnd-session-recap-loop (full post-session close — actual play → NPC loop → front movement → continuity → threads → ranked decisions → next session queue).
+
+**NPC Arc:** character-arc (internal transformation) → dnd-npc-arc-builder (revelation structure) → dnd-node-builder (discovery paths) → scene-craft (reveal scene) → dnd-session-prep.
 
 **Review:** dnd-review *continuity* → dnd-review *threads* → dnd-review *agency*.
 

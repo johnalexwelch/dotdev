@@ -19,6 +19,10 @@ Critical rule: never use `Closes`, `Fixes`, or `Resolves` unless the issue is fu
 ## Table Format
 
 ```markdown
+## Vertical slice progress
+
+<Render before `## Issues` when PRD/issue lineage exists; use the grouped PRD -> issue format from `references/pr-body-template.md`.>
+
 ## Issues
 
 | Issue | Disposition | Rationale |
@@ -43,3 +47,5 @@ Critical rule: never use `Closes`, `Fixes`, or `Resolves` unless the issue is fu
 5. If the plan explicitly states this approach replaces an earlier issue, use `Supersedes`.
 
 For auto-closing dispositions, place the exact keyword outside the table so GitHub recognizes it: `Closes #123`, `Fixes #124`, or `Resolves #125`.
+
+When `## Vertical slice progress` is present, keep `## Issues` focused on disposition semantics only (close/fix/address/refs rationale). Do not duplicate lineage or date fields in the disposition table.

@@ -38,12 +38,13 @@ Two **category** roles:
 - `bug` — something is broken
 - `enhancement` — new feature or improvement
 
-Five **state** roles:
+Six **state** roles:
 
 - `needs-triage` — maintainer needs to evaluate
 - `needs-info` — waiting on reporter for more information
 - `ready-for-agent` — fully specified, ready for an AFK agent
-- `ready-for-human` — needs human implementation
+- `ready-for-human` — needs human implementation (cannot be delegated to agents)
+- `needs-human-review` — HITL checkpoint: agent can start but a human must review before it can safely proceed (judgment calls, external access, risky migrations)
 - `wontfix` — will not be actioned
 
 Every triaged issue should carry exactly one category role and one state role. If state roles conflict, flag it and ask the maintainer before doing anything else.
@@ -80,7 +81,7 @@ The maintainer invokes `/triage` and describes what they want in natural languag
 
 Query the issue tracker and present three buckets, oldest first:
 
-1. **Unlabeled** — never triaged.
+1. **No state label** — has no state role applied (may have category/type/priority labels). Includes issues that have never been triaged AND issues that were categorized but never given a state. Security CVE auto-filed issues (`from:nightly-scan`) belong here too.
 2. **`needs-triage`** — evaluation in progress.
 3. **`needs-info` with reporter activity since the last triage notes** — needs re-evaluation.
 

@@ -93,6 +93,22 @@ section immediately after `## Phases completed` when issues are
 discovered, and use that reference to assign dispositions and place
 GitHub auto-closing keywords.
 
+## Vertical Slice Progress Table
+
+When PRD and issue lineage can be reconstructed, include the `## Vertical slice progress`
+section from `references/pr-body-template.md` before `## Issues`.
+
+Table requirements:
+
+- Render PRD rows first, then issue rows directly underneath each PRD.
+- Keep the schema exact:
+  - `Status | Title | Description | Date closed / merged`
+- For issue rows, include a visual prefix in `Title` (for example `↳`).
+- If an issue was closed by a merged PR, link the issue title to that PR URL.
+- Prefer PR merge date for closed-by-PR rows; otherwise use issue closed date.
+- If lineage or dates are unavailable, use `-` and continue without blocking.
+- If no PRD/issue lineage can be found, omit the section.
+
 ## Tuning notes
 
 - **Prefer phase-run outcome files over raw `git log`.** They have

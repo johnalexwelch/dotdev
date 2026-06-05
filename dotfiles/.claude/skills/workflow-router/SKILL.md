@@ -126,6 +126,14 @@ Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo aud
 - For repo-wide refactors, migrations, or multi-phase remediation that cannot be represented cleanly as issue slices yet: route to `design-plan`, then optionally `execute-phase`.
 - Do not route audits directly to `execute-phase`; a human-approved roadmap, PRD/issues, or design plan must exist first.
 
+## Roadmap Gate Rule
+
+For feature planning that will produce PRDs and implementation issues, require an approved `workflow-roadmap` artifact before dispatching `to-prd` or `to-issues`.
+
+- If roadmap evidence exists and is in scope: proceed.
+- If roadmap is missing, stale, or out of scope: route to `workflow-roadmap` first and halt downstream dispatch until approved.
+- Only an explicit user waiver may bypass this gate.
+
 ## Graceful degradation
 
 These fallbacks apply only when the target workflow does not list the

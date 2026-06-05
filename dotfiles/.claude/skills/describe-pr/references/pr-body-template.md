@@ -18,9 +18,6 @@ Write to `docs/executions/.pr-bodies/<date>-pr-<N>.md` or `<date>-pr-<branch>.md
   - Evidence: `docs/executions/.phase-runs/<outcome file>`
 >
 
-## Issues
-
-<For each issue discovered by Issue Discovery, assign a disposition using `references/issue-disposition-rules.md`. For auto-closing dispositions, add GitHub keywords after the table. If no issues are discovered, omit this section.>
 
 ## User-facing changes
 
@@ -41,6 +38,22 @@ Write to `docs/executions/.pr-bodies/<date>-pr-<N>.md` or `<date>-pr-<branch>.md
 ## How to verify
 
 <From the plan's Verification blocks and phase-run outcome files' `## Verification` PASS/FAIL. Cite any UNVERIFIED load-bearing claim as a reviewer focus item.>
+
+## Vertical slice progress
+
+<Render one grouped table that starts with PRD rows and then lists the issues under each PRD. Keep parent PRD rows immediately above their issue rows. Use a visual prefix in the Title cell for issue rows (for example: `↳`) so grouping is obvious.>
+
+| Status | Title | Description | Date closed / merged |
+|--------|-------|-------------|----------------------|
+| <status> | **PRD:** <PRD title> | <short PRD summary> | <date closed or `-`> |
+| <status> | ↳ <Issue title or `[Issue title](<merged PR link>)` when closed via PR> | <short issue summary> | <issue closed date, or PR merge date when available> |
+
+<Status values should be concise and consistent across rows (for example: `open`, `in_progress`, `closed`, `blocked`). When an issue is closed by a merged PR, prefer linking the Issue title to that merged PR URL. If merge date is unavailable, use issue closed date. If a date is unknown, use `-`. If no PRD/issue lineage is available, omit this section.>
+
+## Issues
+
+<For each issue discovered by Issue Discovery, assign a disposition using `references/issue-disposition-rules.md`. For auto-closing dispositions, add GitHub keywords after the table. If no issues are discovered, omit this section.>
+
 
 ## Changelog entry
 

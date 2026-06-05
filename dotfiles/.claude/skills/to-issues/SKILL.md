@@ -26,6 +26,17 @@ The issue tracker and triage label vocabulary should have been provided to you â
 
 ## Process
 
+### 0. Roadmap gate (required)
+
+Before drafting slices, verify there is an approved roadmap artifact covering this PRD/plan scope (normally from `workflow-roadmap`).
+
+Required evidence:
+- roadmap artifact path (typically `docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md`)
+- explicit user approval (or explicit user waiver)
+- milestone order that this issue breakdown can map to
+
+If missing, stale, or not aligned to the current scope, halt and return to `workflow-roadmap` before publishing issues.
+
 ### 1. Gather context
 
 Work from whatever is already in the conversation context. If the user passes an issue reference (issue number, URL, or path) as an argument, fetch it from the issue tracker and read its full body and comments. Read `docs/decision-log.md` or the repo's established equivalent when present so issue slices preserve why decisions were made.

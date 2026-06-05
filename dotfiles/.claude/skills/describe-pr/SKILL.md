@@ -33,11 +33,16 @@ Confirm a git repo. Resolve `branch` (default current). Resolve `plan_path` (new
 ## Step 1 — Gather inputs
 Plan sections (§3 Goals, §5 Execution plan, phase Addresses → map `phase_N → [FIND-NN,...]`); phase-run outcomes matching the branch range (Commits, Scope violations, Follow-ups, Chain state); commits (`git log/diff <base>..<branch>`); graphify evidence (context only); per-file diff URLs (`references/diff-url-guidance.md`); ticket refs (pluggable regex, link only if a base URL is declared); issue discovery across the sources in `references/details.md`.
 
+For vertical-slice reporting, also gather lineage metadata when available:
+- PRD issue refs associated with discovered implementation issues
+- issue state and `closedAt`
+- merged PR URL and merge date for issues closed by a PR (when discoverable)
+
 ## Step 2 — Deviation review
 In plan/phase modes, dispatch one general-purpose Agent with `references/deviation-review-prompt.md` (substituting plan, branch, base, commits, phase-run files); wait and record. In `issue_only`, skip and record `deviations: not_applicable`.
 
 ## Step 3 — Compose
-Load `references/pr-body-template.md`; write `docs/executions/.pr-bodies/<date>-pr-<N>.md`. For the `## Issues` section load `references/issue-disposition-rules.md`. Generate from this run's gathered inputs — don't copy the issue body or a stale PR body. Include provenance (mode + whether graphify was queried).
+Load `references/pr-body-template.md`; write `docs/executions/.pr-bodies/<date>-pr-<N>.md`. For the `## Vertical slice progress` section, render PRD-first grouped rows followed by issue rows under each PRD, including status, summary, and close/merge date metadata when available. For the `## Issues` section load `references/issue-disposition-rules.md`. Generate from this run's gathered inputs — don't copy the issue body or a stale PR body. Include provenance (mode + whether graphify was queried).
 
 ## Step 4 — Apply (optional)
 If `apply==true` and a PR exists: `gh pr edit <N> --body-file <path>`, confirm, set `applied_to_pr=true`. Else skip.

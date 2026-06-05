@@ -52,6 +52,7 @@
     ],
     "defaultMode": "auto"
   },
+  "model": "sonnet",
   "hooks": {
     "PreToolUse": [
       {
@@ -147,7 +148,6 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
-  "model": "sonnet",
   "advisorModel": "opus",
   "skipDangerousModePermissionPrompt": true,
   "preferredNotifChannel": "ghostty",

@@ -24,6 +24,17 @@ Every development path described by the PRD must be decomposable into vertical s
 
 ## Process
 
+0. Roadmap gate (required):
+
+Before synthesizing the PRD, verify there is an approved roadmap artifact for this workstream (normally from `workflow-roadmap`) with milestone sequencing and vertical-slice intent.
+
+Required evidence:
+- roadmap artifact path (typically `docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md`)
+- explicit user approval (or explicit user waiver)
+- at least one milestone that maps to this PRD scope
+
+If missing, stale, or out of scope, halt and route back to `workflow-roadmap` before continuing.
+
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the PRD, and respect any decision log entries and ADRs in the area you're touching.
 
 Before synthesizing the PRD, read `docs/decision-log.md` or the repo's established equivalent if it exists. Treat logged decisions as settled context unless the user explicitly reopens them. If the PRD relies on grill output that has not been logged, reconstruct decision-log entries for the accepted answers before continuing.

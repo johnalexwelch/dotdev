@@ -21,7 +21,7 @@ All implementation issues produced by this workflow must be vertical slices of a
 ## Flow
 
 ```
-grill-with-docs → decision-log → [prototype] → to-prd → to-issues → triage
+grill-with-docs → decision-log → [prototype] → workflow-roadmap (approval gate) → to-prd → to-issues → triage
                                   ^optional^
 ```
 
@@ -85,6 +85,19 @@ If grilling happened before the decision-log requirement existed, reconstruct `d
 
 This gate applies to every feature regardless of perceived simplicity. "Simple" features are where unexamined assumptions cause the most wasted work.
 
+### Step 1.95: Roadmap gate (HARD-GATE)
+
+**Do NOT proceed to PRD/issue creation until there is an approved roadmap artifact.**
+
+Before running `to-prd`, run `workflow-roadmap` (or confirm an equivalent current roadmap exists) and capture:
+
+- roadmap artifact path (`docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md`)
+- explicit user approval evidence
+- milestone sequencing relevant to this feature
+- identified vertical-slice path for the first implementation slice
+
+If no roadmap exists, create one and stop for approval. If one exists but is stale or lacks the target vertical slice, update it and re-approve before continuing.
+
 ### Step 2: PRD (to-prd)
 
 - Convert grilling output into a structured PRD
@@ -124,7 +137,7 @@ Consumes: ambiguous feature idea (user description, conversation context)
 Produces: PRD issue, child implementation issues (triaged, labeled, dependency-ordered)
 Requires: gh
 Side effects: creates GitHub issues and labels
-Human gates: Step 1 grilling requires user participation; Step 1.9 design approval blocks PRD creation; Step 4 triage decisions presented for approval
+Human gates: Step 1 grilling requires user participation; Step 1.9 design approval blocks PRD creation; Step 1.95 roadmap approval blocks PRD/issue creation; Step 4 triage decisions presented for approval
 
 ## Context
 
