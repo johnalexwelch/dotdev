@@ -1,6 +1,7 @@
 ---
 name: slop-cleaner
-description: "Strips AI-generated tells from technical documentation or analytical writing. Two modes — docs (READMEs, API docs, runbooks, code comments/docstrings) and analysis (analytical narratives, findings, recommendations). Use for 'clean up this doc/analysis', 'de-AI this', or a final pass on LLM-drafted docs or analysis. For persuasive prose use humanizer; for code cleanup use ai-slop-cleaner."
+model: sonnet
+description: "The canonical slop cleaner for non-code writing. Two modes: docs (READMEs, API docs, runbooks, code comments, docstrings, skill docs) and analysis (analytical narratives, findings, recommendations, memos). Use for 'clean up this doc', 'clean up this analysis', 'de-AI this', or a final pass on any LLM-drafted technical or analytical writing. Replaces doc-slop-cleaner and analysis-slop-cleaner — always use this one. For persuasive prose use humanizer; for actual code slop use oh-my-claudecode:ai-slop-cleaner."
 ---
 
 # Slop Cleaner

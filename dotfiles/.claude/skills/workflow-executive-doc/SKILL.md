@@ -1,5 +1,6 @@
 ---
 name: workflow-executive-doc
+model: opus
 description: "Orchestrates executive-doc creation and review across research, domain analysis, drafting, adversarial critique, revision, and polish. Use for executive memos, board updates, strategy docs, org/product analyses, or any decision document needing multiple expert perspectives."
 ---
 

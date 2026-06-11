@@ -1,5 +1,6 @@
 ---
 name: metric-design
+model: opus
 description: Designs a new metric from a question, not from available data. Forces a precise definition (what counts, what's excluded), a stable denominator, a Goodhart's-Law check, a falsifier, and a maintenance plan. Produces a metric spec ready for YAML implementation. Use before adding any new metric to a tree, a dashboard, or a target.
 ---
 

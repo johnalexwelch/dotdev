@@ -1,5 +1,6 @@
 ---
 name: metric-tree-review
+model: sonnet
 description: "Audits a metric tree (or candidate addition) for definitional clarity, math consistency, cross-tree coherence, and whether it actually decomposes the parent. Catches double-counted leaves, missing components, conflated influences-vs-components, and metric-soup trees. Use when adding to or restructuring trees."
 ---
 

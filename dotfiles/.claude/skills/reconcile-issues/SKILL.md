@@ -1,5 +1,6 @@
 ---
 name: reconcile-issues
+model: sonnet
 description: Detect and correct drift between GitHub Issues, PRs, labels, execution outcomes, and post-mortems
 ---
 

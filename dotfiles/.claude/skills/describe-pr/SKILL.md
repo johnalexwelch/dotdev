@@ -1,5 +1,6 @@
 ---
 name: describe-pr
+model: sonnet
 description: Manual slash-only artifact generator for pull request body text and issue disposition tables. Auto-routing disabled; workflow-finalize may call it internally.
 disable-model-invocation: true
 triggers: ["/describe-pr","describe pr","generate pr description","write pr body"]

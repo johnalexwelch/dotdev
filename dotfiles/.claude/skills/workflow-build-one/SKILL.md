@@ -1,5 +1,6 @@
 ---
 name: workflow-build-one
+model: sonnet
 description: Implement one ready-for-agent issue end-to-end (preflight → execute → review → repo-policy-controlled PR handoff)
 ---
 
@@ -33,6 +34,29 @@ Take a single `ready-for-agent` issue and drive it from implementation through r
 ```
 per-issue origin/staging worktree → preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
 ```
+
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger **before executing or dispatching any step**. Use the exact step names from this skill and include conditional or optional steps.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Step 0: Preflight | required | pending | - |
+| Step 1: Triage | required | pending | - |
+| Step 2: Execute | required | pending | - |
+| Step 3: Review (workflow-review) | required | pending | - |
+| Step 4: User Journey QA | conditional | pending | - |
+| Step 5: Finalize (workflow-finalize) | required | pending | - |
+```
+
+Rules:
+- Initialize every step as `pending`. Update each to `completed`, `skipped`, `blocked`, or `failed` as it resolves.
+- Steps 3 and 5 **cannot be skipped**. If they cannot run, mark `blocked` and halt.
+- Step 4 may be `skipped` only for purely backend/infrastructure/tooling changes — record the reason.
+- Include the final ledger in every halt, handoff, and completion response.
+- A step is only `completed` when its required gate block exists in the output: Step 3 requires `WORKFLOW_REVIEW_GATE`, Step 5 requires `WORKFLOW_FINALIZE_GATE`.
 
 ## Per-Issue Worktree Invariant
 
@@ -71,7 +95,7 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 
 ### Step 3: Review (workflow-review)
 
-- Load and run `workflow-review/SKILL.md` explicitly. Do not treat tests, green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, or resolved PR comments as satisfying this step.
+- **Use the Skill tool to invoke `workflow-review`** — do not inline review logic, self-review, or skip the skill invocation. "Load and run" means invoke the skill. Do not treat tests, green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, or resolved PR comments as satisfying this step.
 - Select a risk-sized `review_profile` in `workflow-review`: `fast` for small low-risk changes, `standard` for normal issue work, `full` for broad or high-risk changes
 - Require independent review evidence from `workflow-review`: review profile, active lanes, independent reviewer context/subagent types, skipped-with-reason conditional lanes, and synthesized verdict
 - Require the `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. If the block is missing or incomplete, treat review as not run and halt.
@@ -94,7 +118,7 @@ When triggered, this is a blocking gate. Proceed to `workflow-finalize` only whe
 
 ### Step 5: Finalize (workflow-finalize)
 
-- Load and run `workflow-finalize/SKILL.md`; do not replace it with direct PR creation commands.
+- **Use the Skill tool to invoke `workflow-finalize`**. Do not replace it with direct `gh pr create` or any other PR creation commands — `workflow-finalize` owns PR creation, description, CI monitoring, and issue reconciliation.
 - `workflow-finalize` owns `describe-pr`, so the worker must preserve the generated PR body file path and `describe_pr` evidence in `WORKFLOW_FINALIZE_GATE`.
 - Open or update a PR according to the caller's `REPO_DELIVERY_POLICY` when supplied:
   - `human-only` or no policy supplied: create/update a draft PR and leave final merge/mark-ready decisions to the user.
@@ -114,6 +138,24 @@ When triggered, this is a blocking gate. Proceed to `workflow-finalize` only whe
 ## Exit behavior
 
 Every halt produces an auto-handoff. Every completion checks for follow-up work. No workflow exit should lose context.
+
+## Pre-Completion Gate
+
+Before declaring done, reporting completion, or producing a handoff, verify ALL three gate blocks exist in your output for this run:
+
+1. **`WORKTREE_BASELINE_GATE`** — confirms isolated worktree from `origin/staging`
+2. **`WORKFLOW_REVIEW_GATE`** with `review_profile`, `independent_review: true`, and `verdict: APPROVE` — confirms `workflow-review` ran with independent evidence
+3. **`WORKFLOW_FINALIZE_GATE`** — confirms `workflow-finalize` ran to completion
+
+If any block is absent, **do not claim completion**. Load and run the missing skill via the Skill tool now, or produce an auto-handoff explaining why it could not run.
+
+This check applies even when:
+- The PR exists and CI is green
+- Tests pass locally
+- You reviewed the diff yourself
+- PR comments are resolved
+
+None of those substitute for the gate blocks. The gate blocks are the proof of record.
 
 ## Partial-Completion Contract
 

@@ -1,5 +1,6 @@
 ---
 name: humanizer
+model: sonnet
 description: Remove signs of AI-generated writing from text. Detects 29 patterns (significance inflation, promotional language, AI vocabulary, em dash overuse, rule of three, filler phrases, etc.) and rewrites them. Based on Wikipedia's "Signs of AI writing" guide. Use when editing text to make it sound more natural, or say "humanize", "de-AI", "make it sound human".
 codex-compatible: true
 ---

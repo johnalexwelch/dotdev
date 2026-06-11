@@ -1,5 +1,6 @@
 ---
 name: graph-first
+model: haiku
 description: Canonical graph-first reference protocol for loading context from graphify-out when present. Loaded by council, constructive, audit, incident, and fiction skills. Never invoked directly.
 user-invocable: false
 disable-model-invocation: true

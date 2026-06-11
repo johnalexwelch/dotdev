@@ -1,5 +1,6 @@
 ---
 name: workflow-effectiveness-audit
+model: sonnet
 description: Evaluate whether skills and workflows are actually working. Audits recent agent transcripts, GitHub PRs/issues, and execution artifacts for skipped steps, missing subagents, unresolved review comments, weak handoffs, and routing gaps.
 codex-compatible: true
 ---

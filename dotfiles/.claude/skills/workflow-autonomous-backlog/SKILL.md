@@ -1,5 +1,6 @@
 ---
 name: workflow-autonomous-backlog
+model: sonnet
 description: Orchestrates autonomous module discovery into PRDs/issues and AFK backlog execution with outage controls. Use when the user wants agents to find module opportunities, create PRDs/issues, or run a ready-for-agent backlog unattended without bypassing delivery gates.
 ---
 

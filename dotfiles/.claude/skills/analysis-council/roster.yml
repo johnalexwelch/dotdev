@@ -8,6 +8,7 @@ optional:
   - statistician
   - causal-reasoner
   - counterfactual-check
+  - bias-auditor
   - governance-reviewer
   - exec-audience-stand-in
   - ops-analyst
@@ -57,6 +58,14 @@ overlays:
     unit economics, cohort LTV/CAC, expansion/churn drivers,
     international pricing, free-vs-paid conversion.
 
+  bias-auditor: |
+    Activate when the input is a judgment call or recommendation
+    (a strategy bet, a "we should" memo, a build/kill call) rather
+    than a data analysis — i.e. when the risk is in the reasoning,
+    not the denominator. Defer data critiques to
+    skeptical-data-scientist and framing/reversibility to
+    decision-scientist; stay on the cognitive biases.
+
 dispatch_signals:
   # Topic-keyword heuristics for smart-picking optional personas
   # in default mode. Orchestrator scans the user's invocation
@@ -67,6 +76,8 @@ dispatch_signals:
     keywords: [caused, drove, led to, because, due to, attributable, drivers of]
   counterfactual-check:
     keywords: [would have, if we hadn't, counterfactual, alternative]
+  bias-auditor:
+    keywords: [recommend, we should, we believe, judgment, decision, confident, obviously, clearly, narrative, sunk cost, anchor, gut, the case for]
   governance-reviewer:
     keywords: [child, COPPA, FERPA, GDPR, parent consent, under 13, student data, privacy]
   exec-audience-stand-in:

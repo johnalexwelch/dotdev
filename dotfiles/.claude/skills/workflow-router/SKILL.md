@@ -1,5 +1,6 @@
 ---
 name: workflow-router
+model: sonnet
 description: Single authoritative entry point for classifying work and routing to the correct workflow skill
 ---
 
@@ -47,9 +48,10 @@ because a workflow says "review"; use `workflow-review`'s risk-sized
 
 | Signal | Classification | Routes to |
 |--------|---------------|-----------|
-| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details | **V1 idea discovery** | v1-idea-grill |
-| Approved `V1_IDEA_BRIEF`, "design the system for this V1", "turn this V1 brief into architecture", "system design for V1" | **V1 system design** | v1-system-design |
+| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture" | **V1** | `v1-workflow` (full gated pipeline: idea grill → approval → decision-log → system design → roadmap → issues — do NOT route directly to `v1-idea-grill` or `v1-system-design`, which skips the approval gates) |
 | "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | workflow-roadmap |
+| "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
+| "we're launching X", "launch plan", "launch checklist", "go-to-market checklist", "are we ready to ship", "go-live readiness" | **product launch** | product-launch-checklist |
 | "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog workflow** | workflow-autonomous-backlog |
 | Bug report, error, "it's broken", regression | **bug** | workflow-debug |
 | Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature |
@@ -57,7 +59,7 @@ because a workflow says "review"; use `workflow-review`'s risk-sized
 | Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
 | "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
-| Research question, "investigate how..." | **research** | RPI Chain (research → plan → implement) |
+| Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` |
 | "Review this", "review my changes" | **review** | workflow-review |
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
@@ -65,7 +67,7 @@ because a workflow says "review"; use `workflow-review`'s risk-sized
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D** | dnd-workflow |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
 | "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
-| "write an article", "blog post", "draft", "write about" | **writing** | writing-fragments → writing-shape or writing-shape (beats mode) → humanizer |
+| "write an article", "blog post", "draft", "write about" | **writing** | writing-fragments → writing-shape (argument mode) or writing-beats (narrative/beats mode) → humanizer |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
 | "generate prompt for", "prep for codex", "prep for AFK" | **prompt generation** | prompt-builder |
@@ -149,7 +151,7 @@ halt, report the missing requirement, and do not proceed.
 | `playwright-mcp` | Can't run UJ QA | For frontend/user-facing changes, halt for human waiver or setup; do not silently skip |
 | Project test runner | Can't verify | Halt and request setup info |
 | Campaign docs | D&D canon-specific review unavailable | `dnd-grill` may run without docs; `dnd-grill (canon mode)` must halt or explicitly switch to lightweight `dnd-grill` with the user's consent |
-| Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-shape (beats mode) need a file to work from |
+| Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-beats need a file to work from |
 
 ## Process
 

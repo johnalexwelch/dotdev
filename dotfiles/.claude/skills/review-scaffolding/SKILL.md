@@ -73,6 +73,7 @@ Group the smallest tweaks under a final **Minor** heading rather than numbering 
 
 - **Graph-first** — when the domain benefits, follow `graph-first/SKILL.md` and tag graph-sourced findings `[GRAPH]`. The adapter declares the insertion point.
 - **Persistence** — write the report to `<domain>/audits/<slug>-<review>-<YYYY-MM-DD>.md` when the adapter opts in. Auto-`.gitignore` on first write.
+- **Tracked-changes output** — when the adapter opts in, append a second deliverable *after* the findings report: the artifact reproduced with edits inline, `~~struck~~` for cuts and **bold** for insertions, plus a one-line-per-change table (`locus · was → now · finding #`). It is an *additional* view, never a replacement for the findings report, and never license to rewrite beyond what the numbered findings justify — every inline edit must trace to a finding. Reviews that don't propose text-level replacements (thread inventories, agency reviews) don't opt in.
 
 ## Adapter contract
 

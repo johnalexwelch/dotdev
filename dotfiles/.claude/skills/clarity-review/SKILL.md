@@ -1,5 +1,6 @@
 ---
 name: clarity-review
+model: sonnet
 description: >-
   Review a document, email, Slack post, memo, metrics update, spec, or set of instructions
   for communication clarity, and produce a structured report of recommended changes — each
@@ -65,6 +66,9 @@ Sentence / passage for the prose-level 5 C's; the whole document for the structu
 - **Identify audience and purpose first.** A note to your own team can assume context a company-wide announcement can't — judge Context Aware and Concise against *the actual intended readers*, not an omniscient one. If the audience isn't stated and it changes your review, say so and state your assumption. (This runs before the scaffold's prioritize step.)
 - **Severity mapping for the 5 C's:** internal contradictions, a missing decision, or an unexplained acronym in a wide announcement are usually `[HIGH]`; a vague-but-recoverable phrasing is `[MED]`; wording tightening is `[LOW]`/Minor.
 - **Section naming:** title the report `# Clarity review: <document name or type>` and the findings section `## Recommended changes`.
+- **Protected elements.** Never edit inside code fences, tables, or LaTeX/math — treat them as fixed context you may quote but not rewrite.
+- **Readability is advisory, not a target.** You may note a Flesch–Kincaid grade level as one *signal*, but never recommend a change merely to move the score. A short sentence that misleads is worse than a long one that doesn't — the 5 C's, not a readability formula, decide. There is deliberately **no "strictness" / rewrite-aggressiveness knob**: this review finds where the reader is confused and shows a better version; it does not do wholesale rewriting.
+- **Tracked-changes (opt-in).** Opts into the scaffold's tracked-changes output. When the user asks to "show edits" / "track changes," append the text with `~~cuts~~` and **insertions** plus a change table *after* the `## Recommended changes` report — every inline edit tracing to a numbered finding. Default off; the findings report is always the primary deliverable.
 
 ## Persistence
 

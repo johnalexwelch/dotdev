@@ -1,5 +1,6 @@
 ---
 name: workflow-review
+model: opus
 description: Run an auditable independent review gate with a risk-sized review profile. Use before merging, after implementation, at any explicit review gate, or whenever the user asks to review changes; green CI, GitHub reviews, Claude Code Review, and PR comments do not substitute for this workflow.
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: to-prd
+model: sonnet
 description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
 ---
 
@@ -58,6 +59,24 @@ Autonomous module PRD preflight: if this PRD comes from `workflow-autonomous-bac
 Critic consensus is evidence validation only. Do not treat `MODULE_GRILL_CONSENSUS` as module design approval unless the same invocation includes explicit human approval or explicit low-risk autonomous preauthorization.
 
 Check with the user that these modules match their expectations. Check with the user which modules they want tests written for. For new modules, broad architecture moves, product behavior changes, public API changes, data model changes, auth/payment paths, or high-risk refactors, this confirmation is a hard module design summary gate.
+
+2b. Independent slice coverage review (required after module confirmation, before writing PRD):
+
+After the user confirms the module breakdown, spawn an independent critic agent (`oh-my-claudecode:critic`) to verify the proposed modules decompose into clean vertical slices before you commit the full PRD to writing.
+
+Brief the critic with:
+- The confirmed module breakdown and user stories
+- The relevant decision log sections
+- Enough codebase context to spot phantom dependencies or missing integration seams
+
+The critic must check:
+1. **Vertical decomposability** — can each module be delivered as narrow end-to-end behavior, or does any module require another to be "done first" for a reason that isn't a real data dependency?
+2. **Horizontal-layer disguise** — are any proposed modules secretly horizontal (e.g., "build the schema," "build the API," "build the UI" as separate modules)?
+3. **Dependency ordering** — are module dependencies correctly ordered so slices can be independently implemented?
+4. **User story coverage** — does the module set cover all identified user stories? are any behaviors orphaned (no module owns them)?
+5. **Missing seams** — are there integration points (registration in a task registry, enum members, migration of existing records) that no module accounts for?
+
+Address all **MAJOR** concerns before writing the PRD. Surface **MINOR** concerns and **QUESTIONs** in the PRD's Implementation Decisions or Further Notes sections so downstream implementers can see them.
 
 3. Write the PRD using the template below, then publish it to the project issue tracker as a PRD/spec/reference issue. Do not apply `ready-for-agent` to the PRD itself. Only child implementation issues produced by `to-issues` may receive `ready-for-agent`, and only after triage confirms AFK safety.
 

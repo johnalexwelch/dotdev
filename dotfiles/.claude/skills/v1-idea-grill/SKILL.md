@@ -1,6 +1,7 @@
 ---
 name: v1-idea-grill
-description: Turns a loose product idea into an approved non-technical V1 brief through a full functionality grill. Use when the user wants to build a V1 from an idea, shape a fuzzy product concept, define an MVP, or clarify functionality before technical design.
+model: opus
+description: Turns a loose product idea into an approved non-technical V1 brief through a full functionality grill. Called by v1-workflow as Step 1 — invoke directly only when you explicitly want just this step in isolation. For full V1 work (idea → design → issues), use v1-workflow instead.
 ---
 
 # V1 Idea Grill

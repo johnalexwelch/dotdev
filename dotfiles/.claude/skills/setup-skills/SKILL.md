@@ -1,5 +1,6 @@
 ---
 name: setup-skills
+model: sonnet
 description: "Sets up the \"## Agent skills\" block in AGENTS.md/CLAUDE.md and docs/agents/ so engineering skills know the repo's issue tracker, triage labels, and doc layout. Run before first use of to-issues/to-prd/triage/diagnose/tdd, or when those skills lack repo context."
 disable-model-invocation: true
 ---

@@ -1,5 +1,6 @@
 ---
 name: repo-audit
+model: opus
 description: Map-reduce, evidence-based state-of-the-repo investigation. Use to get an honest picture of where a repo (or monorepo subtree) actually is — feeds workflow-roadmap, to-prd, to-issues, triage, or refactor-scale design-plan. Triggers on "audit the repo", "/repo-audit", "what's the real state of this codebase".
 ---
 

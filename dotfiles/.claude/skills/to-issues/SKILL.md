@@ -1,5 +1,6 @@
 ---
 name: to-issues
+model: sonnet
 description: Break a plan, spec, or PRD into independently-grabbable issues on the project issue tracker using tracer-bullet vertical slices. Use when user wants to convert a plan into issues, create implementation tickets, or break down work into issues.
 ---
 
@@ -57,6 +58,30 @@ Slices may be 'HITL' or 'AFK'. HITL slices require human interaction, such as an
 - Prefer many thin slices over few thick ones
 - Horizontal work belongs inside a slice as implementation detail; it should not become its own issue unless it has standalone user-visible or system-verifiable behavior
 </vertical-slice-rules>
+
+### 3b. Independent slice review (required before presenting to user)
+
+Before presenting the breakdown to the user, spawn an independent critic agent (`oh-my-claudecode:critic`) to evaluate the proposed slices. Do this silently — do not show the draft to the user until the review is complete and MAJOR concerns are resolved.
+
+Brief the critic with:
+- The PRD or plan source, user stories, and the proposed slice breakdown
+- The decision log sections relevant to this work
+- The codebase context needed to spot phantom dependencies or missing seams
+
+The critic must evaluate:
+1. **Vertical integrity** — is each slice truly end-to-end, or is any slice a horizontal layer (schema-only, API-only, tests-only)?
+2. **Dependency correctness** — is the chain right? are there hidden dependencies on unbuilt infrastructure?
+3. **AFK/HITL classification** — are write-authority slices appropriately gated?
+4. **Coverage completeness** — do the slices collectively cover all user stories? are any behaviors (env-var degrades, exclusion rules, edge cases) missing from every slice?
+5. **Scope vs. source** — does the breakdown cover the full PRD/plan scope, or is anything hanging?
+6. **Risk guards** — for write-authority slices, are KILLSWITCH, dry-run, and rollback paths accounted for?
+
+After the review:
+- Address all **MAJOR** concerns by revising the breakdown before presenting to the user
+- Surface **MINOR** concerns and **QUESTIONs** to the user as part of step 4 so they can decide
+- If the review returns no MAJOR concerns, note the reviewer's LGTM items alongside the breakdown
+
+Do not skip this step. The independent reviewer catches phantom dependencies, missing coverage, and horizontal-layer disguised as slices that the author normalizes.
 
 ### 4. Quiz the user
 

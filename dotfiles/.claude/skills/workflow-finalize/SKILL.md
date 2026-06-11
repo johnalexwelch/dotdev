@@ -1,5 +1,6 @@
 ---
 name: workflow-finalize
+model: sonnet
 description: Universal delivery closure after review passes (PR body → reviewer comments → CI → reconcile → repo-policy-controlled final action)
 ---
 
@@ -130,15 +131,17 @@ Before declaring the PR ready for final action, run a verification gate:
 3. **Confirm review comment resolution** — fetch review threads/comments one final time. If any actionable reviewer comment has no fix, reply, or explicit human waiver, halt before handoff.
 4. **Confirm review freshness** — verify the latest `WORKFLOW_REVIEW_GATE` was produced after the final code-changing commit. If finalization pushed review-fix or CI-fix commits after the last review gate, halt and rerun `workflow-review`.
 5. **Check for large diffs** — run `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
-   - Suggest using the Cursor `split-to-prs` skill to break into reviewable chunks
    - If the changes are logically atomic (single feature, single refactor), proceed but note the size in the PR description
-   - If the changes span unrelated concerns, **halt** and split before merging
+   - If the changes span unrelated concerns, **halt**: identify the independent concerns, create a separate branch for each from `origin/staging`, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
 
 ### Step 7: Long-lived PR maintenance (conditional)
 
 If the PR has been open >24 hours or has accumulated >5 review comments:
 
-- Use the Cursor `babysit` skill pattern: triage all unresolved comments, sync with base branch if conflicts exist, and fix any new CI issues from the sync
+- Triage all unresolved reviewer comments: categorize as blocker, non-blocker, nit, or stale (no longer applies after recent changes)
+- Sync with base branch if conflicts exist: `git fetch origin && git rebase origin/<base>` (or merge if the repo policy prefers merge)
+- Fix any new CI issues introduced by the sync
+- Re-check all review threads after the sync push and reply to any that are now resolved
 - This step is skipped for fresh PRs that go straight through
 
 ### Step 8: Final PR Action (repo-policy-controlled)
@@ -204,4 +207,4 @@ Human gates: missing workflow-review independent review evidence; missing/failed
 ## Context
 
 Typical workflows: workflow-build-one (final step), workflow-debug (final step), workflow-autonomous-backlog (per-issue repo-policy-controlled PR handoff)
-Pairs well with: workflow-review (precondition), describe-pr, receive-review, watch-ci, reconcile-issues, cleanup-delivery, post-mortem, handoff (auto-invoked at halt or completion-with-follow-ups), split-to-prs (Cursor built-in, for large diffs), babysit (Cursor built-in, for long-lived PRs), run-backlog
+Pairs well with: workflow-review (precondition), describe-pr, receive-review, watch-ci, reconcile-issues, cleanup-delivery, post-mortem, handoff (auto-invoked at halt or completion-with-follow-ups), run-backlog

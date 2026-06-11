@@ -1,5 +1,6 @@
 ---
 name: incident-retro
+model: opus
 description: Blameless post-incident retrospective. Reconstructs the timeline, separates contributing factors from root cause, surfaces what worked and what didn't in the response, and proposes durable changes (runbooks, alerts, instrumentation, process). Use after any incident worth learning from — even a near-miss.
 ---
 

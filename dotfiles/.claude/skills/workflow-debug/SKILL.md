@@ -1,5 +1,6 @@
 ---
 name: workflow-debug
+model: sonnet
 description: Bug diagnosis to fix (all bug work begins with diagnose, no exceptions)
 ---
 

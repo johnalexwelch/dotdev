@@ -39,3 +39,22 @@ Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.claude/sk
 **Status.** Shipped: `CONVENTIONS.md` + `lint-skill-refs.sh`. Lint is **clean** on the active root — the core delivery loop's explicit refs (`workflow-build-one`/`-debug`/`-finalize` → their sub-steps) all resolve, because the 14 closure links added earlier fixed them.
 
 **Deferred (lint-driven).** Converting the ~30 arrow-only orchestrators to explicit refs (expands lint coverage); linking `CONVENTIONS.md` from `write-a-skill`; activating the review adapters (`review-scaffolding` + chosen reviews) into the active root.
+
+## D-004 — Adopt 5 capability upgrades from the MagickPen template review (2026-06-10)
+
+**Decision.** After mapping 173 MagickPen templates against the corpus, adopt the 5 highest-value ideas — but in the *cheapest fit form*, not all as standalone skills:
+
+1. **`review-scaffolding` + tracked-changes** — added an opt-in **tracked-changes output** mechanic to the scaffold (not to one review), so every `*-review` adapter inherits a consistent inline-edit view. Source idea: MagickPen `article-polishing`.
+2. **`clarity-review`** — opted into tracked-changes; added **protected elements** (don't edit code/tables/LaTeX) and **readability as an advisory signal only**. Explicitly **rejected** the source template's "strictness / rewrite-aggressiveness" knob — it contradicts clarity-review's stated non-rewrite philosophy.
+3. **`bias-auditor` persona + `cognitive-bias-catalog.md`** — built the cognitive-bias capability as an **analysis-council persona + reference**, *not* a standalone skill, to avoid overlap with `decision-scientist`/`counterfactual-check`/`skeptical-data-scientist` and routing ambiguity. Wired into `analysis-council/roster.yml` (optional + dispatch signal + overlay).
+4. **`product-launch-checklist`** — new standalone skill (clean whitespace; `workflow-roadmap` plans what to build, nothing covered shipping). Tier-sized (T1/T2/T3), guardrail-first, hands off to `report-metrics` / `post-mortem`.
+5. **`okr-generator`** — new standalone skill, decision-first; **delegates KR definition + Goodhart check to `metric-design`** rather than reinventing metric rigor.
+6. **`mock-data-generator`** — new standalone utility skill with a working, dependency-light Python generator (FK topological resolve, deterministic seed, dialect-aware SQL) + passing smoke test.
+
+**Alternatives considered & rejected.** Building bias-identifier, NL→formula, commit-message, and several others as standalone skills — rejected to protect the corpus from bloat/routing ambiguity (95→ skills already). Importing the MagickPen *form* (FastAPI/SQLite scaffolding) — rejected; only the rubric/checklist ideas were taken, rendered in the decision-first house style. Legal/compliance and personal-life templates — rejected (liability + out of scope).
+
+**Verification.** `lint-skill-refs.sh` clean for new cross-skill refs; `mock-data-generator` smoke test passes (FK integrity, determinism, cycle-detect, SQL export). Per-skill: SKILL.md under house line budget, description has "Use when" triggers, references one level deep.
+
+**Activation (host-side, pending).** New skills authored in canon. Must be symlinked into the active root (`~/.claude/skills`) and `okr-generator` + `product-launch-checklist` added to `workflow-router` (done in canon) before they resolve at runtime — see apply/activation commands in the session handoff.
+
+**Status.** Authored in canon; activation + git commit pending on host.

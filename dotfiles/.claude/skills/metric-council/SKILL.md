@@ -1,5 +1,6 @@
 ---
 name: metric-council
+model: opus
 description: "Convenes a council to stress-test a metric design: does it answer the question, is it gameable, does the denominator stabilize, what's the perverse incentive. Graph-first from existing metric defs/trees in graphify-out. Use after metric-design, before add-metric."
 ---
 

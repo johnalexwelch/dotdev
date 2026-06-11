@@ -1,5 +1,6 @@
 ---
 name: grill-with-docs
+model: opus
 description: "Design interrogation and doc-driven interview: challenges your plan against the domain model, sharpens terms, updates CONTEXT.md/ADRs inline. Use to stress-test a plan or design. Triggers: \"grill me\", \"stress test this\", \"poke holes\", \"challenge this\"."
 ---
 

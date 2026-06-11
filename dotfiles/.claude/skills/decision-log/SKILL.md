@@ -1,5 +1,6 @@
 ---
 name: decision-log
+model: sonnet
 description: Use when grilling, design, PRD, planning, or implementation workflows need to record or consume accepted decisions, alternatives considered, and tradeoffs.
 ---
 

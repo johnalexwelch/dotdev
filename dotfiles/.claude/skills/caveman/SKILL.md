@@ -1,5 +1,6 @@
 ---
 name: caveman
+model: haiku
 description: Ultra-compressed communication mode. Cuts token usage by dropping filler, articles, and pleasantries while keeping technical accuracy. Use when user says "caveman mode", "talk like caveman", "less tokens", "be brief", or invokes /caveman.
 ---
 

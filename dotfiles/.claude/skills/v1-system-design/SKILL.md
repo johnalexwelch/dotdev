@@ -1,6 +1,7 @@
 ---
 name: v1-system-design
-description: Designs a technical system to support an approved V1 product brief. Use after v1-idea-grill, when the user has a V1_IDEA_BRIEF and wants architecture, modules, interfaces, risks, implementation slices, or a path to PRDs/issues.
+model: opus
+description: Designs a technical system to support an approved V1 product brief. Called by v1-workflow as Step 3 — invoke directly only when you explicitly want just this step in isolation (you already have an approved V1_IDEA_BRIEF). For full V1 work (idea → design → issues), use v1-workflow instead.
 ---
 
 # V1 System Design

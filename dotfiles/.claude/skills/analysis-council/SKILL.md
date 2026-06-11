@@ -1,5 +1,6 @@
 ---
 name: analysis-council
+model: opus
 description: "Convenes a 2-5 expert council to stress-test an analysis, claim, or judgment call. Graph-first: pulls prior decisions/ADRs from graphify-out when present. Use for \"challenge my thinking\", \"pressure-test this\", \"what am I missing\", or before any high-stakes analytical conclusion. Supports --fast and --verify."
 ---
 
@@ -24,7 +25,7 @@ Run a multi-lens council on an analytical topic — each persona a fresh subagen
 Prefer the lightest mode the stakes justify: bias to `--fast` for "quick/before EOD" and routine single claims; escalate to default/`--round-3` only on "high-stakes/board/irreversible" signals.
 
 ## Roster
-Required: `skeptical-data-scientist`, `decision-scientist`. Smart-pick optional by topic: causal language→`causal-reasoner`; cohort/sample-size→`statistician`; missing counterfactual→`counterfactual-check`; child-data/privacy/regulatory→`governance-reviewer`; board/ELT→`exec-audience-stand-in`; ops/SLA→`ops-analyst`; money/pricing→`economist`. Cap at `roster.limits.max_experts`.
+Required: `skeptical-data-scientist`, `decision-scientist`. Smart-pick optional by topic: causal language→`causal-reasoner`; cohort/sample-size→`statistician`; missing counterfactual→`counterfactual-check`; judgment call/recommendation (not a data analysis)→`bias-auditor`; child-data/privacy/regulatory→`governance-reviewer`; board/ELT→`exec-audience-stand-in`; ops/SLA→`ops-analyst`; money/pricing→`economist`. Cap at `roster.limits.max_experts`.
 
 ## Graph context (graph-first)
 Detect graphify-out (`.council/graphify-out/` → `graphify-out/` → `docs/`/`decisions/graphify-out/`). Extract topic entities (metrics, services, ADR numbers, decision titles, prior analyses); prefix each persona with related ADRs/decisions/prior-analyses/contradicted-claims; tag findings `[GRAPH]`. `--no-graph` skips; `--graph` forces ingestion first; `--fast` loads 1-hop headline entities only.

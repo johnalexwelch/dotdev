@@ -1,5 +1,6 @@
 ---
 name: humanizer-exec
+model: sonnet
 description: Executive-tuned humanizer — strips AI-writing tells and sharpens exec register (active verbs, concrete numbers, lead-with-the-answer, compression). Use as the final polish on any board/ELT/CEO/customer-facing draft, or after decision-memo or strategic-analysis-review. Trigger on "make this exec-ready", "tighten for the board", "de-AI this memo", or any LLM-drafted memo, board update, or deck narrative.
 ---
 

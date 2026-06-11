@@ -1,0 +1,87 @@
+{
+  "/Users/alexwelch/dotdev/dotfiles/.config/macos/spotlight.json": {
+    "mtime": 1778707960.850253,
+    "ast_hash": "0e5d747c36974d8842011f62caed9f2d",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/cursor/settings.json": {
+    "mtime": 1778707960.8494658,
+    "ast_hash": "85bb572f9f9876c2d03ff2e9b15ccad4",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/cursor/extensions.json": {
+    "mtime": 1778707960.849318,
+    "ast_hash": "80b960690d8375f6e8e828f4c6e353de",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/dev/layouts/web-ui.sh": {
+    "mtime": 1778707960.798491,
+    "ast_hash": "37a0e262f6ebfcdc547f3da1d99c67e0",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/dev/layouts/minimal.sh": {
+    "mtime": 1778707960.7979405,
+    "ast_hash": "78c6f1101322ff68607da8576f3c096b",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/dev/layouts/lib.sh": {
+    "mtime": 1778707960.7977483,
+    "ast_hash": "4c0f87e3148631c0bda49bf2f78ffae4",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/dev/layouts/standard.sh": {
+    "mtime": 1778707960.7981167,
+    "ast_hash": "7b277e54ead097fcccebb114bca865c8",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/streamdeck/plugins.json": {
+    "mtime": 1778707960.8513725,
+    "ast_hash": "814ec07e1b291cd8100d3acc98e26391",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/streamdeck/profiles/development.json": {
+    "mtime": 1778707960.8517373,
+    "ast_hash": "37a182df9c4cf62e5606e8e4989ad112",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/streamdeck/profiles/default.json": {
+    "mtime": 1778707960.8515828,
+    "ast_hash": "55a7d13f9b0a89db1821f20cc4dea2ed",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/arc/settings.json": {
+    "mtime": 1778707960.8491566,
+    "ast_hash": "1c2dc40888070dcb088225310565b17a",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/git/commit-msg": {
+    "mtime": 1778708372.6675973,
+    "ast_hash": "aa6912373106857d8f700331a83f3a4d",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/git/commit-normalize.sh": {
+    "mtime": 1778707960.8497455,
+    "ast_hash": "758902f736eb75ab8f2c7142629bd303",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/gh-dash/config.yml": {
+    "mtime": 1778708321.3940737,
+    "ast_hash": "a991cde56a6d28ac776f52de02bb2dd3",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/raycast/config.yaml": {
+    "mtime": 1778708321.393796,
+    "ast_hash": "089a4eabe87a0b5a6d23958605325c55",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/streamdeck/README.md": {
+    "mtime": 1778707960.8512428,
+    "ast_hash": "8514c2130bc3c32afad108a1aa2c4778",
+    "semantic_hash": ""
+  },
+  "/Users/alexwelch/dotdev/dotfiles/.config/ollama/config.yaml": {
+    "mtime": 1778708321.3930027,
+    "ast_hash": "3619ccf91ed16d623c1a9cb0d70c4dd9",
+    "semantic_hash": ""
+  }
+}

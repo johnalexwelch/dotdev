@@ -1,5 +1,6 @@
 ---
 name: run-backlog
+model: sonnet
 description: AFK backlog orchestrator — batch-process ready-for-agent issues via Codex (default) or Claude, with repo-policy-controlled draft vs auto-merge delivery
 ---
 

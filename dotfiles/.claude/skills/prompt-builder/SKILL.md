@@ -1,5 +1,6 @@
 ---
 name: prompt-builder
+model: sonnet
 description: Generate an optimized agent prompt for a ready-for-agent issue. Reads the issue body, acceptance criteria, labels, related files, and project context to produce a copy-paste-ready prompt tailored for Claude or Codex. Use when preparing work for AFK execution, Codex dispatch, batch runs, or handoffs.
 codex-compatible: true
 ---
