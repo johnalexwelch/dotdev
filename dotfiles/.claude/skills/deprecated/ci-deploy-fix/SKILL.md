@@ -21,7 +21,6 @@ Requires: gh, git, project test runner when used manually
 Side effects: none unless manually invoked for archival comparison
 Human gates: all new work should route to replacement workflows
 
-
 # CI & Deploy Failure Fix
 
 Diagnose CI/deployment failures, fix code/config/manifests, and open a PR with structured reasoning.

@@ -13,7 +13,6 @@ Status: deprecated. Passive skill-improvement monitoring is covered by workflow-
 
 ---
 
-
 # Task Observer - Continuous Skill Discovery
 
 **Created by Eoghan Henn / [rebelytics.com](https://rebelytics.com)**
@@ -28,8 +27,8 @@ International (CC BY 4.0). See `LICENSE.txt`.
 
 **User docs:** For user-facing setup and methodology, use the upstream docs:
 
-- README: https://github.com/rebelytics/one-skill-to-rule-them-all/blob/main/README.md
-- USER-GUIDE: https://github.com/rebelytics/one-skill-to-rule-them-all/blob/main/USER-GUIDE.md
+- README: <https://github.com/rebelytics/one-skill-to-rule-them-all/blob/main/README.md>
+- USER-GUIDE: <https://github.com/rebelytics/one-skill-to-rule-them-all/blob/main/USER-GUIDE.md>
 
 ## Runtime Rules
 

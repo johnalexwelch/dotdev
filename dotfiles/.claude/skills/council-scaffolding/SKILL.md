@@ -13,7 +13,6 @@ disable-model-invocation: true
 
 Judgment personas and the synthesis run on **Opus** (persona `default_model: opus`); reserve **Sonnet/Haiku** for narrow, mechanical lenses. If the synthesis is delegated to a subagent rather than the main session, use **Opus**.
 
-
 This skill is a **library**, not a workflow. Council skills (`analysis-council`, `worldbuilding-council`, etc.) reference it for shared mechanics. If you are invoking it directly, you probably want `analysis-council` instead.
 
 ## What a council is
@@ -120,6 +119,7 @@ A council orchestrator (the `SKILL.md` of `analysis-council`, etc.) does the fol
 ## Verify mode (`--verify`)
 
 Opt-in. When set:
+
 - Each persona may use its declared `tool_access` (graphify, web_fetch) to test ONE specific claim.
 - Hard budget: ≤25 tool calls per council, ≤$1.25, ≤5 min wall-clock.
 - A `[VERIFIED: <claim breaks>]` finding trumps lens-only disagreement during synthesis.

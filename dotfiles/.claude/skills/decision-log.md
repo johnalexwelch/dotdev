@@ -32,7 +32,7 @@ Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.claude/sk
 
 ## D-003 — One sub-skill invocation convention + resolution rule + lint (2026-06-01)
 
-**Decision.** Adopt a single cross-skill invocation form — `Load and run \`<name>/SKILL.md\`` (workflow steps) and `follow \`<name>\`` (libraries) — resolving against the **active skills root** (`~/.claude/skills`, canon behind the links). Flow-arrow prose is a map, not an invocation. `lint-skill-refs.sh` guards against hollow references (a linked skill pointing at an unlinked one). Convention documented in `CONVENTIONS.md`.
+**Decision.** Adopt a single cross-skill invocation form — `Load and run \`<name>/SKILL.md\`` (workflow steps) and `follow \`<name>\``(libraries) — resolving against the **active skills root** (`~/.claude/skills`, canon behind the links). Flow-arrow prose is a map, not an invocation.`lint-skill-refs.sh` guards against hollow references (a linked skill pointing at an unlinked one). Convention documented in `CONVENTIONS.md`.
 
 **Why.** Grounded measurement: only 3 skills used the explicit form; 30 used arrow-only prose that names skills without an invocation or a resolution rule — the gap that made `/workflow-debug` and `/grill-with-docs` hollow earlier this session.
 

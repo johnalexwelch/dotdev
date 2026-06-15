@@ -21,6 +21,7 @@ A metric tree should let an executive look at the parent metric and walk down th
 - After `audit-metric-trees` flags a gap
 
 Routing:
+
 - Add a single metric → `add-metric` (this can review after)
 - Validate gap SQL → `validate-metric-trees`
 - Manage tree structure broadly → `manage-metric-trees`
@@ -55,6 +56,7 @@ Common failure: "drivers of X" are listed but don't actually compose. Flag this.
 ### 3. Component vs. influence check
 
 For each child, classify:
+
 - **Component**: mathematically composes into parent. If you change this child, parent changes by definition.
 - **Influence**: correlated with parent but not part of its definition. Useful, but should live in a different structure (driver analysis, not metric tree).
 
@@ -118,6 +120,7 @@ If the same metric appears in another tree, do the definitions match? Same SQL, 
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Full tree structure** as a graph (parents, children, claimed math relationships)
 - **Cross-tree appearances** of the same metric — definitional drift surfaces here
 - **Downstream dashboards** consuming any node in the tree (impact scope)

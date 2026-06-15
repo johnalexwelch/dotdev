@@ -72,6 +72,7 @@ Synthesis output should weight `[GRAPH]`-tagged findings explicitly — they're 
 ## Fallback when no graph exists
 
 If `graphify-out/` is not found AND `--graph` is not passed:
+
 - Skip the context block (don't fabricate context)
 - Proceed with the skill's normal flow
 - Add a one-line note in the skill's output: "No knowledge graph detected — <skill> ran without prior-<domain> context. Consider `graphify` on `<domain-source-dir>/` and re-invoking."

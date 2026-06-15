@@ -10,6 +10,7 @@ description: "During an active data/system incident, establishes facts, scope, b
 ## Purpose
 
 In the first 15 minutes of an incident, structured thinking saves hours. This skill produces a triage card that captures:
+
 - What's happening (the symptom)
 - What's known vs. assumed
 - Who's affected and how
@@ -26,6 +27,7 @@ It is NOT a replacement for the incident-management runbook your team uses. It's
 - Before paging additional responders (the triage card brings them up to speed)
 
 Routing:
+
 - Post-incident review → `incident-retro`
 - Author / update a runbook → `runbook-author`
 - Diagnose specific bug → `diagnose`
@@ -35,6 +37,7 @@ Routing:
 ### 1. State the symptom precisely
 
 What is observable that shouldn't be? Examples:
+
 - "Dashboard X showing 0 for metric Y since 09:00"
 - "Pipeline Z failed with timeout at step 4"
 - "Users report login failures from district A"
@@ -66,6 +69,7 @@ Each item: what was tried, what was the result, what did we learn.
 ### 6. List next probes
 
 What can be tested next? Ordered by:
+
 - Cheapness to try
 - Information gained
 - Reversibility
@@ -140,6 +144,7 @@ What can be tested next? Ordered by:
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Affected systems / services / metrics** named in the symptom — full lineage and ownership
 - **Similar past incidents** by symptom keywords — what was the resolution, what was the cost
 - **Runbooks** that match the symptom pattern — fast routing

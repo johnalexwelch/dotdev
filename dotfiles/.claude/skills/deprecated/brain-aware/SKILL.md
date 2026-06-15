@@ -14,7 +14,6 @@ Status: deprecated. These usage rules should be embedded directly in the brain c
 
 ---
 
-
 # Brain Aware
 
 When brain concept pages are included as context in your prompt, follow these rules to use them effectively and produce outputs the brain can later ingest.
@@ -144,6 +143,7 @@ Implement the IRIS eval harness per issue #42.
 ```
 
 In this case, the agent should:
+
 1. Use "IRIS" (not "Iris" or "iris") per the brain's established naming
 2. Know that eval-as-arbiter is the agreed decision mechanism
 3. Know that Gregg owns eval methodology and Will owns the dataset

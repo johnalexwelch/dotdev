@@ -18,6 +18,7 @@ The point of a retro is not to assign blame — it's to extract durable change. 
 - After repeated small incidents that share a root cause
 
 Routing:
+
 - Active incident still ongoing → `incident-triage`
 - Need to write a new runbook → `runbook-author`
 - General post-mortem (non-incident, e.g., project retro) → `post-mortem`
@@ -27,6 +28,7 @@ Routing:
 ### 1. Reconstruct the timeline
 
 Pull from:
+
 - Triage card (`incident-triage` output if used)
 - Slack channel
 - Status page updates
@@ -147,6 +149,7 @@ Re-read the retro before sharing. For each decision in the chain: was the person
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Prior retros** in this system / area — surface lessons not learned, pattern of failure
 - **Open action items** from prior retros — did this incident result from one of those?
 - **Related runbooks** — were they consulted, were they correct, do they need update

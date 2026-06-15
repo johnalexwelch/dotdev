@@ -47,7 +47,6 @@ Rules:
 - At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
 - The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
 
-
 ## Process
 
 ### 1. Intake

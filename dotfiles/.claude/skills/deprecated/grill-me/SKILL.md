@@ -22,7 +22,6 @@ Requires: none
 Side effects: none unless manually invoked for archival comparison
 Human gates: all new work should route to replacement workflows
 
-
 Interview me relentlessly about every aspect of this plan untill we reach a shared understanding. Walk down each branch of the design tree, resolving dependencies between decisions one-by-one. For each question, provide your recommended answer.
 
 Ask the questions one at a time.

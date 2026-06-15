@@ -12,13 +12,11 @@ codex-compatible: true
 
 Dispatch per-slice implementation workers on **Sonnet** (`model: sonnet`); reserve **Opus** for planning, review/CI reasoning, and reconciliation. Escalate a worker to Opus only for genuinely hard logic.
 
-
 ## Output discipline (during execution only)
 
 While running the mechanical execution/implementation loop, compress **routine progress narration** to caveman style — drop articles, filler, and pleasantries; prefer `[thing] [action] [reason]. [next].` This cuts scroll and output tokens during the grind.
 
 Snap back to **full prose** for anything that needs judgment: findings, scope violations, blockers, `NEEDS_HUMAN` gates, decisions/tradeoffs, and the final summary/handoff. The terseness is scoped to the loop — it ends when execution ends; do not carry it into the review or handoff that follows. See `caveman` for the full compression rules.
-
 
 Drive a parent PRD issue tree from analysis through delivery. Unlike `run-backlog` (independent issues in batch), this skill handles **dependent, ordered, parent-aware** execution where child issues have relationships and must be sequenced.
 
@@ -62,17 +60,23 @@ preflight → build-tree → order → [execute children] → reconcile-parent �
    - Build/test commands from package.json, Makefile, CI workflows
    - Repo-local skills from `.agents/skills/` or similar
 6. Inspect current open PRs for overlap:
+
    ```
    gh pr list --state open --json number,title,headRefName,baseRefName,url,labels
    ```
+
 7. Inspect recently merged PRs for already-done work:
+
    ```
    gh pr list --state merged --limit 20 --json number,title,headRefName,mergedAt
    ```
+
 8. Fetch the parent PRD issue:
+
    ```
    gh issue view <parent> --json number,title,body,labels,state,url,assignees,milestone
    ```
+
 9. Discover child issues from:
    - Explicit input (if provided)
    - Parent issue body task lists (`- [ ] #N`)
@@ -115,14 +119,18 @@ For each child (parallel within a wave, sequential across waves):
 
 1. **Generate child execution brief** via `prompt-builder --mode child-brief` or `references/child-execution-brief-template.md`
 2. **Create isolated worktree** from `origin/staging`:
+
    ```
    git worktree add -b <branch_prefix>/<issue-number>-<child-slug> ../worktrees/<issue-number>-<slug> origin/staging
    ```
+
 3. **Record worktree baseline evidence**: `WORKTREE_BASELINE_GATE: origin/staging -> <branch_prefix>/<issue-number>-<child-slug> @ ../worktrees/<issue-number>-<slug>`
 4. **Execute** using the `workflow-build-one` chain:
+
    ```
    preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
    ```
+
 5. **Enforce the workflow-review gate** — the child may not proceed to `workflow-finalize`, PR creation, CI monitoring, reconcile, or clean handoff unless `workflow-review` emitted a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. Do not substitute green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, resolved PR comments, or prose claims that review happened.
 6. **Keep scope tight** — only files relevant to this child
 7. **Let workflow-finalize own PR/CI/reviewer-comment closure** — do not duplicate or skip around its `describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues` flow. The child is not complete until `workflow-finalize` emits a complete `WORKFLOW_FINALIZE_GATE` block.
@@ -158,6 +166,7 @@ Always write a parent handoff artifact at exit:
 `docs/executions/handoffs/<date>-prd-<parent-number>-<slug>.md`
 
 Contents:
+
 - Parent PRD URL and title
 - Child issue disposition table (status per child)
 - Execution order chosen and rationale
@@ -187,6 +196,7 @@ available.
 ## Exit Behavior
 
 Every exit produces an auto-handoff:
+
 - Completion: parent handoff with full disposition table
 - Partial completion: handoff with remaining children as ready-to-use prompts
 - Blocker: handoff with specific blocker and next action

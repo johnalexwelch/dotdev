@@ -22,6 +22,7 @@ This skill complements `data-engineering:tracing-upstream-lineage` and `data-eng
 - "What breaks if I change this table?"
 
 Routing:
+
 - Just need the lineage data → `data-engineering:tracing-upstream-lineage` / `tracing-downstream-lineage`
 - Quality issues per-source → `data-quality-audit`
 - About to refactor → run this audit then `metric-tree-review` for affected metrics
@@ -35,6 +36,7 @@ Table, view, model, metric, dashboard. What's the canonical name and schema?
 ### 2. Trace upstream (3–5 hops or until raw sources)
 
 For each parent:
+
 - What table / event source / external API
 - Transformation logic between (filters, joins, aggregations)
 - Freshness contract
@@ -45,6 +47,7 @@ Stop at raw event sources OR at 5 hops (whichever first).
 ### 3. Trace downstream (3–5 hops or until terminal consumers)
 
 For each child:
+
 - What consumes this — model, dashboard, alert, vendor export, ML feature
 - Owner
 - Criticality (is this consumer load-bearing?)
@@ -69,6 +72,7 @@ For each child:
 
 ### Upstream
 ```
+
 <asset>
 ├── <parent 1> (owner: <X>, freshness: <Y>)
 │   └── <grandparent 1> (...)
@@ -77,6 +81,7 @@ For each child:
 ```
 
 ### Downstream
+
 ```
 <asset>
 ├── <child 1> — <what it is, owner, criticality>
@@ -85,6 +90,7 @@ For each child:
 ```
 
 ### Risks identified
+
 - **Single-point-of-failure**: <asset> feeds <N> critical downstreams; any change ripples
 - **Hidden transformation**: filter logic in <model X> at <line>
 - **Orphan candidate**: <model Y> has no downstream
@@ -92,14 +98,18 @@ For each child:
 - **Freshness mismatch**: <consumer A> expects hourly, this asset is daily
 
 ### Blast radius if changed
+
 - <N critical downstreams>
 - <list>
 
 ### Recommended action
+
 - safe to change | requires migration plan | block change until <X>
 
 ### Open questions
+
 - <ambiguities the lineage tool can't resolve>
+
 ```
 
 ## Rules

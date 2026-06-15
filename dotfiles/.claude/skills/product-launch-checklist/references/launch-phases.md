@@ -5,6 +5,7 @@ Companion to `product-launch-checklist/SKILL.md`. Expanded gate menus per phase 
 ## Gate menus (superset — prune to the tier)
 
 ### Phase 1 — Plan / readiness
+
 - Success metric named, with a target and an owner (use `metric-design`).
 - Guardrail / counter-metrics named, each with a "do not breach" threshold.
 - Audience defined (all users? cohort? %? geo? internal-first?).
@@ -15,6 +16,7 @@ Companion to `product-launch-checklist/SKILL.md`. Expanded gate menus per phase 
 - Rollback path written and feasible (flag off? revert? data migration reversible?).
 
 ### Phase 2 — Pre-launch / go-no-go
+
 - Instrumentation verified actually emitting the success + guardrail events.
 - Dashboards/alerts live and watched by a named owner.
 - Support / CS / community briefed; FAQ + known-issues doc shipped.
@@ -24,12 +26,14 @@ Companion to `product-launch-checklist/SKILL.md`. Expanded gate menus per phase 
 - Go/no-go decision explicitly recorded with the deciders (`decision-log`).
 
 ### Phase 3 — Launch
+
 - Staged ramp plan (e.g. 1% → 10% → 50% → 100%) with a hold-and-watch gate between stages.
 - Guardrails checked against thresholds at each stage before widening.
 - A single named person owns the abort/rollback call.
 - Comms sent on schedule; support watching inbound.
 
 ### Phase 4 — Post-launch / close
+
 - Success metric read out: absolute + vs-goal + YoY where it exists (`report-metrics`).
 - Guardrails reviewed over the watch window (not just launch day).
 - Flag state finalized: fully rolled out, held, or rolled back — with the reason.

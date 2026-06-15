@@ -15,7 +15,6 @@ Status: deprecated. The vault path (~/.claude/docs or ~/Documents/Home/) can be 
 
 ---
 
-
 ## Contract
 
 Consumes: content to save (briefings, meeting prep, notes, structured output)

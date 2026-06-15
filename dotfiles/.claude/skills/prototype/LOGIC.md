@@ -31,6 +31,7 @@ This is the core of the prototype. Put the logic in its own file, completely pur
 - **Class with clear method surface**: if the domain is naturally OOP, a class is fine — but methods should be pure or clearly separated from I/O
 
 Rules for the logic module:
+
 - No I/O. No network calls, no file reads, no database.
 - No framework imports. Standard library only.
 - Accept input as arguments, return output as return values.
@@ -41,11 +42,13 @@ Rules for the logic module:
 The TUI is a throwaway shell around the logic module. Its only job is to let the user poke the state and see what happens.
 
 **Pattern: clear-screen-and-rerender**
+
 - After every action, clear the terminal and reprint the full state.
 - State goes at the top. Available actions go at the bottom.
 - Use ANSI escape codes for minimal formatting (bold for labels, dim for hints). No TUI framework unless the project already has one.
 
 **Layout:**
+
 ```
 ┌─────────────────────────────────┐
 │  PROTOTYPE: [question]          │
@@ -60,18 +63,21 @@ The TUI is a throwaway shell around the logic module. Its only job is to let the
 ```
 
 **Keyboard shortcuts:**
+
 - Single-letter keys for each action (a, b, c…)
 - `r` to reset state to initial
 - `q` to quit
 - Print the shortcut legend at the bottom of every render
 
 **State display:**
+
 - Print the full state object after every action. Use JSON.stringify with indentation, pprint, or equivalent.
 - Highlight what changed since last action if it's easy (bold the changed fields). Skip if it's not trivial.
 
 ### 5. Make it runnable in one command
 
 Add a script to the project's task runner:
+
 - `package.json` → `"scripts": { "prototype:thing-name": "npx tsx src/prototype-thing-name.ts" }`
 - `Makefile` → `prototype-thing-name: ...`
 - `pyproject.toml` → `[tool.poetry.scripts]` or a simple `python src/prototype_thing_name.py`
@@ -81,6 +87,7 @@ The command should be obvious from the project's existing patterns. Name it `pro
 ### 6. Hand it over
 
 Tell the user:
+
 - What the question is
 - How to run it (`npm run prototype:thing-name`)
 - What to try (specific sequences of actions that exercise the interesting cases)
@@ -91,6 +98,7 @@ Then stop. Let them play with it.
 ### 7. Capture the answer
 
 When the user has an answer, record it before deleting the prototype:
+
 - What was the question?
 - What did we learn?
 - What decision does this support?

@@ -13,7 +13,6 @@ Status: deprecated. Use `slop-cleaner` instead — it covers both docs and analy
 
 ---
 
-
 # Doc Slop Cleaner
 
 ## Purpose
@@ -21,6 +20,7 @@ Status: deprecated. Use `slop-cleaner` instead — it covers both docs and analy
 LLMs generate documentation that *looks* thorough but actually buries the load-bearing content in noise. This skill strips the noise patterns specific to technical documentation.
 
 Use on:
+
 - README files
 - API docs
 - Inline code comments / docstrings
@@ -29,6 +29,7 @@ Use on:
 - Plugin / skill descriptions
 
 Don't use on:
+
 - Prose meant to persuade (use `humanizer-exec`)
 - Analysis output (use `analysis-slop-cleaner`)
 
@@ -70,6 +71,7 @@ Walk the 13 patterns. Flag each instance.
 ### 3. Rewrite
 
 For each flagged instance:
+
 - **Cut** when the surrounding text already says it
 - **Sharpen** when the line is right but vague
 - **Replace** when the bullet/prose form is wrong for the content
@@ -109,6 +111,7 @@ Don't strip examples that are doing real work. Don't cut warnings that protect a
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **In-repo documentation conventions** — established README structure, docstring style, comment density
 - **Related docs** the cleaned output should align with stylistically
 - **Code modules referenced** — their actual API (so over-explanation can be cut to "see <module>")

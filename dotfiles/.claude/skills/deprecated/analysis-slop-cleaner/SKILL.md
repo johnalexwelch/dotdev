@@ -13,7 +13,6 @@ Status: deprecated. Use `slop-cleaner` instead — it covers both docs and analy
 
 ---
 
-
 # Analysis Slop Cleaner
 
 ## Purpose
@@ -59,6 +58,7 @@ Flag each instance. Note the load-bearing version vs. the slop version.
 ### 3. Rewrite
 
 For each flagged instance:
+
 - **Cut** if the line adds nothing the surrounding text doesn't already say.
 - **Sharpen** if the line is right but vague — replace generic words with specific ones.
 - **Resolve** if the line hedges — force a position or cut.
@@ -95,6 +95,7 @@ Return the cleaned text with a brief change-log:
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Prior cleaned analyses** in this domain — style consistency, recurring slop patterns previously found
 - **Domain-specific vocabulary** that should NOT be stripped (e.g., "denominator drift" is precise, not slop)
 - **Author voice patterns** to preserve when the input is from a known author

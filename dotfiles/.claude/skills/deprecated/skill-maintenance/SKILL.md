@@ -7,6 +7,7 @@ description: "Use when auditing, improving, creating, deduplicating, syncing, or
 ## Deprecation Status
 
 Status: deprecated. The work this skill wraps is better done by:
+
 - `lint-skill-refs.sh` (in the dotdev skills dir) for mechanical reference checks
 - Direct analysis sessions for deep evaluation — skill audits that catch real problems (routing bypasses, dead workflow refs, description drift) require reading skills and thinking, not running a lint wrapper
 - `write-a-skill` as the single skill-creation entry point
@@ -15,7 +16,6 @@ Status: deprecated. The work this skill wraps is better done by:
 - Date: 2026-06-10
 
 ---
-
 
 ## Contract
 

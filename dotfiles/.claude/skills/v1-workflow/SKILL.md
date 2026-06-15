@@ -109,6 +109,7 @@ This log becomes the context for system design and downstream PRDs.
 **Trigger when:** Grilling surfaces a question that reasoning alone cannot answer.
 
 **Examples:**
+
 - "Does this state model handle the case where X then Y?" → prototype (logic branch)
 - "What should this look like?" → prototype (UI branch)
 - "What's the right API shape?" → prototype (interface branch)
@@ -201,21 +202,25 @@ This ensures downstream PRD writers and implementers understand the "why" behind
 ## Hard Gates and Approval Points
 
 **Gate 1: V1 Idea Brief Approval**
+
 - Halt before Step 2 if the brief is not approved
 - User must explicitly confirm the brief captures the V1 idea
 - Re-run Step 1 if the brief is unclear or rejected
 
 **Gate 2: System Design Approval**
+
 - Halt before Step 4 if the design is not approved
 - User must explicitly confirm the architecture is sound
 - Address user concerns or re-design before proceeding
 
 **Gate 3: Roadmap Approval**
+
 - Halt before Step 6 if the roadmap is not approved
 - User must explicitly confirm the vertical-slice path and sequencing
 - Re-plan if milestones or dependencies are unclear
 
 **Gate 4: Issue Readiness**
+
 - Halt before handoff if any issue is missing mandatory fields
 - All issues must pass triage classification
 - Return to PRD or system design if issues don't align with the design

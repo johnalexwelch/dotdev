@@ -12,9 +12,11 @@ Run a multi-lens council on an analytical topic — each persona a fresh subagen
 **Mechanics:** follow `council-scaffolding` for the full dispatch contract (roster resolution, rounds, synthesis, post-process, persist, report). Only the deltas below are council-specific.
 
 ## When to invoke
+
 "Challenge my thinking on X", "what am I missing", "pressure-test this", "is this analysis right", "second opinion", "what would a skeptic say". Routing tiebreakers: single-claim fast check → `--fast`; polish a memo → `strategic-analysis-review` (not a council); build an analysis → `analysis-design` then loop back.
 
 ## Modes
+
 | Mode | Personas | Rounds |
 |------|----------|--------|
 | `--fast` (default for routine claim checks) | required only | 1 |
@@ -26,13 +28,17 @@ Run a multi-lens council on an analytical topic — each persona a fresh subagen
 Prefer the lightest mode the stakes justify: bias to `--fast` for "quick/before EOD" and routine single claims; escalate to default/`--round-3` only on "high-stakes/board/irreversible" signals.
 
 ## Roster
+
 Required: `skeptical-data-scientist`, `decision-scientist`. Smart-pick optional by topic: causal language→`causal-reasoner`; cohort/sample-size→`statistician`; missing counterfactual→`counterfactual-check`; judgment call/recommendation (not a data analysis)→`bias-auditor`; child-data/privacy/regulatory→`governance-reviewer`; board/ELT→`exec-audience-stand-in`; ops/SLA→`ops-analyst`; money/pricing→`economist`. Cap at `roster.limits.max_experts`.
 
 ## Graph context (graph-first)
+
 Detect graphify-out (`.council/graphify-out/` → `graphify-out/` → `docs/`/`decisions/graphify-out/`). Extract topic entities (metrics, services, ADR numbers, decision titles, prior analyses); prefix each persona with related ADRs/decisions/prior-analyses/contradicted-claims; tag findings `[GRAPH]`. `--no-graph` skips; `--graph` forces ingestion first; `--fast` loads 1-hop headline entities only.
 
 ## Synthesis template
+
 Headline (≤8 lines: agreement first, then splits) · **Where experts disagreed** (with the crux) · **What would change the picture** (falsifiers) · **Confidence** high/med/low · **Per-expert reads** (80-line cap each). Don't force consensus; a `[VERIFIED: claim breaks]` finding outranks lens-only disagreement.
 
 ## Post-process
+
 `humanizer: true` (synthesis only, not per-expert), `domain_cleaner: slop-cleaner (analysis mode)` → now `slop-cleaner --mode analysis`. Persist to `.council/analysis/`.

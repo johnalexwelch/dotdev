@@ -20,6 +20,7 @@ It composes with — does not replace — `receive-review` (which validates whet
 - After bots (e.g., Claude Code Review, Copilot) and humans have left a batch of comments
 
 Routing:
+
 - Evaluate whether each comment is right → `receive-review` first
 - Just write a reply → use `gh pr review` / `gh api`; this skill is for the multi-comment batch
 - Re-review after responses → `workflow-review`
@@ -31,6 +32,7 @@ Routing:
 Via `gh pr view <num> --json reviews,comments` or `gh api repos/.../pulls/<num>/comments`.
 
 For each comment:
+
 - ID
 - Author (human / bot — categorize: blocker | nit | question | suggestion)
 - File + line
@@ -51,6 +53,7 @@ For each comment:
 ### 3. For each comment, run `receive-review` evaluation
 
 For each substantive comment, ask:
+
 - Is the comment technically correct?
 - Is the suggested change actually better?
 - Does it fit the codebase patterns?
@@ -61,6 +64,7 @@ Output a per-comment verdict: **action** / **reply-only** / **push-back** / **de
 ### 4. For "action" comments, draft the code change
 
 Plan the actual edits:
+
 - Group related fixes (same file, same concern) into one edit
 - Order edits to avoid conflicts
 - Note where one fix may require updating tests / docs
@@ -72,6 +76,7 @@ Acknowledge concisely. "Good point — fixed in <commit>." or "Considered this; 
 ### 6. For "push-back" comments, draft the response
 
 Be specific:
+
 - Acknowledge the reviewer's concern
 - State the reason for the choice
 - Offer a falsifier ("would change my mind if...")
@@ -134,6 +139,7 @@ For each comment, post the drafted reply via `gh pr review` or `gh api`.
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Files and modules touched** by the PR — their owners, dependencies, prior bug history
 - **Reviewers** and their typical comment patterns — common nits vs. blockers
 - **Related ADRs** that constrain how the response should land

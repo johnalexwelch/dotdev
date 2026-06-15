@@ -21,6 +21,7 @@ This skill produces a design spec anchored to a decision, an audience, and a sma
 - Before implementation in any BI tool
 
 Routing:
+
 - Review existing dashboard → `dashboard-review`
 - Just write SQL for a chart → `sql-review` after writing
 - Decision-level analysis → `analysis-design`
@@ -49,6 +50,7 @@ Audience and cadence drive chart count, density, and interaction model.
 ### 3. Pick the 3–6 charts that resolve the decision
 
 For each chart, name:
+
 - **The question it answers** (in plain language)
 - **The chart type** (line, bar, area, scatter, table, single-stat)
 - **The time grain** (day / week / month / quarter)
@@ -142,6 +144,7 @@ Explicitly list what users might expect that this dashboard does NOT include —
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Existing dashboards for the same decision or audience** — duplication candidates
 - **Candidate metrics**: each metric's definition, owner, refresh, prior trust issues
 - **Related ADRs** constraining what the dashboard can show (governance, aggregation thresholds)

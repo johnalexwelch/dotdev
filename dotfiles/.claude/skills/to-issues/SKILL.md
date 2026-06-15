@@ -33,6 +33,7 @@ The issue tracker and triage label vocabulary should have been provided to you �
 Before drafting slices, verify there is an approved roadmap artifact covering this PRD/plan scope (normally from `workflow-roadmap`).
 
 Required evidence:
+
 - roadmap artifact path (typically `docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md`)
 - explicit user approval (or explicit user waiver)
 - milestone order that this issue breakdown can map to
@@ -69,11 +70,13 @@ Prefer AFK over HITL only when acceptance criteria, verification, dependencies, 
 Before presenting the breakdown to the user, spawn an independent critic agent (`oh-my-claudecode:critic`) to evaluate the proposed slices. Do this silently — do not show the draft to the user until the review is complete and MAJOR concerns are resolved.
 
 Brief the critic with:
+
 - The PRD or plan source, user stories, and the proposed slice breakdown
 - The decision log sections relevant to this work
 - The codebase context needed to spot phantom dependencies or missing seams
 
 The critic must evaluate:
+
 1. **Vertical integrity** — is each slice truly end-to-end, or is any slice a horizontal layer (schema-only, API-only, tests-only)?
 2. **Dependency correctness** — is the chain right? are there hidden dependencies on unbuilt infrastructure?
 3. **AFK/HITL classification** — are write-authority slices appropriately gated?
@@ -83,6 +86,7 @@ The critic must evaluate:
 7. **Risk guards** — for write-authority slices, are KILLSWITCH, dry-run, and rollback paths accounted for?
 
 After the review:
+
 - Address all **MAJOR** concerns by revising the breakdown before presenting to the user
 - Surface **MINOR** concerns and **QUESTIONs** to the user as part of step 4 so they can decide
 - If the review returns no MAJOR concerns, note the reviewer's LGTM items alongside the breakdown

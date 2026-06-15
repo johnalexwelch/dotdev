@@ -77,7 +77,6 @@ Rules:
 - At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
 - The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
 
-
 ## Research Lanes
 
 Run the lanes that fit the request. For broad roadmap work, dispatch read-only subagents in parallel and require evidence, not vibes.

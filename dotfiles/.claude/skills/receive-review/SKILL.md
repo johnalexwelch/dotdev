@@ -11,12 +11,15 @@ codex-compatible: true
 Evaluate code-review feedback with technical rigor, then process the whole comment queue to resolution. The default is to incorporate feedback (blockers, non-blockers, observations, questions, nits); decline only when a suggestion is technically invalid, conflicts with another reviewer, contradicts project invariants, or needs human/product judgment. (Composes with `workflow-finalize`, which gates the merge, and `workflow-review`, which produced the comments.)
 
 ## Contract
+
 Consumes: PR number/URL, review comments (bot or human), code context, original intent. Produces: a triage table with verdicts, grouped fix commits, inline replies for every active thread, and a summary. Requires: `gh`, `git`, local test/lint runner. Side effects: pushes fix commits, posts replies, may file follow-up issues. Human gates: surface the summary before pushing; disagreements with **human** reviewers go to the user for decision before replying; push-back replies are higher-stakes — confirm first.
 
 ## When to invoke
+
 Bot reviews land (Claude, Codex, Bugbot, Copilot); a human submits a review; the `workflow-finalize` / `watch-ci` comment gate; or "address/respond to the review comments on PR #X."
 
 ## Process
+
 1. **Gather all open comments.** `gh pr view <n> --json reviews,comments` or `gh api repos/<o>/<r>/pulls/<n>/comments`. Filter resolved/outdated. Per comment capture: id, author (bot vs human), severity signal (blocker/suggestion/nit/question/praise), file+line, suggested change.
 2. **Verify before acting** (the anti-blind-agreement core). For each non-trivial suggestion: read the *surrounding* code (not just the hunk); is it technically correct (compiles, edge cases, matches patterns)?; is it contextually appropriate (does the reviewer have full intent)?; does it actually improve the code vs. style preference?
 3. **Classify each comment** with a verdict + action:
@@ -35,6 +38,7 @@ Bot reviews land (Claude, Codex, Bugbot, Copilot); a human submits a review; the
 4. **Action the queue.** Implement accepted changes grouped into logical commits (one per blocker `fix(pr-review): …`; batch related non-blockers; single `style(pr-review): nits` commit). Order edits to avoid conflicts; update tests/docs where a fix requires it. Draft push-back replies with: acknowledge the concern → state the reason → offer a falsifier ("would change my mind if…") → or propose a follow-up if the disagreement is real but out-of-scope.
 5. **Verify, push, reply.** Run tests/lint locally (fix before pushing); commit; push; reply to each thread with the commit hash (fixes), evidence (declines), context (clarifications), or acknowledgment. Confirm **every** active thread has a reply — none left merely "seen."
 6. **Summary:**
+
 ```markdown
 ## PR Response Summary — #<num> (<N> comments)
 ### Actioned (<k>)   - [file:line] <summary> — fixed in <commit>
@@ -46,6 +50,7 @@ Accepted N, declined M (with reasons), clarified K, acknowledged A; unanswered 0
 ```
 
 ## Bot vs human handling
+
 | Reviewer | Trust | Disagreement |
 |---|---|---|
 | Linter/formatter bot | high (deterministic) | fix unless the rule is wrong (then update config) |
@@ -53,7 +58,9 @@ Accepted N, declined M (with reasons), clarified K, acknowledged A; unanswered 0
 | Human | context-dependent | present disagreements to the user; never auto-decline |
 
 ## Anti-patterns
+
 Blind agreement (reviewers can be wrong); performative changes (changing correct code to show responsiveness); scope creep (route broader work to follow-ups); arguing style nits that match the linter (just fix them); silent disagreement or silent acknowledgment (always reply).
 
 ## Graph context (graph-first)
+
 Optionally query the graph for: files/modules the PR touches (owners, deps, bug history), the reviewers' typical nit-vs-blocker patterns, constraining ADRs, and prior similar PRs (what was actioned vs deferred). Use at step 2–3 to sharpen action-vs-push-back; tag `[GRAPH-PRIOR]`. `--no-graph` skips.

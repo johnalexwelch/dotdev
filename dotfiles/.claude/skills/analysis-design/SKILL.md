@@ -12,6 +12,7 @@ description: Designs a decision-first analysis from a question, not from the dat
 Most analyses fail because they start from the data ("let me explore this table") rather than the decision ("what does the audience need to choose?"). This skill produces a 1-pager design spec that anchors the analysis to a decision before any SQL is written.
 
 The output feeds into:
+
 - The analyst who runs the analysis
 - `analysis-council` for stress-testing the design before execution
 - `decision-memo` after results are in
@@ -23,6 +24,7 @@ The output feeds into:
 - When a half-finished analysis is wandering and needs a re-anchor
 
 Routing:
+
 - "Design the analysis" → here
 - "Challenge my analysis design" → `analysis-council` with the output of this skill as input
 - "Write the memo" → `decision-memo` (after this skill + execution)
@@ -32,6 +34,7 @@ Routing:
 ### 1. Identify the decision
 
 Force the user to name one of:
+
 - A specific choice (build X vs. Y, fund A or B, kill Z or keep)
 - A specific belief that's load-bearing (do parents engage with Class Story? does feature X drive retention?)
 - A specific action gate (is metric M healthy enough to ship?)
@@ -51,6 +54,7 @@ Force the user (or yourself) to state, BEFORE seeing the data, what the headline
 ### 4. Name the 3 cuts of data
 
 List the 3 cuts that would resolve the decision:
+
 1. The cut that supports the hypothesis if true
 2. The cut that supports the alternative
 3. The cut that would surprise you (and force re-framing)
@@ -120,6 +124,7 @@ If you can't name 3, you don't understand the question yet. Iterate.
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Prior analyses** on the same question or close neighbors — has this been answered before
 - **Related ADRs / decisions** that constrain the analysis
 - **Related metrics / dashboards / sources** that exist and the analyst should know about

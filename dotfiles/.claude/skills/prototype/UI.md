@@ -19,6 +19,7 @@ If you can phrase the question as "which of these looks/feels right?" or "what's
 Mount variants directly on the existing route using a `?variant=` search parameter. The user sees their real page with real surrounding context, just with the target area swapped between options.
 
 Use this when:
+
 - The page already exists
 - You're exploring alternatives for a section, component, or layout within it
 - Surrounding context matters for evaluating the options
@@ -28,6 +29,7 @@ Use this when:
 Create a dedicated `/prototype-thing-name` route that renders the variants in isolation.
 
 Use this only when:
+
 - The page doesn't exist yet
 - The prototype needs a fundamentally different page shell
 - Mounting on the existing route would require too much plumbing for a throwaway
@@ -57,11 +59,13 @@ Each variant should be **structurally different**, not a color swap or spacing t
 - **Hierarchy**: flat vs. grouped vs. nested vs. tabbed
 
 Bad variation (too similar):
+
 - Variant A: blue header, 16px padding
 - Variant B: blue header, 24px padding
 - Variant C: indigo header, 16px padding
 
 Good variation (structurally different):
+
 - Variant A: dense data table with inline editing and column sorting
 - Variant B: card grid with drag-to-reorder and quick-action overlays
 - Variant C: split pane with master list on left, detail view on right
@@ -71,11 +75,13 @@ Good variation (structurally different):
 All variants consume the **same data**. Create one shared data fixture (hardcoded, realistic-looking) and pass it to each variant component. The only thing that changes between variants is how the data is rendered.
 
 **Sub-shape A** (existing route):
+
 - Read `?variant=` from the URL search params
 - Default to `variant=1` when no param is present (so the page works normally without the param)
 - Render the selected variant component in place of the existing component
 
 **Sub-shape B** (new route):
+
 - Create a single route component that switches on `?variant=`
 - Each variant is a separate component file or a section within the prototype file
 
@@ -84,6 +90,7 @@ All variants consume the **same data**. Create one shared data fixture (hardcode
 Every UI prototype gets a floating variant switcher so the user can flip between options without touching the URL bar.
 
 **Spec:**
+
 - **Position**: fixed, bottom-center, ~16px from bottom edge
 - **Shape**: pill-shaped, semi-transparent background with backdrop blur
 - **Contents**: left arrow, variant label (e.g. "2 / 3: card-grid"), right arrow
@@ -92,6 +99,7 @@ Every UI prototype gets a floating variant switcher so the user can flip between
 - **Unobtrusive**: should not interfere with the page layout or scrolling
 
 **Example layout:**
+
 ```
     ◀  2 / 3: card-grid  ▶
     [1] [2] [3]
@@ -102,6 +110,7 @@ Keep the switcher component self-contained. It should be deletable in one step w
 ### 5. Hand it over
 
 Tell the user:
+
 - What the question is
 - How to see it (URL with `?variant=1`, or how to navigate to the prototype route)
 - How to switch variants (keyboard shortcuts 1-N, arrow keys, or click the switcher)
@@ -112,6 +121,7 @@ Then stop. Let them look at it.
 ### 6. Capture the answer
 
 When the user picks a direction, record it before deleting the prototype:
+
 - What was the question?
 - Which variant won and why?
 - What specific elements from other variants are worth stealing?

@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD024 -->
+
 # Humanizer Pattern Catalog
 
 Use this reference when scanning text for AI-writing tells. You do not need to load it when the user only asks for a light tone polish and the problems are already obvious.
@@ -185,6 +187,7 @@ Use this reference when scanning text for AI-writing tells. You do not need to l
 **Problem:** AI outputs lists where items start with bolded headers followed by colons.
 
 **Before:**
+>
 > - **User Experience:** The user experience has been significantly improved with a new interface.
 > - **Performance:** Performance has been enhanced through optimized algorithms.
 > - **Security:** Security has been strengthened with end-to-end encryption.
@@ -197,9 +200,11 @@ Use this reference when scanning text for AI-writing tells. You do not need to l
 **Problem:** AI chatbots capitalize all main words in headings.
 
 **Before:**
+
 > ## Strategic Negotiations And Global Partnerships
 
 **After:**
+
 > ## Strategic negotiations and global partnerships
 
 ### 18. Emojis
@@ -265,6 +270,7 @@ Use this reference when scanning text for AI-writing tells. You do not need to l
 ### 23. Filler Phrases
 
 **Before -> After:**
+
 - "In order to achieve this goal" -> "To achieve this"
 - "Due to the fact that it was raining" -> "Because it was raining"
 - "At this point in time" -> "Now"
@@ -335,6 +341,7 @@ Use this reference when scanning text for AI-writing tells. You do not need to l
 **Problem:** LLMs often add a generic sentence after a heading as a rhetorical warm-up. It usually adds nothing and makes the prose feel padded.
 
 **Before:**
+
 > ## Performance
 >
 > Speed matters.
@@ -342,6 +349,7 @@ Use this reference when scanning text for AI-writing tells. You do not need to l
 > When users hit a slow page, they leave.
 
 **After:**
+
 > ## Performance
 >
 > When users hit a slow page, they leave.

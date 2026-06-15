@@ -59,6 +59,7 @@ cd $BRAIN_SCRIPTS && uv run brain ingest-dry "<path>"
 ```
 
 The path can be:
+
 - Absolute: `/Users/alexwelch/Documents/Home/path/to/file.md`
 - Relative to vault: `* Inbox/Readwise/Articles/Some Article.md`
 - A file in `_brain/raw/inbox/` (for manual drops)
@@ -74,6 +75,7 @@ cd $BRAIN_SCRIPTS && uv run brain capture "the thought text" --tag optional-tag
 ```
 
 Or from a pipe:
+
 ```bash
 echo "thought" | cd $BRAIN_SCRIPTS && uv run brain capture -
 ```
@@ -83,6 +85,7 @@ The captured note lands in `_brain/raw/inbox/` and will appear in the next revie
 ### Review — triage the raw queue
 
 Generate the scored review queue:
+
 ```bash
 cd $BRAIN_SCRIPTS && uv run brain review
 ```
@@ -94,6 +97,7 @@ cd $BRAIN_SCRIPTS && uv run brain review --apply
 ```
 
 To show what would happen without acting:
+
 ```bash
 cd $BRAIN_SCRIPTS && uv run brain review --apply --dry-run
 ```

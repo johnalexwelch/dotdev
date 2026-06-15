@@ -39,12 +39,15 @@ The pipeline only learns if someone records what actually happened. Compare plan
 Standalone use is deprecated; this runs as the conditional retro gate inside `workflow-finalize`. Edge cases, a worked example, and tuning guidance live in `references/edge-cases-and-examples.md` — load it when needed.
 
 ## Step 0 — Preflight
+
 Confirm a git repo (else abort). Resolve the plan (`plan_path` or newest `docs/plans/*.md`; if none, abort). Resolve the audit (`audit_path`, else the plan's `**Audit:**` header, else newest audit older than the plan). **Brief-mode** plans (no `**Audit:**`, §5 uses `REQ-NN`/ticket slugs) skip audit resolution and anchor on `REQ-NN`/slugs — note this in §Summary. Resolve the git range (`since`, else `git log --follow --format=%H <plan_path> | tail -1` → `<since>..HEAD`). Pick the ID scheme: `FIND-NN` (audit-mode), `REQ-NN`/slugs (brief-mode), or phase-based if neither. `mkdir -p docs/executions/`.
 
 ## Step 1 — Gather execution evidence
+
 Load `references/evidence-checklist.md` and follow it (`.phase-runs/` first, `.ci-runs/` second, git fallback, test status, deletions, docs).
 
 ## Step 2 — Map plan → reality
+
 For each §5 phase: **Status** (done/in-progress/blocked/skipped), **Evidence** (commits/branches/files), **Drift** (actual vs planned), **Findings resolved** (re-read the files to confirm the finding no longer applies). Produce a resolution table anchored on the chosen IDs:
 
 | ID | Severity | Addressed by | Status |
@@ -54,13 +57,17 @@ For each §5 phase: **Status** (done/in-progress/blocked/skipped), **Evidence** 
 Status is the load-bearing column; brief-mode severity is often `—`.
 
 ## Step 3 — New findings
+
 Load `references/new-findings-rules.md`; detect and classify `NEW-NN`, including discoveries in phase-run and CI-run outcome files.
 
 ## Step 4 — Draft
+
 Load `references/retro-output-template.md` and write `docs/executions/<date>-post-mortem.md` in that structure.
 
 ## Step 5 — (Optional) annotate the audit
+
 If the user opts in, append a "Post-mortem annotations" footer to the referenced audit listing each finding's status. Gate on confirmation — audits are historical records.
 
 ## Step 6 — Surface
+
 In chat: a one-sentence summary (phases done/in-progress, findings resolved, NEW count, drift), the top 3 "what I'd change" takeaways, and a pointer to the file.

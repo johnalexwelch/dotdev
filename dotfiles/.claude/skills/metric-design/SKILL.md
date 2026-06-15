@@ -19,6 +19,7 @@ Most bad metrics are bad by design — vague definitions, drifting denominators,
 - "I want to track Y"
 
 Routing:
+
 - After this, implement via `add-metric`
 - Stress-test the design via `metric-council`
 - If it's a one-shot analysis, not a recurring metric → `analysis-design`
@@ -44,6 +45,7 @@ Force one sentence: "We want this metric because it tells us <X>." If it's "to t
 ### 3. Define numerator and denominator precisely
 
 For each:
+
 - What event / row counts
 - What's explicitly excluded (test users, internal staff, churned accounts, deleted records)
 - Source table / source event
@@ -55,6 +57,7 @@ Be ruthless about precision. "Active users" is not a definition; "users who logg
 ### 4. Stability of denominator
 
 A ratio whose denominator can change is unstable over time. Check:
+
 - Does the denominator population shift week-over-week?
 - If so, the metric will move for reasons unrelated to the numerator.
 - Either fix the denominator (e.g., "of accounts that were active in Q1") or report the denominator alongside the rate.
@@ -62,6 +65,7 @@ A ratio whose denominator can change is unstable over time. Check:
 ### 5. Goodhart's Law check
 
 If this metric becomes a target, how would someone game it?
+
 - Cheap wins (e.g., counting opens vs. meaningful actions)
 - Selection effects (excluding users to inflate the rate)
 - Substitution (lowering quality to hit volume)
@@ -146,6 +150,7 @@ If the gaming paths are easy, the metric is fragile. Either accept the risk, des
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Existing metrics with overlapping definitions** — avoid duplicate-with-drift
 - **Candidate tree placements** (parents and siblings the new metric could compose with)
 - **Prior retired or redefined metrics** in this space — what failed before

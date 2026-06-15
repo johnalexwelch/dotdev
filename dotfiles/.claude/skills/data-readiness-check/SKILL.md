@@ -19,6 +19,7 @@ Half of "this analysis is slow" or "this metric doesn't make sense" is data that
 - Before any analysis or metric that depends on an unfamiliar source
 
 Routing:
+
 - Lineage trace upstream → `lineage-audit`
 - Active SQL review → `sql-review`
 - Quality issues across the warehouse → `data-quality-audit`
@@ -47,6 +48,7 @@ From the analysis brief or user's question, list every table / model / source th
 ### 2. Check existence + freshness
 
 For each source:
+
 - Does it exist? In what schema?
 - When was the last write? Is the freshness SLA met?
 - Are recent partitions present?
@@ -114,6 +116,7 @@ If the analysis joins multiple sources, do the join keys exist and behave consis
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Planned sources**: each source's freshness contract, owner, consent classification
 - **Lineage**: where each source comes from (so upstream stale-ness is visible)
 - **Prior readiness checks** on these sources — recurring issues, known caveats

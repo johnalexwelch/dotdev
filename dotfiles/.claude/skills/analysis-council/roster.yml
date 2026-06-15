@@ -1,9 +1,7 @@
 council: analysis-council
-
 required:
   - skeptical-data-scientist
   - decision-scientist
-
 optional:
   - statistician
   - causal-reasoner
@@ -13,19 +11,14 @@ optional:
   - exec-audience-stand-in
   - ops-analyst
   - economist
-
 limits:
   min_experts: 2
   max_experts: 5
-
 round_1_dispatch: parallel
-
 post_process:
   humanizer: true
   domain_cleaner: analysis-slop-cleaner
-
 recommend_round_3: true
-
 overlays:
   skeptical-data-scientist: |
     User context: CDO at ClassDojo (edu-tech, K-8, child users).
@@ -33,7 +26,6 @@ overlays:
     Flag analyses that depend on under-13 user data without
     parent-consent context, or that conflate teacher-segment
     behavior with parent-segment or student-segment behavior.
-
   decision-scientist: |
     User is a CDO making decisions that frequently touch:
     - Data platform / instrumentation investment (often one-way doors)
@@ -41,23 +33,19 @@ overlays:
     - Metric definition changes (one-way doors for trend continuity)
     Bias toward flagging reversibility explicitly when the topic
     touches any of these.
-
   governance-reviewer: |
     Activate when topic mentions: child data, under-13 users,
     parent consent, FERPA, COPPA, GDPR, student records,
     teacher-as-data-controller, school district contracts.
-
   exec-audience-stand-in: |
     Activate when topic is being prepared for: board, ELT, CEO,
     school district customers, investors. Read the topic as
     that audience would — what they'll fixate on, what will
     confuse them, what they'll push back on.
-
   economist: |
     Activate for: pricing decisions, vendor build-vs-buy,
     unit economics, cohort LTV/CAC, expansion/churn drivers,
     international pricing, free-vs-paid conversion.
-
   bias-auditor: |
     Activate when the input is a judgment call or recommendation
     (a strategy bet, a "we should" memo, a build/kill call) rather
@@ -65,7 +53,6 @@ overlays:
     not the denominator. Defer data critiques to
     skeptical-data-scientist and framing/reversibility to
     decision-scientist; stay on the cognitive biases.
-
 dispatch_signals:
   # Topic-keyword heuristics for smart-picking optional personas
   # in default mode. Orchestrator scans the user's invocation

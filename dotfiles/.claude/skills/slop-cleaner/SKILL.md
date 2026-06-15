@@ -15,6 +15,7 @@ LLM output often *looks* thorough but buries the load-bearing content in ceremon
 (For general persuasive prose use `humanizer`; for actual code cleanup — dead code, duplication, wrappers — use `ai-slop-cleaner`.)
 
 ## Process (both modes)
+
 1. **Read** the input; identify its type/scope (different doc types tolerate different explanation levels).
 2. **Scan** the mode's pattern table; flag each instance.
 3. **Rewrite** each flag: **cut** (surrounding text already says it), **sharpen** (right but vague), **replace** (wrong prose/bullet/table form), or **merge** (overlap across inline+block+docstring, or across findings).
@@ -22,6 +23,7 @@ LLM output often *looks* thorough but buries the load-bearing content in ceremon
 5. **Output:** cleaned text + a change log (what was removed/compressed/replaced, by count) + word count before/after.
 
 ## Mode: docs — patterns
+
 | Pattern | Tell | Fix |
 |---|---|---|
 | Restating the signature | `def get_user(id)` + docstring "Gets a user by id." | Cut or add what isn't obvious |
@@ -37,6 +39,7 @@ LLM output often *looks* thorough but buries the load-bearing content in ceremon
 | Output-format restating | prose restating a schema shown next to it | Pick one |
 
 ## Mode: analysis — patterns
+
 | Pattern | Tell | Fix |
 |---|---|---|
 | False precision | "increased 12.7%" with no CI/n | Band it: "~10–15%, n=234" |
@@ -54,4 +57,5 @@ LLM output often *looks* thorough but buries the load-bearing content in ceremon
 | Decision-not-named | recommends action without naming the decision | Lead with "this supports the decision to X" |
 
 ## Rules
+
 Match the existing tone; don't impose a personal voice or restructure unless asked (pattern-strip in place). Don't fabricate specificity the source lacks. Don't impose one voice across multi-expert sections. If a doc/analysis has no clear purpose, flag it — don't invent one.

@@ -14,7 +14,6 @@ Status: deprecated. Use `dnd-grill` instead — it handles both lightweight and 
 
 ---
 
-
 ## Modes
 
 ### Auto-detection

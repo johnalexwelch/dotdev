@@ -21,6 +21,7 @@ This skill produces runbooks shaped for the responder under pressure.
 - Proactively for known but unrunbooked failure modes
 
 Routing:
+
 - During an active incident → `incident-triage` (not this skill)
 - Post-incident retro → `incident-retro`
 
@@ -29,6 +30,7 @@ Routing:
 ### 1. Identify the scenario
 
 What failure mode does this runbook address? Be precise:
+
 - "Pipeline X timeout at step Y"
 - "Dashboard Z showing zero values"
 - "Vendor API returning 429s above threshold"
@@ -38,6 +40,7 @@ A runbook addresses ONE scenario. If the user describes multiple, split into mul
 ### 2. Capture prerequisites
 
 What does the responder need before starting?
+
 - Access (tokens, accounts, VPN)
 - Tools (kubectl, dbt cli, specific dashboard)
 - Permissions (admin role, on-call role)
@@ -53,6 +56,7 @@ If the signals overlap with another scenario, name the discriminator.
 ### 4. Write the diagnostic steps
 
 3–10 steps, each:
+
 - Concrete command or action
 - Expected output / what to look for
 - Decision: next step depending on what's seen
@@ -74,6 +78,7 @@ The rollback step is often more important than the diagnostic steps — sleepy r
 ### 7. Write the post-recovery checklist
 
 Once the system is recovered:
+
 - Confirm with which queries / dashboards
 - File the incident retro
 - Update related runbooks if needed
@@ -152,6 +157,7 @@ Once the system is recovered:
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Existing runbooks** for related scenarios — avoid duplication, identify discriminator
 - **Prior incidents** matching this scenario — what worked, what didn't, common pitfalls
 - **System map** of affected services — escalation paths, on-call ownership, dependencies

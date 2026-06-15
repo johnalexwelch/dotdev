@@ -20,7 +20,6 @@ Requires: td CLI when used manually
 Side effects: none unless manually invoked for archival comparison
 Human gates: all new work should route to replacement workflows
 
-
 # td - Task Management for AI Agents
 
 ## Overview

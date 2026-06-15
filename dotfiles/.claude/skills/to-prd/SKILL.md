@@ -31,6 +31,7 @@ Every development path described by the PRD must be decomposable into vertical s
 Before synthesizing the PRD, verify there is an approved roadmap artifact for this workstream (normally from `workflow-roadmap`) with milestone sequencing and vertical-slice intent.
 
 Required evidence:
+
 - roadmap artifact path (typically `docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md`)
 - explicit user approval (or explicit user waiver)
 - at least one milestone that maps to this PRD scope
@@ -66,11 +67,13 @@ Check with the user that these modules match their expectations. Check with the 
 After the user confirms the module breakdown, spawn an independent critic agent (`oh-my-claudecode:critic`) to verify the proposed modules decompose into clean vertical slices before you commit the full PRD to writing.
 
 Brief the critic with:
+
 - The confirmed module breakdown and user stories
 - The relevant decision log sections
 - Enough codebase context to spot phantom dependencies or missing integration seams
 
 The critic must check:
+
 1. **Vertical decomposability** — can each module be delivered as narrow end-to-end behavior, or does any module require another to be "done first" for a reason that isn't a real data dependency?
 2. **Horizontal-layer disguise** — are any proposed modules secretly horizontal (e.g., "build the schema," "build the API," "build the UI" as separate modules)?
 3. **Dependency ordering** — are module dependencies correctly ordered so slices can be independently implemented?

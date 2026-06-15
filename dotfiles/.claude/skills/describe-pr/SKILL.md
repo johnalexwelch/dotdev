@@ -23,19 +23,25 @@ Standalone use is **deprecated**; this remains loadable only because `workflow-f
 Edge cases, the issue-discovery source list, worked examples, and tuning notes live in `references/details.md` — load it when needed.
 
 ## Required describe_pr evidence line
+
 Every successful run emits one line for `workflow-finalize`:
+
 ```
 describe_pr: body_file=<path>; mode=plan_backed|phase_run_backed|issue_only; issues=<refs|none>; phase_evidence=matched|not_applicable|waived; graphify=queried|not_available_with_reason|not_applicable; applied_to_pr=true|false
 ```
+
 If absent/incomplete or pointing at a body not produced this run, parents treat describe-pr as not run.
 
 ## Step 0 — Preflight
+
 Confirm a git repo. Resolve `branch` (default current). Resolve `plan_path` (newest `docs/plans/*.md`, else `issue_only` mode unless the work is plan/phase/`execute-phase`-based). Classify mode: `plan_backed`, `phase_run_backed`, `issue_only`, or `required_phase_evidence_missing` (halt unless waived). Resolve `pr_number` via `gh pr view` if available; if none, set `apply=false` and produce text only. `mkdir -p docs/executions/.pr-bodies/`. Compute the diff range. If `graphify-out/graph.json` exists, run one focused `graphify query` for PR context and record `graphify: queried`; else record `not_available_with_reason` — never rebuild.
 
 ## Step 1 — Gather inputs
+
 Plan sections (§3 Goals, §5 Execution plan, phase Addresses → map `phase_N → [FIND-NN,...]`); phase-run outcomes matching the branch range (Commits, Scope violations, Follow-ups, Chain state); commits (`git log/diff <base>..<branch>`); graphify evidence (context only); per-file diff URLs (`references/diff-url-guidance.md`); ticket refs (pluggable regex, link only if a base URL is declared); issue discovery across the sources in `references/details.md`.
 
 For vertical-slice reporting, also gather lineage metadata when available:
+
 - PRD issue refs associated with discovered implementation issues
 - issue state and `closedAt`
 - merged PR URL and merge date for issues closed by a PR (when discoverable)
@@ -51,9 +57,11 @@ If that section is missing or vague, halt and report that the issue needs
 reviewer validation steps before the PR body can be generated.
 
 ## Step 2 — Deviation review
+
 In plan/phase modes, dispatch one general-purpose Agent with `references/deviation-review-prompt.md` (substituting plan, branch, base, commits, phase-run files); wait and record. In `issue_only`, skip and record `deviations: not_applicable`.
 
 ## Step 3 — Compose
+
 Load `references/pr-body-template.md`; write `docs/executions/.pr-bodies/<date>-pr-<N>.md`. For the `## Vertical slice progress` section, render PRD-first grouped rows followed by issue rows under each PRD, including status, summary, and close/merge date metadata when available. For the `## Issues` section load `references/issue-disposition-rules.md`. Generate from this run's gathered inputs — don't copy the issue body or a stale PR body. Include provenance (mode + whether graphify was queried).
 
 If any discovered issue requires a human reviewer, include a final `## Reviewer
@@ -64,7 +72,9 @@ concise steps when that matches the issue, but use the number required by the
 issue rather than adding filler.
 
 ## Step 4 — Apply (optional)
+
 If `apply==true` and a PR exists: `gh pr edit <N> --body-file <path>`, confirm, set `applied_to_pr=true`. Else skip.
 
 ## Step 5–6 — Record & surface
+
 Record whether expected review bots are pending/present/timed-out (don't resolve comments — that's `workflow-finalize` via `receive-review`/`watch-ci`). Surface: one-line summary, PR URL if any, pointer to the body file, and the required `describe_pr` evidence line.

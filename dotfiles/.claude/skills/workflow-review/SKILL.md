@@ -11,7 +11,6 @@ description: Run an auditable independent review gate with a risk-sized review p
 
 Dispatch reviewer lanes on **Opus** (`model: opus`) — review is judgment work where the strongest model pays off. The `fast` integrated reviewer may use Sonnet for low-risk changes.
 
-
 ## Purpose
 
 Run an independent review sized to the change's risk, then synthesize findings into a prioritized verdict. This replaces ad-hoc "review this" with an auditable gate, without forcing every small change through a full council. A valid review needs a *fresh independent reviewer context* — the author approving their own work, green CI, GitHub/Claude/Bugbot/Codex reviews, or resolved PR comments do **not** satisfy it unless this skill is loaded, reviewer lanes are dispatched, and a synthesis verdict is produced.

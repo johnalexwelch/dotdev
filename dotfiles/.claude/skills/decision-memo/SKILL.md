@@ -20,6 +20,7 @@ This is the synthesis step between "I have the data" and "the audience makes a c
 - After `analysis-design` + execution, before sharing with the audience
 
 Routing:
+
 - "Polish this memo I wrote" → `strategic-analysis-review` (review, not draft)
 - "Stress-test this recommendation" → `analysis-council`
 - "Make this less AI-shaped" → `slop-cleaner (analysis mode)` then `humanizer`
@@ -29,6 +30,7 @@ Routing:
 ### 1. Identify audience and decision
 
 Same anchors as `analysis-design`:
+
 - Who is the reader?
 - What decision is being made?
 - One-way or two-way door?
@@ -41,6 +43,7 @@ If unclear, route back to `analysis-design` or ask once.
 Three common shapes:
 
 **SCQA (Situation-Complication-Question-Answer)** — when the reader needs context first
+
 ```
 Situation: how things have been
 Complication: what changed or what's at risk
@@ -49,6 +52,7 @@ Answer: <recommendation>
 ```
 
 **Headline-first (recommended for ELT/board)** — when the reader is familiar with context
+
 ```
 Answer: <recommendation in one sentence>
 Because: <3 supporting claims>
@@ -56,6 +60,7 @@ Therefore: <ask / next step>
 ```
 
 **Decision matrix** — when comparing 2–4 options
+
 ```
 Options: A, B, C
 Criteria: 4–6 attributes
@@ -139,6 +144,7 @@ Top 2–3 risks. For each, what's the early indicator and the mitigation.
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Prior memos to the same audience** — voice / format consistency, audience priors
 - **Prior decisions on this topic** — what was decided, what changed, what's still open
 - **ADRs that constrain** the recommendation

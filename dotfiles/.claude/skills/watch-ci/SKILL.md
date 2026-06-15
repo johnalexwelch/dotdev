@@ -72,7 +72,6 @@ Status: standalone use deprecated. This skill remains loadable only because `wor
 - Reason: CI watching is owned by workflow-finalize; this skill must not approve, mark ready, merge, or enable auto-merge.
 - Date: 2026-05-21
 
-
 # /watch-ci - Drive CI To Green And Self-Review
 
 ## Contract

@@ -22,6 +22,7 @@ Stress-test a SQL query before it's run on production data or merged into a mode
 - Before a model is merged
 
 Routing:
+
 - Pattern audit across many models → `metric-tree-review` or `lineage-audit`
 - Performance tuning specifically → use this with `--focus=perf`
 - Data correctness across the warehouse → `data-quality-audit`
@@ -52,6 +53,7 @@ Parse intent from comments + structure. What's the expected grain of the result?
 ### 2. Trace grain through joins
 
 For each join:
+
 - What's the cardinality on each side?
 - Does the join preserve, expand, or contract grain?
 - Is fanout intended or accidental?
@@ -116,6 +118,7 @@ If the user mentions Redshift / BigQuery / Snowflake / Postgres, run dialect-spe
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Tables / models referenced** by the query — their grain, owner, freshness
 - **Lineage** upstream (where do these tables come from) and downstream (what consumes this query's output)
 - **Prior bugs** filed against the same models — recurring footguns

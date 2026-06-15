@@ -19,6 +19,7 @@ Most A/B tests fail before they launch — under-powered, no guardrails, no clea
 - After a brainstorm, before implementation
 
 Routing:
+
 - After implementation, before ship → `experiment-readout` (post-result) — TBD; for now route to `analysis-design`
 - For non-experimental analysis → `analysis-design`
 - Stress-test the design → `analysis-council`
@@ -44,6 +45,7 @@ ONE primary metric. The metric the test will be powered for and judged on. Other
 ### 3. Set the minimum detectable effect (MDE)
 
 What's the smallest effect that would matter? Anchored in the decision:
+
 - "We'd ship at X% lift" → MDE is X%
 - "We'd kill the feature if effect is < Y%" → MDE is Y%
 
@@ -52,6 +54,7 @@ Power the test for MDE — not for "any effect."
 ### 4. Compute sample size and duration
 
 Given MDE + baseline metric value + variance + power (typically 0.8) + alpha (typically 0.05):
+
 - Required sample per arm
 - Required calendar duration given typical user traffic
 - Realistic ramp schedule
@@ -70,6 +73,7 @@ Wrong unit = SUTVA violation = invalid test.
 ### 6. Identify guardrails
 
 What metrics MUST NOT move, even if primary moves?
+
 - Quality (error rates, support tickets, NPS)
 - Adjacent funnels (don't trade conversion for engagement)
 - Revenue (or cost)
@@ -178,6 +182,7 @@ Up to 5 segments where heterogeneous effects are plausible. Pre-register or they
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Prior experiments** in this feature area — outcomes, MDEs that proved insufficient, what was learned
 - **Primary metric history**: typical variance, baseline, recent shifts, prior MDE choices
 - **Related ADRs** that constrain experiment design (e.g., minimum-N policies, governance gates)

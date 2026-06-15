@@ -22,7 +22,6 @@ Status: standalone use deprecated. This skill remains loadable only because `wor
 - Reason: Standalone review is not a delivery gate; workflow-review owns reviewer dispatch, synthesis, and WORKFLOW_REVIEW_GATE.
 - Date: 2026-05-21
 
-
 ## Contract
 
 Consumes: diff/changeset (via git or Conductor workspace)

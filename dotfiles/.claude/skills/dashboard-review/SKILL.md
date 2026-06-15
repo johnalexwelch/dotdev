@@ -21,6 +21,7 @@ Audit an existing dashboard against the question "does this support a real decis
 - After a dashboard sprawls past 8+ charts
 
 Routing:
+
 - Design a new dashboard → `dashboard-design`
 - Specific SQL behind a chart → `sql-review`
 - Tree of metrics underneath → `metric-tree-review`
@@ -54,6 +55,7 @@ Is there a clear top stat? Is it the right one? Does it have a comparator?
 ### 3. Walk each chart
 
 For each chart:
+
 - What question does it answer?
 - Is that question relevant to the decision?
 - Is the chart type appropriate?
@@ -114,6 +116,7 @@ What chart *should* be here that isn't? The "what's NOT here" gap is often the b
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **The dashboard** as a node — what charts it has, what metrics they consume
 - **Sibling dashboards** with overlapping audience or metrics — duplication candidates
 - **Source-metric ecosystem**: each metric's definition, owner, refresh, prior trust issues

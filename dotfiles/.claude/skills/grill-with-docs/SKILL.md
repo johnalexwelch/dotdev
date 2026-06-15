@@ -9,6 +9,7 @@ description: "Canonical grill engine for design interrogation, V1 product discov
 ## Effort
 
 **Think hard** between questions — surfacing the right next question and its tradeoffs is the whole value here. Favor reasoning depth over speed.
+
 ## Modes
 
 ### Context states

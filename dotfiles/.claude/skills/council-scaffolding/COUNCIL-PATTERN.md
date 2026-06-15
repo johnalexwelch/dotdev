@@ -7,12 +7,14 @@ This is the full reference for council-style skills. The `SKILL.md` in this dire
 A single LLM critique tends to converge on a "balanced" middle. A council forces disagreement to surface by dispatching independent subagents with named lenses. Each expert is a fresh context — no contamination from prior turns, no incentive to harmonize. The synthesis step preserves disagreement instead of erasing it.
 
 Councils are useful when:
+
 - The topic is a judgment call, not a fact lookup
 - You want multiple priors stress-testing your thinking
 - A single reviewer would miss a domain you don't know to ask about
 - Disagreement itself is information
 
 Councils are wrong when:
+
 - The question has a single correct answer reachable by reading code or docs
 - Speed matters more than depth (use `analysis-council --fast` or skip the council)
 - You already know what you want to hear (council won't fix motivated reasoning)
@@ -22,6 +24,7 @@ Councils are wrong when:
 ### Round 1: lens pass
 
 Every persona reads the topic and produces:
+
 - Lens summary
 - Challenges (HIGH / MED / LOW with damage × plausibility)
 - What's not shown
@@ -61,6 +64,7 @@ Orchestrator dispatches wave A in parallel, awaits all responses, then passes wa
 The orchestrator (running in the main session) calls the `Agent` tool once per persona per round. For round 1 parallel mode, all Agent calls go in a single tool-use message.
 
 Example (round 1 parallel, 3 personas):
+
 ```
 Agent(subagent_type="oh-my-claudecode:analyst", model="opus", prompt="<persona:skeptical-data-scientist inlined> + <topic>")
 Agent(subagent_type="oh-my-claudecode:scientist", model="opus", prompt="<persona:statistician inlined> + <topic>")
@@ -104,6 +108,7 @@ The synthesis **must not force consensus**. If experts split, the synthesis says
 ## Persistence
 
 Every council run writes:
+
 - `.council/<sub>/<YYYY-MM-DD>-<slug>.md` — the full output above
 - `.council/<sub>/<YYYY-MM-DD>-<slug>.json` — structured sidecar with persona list, model, tool counts, confidence, raw challenges
 
@@ -130,6 +135,7 @@ Worldbuilding and narrative councils typically set both to `null` — preserving
 ## Verify mode
 
 Opt-in via `--verify` flag. When set:
+
 - Each persona MAY use its declared `tool_access` (graphify queries, web_fetch, grep) to test ONE specific claim it raises.
 - The persona's `## Verification` section records the test.
 - Budget: ≤25 tool calls across the whole council, ≤$1.25 estimated, ≤5 min wall-clock.
@@ -140,6 +146,7 @@ Personas WITHOUT `tool_access` in their frontmatter cannot verify — they fall 
 ## Graphify integration
 
 Two modes:
+
 1. **Auto-detect** (default): if `graphify-out/` or `.council/graphify-out/` exists, the orchestrator mentions available graph queries in each persona's prompt. Personas may tag findings `[GRAPH]` when they used graph data.
 2. **Forced** (`--graph`): orchestrator runs `graphify` on the topic input before dispatching round 1. The resulting graph is available to all personas with `tool_access: [graphify]`.
 
@@ -166,15 +173,18 @@ The overlay is appended to the persona's lens section at dispatch time.
 ## Composition with other skills
 
 Councils consume from:
+
 - `graphify` — knowledge graph context
 - Topic inputs from `analysis-design`, `metric-design`, etc.
 
 Councils feed into:
+
 - `decision-memo` — turns a council output into an executive-ready memo
 - `strategic-analysis-review` — reviews a memo that incorporated the council
 - `humanizer` — already applied via post_process
 
 Routing tiebreaker for users:
+
 - "Challenge my thinking on X" → council
 - "Is this claim right?" → council with `--fast`
 - "Polish this memo" → `strategic-analysis-review` (not a council)

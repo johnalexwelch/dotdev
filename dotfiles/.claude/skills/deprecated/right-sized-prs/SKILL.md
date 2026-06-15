@@ -13,7 +13,6 @@ Status: deprecated as a skill. Policy extracted to ~/.claude/docs/pr-sizing-poli
 
 ---
 
-
 # Right-Sized PRs
 
 ## Policy

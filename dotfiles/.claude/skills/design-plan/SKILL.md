@@ -54,7 +54,6 @@ writes:
 
 **Think hard** before drafting — this is planning work, and reasoning depth here prevents expensive rework downstream. Run on the strongest available session model.
 
-
 ## Purpose
 
 Turn a `/repo-audit` report or refactor-scale brief into an executable plan a

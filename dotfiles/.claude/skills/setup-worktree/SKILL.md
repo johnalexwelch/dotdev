@@ -47,7 +47,6 @@ Status: standalone use deprecated. This skill remains loadable only because `wor
 - Reason: Worktree setup is a sidecar/helper, not an execution workflow.
 - Date: 2026-05-21
 
-
 ## Contract
 
 Consumes: plan phase number and/or branch name, repo state

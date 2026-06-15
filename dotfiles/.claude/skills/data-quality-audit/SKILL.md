@@ -19,6 +19,7 @@ Surface data quality issues in a structured way before they corrupt downstream a
 - After upstream change ripples in
 
 Routing:
+
 - Per-query review → `sql-review`
 - Lineage understanding → `lineage-audit`
 - Readiness check before analysis → `data-readiness-check`
@@ -49,6 +50,7 @@ Single table? A pipeline (source → transformed → consumed)? A model and its 
 ### 2. Pull profile stats
 
 For each relevant table:
+
 - Row count over time (last 30 days, last 1 year)
 - NULL rate per column
 - Cardinality per column
@@ -68,6 +70,7 @@ If no baseline: establish one. The audit's first run is the baseline.
 ### 4. Severity-rank findings
 
 For each finding:
+
 - **Critical**: silent data corruption with active downstream impact (e.g., duplicates in fact table, NULLs in load-bearing column, broken FK)
 - **High**: drift that will misleading analyses if unaddressed (e.g., schema drift, distribution shift)
 - **Medium**: hygiene issues that won't break analyses but compound over time (e.g., enum casing inconsistency)
@@ -123,6 +126,7 @@ For each finding:
 See `graph-first/SKILL.md` for the canonical protocol.
 
 For this skill, query the graph for:
+
 - **Target tables / columns**: schema-drift history, prior NULL-rate spikes, prior duplicate findings
 - **Downstream consumers**: who depends on this asset (the audit's blast-radius scope)
 - **Prior quality audits** on this asset — recurring patterns, known caveats
