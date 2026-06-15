@@ -12,7 +12,7 @@ export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"
 
 # Credential files
-for cred in .redshift .metabase .trino .asana .slack .readwise .anthropic .todoist .google .chief-of-staff-env; do
+for cred in .redshift .metabase .trino .asana .slack .readwise .anthropic .todoist .google .chief-of-staff-env .openai .discord .spotify; do
   [[ -f "$HOME/$cred" ]] && source "$HOME/$cred"
 done
 
