@@ -110,6 +110,11 @@ jspm_packages/
 
 # Project specific
 .dotfiles-backup/
+backups/
+outputs/
+graphify-out/
+dotfiles/graphify-out/
+scripts/build_ai_history.py
 # Root-level stow-local-ignore (not the one inside dotfiles/)
 /.stow-local-ignore
 

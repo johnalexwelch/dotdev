@@ -120,9 +120,9 @@ sudo spctl --enable
 
 | Check | Command | Frequency |
 |-------|---------|-----------|
-| 🔎 Secret scan | `./scripts/scan-secrets.sh` | Pre-commit |
-| 🔒 Security audit | `./scripts/security-audit.sh` | Weekly |
-| 🔐 Key rotation | `./scripts/rotate-keys.sh` | Quarterly |
+| 🔎 Secret scan | `pre-commit run gitleaks --all-files` | Pre-commit |
+| 🔒 Secrets baseline | `pre-commit run detect-secrets --all-files` | Pre-commit |
+| 🔐 Key rotation | Revoke and recreate affected keys with the provider | As needed |
 
 ### 📝 Logging
 

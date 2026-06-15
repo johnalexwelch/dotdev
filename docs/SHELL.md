@@ -7,10 +7,10 @@ This guide details the shell configurations and customizations included in these
 | Component | Purpose | Location |
 |-----------|---------|----------|
 | 🐚 ZSH | Main shell | `.zshrc` |
-| ⭐ Starship | Custom prompt | `.config/starship.toml` |
-| 🔧 Aliases | Command shortcuts | `.zsh/aliases.zsh` |
-| 🌍 Environment | Variables & paths | `.zsh/env.zsh` |
-| 🎨 Theme | Shell styling | `.zsh/theme.zsh` |
+| ⭐ Starship | Custom prompt | `.config/starship/starship.toml` |
+| 🔧 Aliases | Command shortcuts | `.config/zsh/configs/aliases.zsh` |
+| 🌍 Environment | Variables & paths | `.config/zsh/configs/env.zsh` |
+| 🎨 Theme | Shell styling | `.config/zsh/themes/starship.zsh` |
 
 ## 🛠️ Features
 
@@ -109,8 +109,8 @@ SAVEHIST=10000
 ### 🔄 Regular Updates
 
 ```bash
-# Update shell components
-./scripts/update-shell.sh
+# Update shell packages and tools
+./scripts/setup.sh
 
 # Rebuild completion cache
 rm -f ~/.zcompdump; compinit
@@ -128,11 +128,10 @@ rm -f ~/.zcompdump; compinit
 
 - [🐚 ZSH Documentation](https://zsh.sourceforge.io/Doc/)
 - [⭐ Starship Manual](https://starship.rs/guide/)
-- [🔧 Dotfiles Wiki](../wiki/Shell.md)
 
 ### Environment
 
-- Location: `app_configs/.zsh/env.zsh`
+- Location: `dotfiles/.config/zsh/configs/env.zsh`
 - Path configuration
 - XDG Base Directory specification
 - Default applications
@@ -140,7 +139,7 @@ rm -f ~/.zcompdump; compinit
 
 ### History Management
 
-- Location: `app_configs/.zsh/history.zsh`
+- Location: `dotfiles/.config/zsh/configs/history.zsh`
 - Extended history with timestamps
 - Duplicate handling
 - Search configuration
@@ -148,7 +147,7 @@ rm -f ~/.zcompdump; compinit
 
 ### Aliases
 
-- Location: `app_configs/.zsh/aliases.zsh`
+- Location: `dotfiles/.config/zsh/configs/aliases.zsh`
 - Modern CLI alternatives
 - Navigation shortcuts
 - Git operations
@@ -158,7 +157,7 @@ rm -f ~/.zcompdump; compinit
 
 #### Git Integration
 
-- Location: `app_configs/.zsh/git.zsh`
+- Location: `dotfiles/.config/zsh/tools/git.zsh`
 - Custom functions
 - Branch management
 - Interactive operations
@@ -166,7 +165,7 @@ rm -f ~/.zcompdump; compinit
 
 #### AWS Tools
 
-- Location: `app_configs/.zsh/aws.zsh`
+- Location: `dotfiles/.config/zsh/configs/aws.zsh`
 - Profile management
 - Session configuration
 - Service shortcuts
@@ -174,7 +173,7 @@ rm -f ~/.zcompdump; compinit
 
 #### Python Development
 
-- Location: `app_configs/.zsh/python.zsh`
+- Location: `dotfiles/.config/zsh/tools/python.zsh`
 - Virtual environment handling
 - Package management
 - Project initialization
@@ -200,7 +199,7 @@ rm -f ~/.zcompdump; compinit
 
 ### Configuration
 
-- Location: `app_configs/.starship/starship.toml`
+- Location: `dotfiles/.config/starship/starship.toml`
 - Custom format
 - Module settings
 - Color scheme
