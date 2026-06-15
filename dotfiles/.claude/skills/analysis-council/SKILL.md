@@ -11,6 +11,14 @@ Run a multi-lens council on an analytical topic — each persona a fresh subagen
 
 **Mechanics:** follow `council-scaffolding` for the full dispatch contract (roster resolution, rounds, synthesis, post-process, persist, report). Only the deltas below are council-specific.
 
+## Contract
+
+Consumes: analysis, claim, judgment call, or user-provided analytical context
+Produces: multi-lens council synthesis with disagreement, falsifiers, confidence, and per-expert reads
+Requires: independent expert contexts; graph context optional
+Side effects: may persist synthesis to `.council/analysis/` when the run reaches the persistence step
+Human gates: high-stakes or unresolved decision points are surfaced for human judgment; verification mode may halt on unverified claims
+
 ## When to invoke
 
 "Challenge my thinking on X", "what am I missing", "pressure-test this", "is this analysis right", "second opinion", "what would a skeptic say". Routing tiebreakers: single-claim fast check → `--fast`; polish a memo → `strategic-analysis-review` (not a council); build an analysis → `analysis-design` then loop back.

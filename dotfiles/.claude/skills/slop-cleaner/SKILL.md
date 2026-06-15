@@ -14,6 +14,14 @@ LLM output often *looks* thorough but buries the load-bearing content in ceremon
 
 (For general persuasive prose use `humanizer`; for actual code cleanup — dead code, duplication, wrappers — use `ai-slop-cleaner`.)
 
+## Contract
+
+Consumes: LLM-drafted documentation, analysis, comments, docstrings, runbooks, memos, or recommendations
+Produces: cleaned text plus change log and before/after word counts when available
+Requires: none
+Side effects: none unless the user explicitly asks to edit a file
+Human gates: unclear purpose, missing evidence, or load-bearing ambiguity is flagged rather than invented
+
 ## Process (both modes)
 
 1. **Read** the input; identify its type/scope (different doc types tolerate different explanation levels).
