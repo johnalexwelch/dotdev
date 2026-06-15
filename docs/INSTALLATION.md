@@ -18,8 +18,8 @@ Before you begin, ensure you have:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/dotfiles.git ~/.dotfiles
-cd ~/.dotfiles
+git clone https://github.com/johnalexwelch/dotdev.git ~/dotdev
+cd ~/dotdev
 ```
 
 ### 2️⃣ Run Installation
@@ -66,7 +66,7 @@ chmod +x scripts/*.sh
 
 ```bash
 # Run tests
-./scripts/test.sh
+./test/run-tests.sh
 
 # Check security baseline
 ./scripts/security-init.sh
@@ -90,13 +90,6 @@ git config --global user.email "your.email@example.com"
 | 📦 Homebrew fails | Run `xcode-select --install` |
 | 🔗 Symlink conflicts | Remove existing config files |
 
-### 📋 Logs
-
-Installation logs are stored in:
-
-- 📝 `~/.dotfiles/logs/install.log`
-- 🔍 `~/.dotfiles/logs/test.log`
-
 ## 🔄 Updates
 
 ### Regular Maintenance
@@ -107,5 +100,5 @@ brew update && brew upgrade
 
 # Update dotfiles
 git pull origin main
-./scripts/update.sh
+./install.sh
 ```

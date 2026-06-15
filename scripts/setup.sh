@@ -27,7 +27,6 @@ echo "Setting up application config symlinks..."
 mkdir -p "$HOME/Library/Application Support"
 ln -sf "$HOME/.config/arc" "$HOME/Library/Application Support/Arc"
 ln -sf "$HOME/.config/cursor" "$HOME/Library/Application Support/Cursor"
-ln -sf "$HOME/.config/warp" "$HOME/Library/Application Support/Warp"
 ln -sf "$HOME/.config/streamdeck" "$HOME/Library/Application Support/com.elgato.StreamDeck"
 
 # Configure macOS settings

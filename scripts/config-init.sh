@@ -17,7 +17,6 @@ config_dirs=(
     "ollama"
     "streamdeck"
     "starship"
-    "warp"
     "zsh"
 )
 

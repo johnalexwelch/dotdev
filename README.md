@@ -6,10 +6,10 @@ Personal dotfiles and system configuration for macOS development environment, ma
 
 ```bash
 # Clone the repository
-git clone https://github.com/johnalexwelch/dotdev.git ~/.dotfiles
+git clone https://github.com/johnalexwelch/dotdev.git ~/dotdev
 
 # Run the installation script
-cd ~/.dotfiles
+cd ~/dotdev
 ./install.sh
 
 # Install pre-commit hooks
@@ -19,18 +19,20 @@ pre-commit install
 ## 📁 Structure
 
 ```tree
-.dotfiles/
-├── .config/          # Application configurations - XDG Base Directory configs
-│   ├── .arc/         # Arc browser settings
-│   ├── .cursor/      # Cursor editor config
-│   ├── .macos/       # macOS specific settings
-│   ├── .ollama/      # Ollama AI settings
-│   ├── .raycast/     # Raycast finder settings
-│   ├── .starship/    # Starship terminal customized settings
-│   ├── .streamdeck/  # Elgato streamdeck settings
-│   ├── .warp/        # Warp terminal settings
-│   ├── .zsh/         # Shell configuration
-│   └── git/          # Git configuration
+dotdev/
+├── dotfiles/
+│   └── .config/      # XDG Base Directory configs
+│       ├── arc/      # Arc browser settings
+│       ├── cursor/   # Cursor editor config
+│       ├── gh-dash/  # GitHub dashboard config
+│       ├── ghostty/  # Ghostty terminal config
+│       ├── git/      # Git configuration
+│       ├── macos/    # macOS specific settings
+│       ├── ollama/   # Ollama AI settings
+│       ├── raycast/  # Raycast finder settings
+│       ├── starship/ # Starship terminal settings
+│       ├── streamdeck/
+│       └── zsh/      # Shell configuration
 ├── scripts/          # Setup and configuration scripts
 ├── docs/             # Documentation
 ├── .pre-commit-config.yaml  # Pre-commit hook configuration
@@ -53,7 +55,6 @@ pre-commit install
 | [📥 Installation](docs/INSTALLATION.md) | Detailed setup instructions |
 | [⚙️ Applications](docs/APPLICATIONS.md) | App-specific settings |
 | [🍎 macOS](docs/MACOS.md) | System preferences and configurations |
-| [📋 Workflows](docs/WORKFLOWS.md) | Development workflow automation |
 | [🐚 Shell](docs/SHELL.md) | ZSH setup and customization |
 
 ## 🛠️ Core Components
@@ -89,21 +90,8 @@ pre-commit install
 ### 📝 Regular Updates
 
 ```bash
-# Update all tools and configurations
-./scripts/update.sh
-
 # Run tests to verify
-./scripts/test.sh
-```
-
-### 🧹 Cleanup
-
-```bash
-# Clean temporary files
-./scripts/cleanup.sh
-
-# Reset configurations
-./scripts/reset.sh
+./test/run-tests.sh
 ```
 
 ## 📄 License

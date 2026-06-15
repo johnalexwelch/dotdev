@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-NORMALIZE="$SCRIPT_DIR/../dotfiles/config/git/commit-normalize.sh"
+NORMALIZE="$SCRIPT_DIR/../dotfiles/.config/git/commit-normalize.sh"
 TMPDIR_BASE=$(mktemp -d)
 PASS=0
 FAIL=0
