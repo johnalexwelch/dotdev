@@ -1,6 +1,7 @@
 ---
 name: run-backlog
 model: sonnet
+reasoning: medium
 description: AFK backlog orchestrator — batch-process ready-for-agent issues via Codex (default) or Claude, with repo-policy-controlled draft vs auto-merge delivery
 ---
 
@@ -50,7 +51,7 @@ If repository identity cannot be resolved, halt before dispatch. Do not guess an
 ### Phase 1: Plan
 
 1. Query GitHub Issues: `gh issue list --label ready-for-agent --state open --json number,title,labels,body`
-2. Filter out issues marked `blocked`, `needs-human`, or `in-progress`
+2. Filter out issues marked `blocked`, `needs-human`, `ready-for-human`, or `in-progress`. Do not filter out `needs-human-review`; that label means the agent may implement but a human must validate the PR.
 3. Exclude issues that violate `references/outage-risk-policy.md`, including unclear acceptance criteria, missing verification commands, high-risk release categories, missing rollback expectations, or outage-risk classifications of `high`/`excluded` without explicit human approval for that issue
 4. For dependency chains, choose one of:
    - **sequential wait**: dependent issue waits until the parent PR is merged
@@ -63,10 +64,10 @@ If repository identity cannot be resolved, halt before dispatch. Do not guess an
 
 ```markdown
 ## Work Queue — [date]
-| # | Issue | Priority | Dependencies | Stack mode | Risk | Verification | Est. Complexity |
-|---|-------|----------|--------------|------------|------|--------------|-----------------|
-| 1 | #N title | high | none | root | low | test command | small |
-| 2 | #M title | medium | #N | stacked-on-#N | medium-approved | lint+test | medium |
+| # | Issue | Priority | Dependencies | Stack mode | Risk | Human review | Verification | Est. Complexity |
+|---|-------|----------|--------------|------------|------|--------------|--------------|-----------------|
+| 1 | #N title | high | none | root | low | not required | test command | small |
+| 2 | #M title | medium | #N | stacked-on-#N | medium-approved | required | lint+test | medium |
 ```
 
 7. Present queue for approval. Auto-approve only when the user explicitly requested unattended/AFK backlog execution in this invocation; otherwise halt for approval. Record the approval evidence and `REPO_DELIVERY_POLICY` in the queue artifact.
@@ -91,9 +92,11 @@ For each issue in queue order:
    - In Claude mode, the prompt seeds workflow-build-one with pre-gathered context
    - The prompt must instruct the worker to use this per-issue worktree, verify either `WORKTREE_BASELINE_GATE` or `STACKED_WORKTREE_GATE`, and include the matching gate evidence in the handoff.
    - If the prompt lacks the per-issue worktree/stack command or gate requirement, do not dispatch the issue; regenerate the prompt or mark the issue `needs-human`.
+   - If the issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, the prompt must include the issue's concrete `## Reviewer validation steps` and instruct the worker to preserve them through `describe-pr`/`workflow-finalize` so the PR body ends with that section.
    - The prompt must include `REPO_DELIVERY_POLICY` and instruct the worker to follow it:
-     - `human-only`: create or update only a draft PR unless an existing non-draft PR already exists; do not mark ready, approve, merge, or enable auto-merge.
-     - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer auto-merge over direct immediate merge.
+      - `human-only`: create or update only a draft PR unless an existing non-draft PR already exists; do not mark ready, approve, merge, or enable auto-merge.
+      - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer auto-merge over direct immediate merge.
+      - Human-review-required issues override auto-merge eligibility: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until the human validation is complete.
    - The prompt must include the Partial-Completion Contract from `workflow-build-one`: before exit the worker must be Complete (all changes committed and pushed), WIP-paused (pushed `wip:` commit naming exactly what remains), or Rolled back (`git reset --hard <baseline>` with a clean worktree).
    - The prompt must require final `git status --short`; if any source file shows `M` or `??`, the worker must commit or reset and re-check before exiting.
 4. Dispatch:
@@ -109,10 +112,12 @@ For each issue in queue order:
    - Stacked PR does not target its parent branch, or parent gate evidence is missing/stale → flag `needs-human`
    - PR lacks a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE` → flag `needs-human`; green CI or GitHub/Claude/Codex/Bugbot review does not satisfy the review gate
    - PR lacks a complete `WORKFLOW_FINALIZE_GATE` block → flag `needs-human`; a PR URL, draft PR, or green CI alone does not satisfy finalization
+   - Issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, but the PR body does not end with `## Reviewer validation steps` → flag `needs-human`; rerun finalization only after the issue contains concrete reviewer validation steps
    - PR or handoff lacks Partial-Completion Contract evidence → flag `needs-human`; require one of Complete, WIP-paused, or Rolled back plus final `git status --short`
    - Handoff reports dirty source files after final `git status --short` → flag `needs-human`; do not accept work that exits with uncommitted source changes
    - `human-only` repo: PR is not draft and does not have `pr_state: existing_non_draft_not_modified` in `WORKFLOW_FINALIZE_GATE` → flag `needs-human`; do not mark ready or accept silently promoted PRs
-   - `auto-merge-eligible` repo: PR is not marked ready or does not have auto-merge enabled after all gates pass → rerun finalization once; if still missing, flag `needs-human`
+   - `auto-merge-eligible` repo with no human-review requirement: PR is not marked ready or does not have auto-merge enabled after all gates pass → rerun finalization once; if still missing, flag `needs-human`
+   - Human-review-required issue: require `WORKFLOW_FINALIZE_GATE.pr_state: pending_human_validation` or an equivalent draft/pending-human state; do not mark the issue `done` until human validation is recorded or the PR is merged by a human
    - PR failed CI → leave for watch-ci auto-fix (or flag for human if exhausted)
    - PR needs review → leave (workflow-build-one handles its own review cycle)
    - PR merged by GitHub auto-merge and all required gate blocks are present → update issue label to `done`, remove `in-progress`
@@ -149,6 +154,7 @@ All state lives in GitHub Issues (labels):
 - `in-progress` → currently being worked
 - `done` → completed
 - `needs-human` → requires human intervention
+- `needs-human-review` → agent may implement, but PR requires human validation before completion/merge
 - `blocked` → dependency not met
 
 Work queue artifact is written to `docs/executions/backlog-runs/[date].md` for audit trail.
@@ -158,6 +164,7 @@ Work queue artifact is written to `docs/executions/backlog-runs/[date].md` for a
 - Max concurrent dispatches: 5 (prevent resource exhaustion)
 - Max total issues per run: 20 (prevent runaway)
 - Skip issues with `needs-human` or `blocked` labels
+- Do not skip `needs-human-review`; carry its reviewer validation steps into the worker prompt and final PR body.
 - If an issue's acceptance criteria are unclear, skip it and add `needs-human` label
 - Never dispatch dependency chains in parallel unless using the stacked development rules above.
 - Every dispatched root issue must create its own fresh `origin/staging` worktree before code changes; stacked dependent issues must create their own fresh worktree from the clean parent branch. Shared worktrees and primary-checkout work are invalid.

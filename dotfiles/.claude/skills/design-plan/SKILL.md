@@ -1,6 +1,7 @@
 ---
 name: design-plan
 model: opus
+reasoning: high
 description: Use when turning a repo-audit report, refactor-scale brief, migration, or existing plan revision into an executable phased plan with FIND-NN/REQ-NN anchors, [auto]/[human] tasks, pilot/canary coverage, rollback, and sync gates. Do not use as the default feature workflow; use grill-with-docs → decision-log → to-prd → to-issues → triage for product work.
 triggers:
   - "write a design doc"

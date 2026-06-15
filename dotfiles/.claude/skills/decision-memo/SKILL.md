@@ -1,6 +1,7 @@
 ---
 name: decision-memo
 model: opus
+reasoning: high
 description: Transforms a completed analysis (or analysis-council output) into a Pyramid Principle / SCQA structured executive memo. Audience-tuned (board, ELT, CEO, customer). Use after analysis-design + execution, when the analyst has findings and needs to communicate a decision recommendation to a specific audience.
 ---
 

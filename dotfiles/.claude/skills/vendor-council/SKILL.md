@@ -1,6 +1,7 @@
 ---
 name: vendor-council
 model: opus
+reasoning: high
 description: "Convenes a council to evaluate a vendor build-vs-buy, selection, renewal, or risk decision: unit economics, contract/governance risk, operational fit, counterfactuals. Graph-first from prior vendor decisions/contracts in graphify-out. Use before any significant vendor commitment."
 ---
 

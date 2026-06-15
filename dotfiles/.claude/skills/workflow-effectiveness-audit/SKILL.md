@@ -1,6 +1,7 @@
 ---
 name: workflow-effectiveness-audit
 model: sonnet
+reasoning: high
 description: Evaluate whether skills and workflows are actually working. Audits recent agent transcripts, GitHub PRs/issues, and execution artifacts for skipped steps, missing subagents, unresolved review comments, weak handoffs, and routing gaps.
 codex-compatible: true
 ---
@@ -75,11 +76,12 @@ For each workflow invocation, derive the expected trace from the skill:
 |----------|----------------|
 | `workflow-autonomous-backlog` | improve-codebase-architecture discovery evidence -> optional repo-audit supporting evidence -> candidate classification -> grill-with-docs module grill with recommended answers and CONTEXT/ADR updates -> MODULE_GRILL_CONSENSUS -> scoped second-pass decision -> module design summary approval for every module PRD -> to-prd -> to-issues -> triage -> AFK queue approval evidence -> run-backlog -> repo-policy-controlled PR handoff |
 | `workflow-review` | worktree baseline evidence -> risk-sized review_profile -> independent reviewer evidence -> synthesized verdict |
-| `workflow-finalize` | worktree baseline evidence -> optional post-mortem -> describe-pr -> ensure draft PR -> receive-review -> watch-ci -> reconcile-issues -> verification gate -> repo-policy final action |
+| `workflow-finalize` | worktree baseline evidence -> optional post-mortem -> describe-pr, including reviewer validation footer when referenced issues carry `needs-human-review`, `Human review: required`, or equivalent explicit human-review gate -> ensure draft PR -> receive-review -> watch-ci -> reconcile-issues -> verification gate -> repo-policy final action |
 | `describe-pr` | PR body -> issue disposition -> record review expectations only |
 | `watch-ci` | draft PR -> CI poll -> bounded fixes -> security review -> reviewer-comment gate -> draft handoff gate |
 | `run-backlog` | queue -> dependency/stack plan -> prompt-builder per issue with mandatory worktree/stack command -> isolated per-issue origin/staging or stacked dispatch -> monitor -> reconcile -> handoff |
 | `workflow-build-one` | per-issue origin/staging worktree -> prompt-builder/preflight -> triage -> execute-phase -> workflow-review -> optional UJ QA -> workflow-finalize |
+| `workflow-router` | classification evidence -> ROUTE_CARD -> user confirmation or valid direct/read-only skip -> target workflow preflight -> confirmed dispatch -> ROUTER_LEARNING_NOTE when completed, halted, or corrected |
 
 Mark each required step as:
 
@@ -126,13 +128,16 @@ Always check for these:
 9. `run-backlog` dispatched raw issue bodies instead of `prompt-builder` outputs.
 9a. `prompt-builder` output omitted the mandatory per-issue `origin/staging` worktree command or `WORKTREE_BASELINE_GATE` requirement.
 9b. Stacked dependent work ran without complete clean parent gates, without `STACKED_WORKTREE_GATE`, or with a child PR targeting `staging` instead of the parent branch.
+9c. `prompt-builder` or `run-backlog` dispatched a human-review-required issue without carrying `Human review: required` and concrete `## Reviewer validation steps` into the worker prompt.
 10. `workflow-autonomous-backlog` used `repo-audit` alone for module discovery without `improve-codebase-architecture`.
 11. `workflow-autonomous-backlog` created module PRDs without evidence-backed module candidate provenance, confidence, rollback expectation, `/grill-with-docs` module grill output, `MODULE_GRILL_CONSENSUS`, scoped second-pass decision, or explicit module design summary approval.
 11b. `MODULE_GRILL_CONSENSUS` was missing, unbounded, used plain `APPROVE` instead of `CRITIC_APPROVE`, lacked critic reasons, repeated the same rejection class twice without halting, or was treated as human module design approval.
 11c. `MODULE_GRILL_CONSENSUS` schema was incomplete or invalid. Required fields: `candidate`, `source_evidence`, `question_batch`, `recommended_answers`, `critic_rounds`, `final_consensus`, `unresolved_uncertainties`, `human_gate_check`, `second_pass_decision`, `rollout_rollback_risk`, and `context_adr_updates`. Required enum values: critic verdict is `CRITIC_APPROVE|CRITIC_REJECT|NEEDS_HUMAN`; `second_pass_decision` is `not_needed|run|needs_human`; `human_gate_check` is `required|granted|preauthorized_low_risk|needs_human`.
 11a. `workflow-autonomous-backlog` recursively decomposed modules without a grill-backed trigger, or promoted submodules that failed the deletion test / lacked a stable Interface.
 12. `to-prd` or another workflow labeled a PRD/spec parent issue `ready-for-agent`; only child implementation issues may receive that label.
-13. `to-issues` produced AFK issues without AFK/HITL classification, outage-risk classification, dependencies, verification commands, rollback expectation, module grill evidence when applicable, or worktree/review/finalize policy.
+13. `to-issues` produced AFK issues without AFK/HITL classification, outage-risk classification, dependencies, verification commands, rollback expectation, module grill evidence when applicable, human-review classification, or worktree/review/finalize policy.
+13a. `to-issues` marked human-validation-only work as `Type: HITL` or `ready-for-human` instead of keeping it AFK with `Human review: required`, `needs-human-review`, and concrete `## Reviewer validation steps`.
+13b. `to-issues` produced a human-review-required issue without `Human review: required` and a concrete `## Reviewer validation steps` section.
 14. `run-backlog` auto-approved a queue without an explicit unattended/AFK request in the same invocation.
 15. Backlog PR was accepted as successful without all required gate blocks: `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, and `WORKFLOW_FINALIZE_GATE`.
 16. AFK run dispatched high-risk/excluded outage categories without explicit issue-level human approval and rollback plan.
@@ -141,6 +146,10 @@ Always check for these:
 19. Skill was edited in `~/.claude/skills` or `~/.codex/skills` but not in the Stow source.
 20. Codex-visible skill requires MCPs or interactive tools without `codex-compatible: false`.
 21. User had to correct the same agent behavior more than once.
+22. `workflow-router` dispatched a non-trivial, mutating, artifact-producing, issue/PR, delivery, or AFK workflow without a `ROUTE_CARD` and explicit confirmation.
+23. `workflow-router` completed, halted, or received user route correction without a `ROUTER_LEARNING_NOTE`.
+24. `workflow-finalize` referenced a `needs-human-review`, `Human review: required`, or equivalent human-review-required issue, but the PR body did not end with a `## Reviewer validation steps` section containing concrete ordered validation actions from the issue.
+25. `describe-pr` or `workflow-finalize` treated `ready-for-human` or generic `Type: HITL` as a PR reviewer-validation trigger.
 
 ### 5. Output
 
@@ -172,8 +181,8 @@ Return:
 - User correction pattern -> workflow/skill to update
 
 ## Autonomous Backlog Gate Matrix
-| PR/Issue | Module PRD provenance | Confidence | Module grill | Rollback | AFK queue approval | Risk policy result | Draft PR state | Worktree gate | Review gate | Finalize gate | Result |
-|----------|-----------------------|------------|--------------|----------|--------------------|--------------------|----------------|---------------|-------------|---------------|--------|
+| PR/Issue | Module PRD provenance | Confidence | Module grill | Rollback | Human review | AFK queue approval | Risk policy result | Draft PR state | Worktree gate | Review gate | Finalize gate | Result |
+|----------|-----------------------|------------|--------------|----------|--------------|--------------------|--------------------|----------------|---------------|-------------|---------------|--------|
 
 ## Follow-up Work
 - Skill edits recommended

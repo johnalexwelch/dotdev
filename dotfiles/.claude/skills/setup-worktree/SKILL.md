@@ -1,6 +1,7 @@
 ---
 name: setup-worktree
 model: haiku
+reasoning: medium
 description: "Create an isolated git worktree from origin/staging for a plan phase, issue, or workflow run; defaults path ~/wt/<repo>/phase-<N>/, derives the branch, auto-copies .env*/.tool-versions etc. Used before workflow execution and at human-gate halts."
 triggers:
   - "/setup-worktree"

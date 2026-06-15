@@ -1,6 +1,7 @@
 ---
 name: receive-review
 model: sonnet
+reasoning: high
 description: "Process PR review feedback end-to-end: evaluate each comment for correctness (no blind agreement), then action it — fix code, reply, push back with reasoning, or defer to a follow-up — and post replies for every thread. Use when bot or human review comments land on a PR, during workflow-finalize's review gate, or 'address/respond to the review comments'."
 codex-compatible: true
 ---

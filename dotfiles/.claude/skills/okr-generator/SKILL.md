@@ -1,6 +1,7 @@
 ---
 name: okr-generator
 model: sonnet
+reasoning: high
 description: >-
   Draft OKRs that are decisions, not wish-lists — objectives that name the bet, and 3-5 key
   results that are real metrics with a baseline and a target. Forces each KR through a

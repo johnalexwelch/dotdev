@@ -1,6 +1,7 @@
 ---
 name: handoff
 model: sonnet
+reasoning: high
 description: Compact the current conversation into a handoff document for another agent to pick up. Invoked manually ("handoff", "wrap up session") or automatically by any workflow that halts or completes with remaining work.
 argument-hint: "What will the next session focus on?"
 codex-compatible: true

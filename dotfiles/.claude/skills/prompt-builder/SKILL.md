@@ -1,6 +1,7 @@
 ---
 name: prompt-builder
 model: sonnet
+reasoning: high
 description: Generate an optimized agent prompt for a ready-for-agent issue. Reads the issue body, acceptance criteria, labels, related files, and project context to produce a copy-paste-ready prompt tailored for Claude or Codex. Use when preparing work for AFK execution, Codex dispatch, batch runs, or handoffs.
 codex-compatible: true
 ---
@@ -35,6 +36,8 @@ Extract:
 - Title and description
 - Acceptance criteria (look for checkboxes, "AC:", "Acceptance Criteria", numbered lists under a criteria heading)
 - Labels (bug, feature, ready-for-agent, security, frontend, etc.)
+- Human-review requirement: `needs-human-review` label, `Human review: required`, or equivalent explicit human-review gate
+- Reviewer validation steps from `## Reviewer validation steps` when human review is required
 - Referenced issues, PRs, or plan documents
 - Any file paths mentioned in the body
 
@@ -53,6 +56,7 @@ Based on issue labels and content:
 |--------|----------|
 | Label: `bug` | Use workflow-debug (diagnosis-first) with strict-tdd profile |
 | Label: `security` | Flag for human review gate; do not auto-merge |
+| Label: `needs-human-review` or `Human review: required` | Preserve reviewer validation steps; require workflow-finalize PR footer; do not mark complete without human validation evidence |
 | Label: `frontend` | Include user-journey-qa step |
 | Acceptance criteria are test-expressible | Use TDD approach |
 | Issue references a design plan phase | Use execute-phase with the plan |
@@ -92,6 +96,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 - For dependent stacked work, may instead create a fresh per-issue worktree from the clean parent branch only when the parent PR has complete gates; include `STACKED_WORKTREE_GATE` and target the PR at the parent branch
 - Must run `workflow-review` with a risk-sized `review_profile` and include `WORKFLOW_REVIEW_GATE` with `independent_review: true` and `verdict: APPROVE`
 - Must run `workflow-finalize` and include a complete `WORKFLOW_FINALIZE_GATE`
+- If `Human review: required`, workflow-finalize/describe-pr must make the PR body end with `## Reviewer validation steps` copied or condensed from the issue, and the PR must remain draft or blocked for human validation according to repo policy
 - Must create or update only a draft PR unless an existing non-draft PR already exists
 - Must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git
 - Must satisfy the Partial-Completion Contract before exit: complete with all changes committed and pushed; WIP-paused with a pushed `wip:` commit whose subject names exactly what remains; or rolled back with `git reset --hard <baseline>` and a clean worktree
@@ -107,6 +112,10 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 ## Verification
 
 [How the agent should verify the work is complete — test commands, manual checks, expected behavior]
+
+## Reviewer validation steps
+
+[Include only when `Human review: required`. Copy the issue's concrete ordered steps. If required but missing or vague, halt prompt generation and mark the issue `needs-human` instead of dispatching.]
 ```
 
 ### 5. Adapt for target tool
@@ -121,6 +130,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
   `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
 - Require `workflow-review` with a real `WORKFLOW_REVIEW_GATE`, `review_profile`, `independent_review: true`, and `verdict: APPROVE`; green CI, GitHub reviews, Claude Code Review, Bugbot, or Codex review do not substitute for this gate.
 - Require `workflow-finalize` with a complete `WORKFLOW_FINALIZE_GATE`.
+- If the issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, include the issue's `## Reviewer validation steps` in the prompt and require the worker to preserve them through `describe-pr`/`workflow-finalize` so the PR body ends with the same section.
 - Require draft PR handoff only; do not mark ready, approve, merge, enable auto-merge, force-push, rebase, or use destructive git.
 - Require the Partial-Completion Contract before exit. The worker must end in exactly one state:
   - Complete: all changes committed and pushed to the remote branch.
@@ -128,6 +138,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
   - Rolled back: `git reset --hard <baseline>` leaves the worktree clean.
 - Require final verification with `git status --short`. If any source file shows `M` or `??`, the prompt must instruct the worker to commit or reset, then re-check before exiting.
 - Do not ask clarifying questions inside the generated prompt. If ambiguity affects behavior, scope, security, data, UX, or acceptance criteria, halt prompt generation and mark the issue `needs-human` instead of dispatching Codex.
+- If human review is required but concrete reviewer validation steps are missing or vague, halt prompt generation and mark the issue `needs-human` instead of dispatching Codex.
 - Conservative assumptions are allowed only for non-behavioral implementation details; record them explicitly.
 - Include relevant decision-log entries when they explain why the issue asks for a particular approach. Do not make the worker rediscover accepted alternatives.
 - Specify the test command to run
@@ -154,6 +165,7 @@ Print the prompt to chat. Then offer:
 - Never generate a root execution prompt that omits mandatory per-issue worktree creation from `origin/staging`. If the issue cannot name a safe branch/worktree convention, include placeholders and require the worker to resolve them before coding.
 - Never generate a stacked execution prompt unless the parent PR gate evidence is complete and the prompt tells the worker to target the child PR at the parent branch.
 - Never generate an execution prompt that omits `workflow-review`, risk-sized `review_profile`, `WORKFLOW_REVIEW_GATE`, `workflow-finalize`, `WORKFLOW_FINALIZE_GATE`, draft-only PR handoff, and no mark-ready/merge/auto-merge/destructive-git constraints.
+- Never generate an execution prompt for a human-review-required issue that omits `Human review: required` and the issue's concrete `## Reviewer validation steps`.
 - Never assume the test runner. Check the project for package.json scripts, Makefile targets, or pytest.ini before suggesting test commands.
 - If the issue is blocked by another issue, say so in the prompt. Do not generate a prompt that will lead to wasted work.
 - Keep prompts under 500 lines. The point is focused context, not a novel.

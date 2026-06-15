@@ -1,6 +1,7 @@
 ---
 name: to-issues
 model: sonnet
+reasoning: high
 description: Break a plan, spec, or PRD into independently-grabbable issues on the project issue tracker using tracer-bullet vertical slices. Use when user wants to convert a plan into issues, create implementation tickets, or break down work into issues.
 ---
 
@@ -50,7 +51,11 @@ If you have not already explored the codebase, do so to understand the current s
 
 Break the plan into **tracer bullet** issues. Each issue is a thin vertical slice that cuts through ALL integration layers end-to-end, NOT a horizontal slice of one layer.
 
-Slices may be 'HITL' or 'AFK'. HITL slices require human interaction, such as an architectural decision or a design review. AFK slices can be implemented to a green draft PR without human interaction, but agents must not mark PRs ready, merge, enable auto-merge, or bypass review/finalization gates. Prefer AFK over HITL only when acceptance criteria, verification, dependencies, and outage risk are clear.
+Slices may be `HITL` or `AFK`. HITL slices require human interaction before or during implementation, such as an architectural decision, external access, manual implementation, or a design decision that cannot be safely delegated. AFK slices can be implemented to a green draft PR without human interaction, but agents must not mark PRs ready, merge, enable auto-merge, or bypass review/finalization gates.
+
+Human PR review is a separate gate, not the same thing as HITL implementation. Use `Human review: required` when an agent may implement the issue but a human must validate the resulting PR before it can be considered complete or merge-ready. Human-review-required AFK issues must include `Reviewer validation steps` and should receive the `needs-human-review` review gate label in addition to `ready-for-agent`.
+
+Prefer AFK over HITL only when acceptance criteria, verification, dependencies, outage risk, and any required reviewer validation steps are clear.
 
 <vertical-slice-rules>
 - Each slice delivers a narrow but COMPLETE path through every layer (schema, API, UI, tests)
@@ -72,9 +77,10 @@ The critic must evaluate:
 1. **Vertical integrity** — is each slice truly end-to-end, or is any slice a horizontal layer (schema-only, API-only, tests-only)?
 2. **Dependency correctness** — is the chain right? are there hidden dependencies on unbuilt infrastructure?
 3. **AFK/HITL classification** — are write-authority slices appropriately gated?
-4. **Coverage completeness** — do the slices collectively cover all user stories? are any behaviors (env-var degrades, exclusion rules, edge cases) missing from every slice?
-5. **Scope vs. source** — does the breakdown cover the full PRD/plan scope, or is anything hanging?
-6. **Risk guards** — for write-authority slices, are KILLSWITCH, dry-run, and rollback paths accounted for?
+4. **Human-review separation** — are human-implementation slices marked HITL, and human-validation-only slices marked AFK with `Human review: required` instead of being mislabeled HITL?
+5. **Coverage completeness** — do the slices collectively cover all user stories? are any behaviors (env-var degrades, exclusion rules, edge cases) missing from every slice?
+6. **Scope vs. source** — does the breakdown cover the full PRD/plan scope, or is anything hanging?
+7. **Risk guards** — for write-authority slices, are KILLSWITCH, dry-run, and rollback paths accounted for?
 
 After the review:
 - Address all **MAJOR** concerns by revising the breakdown before presenting to the user
@@ -93,6 +99,7 @@ Present the proposed breakdown as a numbered list. For each slice, show:
 - **User stories covered**: which user stories this addresses (if the source material has them)
 - **Outage risk**: low / medium / high / excluded
 - **Verification**: required commands or user-journey QA
+- **Human review**: required / not required
 - **Module grill**: completed / not applicable / needed before publish
 - **Decision log**: relevant entries linked / not applicable / missing
 
@@ -102,6 +109,7 @@ Ask the user:
 - Are the dependency relationships correct?
 - Should any slices be merged or split further?
 - Are the correct slices marked as HITL and AFK?
+- Are human-review-only slices marked AFK with `Human review: required`, not HITL?
 - Are outage-risk classifications and rollback expectations correct?
 - For module work, did the module grill answer the interface, seam, adapter, migration, and testing questions deeply enough?
 - Are the relevant decision-log entries present so implementation agents can see alternatives and accepted tradeoffs?
@@ -111,7 +119,7 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the issues to the issue tracker
 
-For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Only apply `ready-for-agent` to AFK slices with clear acceptance criteria, dependencies satisfied or explicitly ordered, verification commands, rollback expectation, `low` or explicitly approved `medium` outage risk, and completed module grill evidence when the slice came from a module PRD. Publish HITL, high-risk, excluded, blocked, unclear, unverifiable, or ungrilled module slices with `needs-human` or `blocked` instead.
+For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Only apply `ready-for-agent` to AFK slices with clear acceptance criteria, dependencies satisfied or explicitly ordered, verification commands, rollback expectation, `low` or explicitly approved `medium` outage risk, and completed module grill evidence when the slice came from a module PRD. If an AFK slice requires human PR validation, also apply `needs-human-review` and include `Human review: required` plus `## Reviewer validation steps`. Publish HITL, high-risk, excluded, blocked, unclear, unverifiable, or ungrilled module slices with the human-implementation state label (`ready-for-human`, or the tracker-equivalent `needs-human`) or `blocked` instead.
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 
@@ -135,6 +143,7 @@ Avoid specific file paths or code snippets — they go stale fast. Exception: if
 ## AFK execution policy
 
 - Type: AFK or HITL
+- Human review: required or not required
 - Outage risk: low, medium, high, or excluded
 - Rollback expectation:
 - Required verification:
@@ -143,6 +152,10 @@ Avoid specific file paths or code snippets — they go stale fast. Exception: if
 - User-journey QA: required / not applicable, with reason
 - Worktree policy: this issue must create its own fresh worktree from `origin/staging` before implementation starts and report `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
 - Review/finalize policy: PR handoff requires `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`, plus a complete `WORKFLOW_FINALIZE_GATE`
+
+## Reviewer validation steps
+
+Required only when `Human review: required`. Provide concrete ordered checks the human reviewer can perform against the PR. Do not write vague steps such as "review the PR" or "verify it works"; tie each step to acceptance criteria, required verification, manual validation, screenshots, deployed state, external access, migration review, or product judgment.
 
 ## Blocked by
 

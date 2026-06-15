@@ -1,6 +1,7 @@
 ---
 name: sql-review
 model: sonnet
+reasoning: high
 description: "Reviews a SQL query, view, or dbt model for correctness, performance, and clarity: join cardinality, window pitfalls, NULL handling, time-zone bugs, fanout, missing GROUP BY, unsafe DELETE/UPDATE, and warehouse-specific gotchas. Use before queries hit production."
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: v1-system-design
 model: opus
+reasoning: high
 description: Designs a technical system to support an approved V1 product brief. Called by v1-workflow as Step 3 — invoke directly only when you explicitly want just this step in isolation (you already have an approved V1_IDEA_BRIEF). For full V1 work (idea → design → issues), use v1-workflow instead.
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: dashboard-design
 model: opus
+reasoning: high
 description: Designs a dashboard from a decision, not from available data. Identifies the question, the audience, the 3–6 charts that resolve it, the time grain, the comparators, and what NOT to include. Produces a spec ready for implementation in Metabase / Looker / Tableau / Hex. Use before building any non-trivial dashboard.
 ---
 

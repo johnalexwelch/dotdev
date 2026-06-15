@@ -1,6 +1,7 @@
 ---
 name: strategic-analysis-review
 model: opus
+reasoning: high
 description: "Reviews executive-facing analyses for argument strength, Pyramid/SCQA structure, insight quality, and wording. Use for strategy memos, board/ELT updates, recommendations, or \"review this memo\", \"pressure-test this recommendation\", \"make this board update sharper\"."
 ---
 

@@ -1,6 +1,7 @@
 ---
 name: runbook-author
 model: sonnet
+reasoning: high
 description: "Authors or updates an operational runbook from an incident retro, a recurring failure mode, or a process to make executable by on-call at 2 AM. Produces stepwise prereqs, signals, decision points, rollback, and escalation. Use after incident-retro or proactively."
 ---
 

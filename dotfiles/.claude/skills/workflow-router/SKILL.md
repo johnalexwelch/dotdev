@@ -1,14 +1,15 @@
 ---
 name: workflow-router
 model: sonnet
-description: Single authoritative entry point for classifying work and routing to the correct workflow skill
+reasoning: high
+description: Use when a request may need routing to a project workflow, AFK execution path, planning/grill flow, review/finalize loop, or skill/workflow audit
 ---
 
 # Workflow Router
 
 ## Purpose
 
-The single routing authority for all incoming work. Classifies the task, runs preflight checks, and dispatches to the appropriate workflow skill. Replaces ad-hoc routing decisions with a consistent classification system.
+The single routing authority for all incoming work. Classifies the task, presents a route card for confirmation, runs preflight checks, and dispatches to the appropriate workflow skill only after the user confirms the route. Replaces ad-hoc routing decisions with a consistent classification system.
 
 ## Authority
 
@@ -17,6 +18,7 @@ This skill is the **sole routing authority**. Per ADR-0002:
 - `workflows.md` is reference documentation only — it does not route
 - OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass this router's classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `workflow-review`, and `workflow-finalize`.
 - All other work goes through this router
+- The router owns classification, confirmation, preflight, and learning notes. Target workflow skills own the actual workflow behavior. Do not copy target workflow procedures into this skill.
 
 ## Audit Loop Retirement Rule
 
@@ -44,6 +46,64 @@ Independence matters more than agent count. Do not use multiple agents merely
 because a workflow says "review"; use `workflow-review`'s risk-sized
 `review_profile`.
 
+## Route Confirmation Gate
+
+Before dispatching any non-trivial workflow, mutating workflow, scaffold, AFK run, GitHub issue/PR action, project document generation, or delivery loop, emit a `ROUTE_CARD` and wait for the user's confirmation.
+
+Skip the confirmation gate only when all are true:
+
+- Budget is `direct`
+- The action is read-only or produces only an immediate conversational answer
+- The user explicitly asked for the immediate action
+- No workflow dispatch, file mutation, repo scaffold, issue creation, PR action, or AFK execution will occur
+
+If the user explicitly names a workflow and says to run it, still emit the route card first when the workflow can mutate files, create artifacts, create issues/PRs, run AFK, or perform delivery actions.
+
+### Route Card
+
+Use this exact shape:
+
+```markdown
+ROUTE_CARD:
+- Request:
+- Classification:
+- Selected flow:
+- Confidence: high|medium|low
+- Why this flow:
+- Budget: direct|one-reviewer|multi-lane|team
+- Will mutate/create:
+- Human gates:
+- Expected artifacts:
+- Follow-up audit:
+- Alternatives considered:
+- Confirmation needed:
+```
+
+Rules:
+
+- `Will mutate/create` must explicitly say `none` for read-only routes.
+- `Human gates` must include every known approval point before implementation, AFK execution, PR action, or cleanup.
+- `Follow-up audit` should say whether `workflow-effectiveness-audit` is expected at the end and why.
+- If confidence is `low`, ask one clarifying question instead of asking the user to approve a route.
+- If confidence is `medium`, recommend the best route and include the closest alternative.
+- Do not perform target workflow preflight, create a worktree, scaffold a repo, write docs, create issues, or dispatch agents until the route is confirmed.
+
+### Confirmation Language
+
+End the route card with one concise confirmation request:
+
+```markdown
+Confirm this route and I will start `<selected-flow>`.
+```
+
+If the route is read-only and low-risk, use:
+
+```markdown
+Confirm this route and I will proceed.
+```
+
+If the user corrects the route, treat that correction as fresh routing input and produce a revised route card.
+
 ## Classification table
 
 | Signal | Classification | Routes to |
@@ -64,6 +124,7 @@ because a workflow says "review"; use `workflow-review`'s risk-sized
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
 | "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **workflow effectiveness audit** | workflow-effectiveness-audit |
+| "route this", "choose the workflow", "what flow do we need", "single wrapper", "intake", "which skill should run", "start the right workflow" | **workflow intake** | workflow-router route card, then confirmed target workflow |
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D** | dnd-workflow |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
 | "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
@@ -136,6 +197,31 @@ For feature planning that will produce PRDs and implementation issues, require a
 - If roadmap is missing, stale, or out of scope: route to `workflow-roadmap` first and halt downstream dispatch until approved.
 - Only an explicit user waiver may bypass this gate.
 
+## Learning Loop
+
+At the end of any confirmed non-trivial route, and whenever the user corrects the routing choice, produce a `ROUTER_LEARNING_NOTE`.
+
+```markdown
+ROUTER_LEARNING_NOTE:
+- Initial classification:
+- Confirmed classification:
+- Confidence was:
+- User correction:
+- What made the route right or wrong:
+- Accepted feedback:
+- Durable destination: none|project decision log|backlog|skill-maintenance proposal|memory proposal
+- Skill/workflow improvement suggested:
+```
+
+Learning rules:
+
+- Do not silently edit memories or skills.
+- Project-specific lessons go to the project decision log only when the active workflow allows writing project artifacts.
+- Future-work items go to backlog only with user approval or inside a workflow that already owns issue creation.
+- Reusable process lessons become `skill-maintenance` proposals.
+- If the workflow was AFK, multi-stage, corrected by the user, halted for a process gap, or produced planning/execution artifacts, run or recommend `workflow-effectiveness-audit` before final closure.
+- If a recommendation is accepted during a review or audit loop, classify it before persisting: project-specific, future-work, reusable process, or local wording only.
+
 ## Graceful degradation
 
 These fallbacks apply only when the target workflow does not list the
@@ -158,19 +244,23 @@ halt, report the missing requirement, and do not proceed.
 ```
 1. Receive work description (user input, issue, or automated trigger)
 2. Classify using signal table above
-3. If ambiguous: ask ONE clarifying question (max 1 — don't interrogate)
-4. Run preflight on target workflow
-5. If preflight passes: dispatch to target workflow
-6. If preflight fails: report missing requirements
+3. If ambiguous or confidence is low: ask ONE clarifying question (max 1 — don't interrogate)
+4. Select the smallest safe agent budget
+5. Emit ROUTE_CARD
+6. Wait for user confirmation unless the route qualifies for the direct/read-only skip
+7. After confirmation, run preflight on target workflow
+8. If preflight passes: dispatch to target workflow
+9. If preflight fails: report missing requirements
+10. At completion, halt, or user correction: emit ROUTER_LEARNING_NOTE and run or recommend workflow-effectiveness-audit when triggered
 ```
 
 ## Contract
 
 Consumes: work description (user input, issue body, automated trigger)
-Produces: dispatched workflow invocation, preflight report (if failed)
+Produces: route card, confirmed workflow invocation, preflight report (if failed), router learning note
 Requires: git
 Side effects: none (routing is a decision, not an action)
-Human gates: ambiguous classification asks one clarifying question
+Human gates: route confirmation before non-trivial dispatch; ambiguous classification asks one clarifying question
 
 Runtime note: the router itself only needs git-aware workspace context; target workflows declare their own `Requires` fields.
 

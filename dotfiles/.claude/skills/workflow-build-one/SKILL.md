@@ -1,6 +1,7 @@
 ---
 name: workflow-build-one
 model: sonnet
+reasoning: medium
 description: Implement one ready-for-agent issue end-to-end (preflight → execute → review → repo-policy-controlled PR handoff)
 ---
 

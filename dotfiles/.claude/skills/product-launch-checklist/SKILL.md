@@ -1,6 +1,7 @@
 ---
 name: product-launch-checklist
 model: sonnet
+reasoning: high
 description: >-
   Turn a feature or product that's about to ship into a phase-gated launch plan — sized to
   the launch's blast radius, not a frozen 200-item list. Produces the gates, owners, comms,

@@ -1,6 +1,7 @@
 ---
 name: user-journey-qa
 model: sonnet
+reasoning: medium
 description: Playwright-first UX regression verification for user-facing changes
 codex-compatible: false
 ---

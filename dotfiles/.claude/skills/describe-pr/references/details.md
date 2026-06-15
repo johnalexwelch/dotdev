@@ -85,6 +85,30 @@ Discover related issues from these sources (checked in order during Step 1):
 
 Deduplicate across all sources. For each discovered issue, fetch its title and status via `gh issue view <N> --json title,state,labels -q '{title,state,labels}'`. If lookup fails, record the failure, do not use `Closes`, `Fixes`, or `Resolves` for that issue, and mark the disposition as `Refs` or `Needs human verification`.
 
+## Human-Reviewer Validation Steps
+
+When any discovered issue requires human review, the PR body must end with
+`## Reviewer validation steps`.
+
+Detection:
+
+- Issue has the `ready-for-human` label.
+- Issue body declares `Type: HITL`.
+- Issue body contains an equivalent explicit human review gate.
+
+Composition rules:
+
+- Place the section after `## References`; it must be the final PR-body
+  section.
+- Derive steps from the issue's acceptance criteria and required verification.
+- Write steps as an ordered list, phrased as reviewer actions.
+- Prefer three concise steps when the issue naturally has three reviewer
+  actions, but do not invent filler steps.
+- Include concrete artifact paths, commands, or evidence links when available.
+- Preserve safety scope: if the issue says the work does not authorize runtime,
+  PRD creation, issue creation, deployment, merge, or automation, include that
+  as a validation step.
+
 ## Issue Disposition Table
 
 When generating the PR body (Step 3), load

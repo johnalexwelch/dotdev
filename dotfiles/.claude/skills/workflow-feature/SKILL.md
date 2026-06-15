@@ -1,6 +1,7 @@
 ---
 name: workflow-feature
 model: sonnet
+reasoning: high
 description: Turn an ambiguous feature idea into ready-to-triage issues (stops before implementation)
 ---
 

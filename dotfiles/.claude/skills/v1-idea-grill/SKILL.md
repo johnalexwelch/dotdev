@@ -1,6 +1,7 @@
 ---
 name: v1-idea-grill
 model: opus
+reasoning: high
 description: Turns a loose product idea into an approved non-technical V1 brief through a full functionality grill. Called by v1-workflow as Step 1 — invoke directly only when you explicitly want just this step in isolation. For full V1 work (idea → design → issues), use v1-workflow instead.
 ---
 

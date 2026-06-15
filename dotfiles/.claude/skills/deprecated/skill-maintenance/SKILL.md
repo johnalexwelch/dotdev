@@ -40,7 +40,7 @@ Audit and improve a personal or project skill library. Treat skills as portable 
    - Inspect `~/.claude/skills`, `~/.codex/skills`, and project `.claude/skills` or `skills` directories that are relevant to the current repo.
    - If the CORA repo exists at `~/projects/cora`, run `uv run cora --dry-run` for broad maintenance findings.
    - For a targeted skills-source audit when the public `cora skills` command is unavailable, run the Python fallback from `~/projects/cora`:
-     `CORA_CLAUDE_SKILLS_DIR=<skills-root> CORA_AUTO_SKILLS_SYNC=false uv run python -c 'import asyncio; from cora.tasks.skills_sync import _run_skills_audit; findings=asyncio.run(_run_skills_audit(dry_run=True)); [print(f"{f.severity.value}: {f.message}") for f in findings]'`
+     `CORA_CLAUDE_SKILLS_DIR=<skills-root> CORA_AUTO_SKILLS_SYNC=false uv run python -c 'import asyncio, os; from pathlib import Path; from cora.settings import Settings; from cora.tasks.skills_sync import SkillsSyncTask; settings=Settings(claude_skills_dir=Path(os.environ["CORA_CLAUDE_SKILLS_DIR"]), codex_skills_dir=Path.home() / ".codex" / "skills", auto_skills_sync=False); result=asyncio.run(SkillsSyncTask().run(settings=settings, dry_run=True)); [print(f"{f.severity.value}: {f.message}") for f in result.findings]'`
    - Do not move, delete, or rewrite skills until the user approves a concrete change plan.
 
 2. **Research current guidance**

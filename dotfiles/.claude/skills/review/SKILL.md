@@ -1,5 +1,7 @@
 ---
 name: review
+model: opus
+reasoning: high
 description: Deprecated standalone helper for reviewer-lane prompts under `workflow-review`. Invoke directly only when the user explicitly types `/review`; ordinary review requests should route to `workflow-review`.
 disable-model-invocation: true
 triggers:

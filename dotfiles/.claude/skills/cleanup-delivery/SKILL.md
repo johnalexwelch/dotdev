@@ -1,6 +1,7 @@
 ---
 name: cleanup-delivery
 model: haiku
+reasoning: medium
 description: Use when cleaning up after merged, closed, abandoned, or superseded delivery work; when local branches, git worktrees, draft PRs, issue labels, or ticket state may be stale.
 ---
 

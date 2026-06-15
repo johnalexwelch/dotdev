@@ -1,6 +1,7 @@
 ---
 name: experiment-design
 model: opus
+reasoning: high
 description: "Designs a controlled experiment (A/B, multivariate, switchback, holdout): hypothesis, primary metric, MDE, sample size, randomization unit, duration, guardrails, stopping rules. Catches under-powered tests, peeking, missing guardrails, confounding. Use before launching any decision-driving experiment."
 ---
 

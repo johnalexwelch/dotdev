@@ -1,6 +1,7 @@
 ---
 name: workflow-debug
 model: sonnet
+reasoning: high
 description: Bug diagnosis to fix (all bug work begins with diagnose, no exceptions)
 ---
 
@@ -30,7 +31,7 @@ Drive a bug from report through diagnosis to verified fix. The cardinal rule: **
 ## Flow
 
 ```text
-root worktree from origin/staging OR valid stacked worktree from parent branch → diagnose → triage → [tdd OR execute-phase] → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+root worktree from origin/staging OR valid stacked worktree from parent branch → diagnose → triage → caveman → [tdd OR execute-phase] → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
 ```
 
 ## Workflow Progress Reporting
@@ -41,7 +42,14 @@ At the start of every run, display a step ledger before executing or dispatching
 WORKFLOW_STEPS:
 | Step | Required? | Status | Evidence / Skip Reason |
 |------|-----------|--------|------------------------|
-| <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
+| Step 0: Worktree Baseline Gate | required | pending | - |
+| Step 1: Diagnose | required | pending | - |
+| Step 2: Triage routing decision | required | pending | - |
+| Step 2.5: Output compression (caveman) | conditional | pending | Required before implementation when Step 2 routes to direct-fix |
+| Step 3: Implement fix | conditional | pending | Runs only for direct-fix |
+| Step 4: Review (workflow-review) | conditional | pending | Runs after implementation |
+| Step 5: User Journey QA | conditional | pending | Runs when user-facing/UX trigger applies |
+| Step 6: Finalize (workflow-finalize) | conditional | pending | Runs after review/QA gates |
 ```
 
 Rules:
@@ -87,6 +95,10 @@ Based on diagnose routing output:
 - **architecture-review** → invoke improve-codebase-architecture, **auto-handoff** (exit_reason: halt, remaining: architecture review findings to act on), and STOP
 - **needs-human** → **auto-handoff** (exit_reason: halt, blocker: what the human needs to decide, include diagnosis artifact path) and halt
 - **unsafe-for-afk** → **auto-handoff** (exit_reason: halt, blocker: what makes it unsafe, include fix plan and diagnosis artifact) and halt
+
+### Step 2.5: Output compression (caveman)
+
+Before entering Step 3, invoke `caveman` as a workflow-scoped output discipline step. Keep routine implementation progress compressed through the implementation loop to reduce token use. Drop back to full prose only for blockers, safety warnings, irreversible action confirmations, review findings, handoff summaries, or any place where terse fragments would be ambiguous.
 
 ### Step 3: Implement fix
 

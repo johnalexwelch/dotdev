@@ -1,6 +1,7 @@
 ---
 name: workflow-roadmap
 model: opus
+reasoning: high
 description: Use when creating a product and implementation roadmap from product goals, repo state, feature gaps, implementation gaps, architecture/infrastructure gaps, security hardening needs, or "what should we build next?" questions.
 ---
 

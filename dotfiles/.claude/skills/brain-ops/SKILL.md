@@ -1,6 +1,7 @@
 ---
 name: brain-ops
 model: sonnet
+reasoning: high
 description: Interact with Alex's Karpathy-style second brain from any Claude session. Ingest sources, query concepts, capture thoughts, run the review queue, or check brain health. Use when the user mentions "brain", "ingest", "what do I know about", "capture this", "brain lint", "brain review", or references the wiki/concept pages.
 codex-compatible: false
 ---

@@ -1,6 +1,7 @@
 ---
 name: post-mortem
 model: sonnet
+reasoning: high
 description: "After executing a design plan, multi-phase refactor, significant drift, or work that produced NEW-NN findings, write a blameless retro that compares planned vs. actual, tracks which FIND-NN/REQ-NN/ticket items were addressed, and feeds lessons back into roadmap, PRD, issue, or audit evidence. Use as a conditional retro gate in workflow-finalize, not as a separate default audit loop."
 triggers:
   - "post-mortem"

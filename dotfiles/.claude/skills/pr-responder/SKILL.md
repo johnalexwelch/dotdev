@@ -1,6 +1,7 @@
 ---
 name: pr-responder
 model: sonnet
+reasoning: high
 description: "Processes open PR review comments in bulk: decides which to action, drafts the code edits, and posts replies for the rest. The actioning step after receive-review. Use when a PR has accumulated review comments to work through."
 ---
 

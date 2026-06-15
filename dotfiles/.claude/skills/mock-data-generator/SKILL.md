@@ -1,6 +1,7 @@
 ---
 name: mock-data-generator
 model: sonnet
+reasoning: high
 description: >-
   Generate realistic, referentially-consistent mock datasets from a schema — CSV, JSON, or
   SQL INSERTs — with foreign keys that actually resolve, constraints, and dialect-aware SQL.

@@ -1,6 +1,7 @@
 ---
 name: v1-workflow
 model: opus
+reasoning: high
 description: Master orchestration for turning a product idea into a complete V1 system design with ready-to-implement issues. Use when starting a new V1 product from an idea or when building a major version from concept.
 ---
 

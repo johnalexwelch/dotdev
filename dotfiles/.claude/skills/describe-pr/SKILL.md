@@ -1,6 +1,7 @@
 ---
 name: describe-pr
 model: sonnet
+reasoning: high
 description: Manual slash-only artifact generator for pull request body text and issue disposition tables. Auto-routing disabled; workflow-finalize may call it internally.
 disable-model-invocation: true
 triggers: ["/describe-pr","describe pr","generate pr description","write pr body"]
@@ -39,11 +40,28 @@ For vertical-slice reporting, also gather lineage metadata when available:
 - issue state and `closedAt`
 - merged PR URL and merge date for issues closed by a PR (when discoverable)
 
+For each discovered issue, determine whether it requires a human reviewer.
+Treat an issue as human-review-required only when it has a `needs-human-review`
+label, its body declares `Human review: required`, or its body contains an
+equivalent explicit human-review gate. Do not treat `ready-for-human` or
+`Type: HITL` as human-review-required; those mean human implementation or
+human interaction, not PR validation. When an issue is human-review-required,
+extract the explicit `## Reviewer validation steps` section from the issue body.
+If that section is missing or vague, halt and report that the issue needs
+reviewer validation steps before the PR body can be generated.
+
 ## Step 2 — Deviation review
 In plan/phase modes, dispatch one general-purpose Agent with `references/deviation-review-prompt.md` (substituting plan, branch, base, commits, phase-run files); wait and record. In `issue_only`, skip and record `deviations: not_applicable`.
 
 ## Step 3 — Compose
 Load `references/pr-body-template.md`; write `docs/executions/.pr-bodies/<date>-pr-<N>.md`. For the `## Vertical slice progress` section, render PRD-first grouped rows followed by issue rows under each PRD, including status, summary, and close/merge date metadata when available. For the `## Issues` section load `references/issue-disposition-rules.md`. Generate from this run's gathered inputs — don't copy the issue body or a stale PR body. Include provenance (mode + whether graphify was queried).
+
+If any discovered issue requires a human reviewer, include a final `## Reviewer
+validation steps` section at the bottom of the PR body. The section must be the
+last section in the file and contain the concrete ordered steps copied or
+condensed from the issue's explicit reviewer validation steps. Prefer three
+concise steps when that matches the issue, but use the number required by the
+issue rather than adding filler.
 
 ## Step 4 — Apply (optional)
 If `apply==true` and a PR exists: `gh pr edit <N> --body-file <path>`, confirm, set `applied_to_pr=true`. Else skip.

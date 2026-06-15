@@ -1,6 +1,7 @@
 ---
 name: prototype
 model: sonnet
+reasoning: high
 description: "Build a throwaway prototype to answer a design question: a runnable terminal app for state/logic questions, or toggleable UI variations. Use to prototype, sanity-check a data model/state machine, or explore UI options. Triggers: \"prototype this\", \"try a few designs\"."
 codex-compatible: true
 ---

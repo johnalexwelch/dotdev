@@ -62,4 +62,20 @@ Write to `docs/executions/.pr-bodies/<date>-pr-<N>.md` or `<date>-pr-<branch>.md
 ## References
 
 <Ticket refs collected in Step 1.5, as a flat list. Only linkify when a base URL is declared.>
+
+## Reviewer validation steps
+
+<Required only when any discovered issue requires a human reviewer: issue label
+`ready-for-human`, issue body `Type: HITL`, or equivalent human-review gate.
+This must be the final section in the PR body so the reviewer can follow it
+without hunting through the description. Write concrete, ordered steps from the
+issue acceptance criteria and required verification. Keep each step actionable
+and checkable, for example:
+
+1. Review <artifact/path or behavior> against <acceptance criteria>.
+2. Confirm <specific non-authorization / safety / dependency condition>.
+3. Run or inspect <verification command, CI check, or local evidence>.
+
+If the referenced human-review issue has more or fewer than three meaningful
+validation steps, use the number required by the issue; do not force filler.>
 ```

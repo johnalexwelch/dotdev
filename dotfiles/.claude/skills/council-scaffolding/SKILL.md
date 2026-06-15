@@ -1,5 +1,7 @@
 ---
 name: council-scaffolding
+model: opus
+reasoning: high
 description: Foundational reference pattern for council-style skills. Loaded by sibling skills such as analysis-council, worldbuilding-council, metric-council, vendor-council, and narrative-council. Never invoked directly.
 user-invocable: false
 disable-model-invocation: true

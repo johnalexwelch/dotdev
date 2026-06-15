@@ -1,6 +1,7 @@
 ---
 name: workflow-finalize
 model: sonnet
+reasoning: medium
 description: Universal delivery closure after review passes (PR body → reviewer comments → CI → reconcile → repo-policy-controlled final action)
 ---
 
@@ -32,6 +33,7 @@ When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
 
 - `human-only`: create/update a draft PR or preserve an existing non-draft PR, but do not mark ready, merge, or enable auto-merge.
 - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer GitHub auto-merge over direct immediate merge.
+- Human-review-required issues (`needs-human-review`, `Human review: required`, or equivalent explicit human-review gate) override `auto-merge-eligible`: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until that human validation is recorded.
 - Missing policy defaults to `human-only`.
 
 ## Flow
@@ -73,6 +75,13 @@ Rules:
 - `describe-pr` must write a body file under `docs/executions/.pr-bodies/` before any draft PR is created or updated.
 - Pass the resolved `branch`, `base`, discovered `pr_number` if one exists, and `apply=false` when no PR exists yet. If a PR already exists, either pass `apply=true` or apply the returned body file in Step 1.5.
 - The generated body must include issue awareness and a disposition table for all referenced issues when issues are discovered.
+- If any referenced issue requires a human reviewer (`needs-human-review`
+  label, `Human review: required`, or equivalent explicit human-review gate),
+  the generated body must end with `## Reviewer validation steps`. The section
+  must be the final section in the PR body and contain concrete ordered steps
+  copied or condensed from the issue's explicit reviewer validation steps. Do
+  not treat `ready-for-human` or `Type: HITL` as human-review-required; those
+  mean human implementation or human interaction, not PR validation.
 - Record describe-pr evidence for the final gate: body file path, mode (`plan_backed`, `phase_run_backed`, or `issue_only`), issue refs discovered, phase evidence status, and deviation/new-finding counts when applicable.
 - If `describe-pr` halts because required phase evidence is missing for plan-backed or multi-phase work, halt finalization. Do not create a draft PR with a replacement body unless the user explicitly waives phase evidence.
 - For routine single-issue work with no design plan or phase-run files, `describe-pr` must run in issue-only mode using git log/diff plus issue discovery; absence of a design plan is not a reason to skip `describe-pr`.
@@ -130,7 +139,15 @@ Before declaring the PR ready for final action, run a verification gate:
 2. **Confirm verification passes** — do not claim "tests pass" without running them. If any command fails, halt and fix before proceeding.
 3. **Confirm review comment resolution** — fetch review threads/comments one final time. If any actionable reviewer comment has no fix, reply, or explicit human waiver, halt before handoff.
 4. **Confirm review freshness** — verify the latest `WORKFLOW_REVIEW_GATE` was produced after the final code-changing commit. If finalization pushed review-fix or CI-fix commits after the last review gate, halt and rerun `workflow-review`.
-5. **Check for large diffs** — run `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
+5. **Confirm human-review PR-body footer when required** — when any referenced
+   issue requires a human reviewer (`needs-human-review`, `Human review:
+   required`, or equivalent explicit human-review gate), inspect the PR body
+   file and confirm its final section is `## Reviewer validation steps` with
+   ordered validation actions copied or condensed from the issue's explicit
+   reviewer validation steps. If missing or not last, route back to Step 1
+   (`describe-pr`) before creating/updating or handing off the PR. Do not use
+   `ready-for-human` or generic `Type: HITL` as this trigger.
+6. **Check for large diffs** — run `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
    - If the changes are logically atomic (single feature, single refactor), proceed but note the size in the PR description
    - If the changes span unrelated concerns, **halt**: identify the independent concerns, create a separate branch for each from `origin/staging`, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
 
@@ -148,6 +165,7 @@ If the PR has been open >24 hours or has accumulated >5 review comments:
 
 After all previous gates pass:
 
+- Human-review-required issue: leave the PR draft or otherwise blocked for human validation. Do not mark ready, merge, or enable auto-merge until the human validation is recorded, regardless of `REPO_DELIVERY_POLICY`.
 - `human-only` or missing policy: leave the PR in draft mode unless the user explicitly asks to mark it ready for review. Do not merge or enable auto-merge.
 - `auto-merge-eligible`: mark the PR ready and enable GitHub auto-merge. Use the repo's configured merge method. If auto-merge cannot be enabled because branch protection, permissions, required checks, or merge queue configuration block it, halt with auto-handoff instead of direct-merging.
 - Direct immediate merge is allowed only when the repo requires it and the user explicitly requested direct merge for this run.
@@ -157,7 +175,7 @@ After all previous gates pass:
 
 When all steps pass:
 
-- Leave or advance the PR according to `REPO_DELIVERY_POLICY`
+- Leave or advance the PR according to `REPO_DELIVERY_POLICY` and the human-review-required override
 - Report final status to user with **evidence** (test output, CI link, verification command results, comment-resolution summary)
 - Include the required `WORKFLOW_FINALIZE_GATE` block in the final response and any handoff artifact
 - When invoked by `run-backlog`, `workflow-autonomous-backlog`, Codex, or any AFK worker, always write a per-issue handoff artifact even when no follow-up work remains. Include PR URL, all gate blocks, verification evidence, review-comment resolution, CI status, issue reconciliation, and residual risks.
@@ -181,7 +199,7 @@ WORKFLOW_FINALIZE_GATE:
   post_mortem: completed|not_applicable_with_reason
   describe_pr: body_file=<docs/executions/.pr-bodies/...>; mode=plan_backed|phase_run_backed|issue_only; issues=<refs|none>; phase_evidence=matched|not_applicable|waived
   repo_delivery_policy: human-only|auto-merge-eligible
-  pr_state: draft|existing_non_draft_not_modified|ready_auto_merge_enabled
+  pr_state: draft|existing_non_draft_not_modified|ready_auto_merge_enabled|pending_human_validation
   pr_number: <number>
   review_comments: all_resolved|human_waived
   ci: green
@@ -189,7 +207,7 @@ WORKFLOW_FINALIZE_GATE:
   verification: passed
   partial_completion: complete_pushed|wip_pushed|rolled_back
   final_git_status_short: clean
-  merge_or_ready_action_taken: false|marked_ready_and_auto_merge_enabled|direct_merge_user_requested
+  merge_or_ready_action_taken: false|pending_human_validation|marked_ready_and_auto_merge_enabled|direct_merge_user_requested
 ```
 
 If this block is absent or incomplete, parent workflows must treat `workflow-finalize` as not run. `required_but_missing` is a halt state, never a completion value. A PR body, green CI, resolved comments, or a draft PR URL alone is not a valid finalization.

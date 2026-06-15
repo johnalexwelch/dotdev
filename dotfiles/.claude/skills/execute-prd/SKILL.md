@@ -1,6 +1,7 @@
 ---
 name: execute-prd
 model: sonnet
+reasoning: medium
 description: "Execute a parent PRD issue tree end-to-end: orders children by dependency, generates execution briefs, creates worktrees, implements unblocked slices, opens PRs, runs review/CI, reconciles, writes handoff. Use for \"execute this PRD\", \"implement all children of #N\"."
 codex-compatible: true
 ---

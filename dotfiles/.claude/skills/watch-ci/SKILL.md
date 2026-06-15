@@ -1,6 +1,7 @@
 ---
 name: watch-ci
 model: haiku
+reasoning: medium
 description: Manual slash-only CI polling and bounded fix helper for existing pull requests. Auto-routing disabled; workflow-finalize may call it internally.
 disable-model-invocation: true
 triggers:

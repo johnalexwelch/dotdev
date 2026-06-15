@@ -1,6 +1,7 @@
 ---
 name: slop-cleaner
 model: sonnet
+reasoning: high
 description: "The canonical slop cleaner for non-code writing. Two modes: docs (READMEs, API docs, runbooks, code comments, docstrings, skill docs) and analysis (analytical narratives, findings, recommendations, memos). Use for 'clean up this doc', 'clean up this analysis', 'de-AI this', or a final pass on any LLM-drafted technical or analytical writing. Replaces doc-slop-cleaner and analysis-slop-cleaner — always use this one. For persuasive prose use humanizer; for actual code slop use oh-my-claudecode:ai-slop-cleaner."
 ---
 

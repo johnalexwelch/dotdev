@@ -1,6 +1,7 @@
 ---
 name: analysis-design
 model: opus
+reasoning: high
 description: Designs a decision-first analysis from a question, not from the data. Produces a 1-pager spec — decision being made, audience, headline answer hypothesis, the 3 cuts of data needed, what would change the recommendation, and the analytical plan. Use when starting any non-trivial analysis, before pulling data or writing SQL.
 ---
 

@@ -1,5 +1,7 @@
 ---
 name: review-scaffolding
+model: opus
+reasoning: high
 description: Foundational reference pattern for single-pass review skills. Loaded by sibling review skills such as clarity-review, pacing-review, sql-review, dashboard-review, metric-tree-review, dnd-review, dnd-open-thread-review, and dnd-player-agency-review. Never invoked directly.
 user-invocable: false
 disable-model-invocation: true

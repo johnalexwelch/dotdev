@@ -1,6 +1,7 @@
 ---
 name: clarity-review
 model: sonnet
+reasoning: high
 description: >-
   Review a document, email, Slack post, memo, metrics update, spec, or set of instructions
   for communication clarity, and produce a structured report of recommended changes — each
