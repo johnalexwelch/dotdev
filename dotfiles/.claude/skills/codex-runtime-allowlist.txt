@@ -1,0 +1,12 @@
+# Runtime-only Codex skills that are intentionally preserved by full prune.
+#
+# These skills do not currently have an active dotdev source skill. Keep this
+# list small: migrate a skill to dotdev source when it becomes a shared workflow,
+# or remove it here before running a full prune when it is stale.
+
+ai-slop-cleaner
+cleanup-worktrees
+graphify
+new-project
+process-needs-human-review
+sql-standards
