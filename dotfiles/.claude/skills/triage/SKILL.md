@@ -72,8 +72,8 @@ Human-review semantics:
 - rollback expectation
 - AFK/HITL classification
 - outage-risk classification
-- mandatory per-issue `origin/staging` worktree policy
-- exact gate requirement: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
+- mandatory per-issue workflow-base worktree policy
+- exact gate requirement: `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <worktree-path>`
 - review/finalize policy
 - `Human review: required|not required`
 - if `Human review: required`, a `## Reviewer validation steps` section
@@ -111,7 +111,7 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 4. **Grill (if needed).** If the issue needs fleshing out, run a `/grill-with-docs` session.
 
 5. **Apply the outcome:**
-   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)) that includes the exact `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>` requirement. If the issue carries `needs-human-review`, the brief must preserve the `Human review: required` field and `## Reviewer validation steps`.
+   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)) that includes the exact `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <worktree-path>` requirement. If the issue carries `needs-human-review`, the brief must preserve the `Human review: required` field and `## Reviewer validation steps`.
    - `ready-for-human` — same structure as an agent brief, but note why it can't be delegated (judgment calls, external access, design decisions, manual testing).
    - `needs-info` — post triage notes (template below).
    - `wontfix` (bug) — polite explanation, then close.

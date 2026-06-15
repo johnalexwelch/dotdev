@@ -138,7 +138,7 @@ If the user wants to immediately proceed to building, they should invoke workflo
 
 ## Worktree Policy
 
-This workflow is planning/issue creation only and does not cut a code worktree. Every child issue it produces must state that implementation workflows start from a fresh worktree cut from `origin/staging`.
+This workflow is planning/issue creation only and does not cut a code worktree. Every child issue it produces must state that implementation workflows resolve `WORKFLOW_BASE_GATE` and start from a fresh worktree cut from the resolved workflow base.
 
 ## Contract
 

@@ -22,6 +22,14 @@ The core idea: communication is expensive for the *reader*, and the writer shoul
 
 **Mechanics:** follow `review-scaffolding` for the review discipline, severity vocabulary, and report contract. The criteria, unit of analysis, and deltas below are what make this a *clarity* review.
 
+## Contract
+
+Consumes: document, email, Slack post, memo, metrics update, spec, instructions, or pasted draft
+Produces: structured clarity review with findings, severity, rationale, and concrete rewrites
+Requires: none; review-scaffolding guidance is used when available
+Side effects: none unless the user explicitly asks to edit a file
+Human gates: unclear audience/purpose may require an assumption or clarification before high-stakes rewrites
+
 ## Criteria — the standards
 
 Apply the 5 C's to everything; the metrics rules when the document reports numbers; the structural checks to longer docs, specs, and instructions.

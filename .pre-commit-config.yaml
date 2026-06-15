@@ -30,9 +30,19 @@ repos:
       - id: yamlfmt
   - repo: local
     hooks:
+      - id: skill-suite-lint
+        name: validate skill suite hardening gates
+        entry: dotfiles/.claude/skills/lint-skill-suite.sh dotfiles/.claude/skills
+        language: script
+        pass_filenames: false
+      - id: skill-ref-lint
+        name: validate skill cross-references
+        entry: dotfiles/.claude/skills/lint-skill-refs.sh dotfiles/.claude/skills
+        language: script
+        pass_filenames: false
       - id: commit-normalize
         name: normalize commit message
-        entry: dotfiles/config/git/commit-normalize.sh
+        entry: dotfiles/.config/git/commit-normalize.sh
         language: script
         stages: [commit-msg]
         always_run: true

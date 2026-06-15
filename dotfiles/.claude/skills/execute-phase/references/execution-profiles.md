@@ -32,9 +32,9 @@ Select profiles in this priority order:
 - **Evidence commands:** prefer absolute-path command invocations when
   output is load-bearing evidence.
 - **Worktree baseline:** live `/execute-phase` runs must start in an
-  isolated worktree cut from `origin/staging`. If a phase halts at a
+  isolated worktree cut from the resolved workflow base. If a phase halts at a
   `[human]` gate, continue resolving inside that worktree or use
-  `/setup-worktree phase=<N>` to create a new origin/staging-based
+  `/setup-worktree phase=<N>` to create a new workflow-base
   worktree.
 - **`dry_run`:** run it before real phase execution when a plan is
   freshly written. It confirms parsing, Verification extraction, and

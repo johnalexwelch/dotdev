@@ -12,7 +12,11 @@ Evaluate code-review feedback with technical rigor, then process the whole comme
 
 ## Contract
 
-Consumes: PR number/URL, review comments (bot or human), code context, original intent. Produces: a triage table with verdicts, grouped fix commits, inline replies for every active thread, and a summary. Requires: `gh`, `git`, local test/lint runner. Side effects: pushes fix commits, posts replies, may file follow-up issues. Human gates: surface the summary before pushing; disagreements with **human** reviewers go to the user for decision before replying; push-back replies are higher-stakes — confirm first.
+Consumes: PR number/URL, review comments (bot or human), code context, original intent
+Produces: a triage table with verdicts, grouped fix commits, inline replies for every active thread, and a summary
+Requires: `gh`, `git`, local test/lint runner
+Side effects: pushes fix commits, posts replies, may file follow-up issues
+Human gates: surface the summary before pushing; disagreements with **human** reviewers go to the user for decision before replying; push-back replies are higher-stakes — confirm first
 
 ## When to invoke
 

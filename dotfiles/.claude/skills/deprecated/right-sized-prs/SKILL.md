@@ -11,6 +11,14 @@ Status: deprecated as a skill. Policy extracted to ~/.claude/docs/pr-sizing-poli
 - Replaced by: ~/.claude/docs/pr-sizing-policy.md
 - Date: 2026-06-10
 
+## Contract
+
+Consumes: PR sizing question, implementation slice, or reviewable diff scope
+Produces: sizing guidance, split proposal shape, and size exception criteria
+Requires: none
+Side effects: none
+Human gates: oversized or scope-changing split decisions require human approval through the owning workflow
+
 ---
 
 # Right-Sized PRs

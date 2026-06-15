@@ -106,6 +106,32 @@ Load references only at the point they are needed:
 - `references/exhaustion-handoff.md`: no-progress or exhausted-attempt handoff artifacts.
 - `references/examples.md`: expected behavior examples and larger workflow context.
 
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Step 0: Preflight | required | pending | - |
+| Step 1: Poll CI | required | pending | - |
+| Step 2: Classify Failures | conditional | pending | Runs when CI fails |
+| Step 3: Check Progress And Dispatch Fixes | conditional | pending | Runs for auto-fixable failures |
+| Step 4: Monitor Review Agents And Incorporate Feedback | required | pending | - |
+| Step 5: Halt Path | conditional | pending | Runs on blocker |
+| Step 6: Post Comment And Hand Back PR To Caller | conditional | pending | Runs on green/clean handoff |
+| Step 7: Write Outcome File | required | pending | - |
+| Step 8: Surface To User | required | pending | - |
+```
+
+Rules:
+
+- Initialize every step as `pending`.
+- Conditional steps may be `skipped` only when their trigger does not occur; record the reason.
+- Required steps cannot be skipped. If preflight, CI polling, review monitoring, or outcome writing cannot run, mark the step `blocked` and halt.
+- Include the final ledger in every halt, outcome file, and completion response.
+
 ## Core Flow
 
 ### Step 0: Preflight

@@ -135,7 +135,7 @@ A list of testing decisions that were made. Include:
 
 ## AFK Readiness
 
-State whether this PRD can produce AFK-safe issues. Include required verification commands, expected `user-journey-qa` coverage when applicable, and the implementation policy that all code work starts from a fresh `origin/staging` worktree with `WORKTREE_BASELINE_GATE` evidence.
+State whether this PRD can produce AFK-safe issues. Include required verification commands, expected `user-journey-qa` coverage when applicable, and the implementation policy that all code work resolves `WORKFLOW_BASE_GATE`, then starts from a fresh workflow-base worktree with `WORKTREE_BASELINE_GATE` evidence.
 
 State explicitly that child implementation issues must be vertical slices. If the work cannot yet be sliced vertically, mark the PRD as needing more design before issue creation.
 
