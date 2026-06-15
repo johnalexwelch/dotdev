@@ -58,7 +58,7 @@ contract_has_field() {
 
 needs_ledger() {
     case "$1" in
-        workflow-*|run-backlog|watch-ci|execute-prd|execute-phase) return 0 ;;
+        workflow-* | run-backlog | watch-ci | execute-prd | execute-phase) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -72,7 +72,7 @@ while IFS= read -r -d '' file; do
     skill="${file#"$root"/}"
     skill="${skill%/SKILL.md}"
     case "$skill" in
-        deprecated/*|docs/*|_personas/*) continue ;;
+        deprecated/* | docs/* | _personas/*) continue ;;
     esac
 
     if ! has_frontmatter_key "$file" name; then

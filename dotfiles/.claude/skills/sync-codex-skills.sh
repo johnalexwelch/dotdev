@@ -22,8 +22,15 @@ while [ "$#" -gt 0 ]; do
     case "$1" in
         --apply) apply=1 ;;
         --prune) prune=1 ;;
-        -h|--help) usage; exit 0 ;;
-        *) echo "unknown argument: $1" >&2; usage >&2; exit 2 ;;
+        -h | --help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "unknown argument: $1" >&2
+            usage >&2
+            exit 2
+            ;;
     esac
     shift
 done
@@ -53,7 +60,7 @@ while IFS= read -r -d '' skill_file; do
     skill="${skill_file#"$source_root"/}"
     skill="${skill%/SKILL.md}"
     case "$skill" in
-        deprecated/*|docs/*|_personas/*) continue ;;
+        deprecated/* | docs/* | _personas/*) continue ;;
     esac
     if [ "$(frontmatter_value "$skill_file" codex-compatible)" = "false" ]; then
         printf 'skip codex-incompatible: %s\n' "$skill"
