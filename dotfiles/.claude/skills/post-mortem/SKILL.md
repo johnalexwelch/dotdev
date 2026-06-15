@@ -38,6 +38,14 @@ The pipeline only learns if someone records what actually happened. Compare plan
 
 Standalone use is deprecated; this runs as the conditional retro gate inside `workflow-finalize`. Edge cases, a worked example, and tuning guidance live in `references/edge-cases-and-examples.md` — load it when needed.
 
+## Contract
+
+Consumes: design plan, audit evidence, phase-run and CI-run artifacts, git history, and optional git range
+Produces: blameless post-mortem under `docs/executions/` with resolved findings, drift, new findings, and takeaways
+Requires: git
+Side effects: writes post-mortem artifact; may annotate the source audit only with explicit user opt-in
+Human gates: missing plan/evidence, audit annotation, or unresolved human tasks halt for human input
+
 ## Step 0 — Preflight
 
 Confirm a git repo (else abort). Resolve the plan (`plan_path` or newest `docs/plans/*.md`; if none, abort). Resolve the audit (`audit_path`, else the plan's `**Audit:**` header, else newest audit older than the plan). **Brief-mode** plans (no `**Audit:**`, §5 uses `REQ-NN`/ticket slugs) skip audit resolution and anchor on `REQ-NN`/slugs — note this in §Summary. Resolve the git range (`since`, else `git log --follow --format=%H <plan_path> | tail -1` → `<since>..HEAD`). Pick the ID scheme: `FIND-NN` (audit-mode), `REQ-NN`/slugs (brief-mode), or phase-based if neither. `mkdir -p docs/executions/`.

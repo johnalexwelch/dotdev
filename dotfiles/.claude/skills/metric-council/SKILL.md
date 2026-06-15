@@ -11,6 +11,14 @@ Stress-test a metric design before it becomes load-bearing (a bad metric's cost 
 
 **Mechanics:** follow `council-scaffolding` for dispatch/synthesis/persist. Deltas below.
 
+## Contract
+
+Consumes: metric design, metric tree change, or existing metric behavior to review
+Produces: council synthesis with survivability verdict, critique, falsifiers, and per-expert reads
+Requires: independent expert contexts; graph context optional
+Side effects: may persist synthesis to `.council/metric/` when the run reaches the persistence step
+Human gates: redesign, abandon, governance, or KPI/target promotion decisions require human judgment
+
 ## When to invoke
 
 After `metric-design` (before implementation), auditing an existing metric "not behaving as expected", before promoting to KPI/target/OKR. Routing: design → `metric-design`; implement → `add-metric` (after this); general → `analysis-council`.

@@ -92,7 +92,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 ## Constraints
 
 [Any constraints extracted from labels, related issues, or project conventions]
-- Must create a fresh per-issue worktree from `origin/staging` before starting implementation and include `WORKTREE_BASELINE_GATE` in the handoff
+- Must resolve `WORKFLOW_BASE_GATE`, create a fresh per-issue worktree from the resolved workflow base before starting implementation, and include `WORKTREE_BASELINE_GATE` in the handoff
 - For dependent stacked work, may instead create a fresh per-issue worktree from the clean parent branch only when the parent PR has complete gates; include `STACKED_WORKTREE_GATE` and target the PR at the parent branch
 - Must run `workflow-review` with a risk-sized `review_profile` and include `WORKFLOW_REVIEW_GATE` with `independent_review: true` and `verdict: APPROVE`
 - Must run `workflow-finalize` and include a complete `WORKFLOW_FINALIZE_GATE`
@@ -124,10 +124,10 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 
 - Be more explicit about file paths (Codex can't browse interactively)
 - Include the full acceptance criteria (no "see issue for details")
-- For root issues, include the exact mandatory per-issue worktree command before any code changes: `git fetch origin --prune && git worktree add -b <issue-branch> <issue-worktree-path> origin/staging`
-- For root issues, require final handoff evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <path>`
-- For stacked dependent work, do not include the root `origin/staging` worktree command as the implementation command. Include the parent-gate precondition, create the child worktree from the parent branch with `git worktree add -b <child-branch> <child-worktree-path> <parent-branch>`, target the child PR at the parent branch, and require final handoff evidence:
-  `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
+- For root issues, include the exact mandatory base-resolution and per-issue worktree command before any code changes: `git fetch origin --prune && <resolve WORKFLOW_BASE_GATE> && git worktree add -b <issue-branch> <issue-worktree-path> <workflow-base-ref>`
+- For root issues, require final handoff evidence: `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <path>`
+- For stacked dependent work, do not include the root workflow-base worktree command as the implementation command. Include the parent-gate precondition, create the child worktree from the parent branch with `git worktree add -b <child-branch> <child-worktree-path> <parent-branch>`, target the child PR at the parent branch, and require final handoff evidence:
+  `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
 - Require `workflow-review` with a real `WORKFLOW_REVIEW_GATE`, `review_profile`, `independent_review: true`, and `verdict: APPROVE`; green CI, GitHub reviews, Claude Code Review, Bugbot, or Codex review do not substitute for this gate.
 - Require `workflow-finalize` with a complete `WORKFLOW_FINALIZE_GATE`.
 - If the issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, include the issue's `## Reviewer validation steps` in the prompt and require the worker to preserve them through `describe-pr`/`workflow-finalize` so the PR body ends with the same section.
@@ -162,7 +162,7 @@ Print the prompt to chat. Then offer:
 ## Rules
 
 - Never fabricate acceptance criteria. If criteria are absent or materially ambiguous, halt AFK prompt generation and mark the issue `needs-human`. `[inferred]` criteria are allowed only for planning briefs, not execution prompts.
-- Never generate a root execution prompt that omits mandatory per-issue worktree creation from `origin/staging`. If the issue cannot name a safe branch/worktree convention, include placeholders and require the worker to resolve them before coding.
+- Never generate a root execution prompt that omits `WORKFLOW_BASE_GATE` and mandatory per-issue worktree creation from the resolved workflow base. If the issue cannot name a safe branch/worktree convention, include placeholders and require the worker to resolve them before coding.
 - Never generate a stacked execution prompt unless the parent PR gate evidence is complete and the prompt tells the worker to target the child PR at the parent branch.
 - Never generate an execution prompt that omits `workflow-review`, risk-sized `review_profile`, `WORKFLOW_REVIEW_GATE`, `workflow-finalize`, `WORKFLOW_FINALIZE_GATE`, draft-only PR handoff, and no mark-ready/merge/auto-merge/destructive-git constraints.
 - Never generate an execution prompt for a human-review-required issue that omits `Human review: required` and the issue's concrete `## Reviewer validation steps`.

@@ -154,7 +154,7 @@ Avoid specific file paths or code snippets — they go stale fast. Exception: if
 - Module grill evidence: completed / not applicable, with link or summary
 - Decision log: relevant entries linked / not applicable
 - User-journey QA: required / not applicable, with reason
-- Worktree policy: this issue must create its own fresh worktree from `origin/staging` before implementation starts and report `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
+- Worktree policy: this issue must resolve `WORKFLOW_BASE_GATE`, create its own fresh worktree from the resolved workflow base before implementation starts, and report `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <worktree-path>`
 - Review/finalize policy: PR handoff requires `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`, plus a complete `WORKFLOW_FINALIZE_GATE`
 
 ## Reviewer validation steps
