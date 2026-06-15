@@ -135,6 +135,26 @@ assert_path_missing "apply incompatible-only removes incompatible runtime skill"
 assert_path_exists "apply incompatible-only keeps runtime-only skill" "$runtime/runtime-only/SKILL.md"
 assert_path_exists "apply incompatible-only syncs active source skill" "$runtime/active/SKILL.md"
 
+IFS=$'\t' read -r source runtime < <(new_fixture dry_allowlisted_runtime_only)
+make_skill "$runtime" stale-runtime-only true
+allowlist="$TMPDIR_BASE/dry_allowlisted_runtime_only.allowlist"
+printf 'runtime-only\n' >"$allowlist"
+output=$(SOURCE_SKILLS_DIR="$source" CODEX_SKILLS_DIR="$runtime" CODEX_RUNTIME_ALLOWLIST="$allowlist" "$SCRIPT" --prune)
+assert_contains "full prune reports allowed runtime-only skill" "$output" \
+    "keep allowlisted runtime-only: runtime-only"
+assert_not_contains "full prune does not preview allowed runtime-only skill" "$output" \
+    "would prune runtime-only/incompatible: runtime-only"
+assert_contains "full prune still previews unlisted runtime-only skill" "$output" \
+    "would prune runtime-only/incompatible: stale-runtime-only"
+
+IFS=$'\t' read -r source runtime < <(new_fixture apply_allowlisted_runtime_only)
+make_skill "$runtime" stale-runtime-only true
+allowlist="$TMPDIR_BASE/apply_allowlisted_runtime_only.allowlist"
+printf 'runtime-only\n' >"$allowlist"
+SOURCE_SKILLS_DIR="$source" CODEX_SKILLS_DIR="$runtime" CODEX_RUNTIME_ALLOWLIST="$allowlist" "$SCRIPT" --apply --prune >/dev/null
+assert_path_exists "apply full prune keeps allowlisted runtime-only skill" "$runtime/runtime-only/SKILL.md"
+assert_path_missing "apply full prune removes unlisted runtime-only skill" "$runtime/stale-runtime-only"
+
 echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"

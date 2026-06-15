@@ -5,6 +5,7 @@ set -euo pipefail
 
 source_root="${SOURCE_SKILLS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 runtime_root="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
+runtime_allowlist="${CODEX_RUNTIME_ALLOWLIST:-$source_root/codex-runtime-allowlist.txt}"
 apply=0
 prune=0
 keep_runtime_only=0
@@ -20,6 +21,9 @@ codex-incompatible in the dry run; with --apply, those skills are removed.
 --keep-runtime-only narrows --prune so runtime-only skills are preserved.
 --prune-incompatible-only is shorthand for pruning only runtime skills whose
 source skill is marked codex-compatible:false.
+Runtime-only skills listed in CODEX_RUNTIME_ALLOWLIST, or
+codex-runtime-allowlist.txt under the source root by default, are preserved by
+full --prune.
 USAGE
 }
 
@@ -69,6 +73,22 @@ frontmatter_value() {
     ' "$file"
 }
 
+is_runtime_allowlisted() {
+    local skill="$1"
+
+    [ -f "$runtime_allowlist" ] || return 1
+    awk -v skill="$skill" '
+        /^[[:space:]]*($|#)/ { next }
+        {
+            name = $1
+            if (name == skill) {
+                found = 1
+            }
+        }
+        END { exit found ? 0 : 1 }
+    ' "$runtime_allowlist"
+}
+
 copy_count=0
 skip_count=0
 while IFS= read -r -d '' skill_file; do
@@ -100,6 +120,10 @@ if [ "$prune" = "1" ]; then
         reason=""
 
         if [ ! -f "$source_file" ]; then
+            if is_runtime_allowlisted "$skill"; then
+                printf 'keep allowlisted runtime-only: %s\n' "$skill"
+                continue
+            fi
             if [ "$keep_runtime_only" = "1" ] || [ "$prune_incompatible_only" = "1" ]; then
                 continue
             fi
