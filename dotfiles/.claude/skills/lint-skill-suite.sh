@@ -5,6 +5,7 @@ set -euo pipefail
 
 root="${1:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 runtime_root="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
+runtime_allowlist="${CODEX_RUNTIME_ALLOWLIST:-$root/codex-runtime-allowlist.txt}"
 check_runtime="${CHECK_CODEX_RUNTIME:-0}"
 failures=0
 warnings=0
@@ -39,6 +40,22 @@ frontmatter_value() {
             exit
         }
     ' "$file"
+}
+
+is_runtime_allowlisted() {
+    local skill="$1"
+
+    [ -f "$runtime_allowlist" ] || return 1
+    awk -v skill="$skill" '
+        /^[[:space:]]*($|#)/ { next }
+        {
+            name = $1
+            if (name == skill) {
+                found = 1
+            }
+        }
+        END { exit found ? 0 : 1 }
+    ' "$runtime_allowlist"
 }
 
 is_top_level_skill() {
@@ -110,6 +127,10 @@ if [ "$check_runtime" = "1" ] && [ -d "$runtime_root" ]; then
         skill="${skill%/SKILL.md}"
         source_file="$root/$skill/SKILL.md"
         if [ ! -f "$source_file" ]; then
+            if is_runtime_allowlisted "$skill"; then
+                warn "Codex runtime has allowlisted runtime-only skill: $skill"
+                continue
+            fi
             fail "Codex runtime has skill not present in active source: $skill"
             continue
         fi
