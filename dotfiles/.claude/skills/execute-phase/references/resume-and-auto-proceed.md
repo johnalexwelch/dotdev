@@ -27,7 +27,7 @@ the plan or chat, continue from the next blocked step.
 
 Resume requires a prior outcome file. If `resume == true` and no prior
 outcome file exists, halt. A fresh invocation requires `resume=false`
-and a normal preflight from an origin/staging-based worktree.
+and a normal preflight from a workflow-base worktree.
 
 ## Auto-Proceed
 
@@ -37,7 +37,7 @@ On successful commit and no pending `[human]` tasks:
 - If Phase N+1 does not exist, halt with success: plan complete.
 - Otherwise, recurse into preflight with `phase = N+1`.
 - The next phase branches from the current HEAD only inside the
-  origin/staging-based phase worktree, where current HEAD is now the
+  workflow-base phase worktree, where current HEAD is now the
   phase N commit. Do not auto-proceed from the primary checkout.
 - The next outcome file references the prior phase's outcome file in
   its `## Commits` section as branch ancestry.

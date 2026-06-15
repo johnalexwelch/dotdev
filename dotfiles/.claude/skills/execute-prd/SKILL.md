@@ -40,7 +40,7 @@ Pairs well with: workflow-feature (produces PRDs this executes), workflow-build-
 | parent | (required) | Parent PRD issue number or URL |
 | children | (discover) | Child issue numbers/URLs, or discover from parent body |
 | branch_prefix | `codex/<parent-slug>` | Branch prefix for all child branches |
-| base_branch | `origin/staging` | Required base for child worktrees and PR branches |
+| base_branch | resolved workflow base | Required remote base for child worktrees and PR branches |
 | scope | (from parent) | Allowed files/areas; out-of-scope exclusions |
 | verification | (from repo) | Commands to verify implementation |
 
@@ -50,11 +50,34 @@ Pairs well with: workflow-feature (produces PRDs this executes), workflow-build-
 preflight → build-tree → order → [execute children] → reconcile-parent → handoff
 ```
 
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Phase 1: Preflight | required | pending | - |
+| Phase 1.5: Resolve Workflow Base | required | pending | - |
+| Phase 2: Build Issue Tree | required | pending | - |
+| Phase 3: Determine Execution Order | required | pending | - |
+| Phase 4: Execute Children | conditional | pending | Runs for ready children |
+| Phase 5: Reconcile Against Parent | required | pending | - |
+| Phase 6: Parent Handoff | required | pending | - |
+```
+
+Rules:
+
+- Initialize every step as `pending`.
+- Required steps cannot be skipped. If a child is blocked, mark the child disposition, not the workflow step, as blocked.
+- Include the final ledger in every halt, handoff, and completion response.
+
 ### Phase 1: Preflight
 
 1. Confirm repo and working directory
 2. `git fetch origin --prune`
-3. Confirm `origin/staging` exists. If not, halt and ask the user for the replacement base.
+3. Load `setup-worktree/references/base-branch-policy.md`, resolve `<workflow-base-ref>`, and record `WORKFLOW_BASE_GATE`.
 4. Confirm `gh` auth works
 5. Discover repo conventions:
    - Build/test commands from package.json, Makefile, CI workflows
@@ -118,13 +141,13 @@ waves, and fall back to serial execution when scope is uncertain.
 For each child (parallel within a wave, sequential across waves):
 
 1. **Generate child execution brief** via `prompt-builder --mode child-brief` or `references/child-execution-brief-template.md`
-2. **Create isolated worktree** from `origin/staging`:
+2. **Create isolated worktree** from `<workflow-base-ref>`:
 
    ```
-   git worktree add -b <branch_prefix>/<issue-number>-<child-slug> ../worktrees/<issue-number>-<slug> origin/staging
+   git worktree add -b <branch_prefix>/<issue-number>-<child-slug> ../worktrees/<issue-number>-<slug> <workflow-base-ref>
    ```
 
-3. **Record worktree baseline evidence**: `WORKTREE_BASELINE_GATE: origin/staging -> <branch_prefix>/<issue-number>-<child-slug> @ ../worktrees/<issue-number>-<slug>`
+3. **Record worktree baseline evidence**: `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch_prefix>/<issue-number>-<child-slug> @ ../worktrees/<issue-number>-<slug>`
 4. **Execute** using the `workflow-build-one` chain:
 
    ```

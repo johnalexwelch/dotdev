@@ -10,6 +10,14 @@ codex-compatible: true
 
 Edit text to remove the tells of AI-generated writing so it reads as natural and human. Based on Wikipedia's "Signs of AI writing" guide (WikiProject AI Cleanup). Preserve the author's meaning and intended tone; the goal is to strip AI-isms and add genuine personality, not to rewrite the message.
 
+## Contract
+
+Consumes: text to rewrite or edit
+Produces: draft rewrite, tells found, and final rewrite
+Requires: none; bundled references are loaded only when needed
+Side effects: none unless the user explicitly asks to edit a file
+Human gates: unclear intended meaning, audience, or tone may require clarification before rewriting
+
 ## References — load only what the request needs
 
 - `references/pattern-catalog.md` — the 29 patterns, watch-words, before/after examples. Load it as your checklist for any non-trivial text.

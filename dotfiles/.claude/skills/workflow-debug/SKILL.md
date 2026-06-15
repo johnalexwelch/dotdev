@@ -31,7 +31,7 @@ Drive a bug from report through diagnosis to verified fix. The cardinal rule: **
 ## Flow
 
 ```text
-root worktree from origin/staging OR valid stacked worktree from parent branch → diagnose → triage → caveman → [tdd OR execute-phase] → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+root worktree from resolved workflow base OR valid stacked worktree from parent branch → diagnose → triage → caveman → [tdd OR execute-phase] → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
 ```
 
 ## Workflow Progress Reporting
@@ -66,13 +66,13 @@ Rules:
 - Run `git fetch origin --prune`.
 - Create a fresh isolated worktree for this issue/bug before diagnosis or implementation.
   Root bug:
-  `git worktree add -b <bugfix-branch> <worktree-path> origin/staging`.
+  `git worktree add -b <bugfix-branch> <worktree-path> <workflow-base-ref>`.
   Stacked dependent bug:
   `git worktree add -b <child-branch> <child-worktree-path> <parent-branch>`.
 - Run diagnosis, implementation, review, and finalization from inside that worktree.
 - If already inside a worktree, verify it has `WORKTREE_BASELINE_GATE` or valid `STACKED_WORKTREE_GATE`; otherwise halt and recreate it.
 - Do not reuse another issue's worktree or work from the primary checkout.
-- Record `WORKTREE_BASELINE_GATE: origin/staging -> <bugfix-branch> @ <worktree-path>` or `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete` in the diagnosis artifact and final handoff.
+- Record `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <bugfix-branch> @ <worktree-path>` or `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete` in the diagnosis artifact and final handoff.
 
 ### Step 1: Diagnose (diagnose)
 

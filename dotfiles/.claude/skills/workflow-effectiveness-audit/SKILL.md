@@ -79,8 +79,8 @@ For each workflow invocation, derive the expected trace from the skill:
 | `workflow-finalize` | worktree baseline evidence -> optional post-mortem -> describe-pr, including reviewer validation footer when referenced issues carry `needs-human-review`, `Human review: required`, or equivalent explicit human-review gate -> ensure draft PR -> receive-review -> watch-ci -> reconcile-issues -> verification gate -> repo-policy final action |
 | `describe-pr` | PR body -> issue disposition -> record review expectations only |
 | `watch-ci` | draft PR -> CI poll -> bounded fixes -> security review -> reviewer-comment gate -> draft handoff gate |
-| `run-backlog` | queue -> dependency/stack plan -> prompt-builder per issue with mandatory worktree/stack command -> isolated per-issue origin/staging or stacked dispatch -> monitor -> reconcile -> handoff |
-| `workflow-build-one` | per-issue origin/staging worktree -> prompt-builder/preflight -> triage -> execute-phase -> workflow-review -> optional UJ QA -> workflow-finalize |
+| `run-backlog` | queue -> dependency/stack plan -> prompt-builder per issue with mandatory base/worktree/stack command -> isolated per-issue workflow-base or stacked dispatch -> monitor -> reconcile -> handoff |
+| `workflow-build-one` | per-issue workflow-base worktree -> prompt-builder/preflight -> triage -> execute-phase -> workflow-review -> optional UJ QA -> workflow-finalize |
 | `workflow-router` | classification evidence -> ROUTE_CARD -> user confirmation or valid direct/read-only skip -> target workflow preflight -> confirmed dispatch -> ROUTER_LEARNING_NOTE when completed, halted, or corrected |
 
 Mark each required step as:
@@ -120,13 +120,13 @@ Always check for these:
 1. `workflow-review` claimed completion but no independent review evidence exists.
 2. `WORKFLOW_REVIEW_GATE` missing, incomplete, self-reported by the author, missing `review_profile`, missing `independent_review: true`, or not backed by the selected profile's required reviewer outputs.
 3. `workflow-finalize` claimed completion but no `WORKFLOW_FINALIZE_GATE` exists.
-4. Mutating issue work lacks a fresh per-issue `WORKTREE_BASELINE_GATE: origin/staging -> ...` or valid `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> ...` created before implementation.
+4. Mutating issue work lacks `WORKFLOW_BASE_GATE` plus a fresh per-issue `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> ...` or valid `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> ...` created before implementation.
 5. PR was approved, auto-merged, merged, or closed while actionable review comments were unanswered.
 6. `watch-ci` handed back a draft despite unresolved comments, missing security review, or skipped required self-review.
 7. `describe-pr` used `Closes/Fixes/Resolves` for partial work.
 8. `workflow-finalize` skipped `receive-review` before `watch-ci`.
 9. `run-backlog` dispatched raw issue bodies instead of `prompt-builder` outputs.
-9a. `prompt-builder` output omitted the mandatory per-issue `origin/staging` worktree command or `WORKTREE_BASELINE_GATE` requirement.
+9a. `prompt-builder` output omitted the mandatory `WORKFLOW_BASE_GATE`, per-issue workflow-base worktree command, or `WORKTREE_BASELINE_GATE` requirement.
 9b. Stacked dependent work ran without complete clean parent gates, without `STACKED_WORKTREE_GATE`, or with a child PR targeting `staging` instead of the parent branch.
 9c. `prompt-builder` or `run-backlog` dispatched a human-review-required issue without carrying `Human review: required` and concrete `## Reviewer validation steps` into the worker prompt.
 10. `workflow-autonomous-backlog` used `repo-audit` alone for module discovery without `improve-codebase-architecture`.

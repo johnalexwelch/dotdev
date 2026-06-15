@@ -11,6 +11,14 @@ Vendor decisions are usually one-way doors made on incomplete info; most evaluat
 
 **Mechanics:** follow `council-scaffolding`. Deltas below.
 
+## Contract
+
+Consumes: vendor decision context, candidate vendors, proposed terms, alternatives, and constraints
+Produces: council synthesis with recommendation, risks, counterfactuals, falsifiers, and per-expert reads
+Requires: independent expert contexts; graph context optional
+Side effects: may persist synthesis to `.council/vendor/` when the run reaches the persistence step
+Human gates: vendor commitment, contract, renewal, governance, or spend decisions require human approval
+
 ## When to invoke
 
 Build-vs-buy, selection between 2–4 candidates, renewal (esp. cost/contract changes), risk audit (post-change/post-incident). Routing: broad analysis → `analysis-council`; pricing alone → `analysis-council --council economist,decision-scientist`; governance-only → `governance-reviewer` inline. High-stakes (>$100k or >2y) should also route to `strategic-analysis-review` before committing.

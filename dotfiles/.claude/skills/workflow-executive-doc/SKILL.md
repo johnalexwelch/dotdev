@@ -145,7 +145,7 @@ verify the artifact against its quality bar.
 
 ## Worktree Policy
 
-This workflow is document/research work, not code delivery. It does not cut a code worktree unless the user asks to persist edits into a repository. If repository files will be edited, first create a fresh worktree from `origin/staging` and record `WORKTREE_BASELINE_GATE` in the final summary.
+This workflow is document/research work, not code delivery. It does not cut a code worktree unless the user asks to persist edits into a repository. If repository files will be edited, first resolve `WORKFLOW_BASE_GATE`, create a fresh worktree from the resolved workflow base, and record `WORKTREE_BASELINE_GATE` in the final summary.
 
 ## Contract
 

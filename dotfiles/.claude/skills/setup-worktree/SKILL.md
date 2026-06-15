@@ -2,7 +2,8 @@
 name: setup-worktree
 model: haiku
 reasoning: medium
-description: "Create an isolated git worktree from origin/staging for a plan phase, issue, or workflow run; defaults path ~/wt/<repo>/phase-<N>/, derives the branch, auto-copies .env*/.tool-versions etc. Used before workflow execution and at human-gate halts."
+description: "Create an isolated git worktree from the resolved workflow base branch for a plan phase, issue, or workflow run; defaults path ~/wt/<repo>/phase-<N>/, derives the branch, auto-copies .env*/.tool-versions etc. Used before workflow execution and at human-gate halts."
+disable-model-invocation: true
 triggers:
   - "/setup-worktree"
   - "setup worktree"
@@ -21,7 +22,7 @@ inputs:
   - name: branch
     type: string
     default: ""
-    description: Branch name. If empty and `plan_path`/`phase` set, derive `refactor/phase-<N>-<plan-phase-slug>`. New branches are created from `origin/staging`; existing branches are allowed only when explicitly reviewing or resuming that branch.
+    description: Branch name. If empty and `plan_path`/`phase` set, derive `refactor/phase-<N>-<plan-phase-slug>`. New branches are created from the resolved workflow base; existing branches are allowed only when explicitly reviewing or resuming that branch.
   - name: path
     type: string
     default: ""
@@ -33,6 +34,7 @@ inputs:
 reads:
   - docs/plans/<date>-design.md (when deriving branch from plan+phase)
   - git, current checkout (for branch existence + env file sources)
+  - references/base-branch-policy.md
 writes:
   - new worktree directory at <path>
   - new git branch (if `branch` doesn't already exist)
@@ -65,7 +67,7 @@ Pairs well with: execute-phase, workflow-finalize, watch-ci, design-plan, workfl
 ## Purpose
 
 Workflows that mutate code should start in a fresh isolated worktree
-cut from `origin/staging`. This skill creates that worktree, copies the
+cut from the resolved workflow base branch. This skill creates that worktree, copies the
 env/config files that new checkouts usually need, and optionally runs a
 setup command. The worktree is discardable — `git worktree remove
 <path>` when done.
@@ -76,8 +78,8 @@ standalone, on-demand side-car for halted human gates.
 ## Step 0: Preflight
 
 - Confirm a git repo.
-- Run `git fetch origin --prune` before reasoning about branches.
-- Verify `origin/staging` exists. If not, halt and ask the user which remote base should replace it.
+- Load `references/base-branch-policy.md`, run `git fetch origin --prune`, and resolve `<workflow-base-ref>`.
+- Record `WORKFLOW_BASE_GATE` with the preferred base, resolved base, fallback reason, and `fetched: true`.
 - Resolve inputs into a concrete `(branch, path, setup_command)` triple:
   - **If `branch` and `path` both set:** use them.
   - **Else if `plan_path` and `phase` set** (most common caller from `/execute-phase` halt):
@@ -87,15 +89,15 @@ standalone, on-demand side-car for halted human gates.
   - **Else if `plan_path` empty but `phase` non-zero:** fall back to newest `docs/plans/*.md` for `plan_path`, then derive as above.
   - **Else:** abort with a clear message: need either `(branch, path)` or `(plan_path, phase)` (or at least `phase` with a newest plan on disk).
 - Verify `path` doesn't already exist. Abort if it does (would require `git worktree add --force`, which we won't do silently).
-- Verify `branch` can be created as a new local branch from `origin/staging`. If it already exists, halt unless the user explicitly requested branch review/resume mode.
-- Before checking out an existing branch for explicit review/resume mode, verify it has `WORKTREE_BASELINE_GATE` evidence or ancestry from `origin/staging`. Otherwise halt and recreate the work in a fresh origin/staging-based worktree.
+- Verify `branch` can be created as a new local branch from `<workflow-base-ref>`. If it already exists, halt unless the user explicitly requested branch review/resume mode.
+- Before checking out an existing branch for explicit review/resume mode, verify it has `WORKTREE_BASELINE_GATE` evidence or ancestry from the resolved workflow base. Otherwise halt and recreate the work in a fresh workflow-base worktree.
 
 ## Step 1: Create the worktree
 
 Single inlined command (no external `scripts/create_worktree.sh`):
 
 - **Normal workflow mode:**
-  `git worktree add -b "<branch>" "<path>" origin/staging` — creates a fresh branch from `origin/staging`.
+  `git worktree add -b "<branch>" "<path>" "<workflow-base-ref>"` — creates a fresh branch from the resolved workflow base.
 - **Explicit review/resume mode only:**
   `git worktree add "<path>" "<branch>"` — checks out the existing branch in the new worktree.
 
@@ -135,6 +137,7 @@ If `setup_command` is empty, record `setup_command: not provided` in the summary
 Print to chat:
 
 - One-line result: "Worktree created at `<path>` on branch `<branch>`."
+- `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <path>`
 - List of copied config files (or "no env/config files found").
 - Setup command outcome if run (exit code + short tail of output).
 - Next step if derived from a plan phase:
@@ -171,6 +174,7 @@ Claude: [preflight — newest plan: docs/plans/2026-04-20-design.md;
          derived branch: refactor/phase-2-skill-scaffolding;
          derived path: ~/wt/myrepo/phase-2/]
         [git fetch origin --prune]
+        [WORKFLOW_BASE_GATE: resolved_base=origin/staging]
         [git worktree add -b refactor/phase-2-skill-scaffolding ~/wt/myrepo/phase-2/ origin/staging]
         [copied .env, .nvmrc, .claude/settings.local.json]
         [no setup_command specified]
@@ -188,7 +192,8 @@ Explicit branch + path + setup command:
 ```
 User: /setup-worktree branch=fix/flaky-test path=~/wt/myrepo/flaky setup_command="bun install"
 Claude: [git fetch origin --prune]
-        [git worktree add -b fix/flaky-test ~/wt/myrepo/flaky origin/staging]
+        [WORKFLOW_BASE_GATE: resolved_base=origin/main, fallback_reason=origin/staging_absent]
+        [git worktree add -b fix/flaky-test ~/wt/myrepo/flaky origin/main]
         [copied .env.local, .nvmrc]
         [bun install: exit 0, 312 packages installed]
 
@@ -199,7 +204,7 @@ Claude: [git fetch origin --prune]
 ## Tuning notes
 
 - **No primary-checkout resolution.** Resolve halted work inside the
-  origin/staging-based phase worktree. If the halt happened in the
+  workflow-base phase worktree. If the halt happened in the
   primary checkout, stop and recreate the work in a fresh worktree
   before making further changes.
 

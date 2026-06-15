@@ -31,7 +31,7 @@ Take a single `ready-for-agent` issue and drive it from implementation through r
 ## Flow
 
 ```
-per-issue origin/staging worktree → preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+per-issue workflow-base worktree → preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
 ```
 
 ## Workflow Progress Reporting
@@ -60,7 +60,7 @@ Rules:
 
 ## Per-Issue Worktree Invariant
 
-Every root issue must cut its own fresh isolated worktree from `origin/staging` before implementation starts. Stacked dependent issues may instead cut their own fresh worktree from a clean parent branch when the parent PR has complete gate evidence and the child PR targets the parent branch. This is mandatory for single-issue runs, `run-backlog` dispatches, and manual invocations.
+Every root issue must cut its own fresh isolated worktree from the resolved workflow base before implementation starts. Load `setup-worktree/references/base-branch-policy.md`, record `WORKFLOW_BASE_GATE`, and use the resolved remote ref in all worktree gates. Stacked dependent issues may instead cut their own fresh worktree from a clean parent branch when the parent PR has complete gate evidence and the child PR targets the parent branch. This is mandatory for single-issue runs, `run-backlog` dispatches, and manual invocations.
 
 Do not reuse another issue's worktree. Do not work from the primary checkout. Do not start from local `main`, local `staging`, or an already-dirty branch. If the worktree cannot be created or verified, halt before changing code.
 
@@ -72,11 +72,11 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 - If issue is unclear: **auto-handoff** (exit_reason: halt, blocker: what's ambiguous and what question to answer) and halt
 - Create a fresh isolated worktree for this issue before any implementation.
   Root issue:
-  `git fetch origin --prune && git worktree add -b <issue-branch> <worktree-path> origin/staging`
+  `git fetch origin --prune && git worktree add -b <issue-branch> <worktree-path> <workflow-base-ref>`
   Stacked dependent issue:
   `git fetch origin --prune && git worktree add -b <child-branch> <child-worktree-path> <parent-branch>`
 - Run the rest of this workflow from inside that worktree. If already inside a worktree, verify it has `WORKTREE_BASELINE_GATE` or valid `STACKED_WORKTREE_GATE`; otherwise halt and recreate it.
-- Record `WORKTREE_BASELINE_GATE: origin/staging -> <issue-branch> @ <worktree-path>` or `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete` in the handoff/final summary.
+- Record `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <issue-branch> @ <worktree-path>` or `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete` in the handoff/final summary.
 - From inside the worktree, invoke or re-run `prompt-builder` to gather repo/code context, decision-log rationale, determine execution strategy, identify files to read, and discover verification commands. A prompt-builder output created outside the per-issue worktree is bootstrap context only; it does not satisfy repo/code context gathering.
 
 ### Step 1: Triage (quick)
@@ -87,7 +87,7 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 
 ### Step 2: Execute (execute-phase)
 
-- Use the branch/worktree created from `origin/staging` or a valid stacked parent branch; do not create feature branches from local `main` or the primary checkout
+- Use the branch/worktree created from the resolved workflow base or a valid stacked parent branch; do not create feature branches from local `main` or the primary checkout
 - Implement against acceptance criteria
 - Honor relevant decision-log entries and accepted tradeoffs; do not re-open settled choices unless implementation evidence invalidates them
 - Use appropriate execution profile (normal by default, strict-tdd for bugs)
@@ -143,7 +143,7 @@ Every halt produces an auto-handoff. Every completion checks for follow-up work.
 
 Before declaring done, reporting completion, or producing a handoff, verify ALL three gate blocks exist in your output for this run:
 
-1. **`WORKTREE_BASELINE_GATE`** — confirms isolated worktree from `origin/staging`
+1. **`WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE`** — confirm isolated worktree from the resolved workflow base
 2. **`WORKFLOW_REVIEW_GATE`** with `review_profile`, `independent_review: true`, and `verdict: APPROVE` — confirms `workflow-review` ran with independent evidence
 3. **`WORKFLOW_FINALIZE_GATE`** — confirms `workflow-finalize` ran to completion
 
@@ -180,7 +180,7 @@ Requires: gh, git, subagent-dispatch, project-test-runner
 Side effects: creates branch, commits, PR; may modify issue labels
 Human gates: unclear issue halts (with auto-handoff); NEEDS HUMAN review halts (with auto-handoff); user-journey QA failure/unavailability halts unless waived (with auto-handoff); CI exhaustion halts (with auto-handoff); review iteration limit halts (with auto-handoff)
 
-Runtime note: project build/test tools are required for verification and are discovered from repo files (`package.json`, `Makefile`, CI workflows, language-specific config). Per-issue worktree creation from `origin/staging` is a hard precondition, not a convenience step.
+Runtime note: project build/test tools are required for verification and are discovered from repo files (`package.json`, `Makefile`, CI workflows, language-specific config). Per-issue worktree creation from the resolved workflow base is a hard precondition, not a convenience step.
 
 ## Context
 

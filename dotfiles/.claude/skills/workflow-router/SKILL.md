@@ -46,6 +46,30 @@ Independence matters more than agent count. Do not use multiple agents merely
 because a workflow says "review"; use `workflow-review`'s risk-sized
 `review_profile`.
 
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Step 0: Classify Request | required | pending | - |
+| Step 1: Select Budget | required | pending | - |
+| Step 2: Emit Route Card | required | pending | - |
+| Step 3: Confirmation Gate | conditional | pending | Required for non-direct routes |
+| Step 4: Target Preflight | conditional | pending | Runs after confirmation |
+| Step 5: Dispatch Or Halt | conditional | pending | Runs after preflight |
+| Step 6: Learning Note | conditional | pending | Required for confirmed non-trivial routes, halts, or corrections |
+```
+
+Rules:
+
+- Initialize every step as `pending`.
+- A conditional step may be `skipped` only when the route is direct/read-only and no dispatch occurs; record the reason.
+- Do not dispatch before the ledger shows route confirmation and target preflight complete or not applicable.
+- Include the final ledger in every halt, handoff, and completion response.
+
 ## Route Confirmation Gate
 
 Before dispatching any non-trivial workflow, mutating workflow, scaffold, AFK run, GitHub issue/PR action, project document generation, or delivery loop, emit a `ROUTE_CARD` and wait for the user's confirmation.
@@ -169,16 +193,16 @@ Before dispatching, check the target workflow's `Requires` field:
 
 ### Worktree Baseline Gate
 
-Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, create or require a fresh isolated worktree from `origin/staging`:
+Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, load `setup-worktree/references/base-branch-policy.md`, resolve `WORKFLOW_BASE_GATE`, and create or require a fresh isolated worktree from the resolved workflow base:
 
 ```bash
 git fetch origin --prune
-git worktree add -b <workflow-branch> <worktree-path> origin/staging
+git worktree add -b <workflow-branch> <worktree-path> <workflow-base-ref>
 ```
 
-The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If `origin/staging` is missing, halt and ask the user for the replacement base.
+The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If neither `origin/staging` nor the remote default branch can be resolved, halt and ask the user for the replacement base.
 
-Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from `origin/staging`.
+Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base.
 
 ## Audit Routing Rule
 

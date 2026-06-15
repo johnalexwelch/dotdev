@@ -25,7 +25,7 @@ inputs:
   - name: auto_proceed
     type: boolean
     default: true
-    description: If true, after successful commit and no pending [human] tasks, cut the next phase branch off the prior phase commit inside the same origin/staging-based worktree and recurse. Halt on verification fail, [human] gate, scope violation, or next-phase preflight error.
+    description: If true, after successful commit and no pending [human] tasks, cut the next phase branch off the prior phase commit inside the same workflow-base worktree and recurse. Halt on verification fail, [human] gate, scope violation, or next-phase preflight error.
   - name: dry_run
     type: boolean
     default: false
@@ -40,7 +40,7 @@ reads:
   - git log, git status, git branch (to establish HEAD and sync-gate state)
 writes:
   - docs/executions/.phase-runs/<date>[-<plan-slug>]-phase-<N>.md
-  - new git branch `<prefix>/phase-<N>-<slug>` (from `origin/staging` for first live phase, then stacked on the prior phase commit only when auto-proceeding in the same worktree)
+  - new git branch `<prefix>/phase-<N>-<slug>` (from the resolved workflow base for first live phase, then stacked on the prior phase commit only when auto-proceeding in the same worktree)
   - git commits on that branch
 ---
 
@@ -87,6 +87,33 @@ approved `design-plan` exists. Normal vertical issues created by
 `to-issues` and approved by `triage` should be executed by
 `workflow-build-one`, `execute-prd`, or `run-backlog`.
 
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Step 0: Preflight And Parse | required | pending | - |
+| Step 0.5: Resolve Workflow Base | conditional | pending | Required for live runs |
+| Step 1: Partition Tasks | required | pending | - |
+| Step 2: Create Phase Branch | conditional | pending | Skipped only for dry_run |
+| Step 3: Dispatch Auto Clusters | conditional | pending | Runs when auto tasks exist |
+| Step 4: Verify Scope | conditional | pending | Runs after mutations |
+| Step 5: Surface Human Work | conditional | pending | Runs when human tasks exist |
+| Step 6: Verify Behavior | conditional | pending | Runs for live auto work |
+| Step 7: Commit Scoped Changes | conditional | pending | Runs only after verification PASS |
+| Step 8: Write Outcome File | required | pending | - |
+| Step 9: Halt Or Auto-Proceed | required | pending | - |
+```
+
+Rules:
+
+- Initialize every step as `pending`.
+- Conditional steps may be `skipped` only for `dry_run`, no auto work, no human work, or an explicit halt reason from this skill.
+- Include the final ledger in every halt, handoff, and completion response.
+
 The skill enforces these invariants:
 
 1. **`[human]` tasks are never executed.** Surface them to chat and
@@ -127,7 +154,7 @@ Load these files as needed for the active step:
 ## Core Flow
 
 1. **Preflight and parse.** Confirm a clean working tree, verify the
-   current worktree/branch was cut from `origin/staging`, resolve
+   current worktree/branch was cut from the resolved workflow base, resolve
    `plan_path`, `plan_slug`, date, phase number, target outcome file,
    ID scheme, branch prefix, and phase fields. See
    `references/phase-parsing.md` and `references/branch-naming.md`.
@@ -135,7 +162,7 @@ Load these files as needed for the active step:
    and unknown tasks. Group `[auto]` tasks into clusters by overlapping
    file/module scope. Unknown tasks are warnings and are not executed.
 3. **Create the phase branch.** For the first live phase, create
-   `<prefix>/phase-<N>-<phase-slug>` from `origin/staging` in a fresh
+   `<prefix>/phase-<N>-<phase-slug>` from `<workflow-base-ref>` in a fresh
    worktree. For chained auto-proceed phases, stack on the prior phase
    commit in that same worktree. For `dry_run`, skip branch creation
    and record that in the outcome file.
@@ -181,7 +208,7 @@ Record the chosen exit state, pushed commit or reset baseline, and final `git st
 
 - `dry_run == true` parses and writes an outcome file, but dispatches
   no mutating subagent, creates no branch, and makes no commit.
-- Live runs must start in a fresh worktree cut from `origin/staging`.
+- Live runs must load `setup-worktree/references/base-branch-policy.md`, record `WORKFLOW_BASE_GATE`, and start in a fresh worktree cut from the resolved workflow base.
   Do not execute phases from the primary checkout or a branch based on
   local `main`/`staging`.
 - Existing target outcome file with `resume == false` is fatal. With

@@ -32,6 +32,30 @@ Before Phase 1, load `references/outage-risk-policy.md` and `references/repo-del
 - `outage-risk-policy.md` decides whether an issue is AFK-safe; a priority label does not override it.
 - `repo-delivery-policy.md` decides whether the current repository is `human-only` or `auto-merge-eligible`.
 
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Phase 0: Resolve Repository Delivery Policy | required | pending | - |
+| Phase 0.5: Resolve Workflow Base | required | pending | - |
+| Phase 1: Plan Queue | required | pending | - |
+| Phase 1.5: Queue Approval | conditional | pending | Auto-approved only for explicit AFK request |
+| Phase 2: Dispatch | conditional | pending | Runs for approved queue |
+| Phase 3: Monitor | conditional | pending | Runs after dispatch |
+| Phase 4: Reconcile And Handoff | required | pending | - |
+```
+
+Rules:
+
+- Initialize every step as `pending`.
+- Required steps cannot be skipped. If repository policy, base resolution, or issue lookup cannot run, mark the step `blocked` and halt.
+- Queue approval may be `skipped` only when the current invocation explicitly requested unattended/AFK execution.
+- Include the final ledger in every halt, handoff, and completion response.
+
 ### Phase 0: Resolve repository delivery policy
 
 1. Resolve the current repository with `gh repo view --json nameWithOwner`.
@@ -47,6 +71,10 @@ REPO_DELIVERY_POLICY:
 ```
 
 If repository identity cannot be resolved, halt before dispatch. Do not guess and do not default to auto-merge.
+
+### Phase 0.5: Resolve workflow base
+
+Load `setup-worktree/references/base-branch-policy.md`, run `git fetch origin --prune`, resolve `<workflow-base-ref>`, and record `WORKFLOW_BASE_GATE` in the queue artifact. All root issue worktrees, prompts, and handoffs use this resolved base.
 
 ### Phase 1: Plan
 
@@ -78,19 +106,19 @@ For each issue in queue order:
 
 1. Apply `in-progress` label
 2. Create or require the issue's worktree before repo/code context gathering:
-   - **Root issue**: create from `origin/staging`.
-   - `git fetch origin --prune && git worktree add -b <issue-branch> <issue-worktree-path> origin/staging`
-   - Record `WORKTREE_BASELINE_GATE: origin/staging -> <issue-branch> @ <issue-worktree-path>` in the queue artifact.
+   - **Root issue**: create from `<workflow-base-ref>`.
+   - `git fetch origin --prune && git worktree add -b <issue-branch> <issue-worktree-path> <workflow-base-ref>`
+   - Record `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <issue-branch> @ <issue-worktree-path>` in the queue artifact.
    - **Stacked dependent issue**: only allowed when the parent PR has `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`, a complete `WORKFLOW_FINALIZE_GATE`, green CI, and no unresolved reviewer comments.
    - Create the dependent worktree from the parent branch, target the dependent PR at the parent branch, and record:
-     `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
+     `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
    - If worktree creation fails, remove `in-progress`, add `needs-human`, and do not dispatch.
 3. Generate prompt via `prompt-builder` from inside that per-issue worktree:
    - Pass the issue number and target tool (codex or claude)
    - prompt-builder gathers repo/code context only after the per-issue worktree exists, determines execution strategy, and produces a structured prompt
    - In Codex mode, the generated prompt is the primary input to the dispatch (Codex cannot ask clarifying questions)
    - In Claude mode, the prompt seeds workflow-build-one with pre-gathered context
-   - The prompt must instruct the worker to use this per-issue worktree, verify either `WORKTREE_BASELINE_GATE` or `STACKED_WORKTREE_GATE`, and include the matching gate evidence in the handoff.
+   - The prompt must instruct the worker to use this per-issue worktree, verify `WORKFLOW_BASE_GATE` plus either `WORKTREE_BASELINE_GATE` or `STACKED_WORKTREE_GATE`, and include the matching gate evidence in the handoff.
    - If the prompt lacks the per-issue worktree/stack command or gate requirement, do not dispatch the issue; regenerate the prompt or mark the issue `needs-human`.
    - If the issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, the prompt must include the issue's concrete `## Reviewer validation steps` and instruct the worker to preserve them through `describe-pr`/`workflow-finalize` so the PR body ends with that section.
    - The prompt must include `REPO_DELIVERY_POLICY` and instruct the worker to follow it:
@@ -108,7 +136,7 @@ For each issue in queue order:
 
 1. Poll PR status: `gh pr list --state open --json number,title,isDraft,statusCheckRollup`
 2. For each completed dispatch:
-   - PR or handoff lacks `WORKTREE_BASELINE_GATE: origin/staging -> ...` or valid `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> ...` → flag `needs-human`; do not accept work from primary checkout or a local-main branch
+   - PR or handoff lacks `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> ...` or valid `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> ...` → flag `needs-human`; do not accept work from primary checkout or a local-main branch
    - Stacked PR does not target its parent branch, or parent gate evidence is missing/stale → flag `needs-human`
    - PR lacks a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE` → flag `needs-human`; green CI or GitHub/Claude/Codex/Bugbot review does not satisfy the review gate
    - PR lacks a complete `WORKFLOW_FINALIZE_GATE` block → flag `needs-human`; a PR URL, draft PR, or green CI alone does not satisfy finalization
@@ -167,7 +195,7 @@ Work queue artifact is written to `docs/executions/backlog-runs/[date].md` for a
 - Do not skip `needs-human-review`; carry its reviewer validation steps into the worker prompt and final PR body.
 - If an issue's acceptance criteria are unclear, skip it and add `needs-human` label
 - Never dispatch dependency chains in parallel unless using the stacked development rules above.
-- Every dispatched root issue must create its own fresh `origin/staging` worktree before code changes; stacked dependent issues must create their own fresh worktree from the clean parent branch. Shared worktrees and primary-checkout work are invalid.
+- Every dispatched root issue must create its own fresh worktree from the resolved workflow base before code changes; stacked dependent issues must create their own fresh worktree from the clean parent branch. Shared worktrees and primary-checkout work are invalid.
 - Every dispatched worker must satisfy the Partial-Completion Contract before exit: Complete and pushed, WIP-paused with a pushed `wip:` commit naming exactly what remains, or Rolled back to the baseline with a clean worktree. A dirty source tree after `git status --short` is never an acceptable AFK exit.
 - Apply `references/outage-risk-policy.md` before dispatch and again before marking outcomes successful
 - Apply `references/repo-delivery-policy.md` before dispatch and before any final PR action

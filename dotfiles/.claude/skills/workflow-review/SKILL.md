@@ -17,7 +17,29 @@ Run an independent review sized to the change's risk, then synthesize findings i
 
 ## Gate Invariant
 
-If a workflow says `workflow-review`, run this skill before proceeding to finalize/PR/CI/merge/handoff. For code changes the review must run against a branch/worktree cut from `origin/staging` (or a valid stacked worktree). Without that baseline evidence, return `NEEDS HUMAN` rather than reviewing a local-main diff.
+If a workflow says `workflow-review`, run this skill before proceeding to finalize/PR/CI/merge/handoff. For code changes the review must run against a branch/worktree cut from the resolved workflow base recorded in `WORKFLOW_BASE_GATE` (or a valid stacked worktree). Without that baseline evidence, return `NEEDS HUMAN` rather than reviewing a local-main diff.
+
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Step 0: Prepare Context | required | pending | - |
+| Step 1: Select Review Profile | required | pending | - |
+| Step 2: Dispatch Independent Review | required | pending | - |
+| Step 3: Synthesize Findings | required | pending | - |
+| Step 4: Emit Verdict Gate | required | pending | - |
+```
+
+Rules:
+
+- Initialize every step as `pending`.
+- Update each step to `completed`, `blocked`, or `failed` as evidence is gathered.
+- Do not mark required review steps as skipped. If independent context is unavailable, mark Step 2 `blocked` and emit `WORKFLOW_REVIEW_GATE.verdict: NEEDS_HUMAN`.
+- Include the final ledger in every halt, handoff, and completion response.
 
 ## Required Gate Block
 
@@ -25,7 +47,8 @@ Every valid run emits this block verbatim in the synthesis and any handoff that 
 
 ```markdown
 WORKFLOW_REVIEW_GATE:
-  worktree_baseline: origin/staging -> <branch> @ <worktree-path> OR stacked: origin/staging -> <parent> -> <child> @ <path>
+  workflow_base: origin/staging|origin/<default-branch>
+  worktree_baseline: <workflow-base-ref> -> <branch> @ <worktree-path> OR stacked: <workflow-base-ref> -> <parent> -> <child> @ <path>
   skill_loaded: true
   review_profile: fast|standard|full
   independent_review: true
@@ -67,4 +90,8 @@ Only report findings the author would agree need fixing. No style nits unless th
 
 ## Contract
 
-Consumes: diff/changeset, file contents, CONTEXT.md, ADRs. Produces: review synthesis (markdown) with independent-review evidence + verdict. Requires: git, independent-review context. Side effects: none. Human gates: `NEEDS HUMAN` halts until a human responds. If subagents are unavailable, use only a host-provided fresh independent reviewer context; otherwise halt `NEEDS HUMAN`.
+Consumes: diff/changeset, file contents, CONTEXT.md, ADRs
+Produces: review synthesis (markdown) with independent-review evidence and verdict
+Requires: git, independent-review context
+Side effects: none
+Human gates: `NEEDS HUMAN` halts until a human responds. If subagents are unavailable, use only a host-provided fresh independent reviewer context; otherwise halt `NEEDS HUMAN`.

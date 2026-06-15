@@ -25,7 +25,7 @@ Do not accept substitutes for this precondition. Green CI, passing tests, GitHub
 
 The precondition is satisfied only by a complete `WORKFLOW_REVIEW_GATE` block from `workflow-review` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. If the block is absent, incomplete, or self-reported by the author without an independent reviewer context, halt. Do not reconstruct it from prose.
 
-The delivery branch must also have `WORKTREE_BASELINE_GATE` evidence showing it was cut from `origin/staging`, or valid `STACKED_WORKTREE_GATE` evidence showing it was cut from a clean parent branch and targets that parent branch. If the work was done in the primary checkout, on a branch based on local `main`/`staging`, or in a stacked child that targets `staging` directly, halt and require a valid worktree.
+The delivery branch must also have `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE` evidence showing it was cut from the resolved workflow base, or valid `STACKED_WORKTREE_GATE` evidence showing it was cut from a clean parent branch and targets that parent branch. If the work was done in the primary checkout, on a branch based on local `main`/`staging`, or in a stacked child that targets the repository integration branch directly, halt and require a valid worktree.
 
 If the change is frontend or user-facing, `user-journey-qa` must also have returned PASS or have an explicit user waiver before finalization proceeds.
 
@@ -148,7 +148,7 @@ Before declaring the PR ready for final action, run a verification gate:
    `ready-for-human` or generic `Type: HITL` as this trigger.
 6. **Check for large diffs** — run `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
    - If the changes are logically atomic (single feature, single refactor), proceed but note the size in the PR description
-   - If the changes span unrelated concerns, **halt**: identify the independent concerns, create a separate branch for each from `origin/staging`, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
+   - If the changes span unrelated concerns, **halt**: identify the independent concerns, resolve `WORKFLOW_BASE_GATE`, create a separate branch for each from the resolved workflow base, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
 
 ### Step 7: Long-lived PR maintenance (conditional)
 
@@ -193,7 +193,8 @@ Every valid `workflow-finalize` run must emit this block verbatim:
 
 ```markdown
 WORKFLOW_FINALIZE_GATE:
-  worktree_baseline: origin/staging -> <branch> @ <worktree-path> OR stacked: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>
+  workflow_base: origin/staging|origin/<default-branch>
+  worktree_baseline: <workflow-base-ref> -> <branch> @ <worktree-path> OR stacked: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>
   workflow_review_gate: APPROVE
   post_mortem: completed|not_applicable_with_reason
   describe_pr: body_file=<docs/executions/.pr-bodies/...>; mode=plan_backed|phase_run_backed|issue_only; issues=<refs|none>; phase_evidence=matched|not_applicable|waived

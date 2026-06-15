@@ -42,7 +42,7 @@ Each queued issue must include:
 - Dispatch only `low` or explicitly approved `medium` risk items in AFK mode.
 - Dispatch dependency chains sequentially, or use stacked development only when the parent PR has complete clean gates and the child PR targets the parent branch.
 - Never dispatch issues that modify the same files or modules in parallel.
-- Use a fresh `origin/staging` worktree per root issue. Stacked dependent issues must use a fresh worktree from the clean parent branch and record `STACKED_WORKTREE_GATE`.
+- Resolve `WORKFLOW_BASE_GATE` first. Use a fresh worktree from the resolved workflow base per root issue. Stacked dependent issues must use a fresh worktree from the clean parent branch and record `STACKED_WORKTREE_GATE`.
 - Require `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, and `WORKFLOW_FINALIZE_GATE` before marking any item successful.
 
 ## Halt Rules

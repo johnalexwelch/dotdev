@@ -76,8 +76,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   auto-merge:
     name: Auto-merge
-    needs: [lint, shell-syntax, secrets]
-    if: github.event_name == 'pull_request'
+    needs: [lint, shell-syntax, stow-dry-run, install-dry-run, secrets]
+    if: github.event_name == 'pull_request' && github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     permissions:
       contents: write

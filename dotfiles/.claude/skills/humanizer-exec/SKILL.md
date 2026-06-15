@@ -69,4 +69,8 @@ Same skeleton, sharper muscle.
 
 ## Contract
 
-Consumes LLM-drafted exec-bound text → produces cleaned text + a change log. Requires nothing hard (siblings and graph used when present, skipped when not). No side effects unless editing a file in place. **Gate:** if there's no clear recommendation/headline, halt and ask (or route to `decision-memo`); never fabricate one.
+Consumes: LLM-drafted exec-bound text
+Produces: cleaned text and a change log
+Requires: nothing hard; siblings and graph context are used when present and skipped when absent
+Side effects: none unless the user asks to edit a file in place
+Human gates: if there is no clear recommendation/headline, halt and ask or route to `decision-memo`; never fabricate one
