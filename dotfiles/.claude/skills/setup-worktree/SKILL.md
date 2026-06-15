@@ -1,6 +1,8 @@
 ---
 name: setup-worktree
-description: Create an isolated git worktree for a design-plan phase. Defaults the worktree path to `~/wt/<repo>/phase-<N>/` and the branch to `refactor/phase-<N>-<slug>` derived from the plan's §5 phase header. Auto-copies common config files (.env*, .envrc, .nvmrc, .python-version, .tool-versions) from the primary checkout. Used on-demand when an /execute-phase chain halts at a [human] gate and the user wants to finish the task in parallel with continued work on main, or to review a completed phase branch in isolation.
+model: haiku
+reasoning: medium
+description: "Create an isolated git worktree from origin/staging for a plan phase, issue, or workflow run; defaults path ~/wt/<repo>/phase-<N>/, derives the branch, auto-copies .env*/.tool-versions etc. Used before workflow execution and at human-gate halts."
 triggers:
   - "/setup-worktree"
   - "setup worktree"
@@ -19,7 +21,7 @@ inputs:
   - name: branch
     type: string
     default: ""
-    description: Branch name. If empty and `plan_path`/`phase` set, derive `refactor/phase-<N>-<plan-phase-slug>`. If the branch already exists, check it out in the new worktree; otherwise create it off the current HEAD.
+    description: Branch name. If empty and `plan_path`/`phase` set, derive `refactor/phase-<N>-<plan-phase-slug>`. New branches are created from `origin/staging`; existing branches are allowed only when explicitly reviewing or resuming that branch.
   - name: path
     type: string
     default: ""
@@ -37,6 +39,14 @@ writes:
   - copied env/config files inside the worktree
 ---
 
+## Deprecation Status
+
+Status: standalone use deprecated. This skill remains loadable only because `workflow-build-one, workflow-debug, run-backlog, or workflow-finalize human-gate sidecar` may invoke it as an implementation helper.
+
+- Workflow owner: `workflow-build-one, workflow-debug, run-backlog, or workflow-finalize human-gate sidecar`
+- Reason: Worktree setup is a sidecar/helper, not an execution workflow.
+- Date: 2026-05-21
+
 ## Contract
 
 Consumes: plan phase number and/or branch name, repo state
@@ -47,29 +57,27 @@ Human gates: none
 
 ## Context
 
-Typical workflows: on-demand side-car (when /execute-phase halts at [human] gate, or for isolated branch review)
-Pairs well with: execute-phase, watch-ci, design-plan
+Typical workflows: on-demand side-car (when /execute-phase or /workflow-finalize halts at a human gate, for isolated branch review, or for workflow-autonomous-backlog issue execution)
+Pairs well with: execute-phase, workflow-finalize, watch-ci, design-plan, workflow-autonomous-backlog, run-backlog
 
 # /setup-worktree — Isolated Checkout for a Plan Phase
 
 ## Purpose
 
-`/execute-phase` defaults to branch-in-primary-checkout — fine for
-clean auto-proceed chains, painful when a phase halts at a `[human]`
-gate and the user wants to keep working on main while resolving the
-gate in parallel. This skill creates a git worktree for the halted
-phase branch (or any branch), copies the env/config files that new
-checkouts usually need, and optionally runs a setup command. The
-worktree is discardable — `git worktree remove <path>` when done.
+Workflows that mutate code should start in a fresh isolated worktree
+cut from `origin/staging`. This skill creates that worktree, copies the
+env/config files that new checkouts usually need, and optionally runs a
+setup command. The worktree is discardable — `git worktree remove
+<path>` when done.
 
-This is a **standalone, on-demand side-car**. `/execute-phase` does
-not invoke it automatically (see `2026-04-21-skills-updates-design.md`
-§7 rationale — scope discipline is the isolation primitive;
-filesystem isolation is human convenience).
+This is both the standard worktree creation helper for workflows and a
+standalone, on-demand side-car for halted human gates.
 
 ## Step 0: Preflight
 
 - Confirm a git repo.
+- Run `git fetch origin --prune` before reasoning about branches.
+- Verify `origin/staging` exists. If not, halt and ask the user which remote base should replace it.
 - Resolve inputs into a concrete `(branch, path, setup_command)` triple:
   - **If `branch` and `path` both set:** use them.
   - **Else if `plan_path` and `phase` set** (most common caller from `/execute-phase` halt):
@@ -79,16 +87,17 @@ filesystem isolation is human convenience).
   - **Else if `plan_path` empty but `phase` non-zero:** fall back to newest `docs/plans/*.md` for `plan_path`, then derive as above.
   - **Else:** abort with a clear message: need either `(branch, path)` or `(plan_path, phase)` (or at least `phase` with a newest plan on disk).
 - Verify `path` doesn't already exist. Abort if it does (would require `git worktree add --force`, which we won't do silently).
-- Verify `branch` either exists (`git show-ref --verify --quiet refs/heads/<branch>`) or can be created (new name, no conflict).
+- Verify `branch` can be created as a new local branch from `origin/staging`. If it already exists, halt unless the user explicitly requested branch review/resume mode.
+- Before checking out an existing branch for explicit review/resume mode, verify it has `WORKTREE_BASELINE_GATE` evidence or ancestry from `origin/staging`. Otherwise halt and recreate the work in a fresh origin/staging-based worktree.
 
 ## Step 1: Create the worktree
 
 Single inlined command (no external `scripts/create_worktree.sh`):
 
-- **If `branch` exists:**
+- **Normal workflow mode:**
+  `git worktree add -b "<branch>" "<path>" origin/staging` — creates a fresh branch from `origin/staging`.
+- **Explicit review/resume mode only:**
   `git worktree add "<path>" "<branch>"` — checks out the existing branch in the new worktree.
-- **If `branch` is new:**
-  `git worktree add -b "<branch>" "<path>"` — creates the branch off the current HEAD.
 
 If the command fails (path conflict, branch in use by another worktree, etc.): abort, report the error, do not attempt fallback logic. User fixes and re-invokes.
 
@@ -107,7 +116,7 @@ Auto-detect and copy each of the following from the primary checkout into `<path
 - `.node-version`
 - `.claude/settings.local.json` (if `.claude/` exists in destination, copy inside; else skip)
 
-Use a glob loop: `for f in <list>; do [ -f "<repo>/$f" ] && cp "<repo>/$f" "<path>/$f" 2>/dev/null; done`. Each copy is best-effort; silently skip a file whose parent dir doesn't exist in the destination.
+Use a glob loop: `for f in <list>; do [ -f "<repo>/$f" ] && cp "<repo>/$f" "<path>/$f" 2>/dev/null; done`. Record each copied file and each skipped file whose parent directory is missing; do not silently omit expected setup files.
 
 Report the list of files actually copied in the chat summary.
 
@@ -119,7 +128,7 @@ If `setup_command` is non-empty:
 
 Stream or capture the output. If the command exits non-zero, surface the error but do not tear down the worktree — the user likely wants to debug in place.
 
-If `setup_command` is empty, skip silently.
+If `setup_command` is empty, record `setup_command: not provided` in the summary.
 
 ## Step 4: Surface to user
 
@@ -161,7 +170,8 @@ Claude: [preflight — newest plan: docs/plans/2026-04-20-design.md;
          phase 2 header: "Phase 2 — Skill scaffolding";
          derived branch: refactor/phase-2-skill-scaffolding;
          derived path: ~/wt/myrepo/phase-2/]
-        [git worktree add ~/wt/myrepo/phase-2/ refactor/phase-2-skill-scaffolding]
+        [git fetch origin --prune]
+        [git worktree add -b refactor/phase-2-skill-scaffolding ~/wt/myrepo/phase-2/ origin/staging]
         [copied .env, .nvmrc, .claude/settings.local.json]
         [no setup_command specified]
 
@@ -177,7 +187,8 @@ Explicit branch + path + setup command:
 
 ```
 User: /setup-worktree branch=fix/flaky-test path=~/wt/myrepo/flaky setup_command="bun install"
-Claude: [git worktree add -b fix/flaky-test ~/wt/myrepo/flaky]
+Claude: [git fetch origin --prune]
+        [git worktree add -b fix/flaky-test ~/wt/myrepo/flaky origin/staging]
         [copied .env.local, .nvmrc]
         [bun install: exit 0, 312 packages installed]
 
@@ -187,14 +198,10 @@ Claude: [git worktree add -b fix/flaky-test ~/wt/myrepo/flaky]
 
 ## Tuning notes
 
-- **On-demand only.** `/execute-phase` does not invoke this
-  automatically. Scope discipline (§7 of the skills-updates plan) is
-  the isolation primitive; filesystem isolation via this skill is
-  human convenience for resolving `[human]` gates in parallel with
-  continued main-branch work. When `/execute-phase` halts at a
-  `[human]` gate, the user's options are: (a) resolve in place on the
-  halted phase branch in the primary checkout; (b) run
-  `/setup-worktree phase=<N>` to resolve in an isolated checkout.
+- **No primary-checkout resolution.** Resolve halted work inside the
+  origin/staging-based phase worktree. If the halt happened in the
+  primary checkout, stop and recreate the work in a fresh worktree
+  before making further changes.
 
 - **Env-file scope.** The copy list is deliberately conservative —
   only files almost every project treats as environment setup. Do not
@@ -243,15 +250,12 @@ Claude: [git worktree add -b fix/flaky-test ~/wt/myrepo/flaky]
      ↓
 /execute-phase ({refactor,fix,feat}/phase-* branches)
      ↓
-/review (workspace reviewer subagent, in-loop)
+/workflow-review (risk-sized independent review evidence)
      ↓
 /post-mortem (NEW-NN, drift)
      ↓
-/describe-pr (cites NEW-NN)
-     ↓
-[human gh pr create]
-     ↓
-/watch-ci (poll, auto-fix, /security-review, approve when clean)
+/workflow-finalize (describe-pr, draft PR, receive-review, watch-ci,
+                    reconcile, draft handoff)
      ↓
 [human merge]
 ```

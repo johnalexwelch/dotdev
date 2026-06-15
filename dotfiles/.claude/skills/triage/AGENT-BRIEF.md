@@ -60,6 +60,21 @@ Be specific about edge cases and error conditions.
 - [ ] Specific, testable criterion 2
 - [ ] Specific, testable criterion 3
 
+**Execution policy:**
+- AFK/HITL: AFK
+- Outage risk: low, or medium with explicit issue-level human approval and rollback plan
+- Rollback expectation: describe how to revert or disable the change
+- Required verification: list exact test/build/lint/manual commands
+- Module grill evidence: completed / not applicable, with link or summary
+- User-journey QA: required / not applicable, with reason
+- The agent must create a fresh per-issue worktree from `origin/staging` before changing code.
+- Required evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
+- The agent must not work from the primary checkout, local `main`, local `staging`, or another issue's worktree.
+- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
+- The agent must run `workflow-finalize` and produce a complete `WORKFLOW_FINALIZE_GATE`.
+- The PR must remain draft unless it was already non-draft before the agent touched it.
+- The agent must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git.
+
 **Out of scope:**
 - Thing that should NOT be changed or addressed in this issue
 - Adjacent feature that might seem related but is separate
@@ -96,6 +111,21 @@ and append "..." to indicate truncation.
       before 1024 chars
 - [ ] Truncated descriptions end with "..."
 - [ ] The total length including "..." does not exceed 1024 chars
+
+**Execution policy:**
+- AFK/HITL: AFK
+- Outage risk: low
+- Rollback expectation: revert the PR; no persisted data migration is involved
+- Required verification: run the skill metadata tests and any truncation unit tests
+- Module grill evidence: not applicable
+- User-journey QA: not applicable, with reason: no user-facing UI
+- The agent must create a fresh per-issue worktree from `origin/staging` before changing code.
+- Required evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
+- The agent must not work from the primary checkout, local `main`, local `staging`, or another issue's worktree.
+- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
+- The agent must run `workflow-finalize` and produce a complete `WORKFLOW_FINALIZE_GATE`.
+- The PR must remain draft unless it was already non-draft before the agent touched it.
+- The agent must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git.
 
 **Out of scope:**
 - Changing the 1024 char limit itself
@@ -136,6 +166,21 @@ checked for matches.
       appended to its "Prior requests" list rather than creating a duplicate
 - [ ] During triage, existing `.out-of-scope/` files are checked and surfaced
       when a new issue matches a prior rejection
+
+**Execution policy:**
+- AFK/HITL: AFK
+- Outage risk: low
+- Rollback expectation: revert the PR; generated docs can be removed safely
+- Required verification: run triage workflow tests and manually inspect one generated `.out-of-scope/` document
+- Module grill evidence: not applicable
+- User-journey QA: not applicable, with reason: no user-facing UI
+- The agent must create a fresh per-issue worktree from `origin/staging` before changing code.
+- Required evidence: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
+- The agent must not work from the primary checkout, local `main`, local `staging`, or another issue's worktree.
+- The agent must run `workflow-review` and produce `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
+- The agent must run `workflow-finalize` and produce a complete `WORKFLOW_FINALIZE_GATE`.
+- The PR must remain draft unless it was already non-draft before the agent touched it.
+- The agent must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git.
 
 **Out of scope:**
 - Automated matching (human confirms the match)

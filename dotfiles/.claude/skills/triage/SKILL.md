@@ -1,5 +1,7 @@
 ---
 name: triage
+model: sonnet
+reasoning: high
 description: Triage issues through a state machine driven by triage roles. Use when user wants to create an issue, triage issues, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow.
 ---
 
@@ -43,14 +45,41 @@ Five **state** roles:
 - `needs-triage` — maintainer needs to evaluate
 - `needs-info` — waiting on reporter for more information
 - `ready-for-agent` — fully specified, ready for an AFK agent
-- `ready-for-human` — needs human implementation
+- `ready-for-human` — needs human implementation (cannot be delegated to agents)
 - `wontfix` — will not be actioned
 
-Every triaged issue should carry exactly one category role and one state role. If state roles conflict, flag it and ask the maintainer before doing anything else.
+One **review gate** role:
+
+- `needs-human-review` — agent may implement, but the resulting PR must receive human validation before it can be considered complete or merge-ready. This is not a human-implementation state.
+
+Every triaged issue should carry exactly one category role and one state role. Review gate roles such as `needs-human-review` may coexist with `ready-for-agent`. If state roles conflict, flag it and ask the maintainer before doing anything else.
 
 These are canonical role names — the actual label strings used in the issue tracker may differ. The mapping should have been provided to you - run `/setup-skills` if not.
 
 State transitions: an unlabeled issue normally goes to `needs-triage` first; from there it moves to `needs-info`, `ready-for-agent`, `ready-for-human`, or `wontfix`. `needs-info` returns to `needs-triage` once the reporter replies. The maintainer can override at any time — flag transitions that look unusual and ask before proceeding.
+
+Human-review semantics:
+
+- `ready-for-human` means a human must implement the work; agents should not pick it up.
+- `needs-human-review` means an agent may implement the work, but the issue body must include `Human review: required` and a `## Reviewer validation steps` section with concrete ordered checks for the human reviewer.
+- Do not use `ready-for-human` as a signal that a PR needs reviewer validation steps.
+
+`ready-for-agent` is allowed only when the issue has:
+
+- clear acceptance criteria
+- dependency status
+- verification commands
+- rollback expectation
+- AFK/HITL classification
+- outage-risk classification
+- mandatory per-issue `origin/staging` worktree policy
+- exact gate requirement: `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`
+- review/finalize policy
+- `Human review: required|not required`
+- if `Human review: required`, a `## Reviewer validation steps` section
+- any required module grill evidence
+
+PRD/spec parent issues are not implementation issues and must not be labeled `ready-for-agent`.
 
 ## Invocation
 
@@ -65,7 +94,7 @@ The maintainer invokes `/triage` and describes what they want in natural languag
 
 Query the issue tracker and present three buckets, oldest first:
 
-1. **Unlabeled** — never triaged.
+1. **No state label** — has no state role applied (may have category/type/priority labels). Includes issues that have never been triaged AND issues that were categorized but never given a state. Security CVE auto-filed issues (`from:nightly-scan`) belong here too.
 2. **`needs-triage`** — evaluation in progress.
 3. **`needs-info` with reporter activity since the last triage notes** — needs re-evaluation.
 
@@ -82,7 +111,7 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 4. **Grill (if needed).** If the issue needs fleshing out, run a `/grill-with-docs` session.
 
 5. **Apply the outcome:**
-   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)).
+   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)) that includes the exact `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>` requirement. If the issue carries `needs-human-review`, the brief must preserve the `Human review: required` field and `## Reviewer validation steps`.
    - `ready-for-human` — same structure as an agent brief, but note why it can't be delegated (judgment calls, external access, design decisions, manual testing).
    - `needs-info` — post triage notes (template below).
    - `wontfix` (bug) — polite explanation, then close.
@@ -91,7 +120,7 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
 
 ## Quick state override
 
-If the maintainer says "move #42 to ready-for-agent", trust them and apply the role directly. Confirm what you're about to do (role changes, comment, close), then act. Skip grilling. If moving to `ready-for-agent` without a grilling session, ask whether they want to write an agent brief.
+If the maintainer says "move #42 to ready-for-agent", trust the requested direction but still verify the readiness fields above before applying the role. If required fields are missing, present the gap and ask whether to add an agent brief or use `ready-for-human` (or the tracker-equivalent `needs-human`) instead. Do not label PRD/spec parents, human-implementation work, high-risk/excluded slices, blocked issues, or ungrilled module work as `ready-for-agent` by override. Human-review-required work may be `ready-for-agent` only when it also carries `needs-human-review`, `Human review: required`, and reviewer validation steps.
 
 ## Needs-info template
 
