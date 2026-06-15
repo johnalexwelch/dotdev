@@ -15,7 +15,13 @@ Give an evidence-based picture of where a repo actually is — not what its docs
 
 ## Contract
 
-Consumes: codebase (or scoped subtree), README, CLAUDE.md, spec docs. Produces: audit report with stable FIND-NN IDs at `docs/audits/<date>-repo-audit.md`. Requires: git. Side effects: writes the audit + intermediate fact-packs (fact-packs deleted by default). Feeds: workflow-roadmap, to-prd, to-issues, triage, design-plan.
+Consumes: codebase (or scoped subtree), README, CLAUDE.md, spec docs
+Produces: audit report with stable FIND-NN IDs at `docs/audits/<date>-repo-audit.md`
+Requires: git
+Side effects: writes the audit and intermediate fact-packs; fact-packs are deleted by default
+Human gates: none by default; halt if required repo context or evidence paths are unavailable
+
+Feeds: workflow-roadmap, to-prd, to-issues, triage, design-plan.
 
 ## Step 0 — Preflight
 

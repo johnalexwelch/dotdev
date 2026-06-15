@@ -25,6 +25,32 @@ Requires: gh, git, omc, subagent-dispatch, project-test-runner
 Side effects: creates GitHub issues, dispatches implementation work, creates branches/PRs through child workflows, writes handoff artifacts
 Human gates: module design summary approval; AFK queue approval unless explicitly requested unattended; high-risk outage categories halt; final release remains human-only only for repos classified `human-only` by `run-backlog/references/repo-delivery-policy.md`
 
+## Workflow Progress Reporting
+
+At the start of every run, display a step ledger before executing or dispatching any step.
+
+```markdown
+WORKFLOW_STEPS:
+| Step | Required? | Status | Evidence / Skip Reason |
+|------|-----------|--------|------------------------|
+| Step 1: Discover Module Candidates | required | pending | - |
+| Step 2: Classify Candidates | required | pending | - |
+| Step 3: Module Grilling Gate | conditional | pending | Runs for module-prd-ready candidates |
+| Step 3.1: Module Grill Consensus | conditional | pending | Runs after module grill |
+| Step 3.5: Optional Scoped Second Architecture Pass | conditional | pending | Runs when grill identifies internal friction |
+| Step 4: Create PRDs And Issues | conditional | pending | Runs for approved candidates |
+| Step 5: Prepare AFK Queue | conditional | pending | Runs when execution requested |
+| Step 6: Execute Backlog | conditional | pending | Runs after AFK approval |
+| Step 7: Handoff | required | pending | - |
+```
+
+Rules:
+
+- Initialize every step as `pending`.
+- Conditional steps may be `skipped` only with an explicit reason such as no approved candidates or no AFK execution approval.
+- Required steps cannot be skipped. If discovery, classification, or handoff cannot run, mark blocked and halt.
+- Include the final ledger in every halt, handoff, and completion response.
+
 ## Flow
 
 ### 1. Discover module candidates
@@ -153,7 +179,7 @@ Required summary fields:
 - Use `to-prd` only for approved `module-prd-ready` candidates.
 - Use `to-issues` to split each PRD into vertical slices.
 - Every issue must include clear acceptance criteria, dependency order, AFK/HITL classification, outage-risk classification, verification expectations, and the worktree rule:
-  `WORKTREE_BASELINE_GATE: origin/staging -> <branch> @ <worktree-path>`.
+  `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <worktree-path>`.
 - Run `/triage` on every child implementation issue after creation. `/triage` owns the labels and agent brief required for execution.
 - Only `/triage` may apply `ready-for-agent`, and only to issues with clear acceptance criteria, no unresolved human decisions, an executable verification path, AFK-safe risk classification, rollback expectations, the exact worktree gate requirement, review/finalize policy, and required module grill evidence.
 
@@ -180,7 +206,7 @@ The run must record `REPO_DELIVERY_POLICY` before dispatch:
 
 Each issue runs through `workflow-build-one` or `workflow-debug`.
 
-Each issue must create its own fresh worktree before work starts. Worktree creation must follow `setup-worktree` or the Cursor `using-git-worktrees` pattern only when it is constrained to the project policy: fetch `origin`, create a fresh branch from `origin/staging`, run inside that worktree, and emit `WORKTREE_BASELINE_GATE`. Generic worktree creation that omits `origin/staging`, reuses another issue's worktree, or works from the primary checkout does not satisfy this workflow.
+Each issue must create its own fresh worktree before work starts. Worktree creation must follow `setup-worktree` or the Cursor `using-git-worktrees` pattern only when it is constrained to the project policy: fetch `origin`, resolve `WORKFLOW_BASE_GATE`, create a fresh branch from the resolved workflow base, run inside that worktree, and emit `WORKTREE_BASELINE_GATE`. Generic worktree creation that omits base resolution, reuses another issue's worktree, or works from the primary checkout does not satisfy this workflow.
 
 ### 6.1. Stacked dependent development
 
@@ -190,7 +216,7 @@ Dependent issues may continue before the parent PR is merged only through a cont
 - The child issue creates its own fresh worktree from the parent branch, not from the primary checkout.
 - The child PR targets the parent branch, not `staging`.
 - The child handoff records:
-  `STACKED_WORKTREE_GATE: origin/staging -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
+  `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
 - The stack handoff records merge order and retargeting instructions after the parent lands.
 
 If any parent gate is missing, stale, or not clean, the dependent issue remains `blocked` or `needs-human`. Stacked development follows `REPO_DELIVERY_POLICY`: `human-only` stacks do not permit marking PRs ready, approving, merging, enabling auto-merge, force-pushing, rebasing, or using destructive git; `auto-merge-eligible` stacks may mark ready and enable GitHub auto-merge only after gates pass and the child PR targets the parent branch.
@@ -199,7 +225,7 @@ No issue can enter finalization until `workflow-review` emits `WORKFLOW_REVIEW_G
 
 Required gates per PR:
 
-- `WORKTREE_BASELINE_GATE` or valid `STACKED_WORKTREE_GATE`
+- `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE` or valid `STACKED_WORKTREE_GATE`
 - local verification evidence
 - `user-journey-qa` when triggered
 - `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`
