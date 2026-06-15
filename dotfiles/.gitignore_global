@@ -154,3 +154,5 @@ docker-compose.override.yml
 ### Local Development ###
 *.local
 .local/
+
+**/.claude/settings.local.json

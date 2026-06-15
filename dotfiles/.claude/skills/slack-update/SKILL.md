@@ -1,5 +1,7 @@
 ---
 name: slack-update
+model: sonnet
+reasoning: high
 description: Generate and send a Slack engineering update summarizing merged PRs from the prior day. Triggers on "slack update", "send update", "engineering update", "daily update", "PR summary". Groups PRs by theme with mrkdwn formatting and sends via Slack API.
 user_invocable: true
 codex-compatible: false

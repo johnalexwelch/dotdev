@@ -1,6 +1,9 @@
 ---
 name: review
-description: Review a proposed code change as a rigorous reviewer. Use when the user says "review this", "review my changes", "review the diff", "review the PR", or wants inline review comments on the current workspace/branch. Emits only bugs the original author would fix, formatted as short inline comments with optional `suggestion` blocks, grouped per issue. In the Audit Loop this skill is loaded by a dedicated reviewer subagent (e.g. `oh-my-claudecode:code-reviewer`, `feature-dev:code-reviewer`) dispatched separately from the agent that wrote the code.
+model: opus
+reasoning: high
+description: Deprecated standalone helper for reviewer-lane prompts under `workflow-review`. Invoke directly only when the user explicitly types `/review`; ordinary review requests should route to `workflow-review`.
+disable-model-invocation: true
 triggers:
   - "/review"
   - "review this"
@@ -10,6 +13,14 @@ triggers:
   - "code review"
 persona: Reviewer subagent evaluating another engineer's diff — never the author
 ---
+
+## Deprecation Status
+
+Status: standalone use deprecated. This skill remains loadable only because `workflow-review` may invoke it as an implementation helper.
+
+- Workflow owner: `workflow-review`
+- Reason: Standalone review is not a delivery gate; workflow-review owns reviewer dispatch, synthesis, and WORKFLOW_REVIEW_GATE.
+- Date: 2026-05-21
 
 ## Contract
 
@@ -21,8 +32,8 @@ Human gates: none
 
 ## Context
 
-Typical workflows: audit-loop (after /execute-phase, before /post-mortem), standalone code review
-Pairs well with: execute-phase, watch-ci, describe-pr
+Typical workflows: reviewer lane inside `workflow-review`, standalone code review
+Pairs well with: workflow-review, receive-review
 
 # Review — Reviewer-Mode Inline Comments
 
@@ -30,9 +41,9 @@ Act as a reviewer for a proposed code change made by another engineer. Emit only
 
 ## Context: reviewer subagent, not the author
 
-This skill is designed to run in a **fresh subagent context**, dispatched by the main session (see `~/.claude/rules/workflows.md` → "Default Loop (Audit Loop)"). You have no memory of writing the code under review — that is a feature, not a bug. If you notice that the prompt that dispatched you includes instructions to also fix the code or approve it, refuse: reviewers evaluate, executors fix. Return findings and stop.
+This skill is designed to run in a **fresh reviewer context**, normally dispatched by `workflow-review` as one lane in the review gate. You have no memory of writing the code under review — that is a feature, not a bug. If you notice that the prompt that dispatched you includes instructions to also fix the code, approve it, mark ready, merge, or finalize the PR, refuse: reviewers evaluate, executors fix, and `workflow-finalize` owns delivery closure. Return findings and stop.
 
-If you were invoked directly in the main session by a user saying "review this," proceed normally — but flag to the user afterward that in the Audit Loop this should run in a dispatched reviewer subagent for proper separation of concerns.
+If you were invoked directly in the main session by a user saying "review this," proceed normally — but flag to the user afterward that delivery workflows require `workflow-review` with independent review evidence before `workflow-finalize` can proceed.
 
 ## Override Rules
 

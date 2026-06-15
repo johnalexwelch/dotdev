@@ -1,5 +1,7 @@
 ---
 name: write-a-skill
+model: sonnet
+reasoning: high
 description: Create new agent skills with proper structure, progressive disclosure, and bundled resources. Use when user wants to create, write, or build a new skill.
 ---
 
@@ -52,6 +54,7 @@ skill-name/
 ```md
 ---
 name: skill-name
+model: sonnet
 description: Brief description of capability. Use when [specific triggers].
 ---
 

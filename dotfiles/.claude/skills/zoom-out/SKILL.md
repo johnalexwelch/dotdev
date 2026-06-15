@@ -1,5 +1,7 @@
 ---
 name: zoom-out
+model: opus
+reasoning: high
 description: Step back from current work context with structured perspective shifts (local, domain, strategic)
 disable-model-invocation: true
 ---

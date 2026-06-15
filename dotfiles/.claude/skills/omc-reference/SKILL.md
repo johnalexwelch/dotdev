@@ -1,12 +1,23 @@
 ---
 name: omc-reference
+model: sonnet
+reasoning: high
 description: OMC agent catalog, available tools, team pipeline routing, commit protocol, and skills registry. Auto-loads when delegating to agents, using OMC tools, orchestrating teams, making commits, or invoking skills.
 user-invocable: false
+disable-model-invocation: true
 ---
 
 # OMC Reference
 
 Use this built-in reference when you need detailed OMC catalog information that does not need to live in every `CLAUDE.md` session.
+
+## Contract
+
+Consumes: OMC runtime questions, agent/tool routing needs, team orchestration needs, commit protocol lookups, and skills registry lookups
+Produces: reference guidance for OMC agent catalog, model routing, tools, team pipeline, commit protocol, and skills registry
+Requires: none
+Side effects: none
+Human gates: none
 
 ## Agent Catalog
 
