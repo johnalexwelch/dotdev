@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Read the JSON file and replace $HOME with actual home directory
-config=$(cat .config/.macos/spotlight.json | sed "s|\$HOME|$HOME|g")
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+config=$(sed "s|\$HOME|$HOME|g" "$repo_root/dotfiles/.config/macos/spotlight.json")
 
 # Ensure Applications are indexed
 echo "Enabling Spotlight indexing for Applications..."
