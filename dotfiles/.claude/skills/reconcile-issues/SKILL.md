@@ -79,9 +79,9 @@ Output a structured markdown artifact:
 
 **Requires approval:**
 
-- Closing issues
+- Closing issues *(except via the non-default-branch close fallback documented in `## Non-default-branch close fallback` above, which auto-acts on a narrow trigger without approval)*
 - Creating follow-up issues
-- Removing `ready-for-agent` label
+- Removing `ready-for-agent` label *(except via the non-default-branch close fallback above, which auto-removes this label as part of its bookkeeping)*
 - Reopening PRs/issues because of unresolved reviewer feedback
 - Creating follow-up work from unresolved reviewer comments
 
