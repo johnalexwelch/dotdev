@@ -7,14 +7,19 @@ source_root="${SOURCE_SKILLS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}
 runtime_root="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
 apply=0
 prune=0
+keep_runtime_only=0
+prune_incompatible_only=0
 
 usage() {
     cat <<'USAGE'
-Usage: sync-codex-skills.sh [--apply] [--prune]
+Usage: sync-codex-skills.sh [--apply] [--prune] [--keep-runtime-only] [--prune-incompatible-only]
 
 Default is dry-run. --apply copies active source skills to the Codex runtime.
 --prune includes runtime skills that are not active source skills or are
 codex-incompatible in the dry run; with --apply, those skills are removed.
+--keep-runtime-only narrows --prune so runtime-only skills are preserved.
+--prune-incompatible-only is shorthand for pruning only runtime skills whose
+source skill is marked codex-compatible:false.
 USAGE
 }
 
@@ -22,6 +27,11 @@ while [ "$#" -gt 0 ]; do
     case "$1" in
         --apply) apply=1 ;;
         --prune) prune=1 ;;
+        --keep-runtime-only) keep_runtime_only=1 ;;
+        --prune-incompatible-only)
+            prune=1
+            prune_incompatible_only=1
+            ;;
         -h | --help)
             usage
             exit 0
@@ -34,6 +44,11 @@ while [ "$#" -gt 0 ]; do
     esac
     shift
 done
+
+if [ "$keep_runtime_only" = "1" ] && [ "$prune" != "1" ]; then
+    echo "--keep-runtime-only requires --prune" >&2
+    exit 2
+fi
 
 [ -d "$source_root" ] || {
     echo "source skills root not found: $source_root" >&2
@@ -81,14 +96,28 @@ if [ "$prune" = "1" ]; then
     while IFS= read -r -d '' runtime_file; do
         skill="${runtime_file#"$runtime_root"/}"
         skill="${skill%/SKILL.md}"
-        if [ ! -f "$source_root/$skill/SKILL.md" ] ||
-            [ "$(frontmatter_value "$source_root/$skill/SKILL.md" codex-compatible)" = "false" ]; then
-            action="would prune"
-            [ "$apply" = "1" ] && action="prune"
-            printf '%s runtime-only/incompatible: %s\n' "$action" "$skill"
-            if [ "$apply" = "1" ]; then
-                rm -rf "${runtime_root:?}/$skill"
+        source_file="$source_root/$skill/SKILL.md"
+        reason=""
+
+        if [ ! -f "$source_file" ]; then
+            if [ "$keep_runtime_only" = "1" ] || [ "$prune_incompatible_only" = "1" ]; then
+                continue
             fi
+            reason="runtime-only/incompatible"
+        elif [ "$(frontmatter_value "$source_file" codex-compatible)" = "false" ]; then
+            reason="incompatible"
+            if [ "$keep_runtime_only" != "1" ] && [ "$prune_incompatible_only" != "1" ]; then
+                reason="runtime-only/incompatible"
+            fi
+        else
+            continue
+        fi
+
+        action="would prune"
+        [ "$apply" = "1" ] && action="prune"
+        printf '%s %s: %s\n' "$action" "$reason" "$skill"
+        if [ "$apply" = "1" ]; then
+            rm -rf "${runtime_root:?}/$skill"
         fi
     done < <(find "$runtime_root" -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
 fi
