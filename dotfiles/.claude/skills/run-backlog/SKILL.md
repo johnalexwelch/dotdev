@@ -81,14 +81,18 @@ Load `setup-worktree/references/base-branch-policy.md`, run `git fetch origin --
 1. Query GitHub Issues: `gh issue list --label ready-for-agent --state open --json number,title,labels,body`
 2. Filter out issues marked `blocked`, `needs-human`, `ready-for-human`, or `in-progress`. Do not filter out `needs-human-review`; that label means the agent may implement but a human must validate the PR.
 3. Exclude issues that violate `references/outage-risk-policy.md`, including unclear acceptance criteria, missing verification commands, high-risk release categories, missing rollback expectations, or outage-risk classifications of `high`/`excluded` without explicit human approval for that issue
-4. For dependency chains, choose one of:
+4. Require dependency evidence before queue approval:
+   - If the queue came from `to-issues`, read its `ISSUE_DEPENDENCY_AUDIT`.
+   - If issues reference the same PRD parent or form a dependent child tree, halt and route to `execute-prd`.
+   - If no audit exists, inspect issue bodies for `Parent` and `Blocked by` sections and record the inferred dependency shape in the queue artifact.
+5. For approved dependency chains, choose one of:
    - **sequential wait**: dependent issue waits until the parent PR is merged
    - **stacked development**: dependent issue may run before merge only when the parent PR has clean gate evidence and the dependent PR targets the parent branch
-5. Rank by:
+6. Rank by:
    - Priority label (critical > high > medium > low)
    - Dependencies (unblocked issues first)
    - Age (older issues first, as tiebreaker)
-6. Produce work queue artifact:
+7. Produce work queue artifact:
 
 ```markdown
 ## Work Queue — [date]
@@ -98,7 +102,7 @@ Load `setup-worktree/references/base-branch-policy.md`, run `git fetch origin --
 | 2 | #M title | medium | #N | stacked-on-#N | medium-approved | required | lint+test | medium |
 ```
 
-7. Present queue for approval. Auto-approve only when the user explicitly requested unattended/AFK backlog execution in this invocation; otherwise halt for approval. Record the approval evidence and `REPO_DELIVERY_POLICY` in the queue artifact.
+8. Present queue for approval. Auto-approve only when the user explicitly requested unattended/AFK backlog execution in this invocation; otherwise halt for approval. Record the approval evidence, dependency evidence, and `REPO_DELIVERY_POLICY` in the queue artifact.
 
 ### Phase 2: Dispatch
 

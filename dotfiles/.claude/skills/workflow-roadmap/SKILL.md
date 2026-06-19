@@ -172,6 +172,9 @@ Every roadmap item must include:
   - `improve-codebase-architecture`
   - `workflow-autonomous-backlog`
   - `needs-human`
+- **Backlog transition plan:** whether this item needs a PRD parent, can go
+  directly to issue breakdown, has expected child dependencies, and should route
+  next to `to-prd`, `to-issues`, `design-plan`, or `needs-human`.
 
 Do not bury risk. If a roadmap item changes product behavior, public interfaces, data model, auth/payment behavior, infrastructure, rollout strategy, or security posture, mark a human gate.
 
@@ -221,6 +224,7 @@ Dependencies:
 Risks:
 Verification:
 Recommended next workflows:
+Backlog transition plan:
 
 ### Milestone 2: {name}
 ...

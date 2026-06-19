@@ -138,7 +138,9 @@ Always check for these:
 13. `to-issues` produced AFK issues without AFK/HITL classification, outage-risk classification, dependencies, verification commands, rollback expectation, module grill evidence when applicable, human-review classification, or worktree/review/finalize policy.
 13a. `to-issues` marked human-validation-only work as `Type: HITL` or `ready-for-human` instead of keeping it AFK with `Human review: required`, `needs-human-review`, and concrete `## Reviewer validation steps`.
 13b. `to-issues` produced a human-review-required issue without `Human review: required` and a concrete `## Reviewer validation steps` section.
+13c. `to-issues` published implementation issues without an `ISSUE_DEPENDENCY_AUDIT`, or the audit routed a parent/dependent PRD child tree to `run-backlog` instead of `execute-prd`.
 14. `run-backlog` auto-approved a queue without an explicit unattended/AFK request in the same invocation.
+14a. `run-backlog` queued PRD child issues instead of halting and routing to `execute-prd`.
 15. Backlog PR was accepted as successful without all required gate blocks: `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, and `WORKFLOW_FINALIZE_GATE`.
 16. AFK run dispatched high-risk/excluded outage categories without explicit issue-level human approval and rollback plan.
 17. Backlog PR final action violated `REPO_DELIVERY_POLICY`: human-only repo became ready/auto-merged, auto-merge-eligible repo skipped ready/auto-merge after gates passed, or `WORKFLOW_FINALIZE_GATE.repo_delivery_policy` was missing.
