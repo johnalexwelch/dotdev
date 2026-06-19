@@ -28,8 +28,9 @@ run_cmd bash "$DOTFILES/scripts/macos/defaults.sh"
 
 # Create symlinks
 # Ensure target dirs exist so Stow creates per-item symlinks (not tree-folded)
-mkdir -p "$HOME/.claude/skills"
-mkdir -p "$HOME/.config"
+run_cmd mkdir -p "$HOME/.claude/hooks"
+run_cmd mkdir -p "$HOME/.claude/skills"
+run_cmd mkdir -p "$HOME/.config"
 
 if [ "$DRY_RUN" = "1" ]; then
     stow -nv -R -t "$HOME" dotfiles/
