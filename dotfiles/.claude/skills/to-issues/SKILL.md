@@ -18,6 +18,10 @@ Human gates: slice breakdown presented for approval before publishing
 Typical workflows: planning-to-execution (after /design-plan or /to-prd)
 Pairs well with: decision-log, design-plan, to-prd, triage, setup-skills
 
+## References
+
+- [Issue Dependency Audit](references/issue-dependency-audit.md)
+
 # To Issues
 
 Break a plan into independently-grabbable issues using vertical slices (tracer bullets).
@@ -90,6 +94,7 @@ After the review:
 - Address all **MAJOR** concerns by revising the breakdown before presenting to the user
 - Surface **MINOR** concerns and **QUESTIONs** to the user as part of step 4 so they can decide
 - If the review returns no MAJOR concerns, note the reviewer's LGTM items alongside the breakdown
+- Load and apply `references/issue-dependency-audit.md` to classify dependencies, AFK/HITL status, human-review gates, and the recommended executor before showing the issue plan.
 
 Do not skip this step. The independent reviewer catches phantom dependencies, missing coverage, and horizontal-layer disguised as slices that the author normalizes.
 
@@ -126,6 +131,8 @@ Iterate until the user approves the breakdown.
 For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Only apply `ready-for-agent` to AFK slices with clear acceptance criteria, dependencies satisfied or explicitly ordered, verification commands, rollback expectation, `low` or explicitly approved `medium` outage risk, and completed module grill evidence when the slice came from a module PRD. If an AFK slice requires human PR validation, also apply `needs-human-review` and include `Human review: required` plus `## Reviewer validation steps`. Publish HITL, high-risk, excluded, blocked, unclear, unverifiable, or ungrilled module slices with the human-implementation state label (`ready-for-human`, or the tracker-equivalent `needs-human`) or `blocked` instead.
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
+
+After publishing real issue IDs, rerun `references/issue-dependency-audit.md` and include the final `ISSUE_DEPENDENCY_AUDIT` block in every issue body plus the publish summary. Use it to decide whether the child tree should go to `execute-prd`, independent issues should go to `run-backlog`, or any item should remain human/blocked.
 
 <issue-template>
 ## Parent
@@ -166,6 +173,10 @@ Required only when `Human review: required`. Provide concrete ordered checks the
 - A reference to the blocking ticket (if any)
 
 Or "None - can start immediately" if no blockers.
+
+## Issue dependency audit
+
+Include the slice's final `ISSUE_DEPENDENCY_AUDIT` entry after real issue IDs exist. Include `parent_issue`, `source_prd_or_plan`, `blocked_by`, `blocks`, `route_eligible`, and `recommended_executor` so future `run-backlog` or `execute-prd` sessions can read routing evidence from live issue bodies.
 
 </issue-template>
 
