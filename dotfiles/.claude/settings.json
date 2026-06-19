@@ -61,6 +61,11 @@
             "type": "command",
             "command": "bash ~/.claude/guardian/run.sh",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/workflow-guard.sh",
+            "timeout": 5
           }
         ]
       }
@@ -71,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cmd=$(jq -r '.tool_input.command // \"\"' 2>/dev/null); if echo \"$cmd\" | grep -q 'gh pr create'; then printf '\\n[GATE CHECK] PR created. Before declaring this task complete, verify:\\n  1. WORKFLOW_REVIEW_GATE (independent_review: true, verdict: APPROVE) exists in output\\n  2. WORKFLOW_FINALIZE_GATE exists in output\\nGreen CI and passing tests are NOT sufficient. Use Skill tool for missing skills.\\n'; fi",
+            "command": "bash ~/.claude/hooks/workflow-guard.sh",
             "timeout": 5
           }
         ]

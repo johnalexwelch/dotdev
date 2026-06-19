@@ -134,6 +134,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 |--------|---------------|-----------|
 | "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture" | **V1** | `v1-workflow` (full gated pipeline: idea grill → approval → decision-log → system design → roadmap → issues — do NOT route directly to `v1-idea-grill` or `v1-system-design`, which skips the approval gates) |
 | "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | workflow-roadmap |
+| "turn this roadmap into PRDs/issues", "roadmap to backlog", "break milestones into PRDs", "break PRDs into issues", approved roadmap needing issue queue | **roadmap-to-backlog transition** | `workflow-roadmap` if no approved roadmap -> `to-prd` for spec parents -> `to-issues` with `references/issue-dependency-audit.md` -> `execute-prd` for parent/dependent trees or `run-backlog` only for independent ready issues |
 | "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
 | "we're launching X", "launch plan", "launch checklist", "go-to-market checklist", "are we ready to ship", "go-live readiness" | **product launch** | product-launch-checklist |
 | "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog workflow** | workflow-autonomous-backlog |
@@ -167,7 +168,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 
 ## PRD vs backlog routing rule
 
-**Use `execute-prd` when issues have a parent PRD and dependencies between them.** Use `run-backlog` when issues are independent and can be processed in any order.
+**Use `execute-prd` when issues have a parent PRD and dependencies between them.** Use `run-backlog` only when the `to-issues` dependency audit says issues are independent and can be processed in any order.
 
 | Signal | Route |
 |--------|-------|
