@@ -32,3 +32,13 @@ fi
 if [[ -z "${CODEX_GITHUB_PERSONAL_ACCESS_TOKEN:-}" && -n "${GITHUB_MCP_PAT:-}" ]]; then
   export CODEX_GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_MCP_PAT"
 fi
+export PATH="$HOME/.cargo/bin:$PATH"
+
+source /Users/alexwelch/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
+
+# bun completions
+[ -s "/Users/alexwelch/.bun/_bun" ] && source "/Users/alexwelch/.bun/_bun"
+
+# bun
+export BUN_INSTALL="$HOME/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
