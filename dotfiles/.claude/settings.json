@@ -51,7 +51,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "sonnet",
+  "model": "opus",
   "hooks": {
     "PreToolUse": [
       {
@@ -170,5 +170,14 @@
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true
+  "skipAutoPermissionPrompt": true,
+  "tui": "fullscreen",
+  "mcpServers": {
+    "gbrain": {
+      "command": "/Users/alexwelch/.bun/bin/bun",
+      "args": [
+        "/Users/alexwelch/gbrain-repo/src/mcp/server.ts"
+      ]
+    }
+  }
 }
