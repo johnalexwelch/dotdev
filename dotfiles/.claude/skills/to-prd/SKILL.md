@@ -16,7 +16,7 @@ Human gates: module breakdown confirmed with user; PRD published as spec/referen
 ## Context
 
 Typical workflows: feature ideation (after /grill-with-docs, before /to-issues)
-Pairs well with: decision-log, grill-with-docs, to-issues, triage
+Pairs well with: decision-log, grill-with-docs, domain-modeling, to-issues, triage
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
 
@@ -81,6 +81,16 @@ The critic must check:
 5. **Missing seams** — are there integration points (registration in a task registry, enum members, migration of existing records) that no module accounts for?
 
 Address all **MAJOR** concerns before writing the PRD. Surface **MINOR** concerns and **QUESTIONs** in the PRD's Implementation Decisions or Further Notes sections so downstream implementers can see them.
+
+2c. ADR promotion scan (required before writing PRD):
+
+Scan every entry in the proposed Implementation Decisions against the three ADR criteria:
+
+1. **Hard to reverse** — the cost of changing this decision later is meaningful
+2. **Surprising without context** — a future reader will wonder “why did they do it this way?”
+3. **Real trade-off** — there were genuine alternatives and one was chosen for specific reasons
+
+For any decision that satisfies all three: either write the ADR now (using the format in `docs/adr/`) or surface it to the user with the three criteria scored so they can decide. Do not embed it only in the PRD and move on — Implementation Decisions sections get lost when the PRD is done. Decisions that do not satisfy all three criteria stay in the PRD as-is.
 
 3. Write the PRD using the template below, then publish it to the project issue tracker as a PRD/spec/reference issue. Do not apply `ready-for-agent` to the PRD itself. Only child implementation issues produced by `to-issues` may receive `ready-for-agent`, and only after triage confirms AFK safety.
 

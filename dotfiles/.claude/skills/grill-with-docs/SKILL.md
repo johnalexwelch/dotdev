@@ -92,7 +92,7 @@ Human gates: every question batch (groups of five) requires user response before
 ## Context
 
 Typical workflows: pre-planning (before /design-plan or /to-prd), domain modeling, V1 idea discovery
-Pairs well with: decision-log, design-plan, to-prd, improve-codebase-architecture, stage-v1-concept, v1-workflow
+Pairs well with: decision-log, design-plan, to-prd, improve-codebase-architecture, domain-modeling, stage-v1-concept, v1-workflow
 
 <what-to-do>
 
@@ -109,6 +109,8 @@ V1 product discovery mode. If neither V1 nor a complex/doc-backed topic applies
 **Lightweight mode:** Ask one question at a time. Skip CONTEXT.md and ADR updates. Focus on resolving each decision branch before moving to the next.
 
 **Full mode:** Ask the questions in groups of five, waiting for feedback on each question before continuing.
+
+In full mode, maintain a `.grill-tree.md` scratchpad at the repo root (or in memory only for scratch/ephemeral states). One line per branch: `[ ]` pending or `[x]` resolved, followed by a short question summary. Update it as branches settle so context compaction cannot drop the unresolved frontier. Delete the file when the grill concludes.
 
 **V1 product discovery mode:** Ask in groups of five, waiting for feedback on
 each batch. An answer of `a`, `y`, or `yes` accepts the recommendations in that
@@ -138,7 +140,7 @@ V1_IDEA_BRIEF:
 
 **Autonomous module-grill drafting mode:** When invoked by `workflow-autonomous-backlog`, draft the question batch, recommended answers, uncertainty notes, and evidence references without treating the draft as user approval. The parent workflow must run critic consensus and still preserve human approval gates.
 
-If a question can be answered by exploring the codebase, explore the codebase instead.
+If a question can be answered from resources available to you (codebase, docs, ADRs, web search), answer it that way instead of asking.
 
 **Decision log requirement:** Use `decision-log` for every accepted
 recommendation or user-edited answer when a repo decision log exists. In scratch
