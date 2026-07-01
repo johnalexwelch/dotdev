@@ -16,7 +16,7 @@ Human gates: slice breakdown presented for approval before publishing
 ## Context
 
 Typical workflows: planning-to-execution (after /design-plan or /to-prd)
-Pairs well with: decision-log, design-plan, to-prd, triage, setup-skills
+Pairs well with: decision-log, design-plan, to-prd, triage, setup-skills, implement
 
 ## References
 
@@ -67,6 +67,8 @@ Prefer AFK over HITL only when acceptance criteria, verification, dependencies, 
 - A completed slice is demoable or verifiable on its own
 - Prefer many thin slices over few thick ones
 - Horizontal work belongs inside a slice as implementation detail; it should not become its own issue unless it has standalone user-visible or system-verifiable behavior
+- **Issue titles must describe an observable outcome, not a layer or component.** “User sees config value after saving” is correct; “Config UI” or “Backend resolver” are not. Rewrite any title that names a layer before presenting to the user.
+- **Tracer check for the first outcome slice:** after any prep/infrastructure slices, trace one representative value through every integration layer end-to-end (schema → service → API → UI → test). If the trace breaks — any layer is missing or unowned — resolve the gap before presenting the breakdown.
 </vertical-slice-rules>
 
 ### 3b. Independent slice review (required before presenting to user)
@@ -144,6 +146,14 @@ A reference to the parent issue on the issue tracker (if the source was an exist
 A concise description of this vertical slice. Describe the end-to-end behavior, not layer-by-layer implementation.
 
 Avoid specific file paths or code snippets — they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it here and note briefly that it came from a prototype. Trim to the decision-rich parts — not a working demo, just the important bits.
+
+### User stories
+
+The specific user stories from the PRD that this slice addresses (copy or reference by number).
+
+### Research / documentation notes
+
+_Optional. Include when this slice depends on external APIs, third-party specs, domain constraints, or prior art that implementers will need. Link or inline the key details so an agent can start without a separate research step. Omit when not applicable._
 
 ## Acceptance criteria
 
