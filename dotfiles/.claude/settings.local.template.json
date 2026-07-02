@@ -2,5 +2,13 @@
   "permissions": {
     "allow": [],
     "deny": []
+  },
+  "mcpServers": {
+    "gbrain": {
+      "args": [
+        "/Users/alexwelch/gbrain-repo/src/mcp/server.ts"
+      ],
+      "command": "/Users/alexwelch/.bun/bin/bun"
+    }
   }
 }
