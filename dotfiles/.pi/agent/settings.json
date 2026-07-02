@@ -31,7 +31,7 @@
   ],
   "theme": "dark",
   "skills": [
-    "~/dotdev/dotfiles/.claude/skills"
+    "~/.claude/skills"
   ],
   "pi-fork": {
     "defaultEffort": "balanced",

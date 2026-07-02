@@ -37,24 +37,26 @@ elif [ -d "$GUARDIAN_DIR" ]; then
     echo "Guardian ready (deps cached)"
 fi
 
-# Clone gbrain MCP server (optional — set INSTALL_GBRAIN=1 to enable)
-if [ "${INSTALL_GBRAIN:-0}" = "1" ]; then
-    GBRAIN_DIR="$HOME/gbrain-repo"
-    if [ ! -d "$GBRAIN_DIR" ]; then
-        echo "Cloning gbrain..."
-        run_cmd git clone https://github.com/garrytan/gbrain.git "$GBRAIN_DIR"
-    else
-        echo "gbrain already present, skipping clone"
-    fi
+# Clone gbrain MCP server (required — registered in settings.local.template.json)
+GBRAIN_DIR="$HOME/gbrain-repo"
+if [ ! -d "$GBRAIN_DIR" ]; then
+    echo "Cloning gbrain..."
+    run_cmd git clone https://github.com/garrytan/gbrain.git "$GBRAIN_DIR"
+else
+    echo "gbrain already present, skipping clone"
 fi
 
 # Install pi packages from settings.json
 PI_SETTINGS="$DOTFILES/dotfiles/.pi/agent/settings.json"
 if [ -f "$PI_SETTINGS" ]; then
     echo "Installing pi packages..."
-    python3 -c "import json; [print(p) for p in json.load(open('$PI_SETTINGS'))['packages']]" | while read -r pkg; do
-        run_cmd pi install "$pkg"
-    done
+    pi_failed=()
+    while IFS= read -r pkg; do
+        run_cmd pi install "$pkg" || pi_failed+=("$pkg")
+    done < <(python3 -c "import json; [print(p) for p in json.load(open('$PI_SETTINGS'))['packages']]")
+    if [ ${#pi_failed[@]} -gt 0 ]; then
+        echo "Warning: ${#pi_failed[@]} pi package(s) failed: ${pi_failed[*]}"
+    fi
 else
     echo "Warning: pi settings missing — skipping pi package install"
 fi

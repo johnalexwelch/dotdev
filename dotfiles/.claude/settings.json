@@ -181,13 +181,5 @@
   "remoteControlAtStartup": true,
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
-  "skipAutoPermissionPrompt": true,
-  "mcpServers": {
-    "gbrain": {
-      "args": [
-        "/Users/alexwelch/gbrain-repo/src/mcp/server.ts"
-      ],
-      "command": "/Users/alexwelch/.bun/bin/bun"
-    }
-  }
+  "skipAutoPermissionPrompt": true
 }
