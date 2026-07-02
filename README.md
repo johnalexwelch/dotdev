@@ -85,6 +85,18 @@ dotdev/
 | ⭐ Starship | Shell prompt | Git integration |
 | 🤖 Ollama | Local AI | Code assistance |
 
+
+## 🛠️ Standalone Scripts
+
+These live in `scripts/` but are **not called by `install.sh`** — run manually as needed:
+
+| Script | Purpose | Usage |
+|--------|---------|-------|
+| `arc.sh` | Backup/restore Arc browser extensions & settings | `./scripts/arc.sh backup` / `restore` |
+| `hdev.sh` | Launch herdr workspace layout for a project | `hdev [project_dir] [--monitor\|--minimal]` |
+| `hlog.sh` | Snapshot active herdr agent panes to daily log | `hlog` / `hlog --view` / `hlog --search` |
+| `security-init.sh` | Init detect-secrets + git-secrets in a **repo** | Run inside each new repo, not at machine setup |
+
 ## 🔄 Maintenance
 
 ### 📝 Regular Updates

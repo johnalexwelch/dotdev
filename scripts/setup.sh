@@ -1,54 +1,5 @@
 #!/bin/bash
-# Legacy standalone script — canonical setup is install.sh.
-# Kept for direct invocation; install.sh inlines the relevant pieces.
-
-# Base directory
-DOTFILES="$HOME/dotdev"
-# Create base directories
-echo "Creating base directories..."
-mkdir -p ~/dbtlabs ~/jarvis ~/projects
-
-# Initialize config directory structure
-echo "Initializing config directory structure..."
-bash "$DOTFILES/scripts/config-init.sh"
-
-# Install Homebrew and packages
-echo "Setting up Homebrew..."
-bash "$DOTFILES/scripts/brew.sh"
-
-# Setup GitHub SSH
-echo "Setting up GitHub SSH..."
-bash "$DOTFILES/scripts/github.sh"
-
-# Install GitHub CLI extensions (gh-dash, gh-enhance, ...)
-echo "Installing GitHub CLI extensions..."
-bash "$DOTFILES/scripts/gh-extensions.sh"
-
-# Create symbolic links from Library/Application Support to .config
-echo "Setting up application config symlinks..."
-mkdir -p "$HOME/Library/Application Support"
-ln -sf "$HOME/.config/arc" "$HOME/Library/Application Support/Arc"
-ln -sf "$HOME/.config/cursor" "$HOME/Library/Application Support/Cursor"
-ln -sf "$HOME/.config/streamdeck" "$HOME/Library/Application Support/com.elgato.StreamDeck"
-
-# Configure macOS settings
-echo "Configuring macOS settings..."
-bash "$DOTFILES/scripts/macos/defaults.sh"
-bash "$DOTFILES/scripts/macos/finder.sh"
-bash "$DOTFILES/scripts/macos/dock.sh"
-bash "$DOTFILES/scripts/macos/spotlight.sh"
-bash "$DOTFILES/scripts/macos/terminal.sh"
-
-# Make scripts executable and configure macOS permissions
-echo "Configuring app permissions..."
-chmod +x "$DOTFILES/scripts/macos/permissions.sh"
-"$DOTFILES/scripts/macos/permissions.sh"
-
-# Initialize security tools
-echo "Setting up security tools..."
-bash "$DOTFILES/scripts/security-init.sh"
-
-# Make shellcheck-fix script executable
-chmod +x scripts/shellcheck-fix.sh
-
-echo "Setup complete!"
+# Thin wrapper — canonical setup is install.sh.
+# Kept for muscle memory; exec avoids double-process overhead.
+# ponytail: security-init.sh is per-repo (scans cwd) — run manually inside each repo
+exec "$(dirname "${BASH_SOURCE[0]}")/../install.sh" "$@"
