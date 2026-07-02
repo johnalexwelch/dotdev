@@ -2,7 +2,6 @@ tap "anomalyco/tap"
 tap "derailed/k9s"
 tap "hashicorp/tap"
 tap "int128/kubelogin"
-tap "manaflow-ai/cmux"
 tap "marcus/tap"
 tap "nikitabobko/tap"
 # Display directories as trees (with optional color/HTML output)
