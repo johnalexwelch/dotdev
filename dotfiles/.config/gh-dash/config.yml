@@ -3,8 +3,59 @@
 #
 # Companion integration: gh-enhance
 # Docs: https://www.gh-dash.dev/companions/enhance/dash-integration/
+
+prSections:
+  - title: "Needs Review"
+    filters: "is:open repo:johnalexwelch/chorus review:required"
+  - title: "Agent PRs"
+    filters: "is:open repo:johnalexwelch/chorus"
+  - title: "My PRs"
+    filters: "is:open repo:johnalexwelch/chorus author:@me"
+
+issuesSections:
+  - title: "Needs Me"
+    filters: "is:open repo:johnalexwelch/chorus label:ready-for-human,needs-human,needs-human-review,needs-info"
+  - title: "Triage"
+    filters: "is:open repo:johnalexwelch/chorus label:needs-triage"
+  - title: "In Progress"
+    filters: "is:open repo:johnalexwelch/chorus label:in-progress,ready-for-agent"
+  - title: "Blocked"
+    filters: "is:open repo:johnalexwelch/chorus label:blocked,blocked-planning,on-hold"
+  - title: "Planning"
+    filters: "is:open repo:johnalexwelch/chorus label:planning"
+
+defaults:
+  prsLimit: 20
+  issuesLimit: 30
+  preview:
+    open: true
+    width: 60
+  layout:
+    prs:
+      repoName:
+        hidden: true
+      author:
+        width: 15
+    issues:
+      repoName:
+        hidden: true
+
 keybindings:
   prs:
     - key: T
       name: enhance pr
       command: gh enhance -R {{.RepoName}} {{.PrNumber}}
+  issues:
+    - key: c
+      name: comment
+      command: >
+        gh issue comment {{.IssueNumber}} --repo {{.RepoName}} --body "$(gum write --placeholder 'comment...')"
+    - key: l
+      name: label ready-for-agent
+      command: gh issue edit {{.IssueNumber}} --repo {{.RepoName}} --add-label ready-for-agent --remove-label needs-triage
+    - key: H
+      name: label needs-human
+      command: gh issue edit {{.IssueNumber}} --repo {{.RepoName}} --add-label needs-human
+    - key: X
+      name: close
+      command: gh issue close {{.IssueNumber}} --repo {{.RepoName}}
