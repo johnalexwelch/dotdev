@@ -17,6 +17,11 @@ Everything lives in `~/dotdev`. One repo, two concerns:
     .gitconfig
     .gitignore_global
     .claude/                # Claude Code + pi config
+      skills/               # 70+ skills (source of truth — stowed to ~/.claude/skills)
+      skills.zip            # distributable archive of the skills dir
+      hooks/                # workflow-guard.sh, herdr-agent-state.sh, etc.
+      settings.json         # shared Claude config (hooks, plugins, permissions)
+      settings.local.template.json  # machine-local template (gbrain MCP)
     .pi/                    # pi agent config
     .config/                # zsh, starship, lazygit, cursor, arc, raycast, etc.
   scripts/
