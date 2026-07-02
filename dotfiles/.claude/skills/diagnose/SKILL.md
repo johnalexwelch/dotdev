@@ -18,7 +18,7 @@ Runtime note: the project test runner or equivalent reproduction harness is requ
 ## Context
 
 Typical workflows: workflow-debug
-Pairs well with: tdd, execute-phase, improve-codebase-architecture
+Pairs well with: tdd, implement, execute-phase, improve-codebase-architecture
 
 ## Diagnosis Modes
 
@@ -73,19 +73,38 @@ The goal is not a clean repro but a **higher reproduction rate**. Loop the trigg
 
 Stop and say so explicitly. List what you tried. Ask the user for: (a) access to whatever environment reproduces it, (b) a captured artifact (HAR file, log dump, core dump, screen recording with timestamps), or (c) permission to add temporary production instrumentation. Do **not** proceed to hypothesise without a loop.
 
+### Phase 1 done — when the loop is tight
+
+Phase 1 is complete when you can name **one command** you have **already run at least once** that satisfies all four:
+
+- [ ] **Red-capable** — drives the actual bug code path and asserts the user's exact symptom; it can go red on this bug and green once fixed
+- [ ] **Deterministic** — same verdict every run (or for non-deterministic bugs, a pinned high reproduction rate)
+- [ ] **Fast** — seconds, not minutes
+- [ ] **Agent-runnable** — you can invoke it unattended; a required human click only via `scripts/hitl-loop.template.sh`
+
+If you catch yourself reading code to build a theory before this command exists, **stop** — jumping to a hypothesis without a red-capable loop is the exact failure this skill prevents.
+
 Do not proceed to Phase 2 until you have a loop you believe in.
 
-## Phase 2 — Reproduce
+## Phase 2 — Reproduce + Minimise
 
 Run the loop. Watch the bug appear.
 
-Confirm:
+**Confirm reproduction:**
 
 - [ ] The loop produces the failure mode the **user** described — not a different failure that happens to be nearby. Wrong bug = wrong fix.
 - [ ] The failure is reproducible across multiple runs (or, for non-deterministic bugs, reproducible at a high enough rate to debug against).
 - [ ] You have captured the exact symptom (error message, wrong output, slow timing) so later phases can verify the fix actually addresses it.
 
-Do not proceed until you reproduce the bug.
+**Minimise:**
+
+Once the loop is red, shrink the repro to the **smallest scenario that still goes red**. Cut inputs, callers, config, data, and steps **one at a time** — re-run the loop after each cut, keeping only what's load-bearing for the failure.
+
+Why bother: a minimal repro shrinks the hypothesis space (fewer moving parts to suspect) and becomes the clean regression test in Phase 5.
+
+Done when every remaining element is load-bearing — removing any one of them makes the loop go green.
+
+Do not proceed until you have reproduced **and** minimised.
 
 ## Phase 3 — Hypothesise
 

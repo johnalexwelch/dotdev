@@ -31,7 +31,7 @@ Human gates: approval required at 4 critical points: idea brief, system design, 
 ## Flow
 
 ```
-v1-idea-grill (Step 1)
+grill-with-docs V1 mode (Step 1)
   ↓ [approval gate]
 decision-log (Step 2)
   ↓
@@ -77,7 +77,9 @@ Rules:
 
 ### Step 1: V1 Idea Grill
 
-**Invoke:** `v1-idea-grill`
+**Invoke:** `grill-with-docs` in **V1 product discovery mode**
+
+Trigger V1 mode by framing the invocation as product/idea discovery. The skill auto-selects V1 mode when the context is a loose product idea.
 
 - Interview the user about the product idea
 - Clarify target users, core problem, V1 promise
@@ -279,7 +281,7 @@ At final completion, return the full workflow_steps ledger showing all completed
 ```
 User: "I want to build a V1 product that helps teams run better standups. Start with the idea."
 
-Response: Invoke v1-idea-grill to:
+Response: Invoke grill-with-docs in V1 product discovery mode to:
 1. Clarify who the users are (scrum masters, developers, engineering managers)
 2. Define the core job (run focused standups without context switching)
 3. Identify must-haves (async updates, time constraints, meeting notes)

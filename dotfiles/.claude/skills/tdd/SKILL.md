@@ -20,7 +20,7 @@ For AFK or workflow-driven usage, the planning gate is satisfied only when the i
 ## Context
 
 Typical workflows: feature development, bug fixing (test-first)
-Pairs well with: diagnose, execute-phase, improve-codebase-architecture
+Pairs well with: diagnose, implement, execute-phase, improve-codebase-architecture, codebase-design
 
 # Test-Driven Development
 
@@ -33,6 +33,20 @@ Pairs well with: diagnose, execute-phase, improve-codebase-architecture
 **Bad tests** are coupled to implementation. They mock internal collaborators, test private methods, or verify through external means (like querying a database directly instead of using the interface). The warning sign: your test breaks when you refactor, but behavior hasn't changed. If you rename an internal function and tests fail, those tests were testing implementation, not behavior.
 
 See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+
+## Anti-Pattern: Tautological Tests
+
+A tautological test **can never disagree with the code** — it passes by construction. The tell: the expected value is computed the same way the implementation computes it.
+
+```typescript
+// Tautological — the test mirrors the implementation, can never catch a bug
+expect(add(a, b)).toBe(a + b);
+
+// Correct — expected value from an independent source of truth
+expect(add(2, 3)).toBe(5);
+```
+
+Expected values must come from an **independent source of truth**: a known-good literal, a worked example, the spec, or a manually-verified result. Never derive the expected value the same way the code under test derives it.
 
 ## Anti-Pattern: Horizontal Slices
 
