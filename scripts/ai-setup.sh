@@ -48,4 +48,26 @@ if [ "${INSTALL_GBRAIN:-0}" = "1" ]; then
     fi
 fi
 
+# Install pi packages from settings.json
+PI_SETTINGS="$DOTFILES/dotfiles/.pi/agent/settings.json"
+if [ -f "$PI_SETTINGS" ]; then
+    echo "Installing pi packages..."
+    python3 -c "import json; [print(p) for p in json.load(open('$PI_SETTINGS'))['packages']]" | while read -r pkg; do
+        run_cmd pi install "$pkg"
+    done
+else
+    echo "Warning: pi settings missing — skipping pi package install"
+fi
+
+# Guardian .env — ANTHROPIC_API_KEY required, cannot be automated
+GUARDIAN_ENV="$HOME/.claude/guardian/.env"
+if [ ! -f "$GUARDIAN_ENV" ] && [ -d "$HOME/.claude/guardian" ]; then
+    echo ""
+    echo "Action required: Guardian .env missing"
+    echo "  Create: $GUARDIAN_ENV"
+    echo "  Contents: ANTHROPIC_API_KEY=<key from console.anthropic.com>"
+    echo ""
+fi
+
 echo "AI setup complete!"
+# ponytail: claude plugins need no script — enabledPlugins in stowed settings.json drives Claude directly
