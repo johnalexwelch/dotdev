@@ -1,4 +1,3 @@
-# In ~/dotdev/home/.zshrc
 export XDG_CONFIG_HOME="$HOME/.config"
 export ZSH_CONFIG="$XDG_CONFIG_HOME/zsh"
 
@@ -36,12 +35,12 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 
 # bun completions
-[ -s "/Users/alexwelch/.bun/_bun" ] && source "/Users/alexwelch/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-source /Users/alexwelch/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
+[ -f "$HOME/.safe-chain/scripts/init-posix.sh" ] && source "$HOME/.safe-chain/scripts/init-posix.sh"
 
 # Quick idea capture → Obsidian Idea Bin
 # Usage: idea <thought>        → AI-enriched note
@@ -93,7 +92,7 @@ STEPS:
 Idea: $title"
 
   local ai_out category pitch tags steps
-  ai_out=$(claude -p "$prompt" --model claude-haiku-4-5-20251001 2>/dev/null)
+  ai_out=$(claude -p "$prompt" --model claude-haiku-4-5 2>/dev/null)
 
   category=$(echo "$ai_out" | grep '^CATEGORY:' | sed 's/CATEGORY: *//'); category=${category:-other}
   pitch=$(echo "$ai_out"    | grep '^PITCH:'    | sed 's/PITCH: *//');    pitch=${pitch:-(no pitch)}
