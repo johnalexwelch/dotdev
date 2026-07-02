@@ -1,4 +1,6 @@
 #!/bin/bash
+# Legacy standalone script — canonical setup is install.sh.
+# Kept for direct invocation; install.sh inlines the relevant pieces.
 
 # Base directory
 DOTFILES="$HOME/dotdev"
