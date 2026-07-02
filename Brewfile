@@ -90,8 +90,6 @@ brew "poppler"
 brew "postgresql@18", link: true
 # Framework for managing multi-language pre-commit hooks
 brew "pre-commit"
-# Python version management
-brew "pyenv"
 # Database management TUI for PostgreSQL/MySQL/SQLite
 brew "rainfrog"
 # Search tool like grep and The Silver Searcher
@@ -221,8 +219,6 @@ cask "suspicious-package"
 cask "todoist-app"
 # Open-source code editor
 cask "visual-studio-code"
-# Rust-based terminal
-cask "warp"
 mas "Goodnotes", id: 1444383602
 mas "Okta Verify", id: 490179405
 mas "Pages", id: 361309726
@@ -273,7 +269,6 @@ vscode "streetsidesoftware.code-spell-checker"
 vscode "usernamehw.errorlens"
 vscode "yzhang.markdown-all-in-one"
 go "github.com/marcus/sidecar/cmd/sidecar"
-go "github.com/marcus/td"
 cargo "rtk"
 uv "cora"
 npm "@brdemorin/google-docs-mcp-server"
