@@ -49,6 +49,7 @@ alias cur="cursor"   # Shorter alias for Cursor
 
 # Projects — herdr workspaces
 alias hdev='bash ~/dotdev/scripts/hdev.sh'
+alias hlog='bash ~/dotdev/scripts/hlog.sh'
 alias chorus='hdev ~/projects/legacy/chorus'
 alias cora='hdev ~/projects/cora'
 alias mira='hdev ~/projects/mira'
