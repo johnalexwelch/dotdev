@@ -31,11 +31,19 @@ run_cmd bash "$DOTFILES/scripts/macos/defaults.sh"
 run_cmd mkdir -p "$HOME/.claude/hooks"
 run_cmd mkdir -p "$HOME/.claude/skills"
 run_cmd mkdir -p "$HOME/.config"
+run_cmd mkdir -p "$HOME/.pi/agent"
+run_cmd mkdir -p "$HOME/.config/herdr"
 
 if [ "$DRY_RUN" = "1" ]; then
     stow -nv -R -t "$HOME" dotfiles/
 else
     stow -v -R -t "$HOME" dotfiles/
 fi
+
+# AI tooling (guardian, headroom, gbrain, pi settings)
+run_cmd bash "$DOTFILES/scripts/ai-setup.sh"
+
+# Herdr integrations and plugins
+run_cmd bash "$DOTFILES/scripts/herdr-setup.sh"
 
 echo "Installation complete! Please restart your computer."

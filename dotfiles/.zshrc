@@ -51,6 +51,12 @@ idea() {
   local ts=$(date "+%Y-%m-%d")
   local quick=0
 
+  [[ "$1" == "-h" || "$1" == "--help" ]] && {
+    echo "usage: idea            → prompt (safe for parens/special chars)"
+    echo "       idea <text>     → inline capture"
+    echo "       idea -q <text>  → quick, no AI"
+    return
+  }
   [[ "$1" == "-q" || "$1" == "--quick" ]] && { quick=1; shift; }
 
   local title
@@ -89,9 +95,9 @@ Idea: $title"
   local ai_out category pitch tags steps
   ai_out=$(claude -p "$prompt" --model claude-haiku-4-5-20251001 2>/dev/null)
 
-  category=$(echo "$ai_out" | grep '^CATEGORY:' | sed 's/CATEGORY: *//')
-  pitch=$(echo "$ai_out"    | grep '^PITCH:'    | sed 's/PITCH: *//')
-  tags=$(echo "$ai_out"     | grep '^TAGS:'     | sed 's/TAGS: *//')
+  category=$(echo "$ai_out" | grep '^CATEGORY:' | sed 's/CATEGORY: *//'); category=${category:-other}
+  pitch=$(echo "$ai_out"    | grep '^PITCH:'    | sed 's/PITCH: *//');    pitch=${pitch:-(no pitch)}
+  tags=$(echo "$ai_out"     | grep '^TAGS:'     | sed 's/TAGS: *//');     tags=${tags:-#idea}
   steps=$(echo "$ai_out"    | awk '/^STEPS:/{f=1;next} f && /^- /{print}')
 
   printf '---\ntitle: %s\ncreated: %s\ncategory: %s\ndomain: %s\nenergy: 0\nstatus: captured\n---\n\n# %s\n\n> %s\n\ntags: #idea %s\n\n## Next Steps\n\n%s\n' \
