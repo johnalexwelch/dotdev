@@ -112,12 +112,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash '/Users/alexwelch/.claude/hooks/herdr-agent-state.sh' session",
+            "command": "bash \"$HOME/.claude/hooks/herdr-agent-state.sh\" session",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "for d in /Users/alexwelch/.claude/plugins/cache/claude-plugins-official/remember/*/hooks.d/after_save; do [ -d \"$d\" ] && [ ! -f \"$d/60-journey.sh\" ] && cp /Users/alexwelch/.claude/hooks/60-journey.sh \"$d/60-journey.sh\" && chmod +x \"$d/60-journey.sh\"; done",
+            "command": "for d in $HOME/.claude/plugins/cache/claude-plugins-official/remember/*/hooks.d/after_save; do [ -d \"$d\" ] && [ ! -f \"$d/60-journey.sh\" ] && cp $HOME/.claude/hooks/60-journey.sh \"$d/60-journey.sh\" && chmod +x \"$d/60-journey.sh\"; done",
             "timeout": 5
           }
         ]
