@@ -45,6 +45,7 @@ backup_extensions() {
     for ext in "$ARC_EXTENSION_PATH"/*; do
         if [ -d "$ext" ]; then
             ext_name=$(basename "$ext")
+            # shellcheck disable=SC2012  # version dirs are alphanumeric, ls is safe here
             ext_version=$(ls "$ext" | sort -V | tail -n1)
 
             # Copy extension files

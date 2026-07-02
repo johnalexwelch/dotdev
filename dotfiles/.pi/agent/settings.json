@@ -37,18 +37,18 @@
     "defaultEffort": "balanced",
     "efforts": {
       "fast": {
-        "provider": "openrouter",
-        "id": "deepseek/deepseek-v4-flash",
+        "provider": "anthropic",
+        "id": "claude-haiku-4-5",
         "thinking": "off"
       },
       "balanced": {
-        "provider": "openrouter",
-        "id": "deepseek/deepseek-v4-pro",
+        "provider": "anthropic",
+        "id": "claude-sonnet-4-6",
         "thinking": "low"
       },
       "deep": {
-        "provider": "openrouter",
-        "id": "deepseek/deepseek-v4-pro",
+        "provider": "anthropic",
+        "id": "claude-opus-4-5",
         "thinking": "medium"
       }
     }

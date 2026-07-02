@@ -15,7 +15,7 @@ if [ ! -f "$HOME/.ssh/id_ed25519" ]; then
     chmod 700 "$HOME/.ssh"
 
     # Generate new SSH key with provided email
-    read -p "Enter your GitHub email: " github_email
+    read -r -p "Enter your GitHub email: " github_email
     ssh-keygen -t ed25519 -C "$github_email" -f "$HOME/.ssh/id_ed25519" -N ""
 
     # Start ssh-agent and add key
