@@ -40,6 +40,8 @@ run_cmd bash "$DOTFILES/scripts/macos/finder.sh"
 run_cmd bash "$DOTFILES/scripts/macos/dock.sh"
 run_cmd bash "$DOTFILES/scripts/macos/spotlight.sh"
 run_cmd bash "$DOTFILES/scripts/macos/terminal.sh"
+run_cmd bash "$DOTFILES/scripts/macos/screen.sh"
+run_cmd bash "$DOTFILES/scripts/macos/input_devices.sh"
 run_cmd bash "$DOTFILES/scripts/macos/permissions.sh"
 
 # Create symlinks
