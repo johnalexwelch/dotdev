@@ -36,9 +36,5 @@ mkdir -p "$DOTFILES_CONFIG/zsh/conf.d"
 
 echo "Config directory structure created"
 
-# Use stow to create symlinks
-echo "Creating symlinks with stow..."
-cd "$DOTFILES" || exit
-stow -v -R -t "$HOME" .config/
-
 echo "Configuration setup complete"
+# ponytail: stow handled by install.sh over full dotfiles/ — no partial stow here
