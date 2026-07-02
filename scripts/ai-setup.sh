@@ -59,14 +59,10 @@ else
     echo "Warning: pi settings missing — skipping pi package install"
 fi
 
-# Guardian .env — ANTHROPIC_API_KEY required, cannot be automated
-GUARDIAN_ENV="$HOME/.claude/guardian/.env"
-if [ ! -f "$GUARDIAN_ENV" ] && [ -d "$HOME/.claude/guardian" ]; then
-    echo ""
-    echo "Action required: Guardian .env missing"
-    echo "  Create: $GUARDIAN_ENV"
-    echo "  Contents: ANTHROPIC_API_KEY=<key from console.anthropic.com>"
-    echo ""
+# Guardian needs ANTHROPIC_API_KEY in env (reads process.env, no .env loading)
+if [ -d "$HOME/.claude/guardian" ] && [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+    echo "Warning: ANTHROPIC_API_KEY not set — guardian will fall back to 'ask' mode"
+    echo "  Export it in ~/.zshrc or equivalent"
 fi
 
 echo "AI setup complete!"
