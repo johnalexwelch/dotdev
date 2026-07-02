@@ -15,16 +15,32 @@ run_cmd() {
 # Base directory
 DOTFILES="$HOME/dotdev"
 
-# Install Homebrew and packages
-if [ -f "$DOTFILES/scripts/brew.sh" ]; then
-    run_cmd bash "$DOTFILES/scripts/brew.sh"
-fi
+# Homebrew + packages
+run_cmd bash "$DOTFILES/scripts/brew.sh"
 
-# Create directory structure
-run_cmd bash "$DOTFILES/scripts/setup.sh"
+# Project dirs
+run_cmd mkdir -p ~/dbtlabs ~/jarvis ~/projects
 
-# Configure macOS
+# Config dir structure (mkdir only — no stow here)
+DOTFILES="$DOTFILES" run_cmd bash "$DOTFILES/scripts/config-init.sh"
+
+# GitHub SSH + CLI extensions
+run_cmd bash "$DOTFILES/scripts/github.sh"
+run_cmd bash "$DOTFILES/scripts/gh-extensions.sh"
+
+# App config symlinks
+run_cmd mkdir -p "$HOME/Library/Application Support"
+run_cmd ln -sf "$HOME/.config/arc" "$HOME/Library/Application Support/Arc"
+run_cmd ln -sf "$HOME/.config/cursor" "$HOME/Library/Application Support/Cursor"
+run_cmd ln -sf "$HOME/.config/streamdeck" "$HOME/Library/Application Support/com.elgato.StreamDeck"
+
+# macOS defaults
 run_cmd bash "$DOTFILES/scripts/macos/defaults.sh"
+run_cmd bash "$DOTFILES/scripts/macos/finder.sh"
+run_cmd bash "$DOTFILES/scripts/macos/dock.sh"
+run_cmd bash "$DOTFILES/scripts/macos/spotlight.sh"
+run_cmd bash "$DOTFILES/scripts/macos/terminal.sh"
+run_cmd bash "$DOTFILES/scripts/macos/permissions.sh"
 
 # Create symlinks
 # Ensure target dirs exist so Stow creates per-item symlinks (not tree-folded)
@@ -35,9 +51,9 @@ run_cmd mkdir -p "$HOME/.pi/agent"
 run_cmd mkdir -p "$HOME/.config/herdr"
 
 if [ "$DRY_RUN" = "1" ]; then
-    stow -nv -R -t "$HOME" dotfiles/
+    stow -d "$DOTFILES" -nv -R -t "$HOME" dotfiles
 else
-    stow -v -R -t "$HOME" dotfiles/
+    stow -d "$DOTFILES" -v -R -t "$HOME" dotfiles
 fi
 
 # AI tooling (guardian, headroom, gbrain, pi settings)
