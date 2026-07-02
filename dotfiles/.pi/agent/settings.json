@@ -55,17 +55,17 @@
   },
   "observational-memory": {
     "model": {
-      "provider": "openrouter",
-      "id": "deepseek/deepseek-v4-flash",
+      "provider": "anthropic",
+      "id": "claude-haiku-4-5",
       "thinking": "off"
     }
   },
   "modelRoles": {
-    "fast": "openrouter/deepseek/deepseek-v4-flash",
-    "strong": "openrouter/xiaomi/mimo-v2.5-pro",
-    "thinker": "openrouter/deepseek/deepseek-v4-pro",
-    "arbiter": "openrouter/qwen/qwen3.7-max",
-    "vision": "minimax/MiniMax-M3",
-    "reasoner": "z-ai/glm-5.1"
+    "fast": "anthropic/claude-haiku-4-5",
+    "strong": "anthropic/claude-sonnet-4-6",
+    "thinker": "anthropic/claude-sonnet-4-6",
+    "arbiter": "anthropic/claude-opus-4-5",
+    "vision": "anthropic/claude-sonnet-4-6",
+    "reasoner": "anthropic/claude-opus-4-5"
   }
 }
