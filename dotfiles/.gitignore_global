@@ -156,3 +156,7 @@ docker-compose.override.yml
 .local/
 
 **/.claude/settings.local.json
+
+# Agent/tool local state
+.omc/
+.serena/
