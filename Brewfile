@@ -80,6 +80,10 @@ brew "neovim"
 brew "node@22"
 # Development kit for the Java programming language
 brew "openjdk@21"
+# Magical shell history
+brew "atuin"
+# Interactive JSON viewer
+brew "fx"
 # Execute binaries from Python packages in isolated environments
 brew "pipx"
 # PDF rendering library (based on the xpdf-3.0 code base)
@@ -106,8 +110,6 @@ brew "sox"
 brew "starship"
 # Organize software neatly under a single directory tree (e.g. /usr/local)
 brew "stow"
-# Code-search similar to ack
-brew "the_silver_searcher"
 # Terminal multiplexer
 brew "tmux"
 # Parser generator tool
@@ -156,8 +158,6 @@ cask "cleanmymac"
 cask "codex"
 # Voice and text chat software
 cask "discord"
-# App to build and share containerised applications and microservices
-cask "docker-desktop"
 # Control your Elgato key lights
 cask "elgato-control-center"
 # Assign keys, and then decorate and label them
@@ -191,8 +191,6 @@ cask "obsidian"
 cask "ollama-app"
 # Replacement for Docker Desktop
 cask "orbstack"
-# Collaboration platform for API development
-cask "postman"
 # Quick Look generator for Markdown files
 cask "qlmarkdown"
 # Control your tools with a few keystrokes

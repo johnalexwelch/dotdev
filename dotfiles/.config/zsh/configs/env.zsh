@@ -22,6 +22,9 @@ export VISUAL='code'
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
+# GitHub MCP — alias so spawned MCP servers find the token
+[[ -n "${GITHUB_MCP_PAT:-}" ]] && export GITHUB_PERSONAL_ACCESS_TOKEN="$GITHUB_MCP_PAT"
+
 # Vault
 export VAULT_ADDR=https://vault.internal.classdojo.com
 
