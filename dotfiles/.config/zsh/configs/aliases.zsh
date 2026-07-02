@@ -47,8 +47,11 @@ alias ports='netstat -tulanp'
 alias code="cursor"  # Make 'code' command open Cursor
 alias cur="cursor"   # Shorter alias for Cursor
 
-# Projects
-alias dev='bash ~/dotdev/scripts/tmux-dev.sh'
+# Projects — herdr workspaces
+alias hdev='bash ~/dotdev/scripts/hdev.sh'
+alias chorus='hdev ~/projects/legacy/chorus'
+alias cora='hdev ~/projects/cora'
+alias mira='hdev ~/projects/mira'
+
+# Legacy tmux fallback
 alias tdev='bash ~/dotdev/scripts/tmux-dev.sh'
-alias iris='bash ~/dotdev/scripts/tmux-dev.sh ~/projects/iris'
-alias iris-reset='tmux kill-session -t iris'
