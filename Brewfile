@@ -80,8 +80,6 @@ brew "neovim"
 brew "node@22"
 # Development kit for the Java programming language
 brew "openjdk@21"
-# CLI for Postgres with auto-completion and syntax highlighting
-brew "pgcli"
 # Execute binaries from Python packages in isolated environments
 brew "pipx"
 # PDF rendering library (based on the xpdf-3.0 code base)
