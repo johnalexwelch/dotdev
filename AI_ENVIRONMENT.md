@@ -1,291 +1,337 @@
-# How Alex Welch Works with AI
+# AI Working Environment
 
-> The goal of this setup is one thing: **make AI a reliable coworker, not a chatbot.** Every piece of infrastructure exists to close the gap between "this feels useful" and "I can depend on this."
-
----
-
-## The Mental Model
-
-The setup treats AI as a personal org of specialists — each one owns a domain, holds memory about it, and operates under clear boundaries. The overall system is called **CHORUS** (*Coordinated Hub Of Reasoning & Unified Specialists*). CHORUS is not an agent itself; it's the constitution — the shared contracts, trust rules, and registry that all agents operate under.
-
-The daily reality is simpler than it sounds: most work happens in **pi** (a local AI coding agent) through **Claude Code** (Anthropic's agentic tool), with a library of skills that route different kinds of work through structured playbooks. The fleet of named agents (Mira, Iris, Cora, etc.) backs the bigger workflows. They connect through a file-based protocol, not API calls.
+> How the toolchain fits together and how work actually gets done.
 
 ---
 
-## The Agent Fleet
+## The Interface: pi + Claude Code
 
-Eight agents, each with a charter — a defined mission, owned responsibilities, and explicit anti-scope (what they *don't* own). The registry is the single source of truth.
+Everything runs through **pi** — a local coding agent harness that wraps Claude Code (Anthropic's agentic tool). The terminal is the primary interface. There's no separate web app, no prompt playground. Work happens in the same terminal session as the code.
 
-| Agent | Role | Trust Domain | What they do |
-|---|---|---|---|
-| **Mira** | COO / Chief of Staff | Operator-sensitive | Brokers cross-domain work, maintains prioritized stream to Alex, advises and coordinates. Broker, not warehouse — she routes, doesn't hoard. |
-| **Iris** | Analytics / CDO | Work-confidential | Warehouse-validated metrics, WBR numbers, ClassDojo analytics. Separate identity, never co-mingled with personal data. |
-| **Cora** | CTO / Principal Engineer | Infrastructure | Operates the platform — runtimes, homelab, NAS, the guardian, the watchdog. Custodies no other domain's data. |
-| **Rowan** | Knowledge / Second Brain | Low-sensitivity | Maintains the curated knowledge corpus. Ingestion, review queue, concept page curation. |
-| **Cleo** | CFO | Operator-sensitive | Household finance, budgeting, transactions. |
-| **Nora** | Nutritionist | Operator-sensitive | Nutrition planning, dietary tracking, meal guidance. |
-| **Wren** | Lorekeeper / Creative | Low-sensitivity | Creative writing, D&D canon. |
-| **Aria** | Transcription | Low-sensitivity | Audio transcription and processing. |
+**Model**: claude-opus-4-5. Extended thinking always on, effort level high. The session runs in fullscreen TUI mode.
 
-**The key design choice**: agents are partitioned by *data sensitivity and credentials*, not by work-vs-life. This means Iris never touches personal data, Cleo never touches work financials, and a breach in one domain stays small. Credentials never cross domain boundaries; data crosses only by explicit, logged, approved request.
+**What "agentic" means here**: the agent reads files, runs shell commands, edits code, calls web APIs, opens browsers, manages git, creates PRs, and spawns subagents — all in a single session. The human sets direction; the agent drives.
 
-**Mira's role specifically**: she's the COO — strategic coordination, one prioritized stream to Alex, the lens through which cross-domain decisions flow. She doesn't own execution; she owns the perspective that makes execution coherent. Coordination is a function she *performs*, not her identity.
-
-**Cora's role specifically**: she's the CTO — she builds, runs, monitors, and operates the technical substrate. She operates the shared infrastructure (guardian, watchdog, homelab) but *CHORUS governs* that infrastructure. Cora enforces the standards; she doesn't define them.
+**Permission model**: almost everything is open by default. The hard-denies are baked in (`sudo`, `git push --force`, `rm -rf /`). The actual safety control surface is the guardian (below), not the permissions list.
 
 ---
 
-## The Trust Model
+## The Guardian: PreToolUse Safety Layer
 
-Every agent operates on a graduated-autonomy ladder:
+Every `Bash` call goes through the guardian before execution. This is a TypeScript program (compiled to `dist/cli.js`) that calls claude-haiku-4-5 to evaluate the command against the current session context and a rule set.
 
-- **Tier 1 — Reads**: run autonomously, no approval needed
-- **Tier 2 — Routine internal actions**: run under a signed standing policy
-- **Tier 3 — Outward, irreversible, or cross-domain**: require Alex's per-action signed consent
+**Three outcomes**: allow (silent), block (hard exit, logged reason), ask (surface to the human).
 
-The signing key never lives in an agent. No agent can forge Alex's approval. Everything logs to a Mira-independent audit trace. There's a fail-closed kill switch (`chorus halt --level soft/medium/hard`).
+**Why haiku**: the guardian runs on every command — latency matters. Haiku is fast (~200ms hot). The rule set and session context give it enough signal to be accurate on what counts.
 
-The `protocol_safety` field in `registry.yaml` is a governed switch — while `false`, agents refuse all Tier-2/3 traffic. It's a Forever-Rung-0 field: only changed by human-reviewed PR, never by any agent.
+**Why precompiled**: the guardian used to run via tsx (TypeScript JIT). Swapped to precompiled `dist/cli.js` to shave ~200ms per call. A PostToolUse hook recompiles automatically whenever guardian source files change and reports failure loudly if the build breaks.
+
+**Zero known vulnerabilities**: removing tsx also removed the esbuild transitive dependency that carried a low CVE. The guardian now depends only on `@anthropic-ai/sdk` and `zod`.
 
 ---
 
-## The Daily Toolchain
+## Workflow Guard: Rule-Based Hooks
 
-### pi + Claude Code
+A second pre/post hook written in pure Bash — no LLM, no latency, just regex. It enforces workflow protocol rules:
 
-The primary interface for all AI-assisted work. **pi** is a local coding agent harness that wraps Claude Code (opus 4.5, extended thinking always on). Every interaction goes through pi — coding, planning, research, writing, execution.
+**Before a `gh issue` command**: blocks PRD-parent issues from being labeled `ready-for-agent`. PRDs are specs; only child implementation issues get that label.
 
-Key configuration choices:
-- **All permissions open by default** (`Bash(*)`, `Read`, `Write`, `Edit`, `WebFetch`, `WebSearch`, plus all agent/cron/worktree primitives). The guardian enforces safety; the permissions list is not the control surface.
-- **Hard denies baked in**: `sudo *`, `git push --force *`, `rm -rf /`, `rm -rf ~*` — these never run regardless of what an agent requests.
-- `skipDangerousModePermissionPrompt: true` — removes interrupt friction for known-safe operations.
+**After a `gh pr` open or ready**: reminds the agent not to claim CI success from exit code alone — every PR needs local validation evidence.
 
-### The Guardian
+**After a `gh pr` merge or close**: runs `git status` + `git worktree list` and tells the agent to load the cleanup-delivery skill before deleting anything.
 
-Every `Bash` call goes through the guardian *before* execution. The guardian is a TypeScript LLM layer (claude-haiku-4-5 for speed, ~200ms hot path) that evaluates the command against the current session context and a rule set.
+---
 
-Three outcomes: **allow** (silent proceed), **block** (hard exit 2, with reason), **ask** (surface to Alex). The guardian sees the full command, the session context, and the rules. It isn't a regex filter — it reasons about intent.
+## PostToolUse Automation
 
-Why haiku and not opus? The guardian runs on every Bash call. Correctness matters; latency matters too. Haiku is fast and cheap; the rules and context give it enough signal to be accurate on the things that count.
+Every file write or edit triggers three automatic checks without prompting:
 
-The guardian compiles to `dist/cli.js` (precompiled TypeScript, no JIT). When any guardian source file changes, a PostToolUse hook runs `npx tsc` automatically and reports failure loudly if the build breaks. No stale code, no silent failures.
-
-### Workflow Guard
-
-A second pre/post hook written in pure Bash (no LLM, no latency). It enforces CHORUS-specific workflow rules:
-
-- **Prevents PRD-parent issues from being labeled `ready-for-agent`** — PRDs are the spec; child implementation issues get that label. Checked by regex against the `gh` command and the issue body before it executes.
-- **After a PR is opened or set to ready**: reminds the agent not to claim CI success from exit code alone — every PR needs local validation evidence.
-- **After a PR is merged or closed**: runs `git status` + `git worktree list` and tells the agent to load the `cleanup-delivery` skill before deleting anything.
-
-### PostToolUse Hooks
-
-Every file write or edit triggers three additional checks:
-
-1. **Auto-linting**: `ruff` for Python, `eslint` for TypeScript — run and fix automatically, no prompting.
-2. **Secret scan**: greps for API key patterns, private key headers, hardcoded passwords. Warns if found.
-3. **File size guard**: warns at 300 lines. The system nudges toward small files by design.
+1. **Auto-linting**: `ruff check --fix` + `ruff format` for Python; `npx eslint --fix` for TypeScript. Runs and fixes silently.
+2. **Secret scanner**: greps for API key patterns (`sk-*`, `AKIA*`), private key headers, and hardcoded passwords. Prints a warning if found.
+3. **File size guard**: warns at 300 lines. Structural nudge toward smaller files.
 
 ---
 
 ## The Skills Library
 
-~70 skills stored in `~/.claude/skills/` (stowed from dotdev). Skills are Markdown files with YAML frontmatter that invoke structured playbooks — they're not just prompts, they're *protocols* with contracts, step ledgers, human gates, and handoff requirements.
+~89 skills in `~/.claude/skills/`. A skill is a Markdown file with YAML frontmatter — it specifies the model, reasoning level, contract (inputs/outputs/side effects), and a playbook. Skills aren't just prompts; they're executable protocols.
 
-Every skill that has multi-step work produces a **step ledger** at the start:
+Every multi-step skill produces a **step ledger** at the start and maintains it throughout:
 
 ```
 WORKFLOW_STEPS:
-| Step | Required? | Status | Evidence / Skip Reason |
-|------|-----------|--------|------------------------|
-| diagnose | required | pending | - |
-| fix     | required | pending | - |
-| verify  | required | pending | - |
+| Step         | Required? | Status    | Evidence              |
+|------------- |-----------|---------- |---------------------- |
+| diagnose     | required  | completed | artifact at docs/...  |
+| fix          | required  | pending   | -                     |
+| verify       | required  | pending   | -                     |
 ```
 
-Steps can't be skipped silently. A required gate that can't run is `blocked`, not `skipped`.
+Steps can't be silently skipped. A required gate that can't run becomes `blocked` — not `skipped` — and the workflow halts.
 
-### The Workflow Stack
+### Workflow Routing
 
-Work typically flows through connected skills. A feature idea:
+**`workflow-router`** is the single entry point for all work. It classifies the task, presents a route card for human confirmation, runs preflight checks, then dispatches. Work types:
+
+| Type | Routes to |
+|---|---|
+| Feature idea (ambiguous) | `workflow-feature` |
+| Ready issue | `workflow-build-one` |
+| Batch of ready issues | `run-backlog` |
+| Bug report | `workflow-debug` |
+| Full PRD tree | `execute-prd` |
+
+### Building One Thing: `workflow-build-one`
+
+The standard workhorse. Takes a single `ready-for-agent` issue from preflight through to repo-policy-controlled PR. Flow:
 
 ```
-grill-with-docs         (stress-test the idea against docs)
-    → decision-log      (record the architectural choice)
-    → [prototype]       (optional quick spike)
-    → workflow-roadmap  (approval gate with Alex)
-    → to-prd            (write the PRD → GitHub Issue)
-    → to-issues         (decompose into vertical implementation slices)
-    → triage            (classify, label, brief each issue)
-    → execute-prd       (implement each child issue with a worktree + PR)
+worktree → preflight → execute → workflow-review → [user-journey-qa] → workflow-finalize
 ```
 
-A bug:
+Implementation runs on Sonnet (fast, cheap). Review runs on Opus (judgment-heavy). The output discipline during execution is intentionally compressed ("caveman mode" — terse narration, no filler) to reduce scroll during the grind. Full prose comes back for findings, blockers, and the final summary.
+
+### Building a Backlog: `run-backlog`
+
+AFK batch processor for `ready-for-agent` issues. Dispatches each issue to Codex (via OMC team bridge) for natural isolation — every issue gets its own context window. Delivery behavior is controlled per-repo: `human-only` repos require a human to merge; `auto-merge-eligible` repos can merge automatically after all gates pass.
+
+### Feature Development: `workflow-feature`
+
+Turns a vague idea into triaged implementation issues. Flow:
 
 ```
-workflow-debug
-    → diagnose          (always first, no exceptions)
-    → fix
-    → verify            (regression test)
-    → PR
+grill-with-docs → decision-log → [prototype] → workflow-roadmap (approval gate) → to-prd → to-issues → triage
 ```
 
-The cardinal rule of `workflow-debug`: *bugs always begin with diagnose*. Even if the fix is obvious. The diagnosis artifact is evidence — it proves understanding and prevents wrong fixes.
+This workflow *stops before implementation*. It produces the work; `workflow-build-one` or `run-backlog` execute it.
 
-### Key Skills
+### Bug Work: `workflow-debug`
 
-**`brain-ops`** — interact with the second brain (`~/Documents/Home/_brain/`). Ingest a source, query a concept, capture a thought, run the review queue, lint the brain. Rowan is the agent that owns this domain; `brain-ops` is the capability that runs inside it.
+Cardinal rule: **all bug work begins with `diagnose`**. Even if the fix is obvious. The diagnosis artifact proves understanding and prevents wrong fixes.
 
-**`handoff`** — compress a session into a structured handoff document. Every workflow that halts with remaining work must produce a handoff. The handoff contains: exit reason, remaining items, current state, and a ready-to-use prompt for the next session.
+`diagnose` has five modes: quick / standard / deep / production / regression. Standard runs the full Phase 1–6 loop: build a feedback loop → reproduce → minimise → hypothesise → instrument → fix → regression-test.
 
-**`execute-prd`** — drive a full PRD issue tree from analysis through delivery. Creates worktrees, implements each child issue in isolation, opens PRs, runs review/CI, reconciles, writes handoffs. Dispatches implementation workers on Sonnet; reserves Opus for planning and review.
+### Review: `workflow-review`
 
-**`setup-worktree`** — creates an isolated git worktree for a plan phase or issue. Every implementation starts in a clean worktree so in-progress work never contaminates the main branch or other in-flight work.
+Runs an independent review gate sized to the change's risk. Dispatches reviewer lanes on Opus. Four review profiles: `fast` (single integrated reviewer, Sonnet), `standard` (one independent reviewer, Opus), `full` (multiple lanes: security, logic, tests, UX), `minimal` (docs/config only).
 
-**`triage`** — routes issues through a state machine (`needs-triage` → `needs-info` → `ready-for-agent` → `ready-for-human` → `wontfix`). Writes durable agent briefs that any agent can pick up cold. Every triage comment is labeled "generated by AI."
+Green CI, GitHub reviews, or Claude Code Review do not substitute for this. The workflow-review gate produces a `WORKFLOW_REVIEW_GATE` block — a structured verdict that downstream workflow-finalize checks for.
 
-**`cleanup-delivery`** — post-merge cleanup: branch deletion, worktree removal, issue close, artifact archival. The workflow-guard hook triggers it explicitly after every `gh pr merge`.
+### Delivery: `workflow-finalize`
 
-**`herdr-launch`** — opens a herdr workspace for a project. Pairs with `hdev` for the terminal experience.
+Closes the delivery loop after workflow-review approves. Handles PR description, reviewer comment resolution, CI monitoring, issue reconciliation, and the repo-policy-controlled final action. Will not proceed without an explicit `WORKFLOW_REVIEW_GATE` block from an independent review with `verdict: APPROVE`.
+
+### Handling Incoming Review: `receive-review` + `pr-responder`
+
+When review comments land on a PR:
+
+1. **`receive-review`**: evaluates each comment for technical correctness. Doesn't blindly agree — declines suggestions that are wrong, conflict with other reviewers, or contradict project invariants. Produces a triage table: action / push-back / defer / acknowledge.
+2. **`pr-responder`**: works through the full comment queue, drafts code fixes, posts replies. Human confirms before replies go out for pushbacks.
+
+### Architecture Work
+
+**`repo-audit`**: map-reduce investigation of actual codebase state. Parallel discovery agents (Sonnet) gather facts; a synthesizer (Opus) produces findings with stable `FIND-NN` IDs. Feeds into `workflow-roadmap`, `to-prd`, or `design-plan`.
+
+**`improve-codebase-architecture`**: surfaces deepening opportunities — refactors that turn shallow modules into deep ones, improve testability, and make code more navigable.
+
+**`slop-cleaner`**: strips LLM ceremony from docs and analysis. Two modes: `docs` (READMEs, comments, runbooks) and `analysis` (findings, memos, recommendations). Produces a change log and before/after word counts.
 
 ---
 
-## The Second Brain
+## Worktrees
 
-`~/Documents/Home/_brain/` — a structured knowledge vault that Rowan maintains. The `idea` function in `.zshrc` is the primary capture path:
+Every non-trivial implementation runs in an isolated git worktree at `~/wt/<repo>/<branch-slug>/`. The main branch stays clean. Multiple in-flight features coexist without conflict.
+
+**`setup-worktree`** handles the mechanics: resolves the workflow base branch, creates the worktree, copies `.env*`/`.tool-versions`, and records `WORKTREE_BASELINE_GATE` evidence that downstream workflow-review and workflow-finalize check for.
+
+**workflow-finalize enforces this**: if the change was done in the primary checkout or on a branch based on local `main`, it halts and requires a valid worktree baseline.
+
+---
+
+## Herdr: Workspace Layout
+
+**herdr** is a terminal multiplexer + session manager. The `hdev` command creates a structured workspace:
+
+```bash
+hdev ~/projects/myapp          # full layout
+hdev ~/projects/myapp --monitor  # gh-dash only
+hdev ~/projects/myapp --minimal  # pi only
+```
+
+**Full layout** (the default):
+- **Work tab**: pi (left pane) | lazygit (right-top) | yazi file browser (right-bottom)
+- **gh tab**: gh-dash for issue/PR/CI monitoring
+
+Every AI session (pi, Claude Code, Codex, opencode) registers with herdr on start via the SessionStart hook. The herdr daemon tracks what's running in which pane, enabling workspace-aware tooling.
+
+Shortcut aliases: `chorus`, `cora`, `mira` → `hdev ~/projects/...` for frequently used projects.
+
+---
+
+## Pi Packages
+
+26 packages loaded into pi. Grouped by what they actually enable:
+
+**Codebase navigation**
+- `pi-codemapper` — indexes the codebase (symbols, call graphs, dependencies), enables `map`, `search`, `outline`, `expand`, `path` operations in every session
+- `pi-lens` — LSP diagnostics, ast-grep structural search, tree-sitter rules; runs against the live language server
+
+**Subagent orchestration**
+- `pi-fork` — spawns subagents at configurable effort levels (fast/balanced/deep → haiku/sonnet/opus)
+- `pi-taskflow` — orchestrates multi-agent DAGs (parallel branches, sequential chains, gated phases, map-reduce)
+
+**Memory + context**
+- `pi-observational-memory` — compresses session learnings into cross-session observations that survive context window resets; runs on haiku (cheap, frequent)
+- `pi-context-cap` — warns approaching context limits
+- `pi-context-inspector` — shows context composition
+
+**Guardrails**
+- `pi-dirty-repo-guard` — blocks writes on repos with uncommitted changes
+- `pi-permission-gate` — confirmation prompts for destructive operations
+- `pi-codex-goal` — tracks a concrete objective through multi-turn sessions
+
+**Output efficiency**
+- `pi-hypa` — compresses shell, read, grep, find, and ls output before it reaches the context window. Same commands, less token spend.
+- `pi-cache-optimizer` — prompt cache optimization
+- `pi-better-messages-cache` — message-level caching
+- `pix-optimizer` — token optimization pass
+
+**Real-world integration**
+- `pi-web-access` — web search and fetch
+- `pi-agent-browser-native` — real Playwright-backed browser automation (click, fill, screenshot, extract, eval)
+- `pi-mcp-adapter` — MCP protocol bridge
+- `@gotgenes/pi-github-tools` — GitHub MCP tools
+- `pi-pr-ally` — PR review and response assistance
+
+**Utility**
+- `@narumitw/pi-caffeinate` — prevents macOS sleep during long AFK runs
+- `@diegopetrucci/pi-notify` — macOS notifications when the agent needs input or completes
+
+**Model roles** — what each tier runs on:
+
+| Role | Model | Used for |
+|---|---|---|
+| fast | claude-haiku-4-5 | Quick lookups, memory compression, subagent fast mode |
+| strong / thinker / vision | claude-sonnet-4-6 | Normal exploration, implementation, most subagent work |
+| arbiter / reasoner | claude-opus-4-5 | Review, architecture decisions, high-stakes judgment |
+
+**Fork effort → model mapping**:
+- `fast` → haiku, thinking off
+- `balanced` (default) → sonnet, low thinking
+- `deep` → opus, medium thinking
+
+---
+
+## Claude Code Plugins
+
+25 plugins loaded via `enabledPlugins`. Active ones:
+
+| Plugin | What it adds |
+|---|---|
+| `context7` | Fetches up-to-date library docs mid-session (no stale training data) |
+| `typescript-lsp` | TypeScript language server — inline errors, go-to-def, rename refactor |
+| `pyright-lsp` | Python language server via Pyright |
+| `playwright` | Browser test generation and execution |
+| `oh-my-claudecode` | HUD status line, session telemetry, team dispatch (AFK batch mode) |
+| `remember` | Persistent session memory — captures key decisions and context across sessions |
+| `superpowers` | Extended tool capabilities |
+| `code-simplifier` | Surfaces complexity hotspots |
+| `context7` | Real-time library docs lookup |
+| `data-engineering` | Data pipeline and SQL tooling |
+| `frontend-design` | UI/design guidance |
+| `git-cleanup` | Dead branches and stale ref cleanup |
+| `skill-creator` | Scaffolds new skills |
+| `agent-sdk-dev` | Agent SDK development helpers |
+| `claude-md-management` | CLAUDE.md context file management |
+| `slack` | Slack integration |
+
+---
+
+## The Status Bar
+
+The bottom of every session: an **omc HUD** (oh-my-claudecode). Shows token usage, model, and session state. Cache-backed — only re-reads state when something changes.
+
+---
+
+## MCP Server: gbrain
+
+A local MCP server (`~/gbrain-repo`) that provides a knowledge graph interface to Claude Code. Runs via bun. Registered in `settings.local.json` (machine-local, not stowed). Gives any session structured query access to a personal knowledge graph.
+
+---
+
+## Idea Capture
+
+The `idea` function in `.zshrc` is the frictionless capture path:
 
 ```bash
 idea "build a metrics alerting layer"
+idea -q "quick note"     # skip AI enrichment
 ```
 
-This calls `claude-haiku-4-5` to classify the idea (tool/app/research/business/experiment/...), write a one-sentence pitch, generate tags, and suggest 3 concrete next steps. The result lands as a structured Markdown file in `~/Documents/Home/Idea Bin/`. No clipboard, no friction, captured before it's lost.
+The first form calls claude-haiku-4-5 to:
+- Classify the idea (tool / app / research / business / experiment / feature / creative / ...)
+- Write a one-sentence pitch
+- Generate 2–4 Obsidian tags
+- Suggest 3 concrete next steps
 
-`idea -q "quick thought"` skips the AI enrichment for speed.
+The result lands as a structured Markdown frontmatter file in `~/Documents/Home/Idea Bin/` — title, date, category, pitch, tags, next steps. Fast enough to capture before the thought is gone.
 
-`ideas review` and `ideas promote` move ideas through the idea-os pipeline (via `~/projects/idea-os`).
-
----
-
-## Herdr — Workspace + Session Tracking
-
-**herdr** is a terminal multiplexer layer that tracks which agent session is running in which pane. When a pi/Claude Code/Codex/opencode session starts, herdr registers it (via the `herdr-agent-state.sh` SessionStart hook). The herdr daemon knows what's running where.
-
-Workspace launchers:
-- `hdev <path>` — open a herdr workspace in a directory
-- `chorus`, `cora`, `mira` — shortcut aliases to canonical project dirs
-
-Two plugins extend herdr:
-- **fresh-worktree** — creates a clean worktree pre-attached to a herdr pane
-- **herdr-plus** — extended herdr utilities
-
----
-
-## The Status Line
-
-At the bottom of every Claude Code session: an **omc HUD** (oh-my-claudecode) that shows token usage, model, and session state. It's cache-backed — the HUD script only re-reads state when something changes, not on every keystroke.
+`ideas review` and `ideas promote` move ideas through the downstream pipeline.
 
 ---
 
 ## Observability
 
-**Langfuse** runs on the home network at `192.168.4.43:3050`. Every Claude session traces to it (`TRACE_TO_LANGFUSE=true`). On the home network, this gives full visibility into token usage, session duration, tool call patterns, and model spend across all sessions.
+**Langfuse** at `192.168.4.43:3050` (home network) receives traces from every Claude session. Token usage, tool calls, session duration, and model spend are visible in a dashboard when on the home network. Set via `LANGFUSE_HOST` and `TRACE_TO_LANGFUSE=true` in session env.
 
-**Herdr's session registry** gives pane-level context: what's running, in what workspace, for how long.
-
-**pi's observational memory** (pi-observational-memory) compresses session context into cross-session observations — learnings that survive context window resets. Compression runs on haiku-4-5 (cheap).
+**pi-observational-memory** produces per-session compressed observations that persist across context resets. These accumulate over time into a navigable log of what was learned, decided, and done.
 
 ---
 
-## Pi Package Architecture
+## Shell + Git
 
-26 packages loaded into pi, organized by purpose:
+**ZSH** with a minimal, modular config. No oh-my-zsh. Modules load in order: configs → tools → theme.
 
-**Core reasoning + navigation**:
-- `pi-codemapper` — index + navigate codebases (symbols, dependencies, call graphs)
-- `pi-lens` — LSP diagnostics, ast-grep structural search, tree-sitter rules
-- `pi-observational-memory` — cross-session memory via compressed observations
-- `pi-fork` — spawn subagents at configurable effort levels (haiku/sonnet/opus)
-- `pi-taskflow` — orchestrate multi-agent DAGs (parallel, sequential, gated)
+**Key tools**:
+```
+eza     → ls (icons, color, git status)
+bat     → cat (syntax highlight, line numbers)
+rg      → grep (ripgrep, fast)
+fd      → find
+fzf     → fuzzy picker (git add, branch checkout, log browse)
+zoxide  → cd (frecency-based, alias j)
+atuin   → shell history (cross-session SQLite, Ctrl-R fuzzy)
+starship → prompt
+delta   → git diffs (side-by-side, line numbers, navigation)
+lazygit → terminal git UI
+```
 
-**Context discipline**:
-- `pi-context-cap` — warns when approaching context limits
-- `pi-context-inspector` — shows context composition
-- `pi-dirty-repo-guard` — blocks writes on dirty repos
-- `pi-permission-gate` — confirmation prompts for destructive actions
+**Git config**:
+- `pull.rebase = true`, `fetch.prune = true`, `rebase.autoStash = true`, `push.autoSetupRemote = true`
+- Global gitignore covers macOS, Python, JS/TS artifacts, `.env*`, AWS credentials, Terraform state, `.omc/`, `.serena/`, `**/.claude/settings.local.json`
+- Conventional commits via pre-commit hook (`commit-normalize.sh`) — active in any repo with `pre-commit install`
 
-**Output efficiency**:
-- `pi-hypa` — compresses shell/read/grep/find/ls output before it hits the context
-- `pi-cache-optimizer` — prompt cache optimization
-- `pi-better-messages-cache` — message-level cache performance
-- `pix-optimizer` — token optimization
-
-**Real-world integration**:
-- `pi-web-access` — web search + fetch
-- `pi-agent-browser-native` — real browser automation (Playwright-backed)
-- `pi-mcp-adapter` — MCP protocol bridge
-- `@gotgenes/pi-github-tools` — GitHub MCP tools
-- `pi-pr-ally` — PR review + response
-
-**Model roles (what each tier runs on)**:
-| Role | Model |
-|---|---|
-| fast | claude-haiku-4-5 |
-| strong, thinker, vision | claude-sonnet-4-6 |
-| arbiter, reasoner | claude-opus-4-5 |
-
-Fork efforts (subagents):
-- `fast` → haiku, no thinking
-- `balanced` → sonnet, low thinking (default)
-- `deep` → opus, medium thinking
+**Git aliases** (selection):
+```
+gs    git status -sb
+glog  git log --oneline --decorate --graph
+gpf   git push --force-with-lease
+grbi  git rebase -i
+ga-fzf    interactive add with fzf + diff preview
+gco-fzf   interactive branch checkout with fzf
+```
 
 ---
 
-## MCP Servers
+## Fresh Machine Bootstrap
 
-**gbrain** — a local MCP server for knowledge graph queries, running the garrytan/gbrain server via bun. Lives at `~/gbrain-repo`, registered in `settings.local.json` (machine-local, not stowed). Gives any Claude session structured access to a knowledge graph layer.
+```bash
+git clone git@github-personal:johnalexwelch/dotdev.git ~/dotdev
+cd ~/dotdev && bash install.sh
+```
 
----
+`DRY_RUN=1 bash install.sh` previews every command without executing.
 
-## The Worktree Pattern
+The install sequence: Homebrew → config dirs → GitHub SSH → macOS defaults → GNU Stow symlinks → guardian clone + compile → gbrain clone → pi packages → herdr integrations.
 
-Every non-trivial implementation runs in an isolated git worktree (`~/wt/<repo>/<branch-slug>/`). This means:
-
-- The main branch is always clean
-- Multiple in-flight features coexist without conflict
-- A failed branch just gets deleted — no cleanup of the working tree
-- herdr can pin a pane to a specific worktree
-
-The `setup-worktree` skill handles the mechanics. The `execute-prd` skill uses worktrees for every child issue in a PRD execution.
-
----
-
-## What This Enables
-
-A typical flow for a real feature:
-
-1. **Capture**: `idea "build X"` → enriched note in Idea Bin
-2. **Brief**: open pi in the relevant project, load `workflow-feature`
-3. **Grill**: `grill-with-docs` stress-tests the idea against existing docs and decisions
-4. **Approve**: `workflow-roadmap` produces a milestone-level plan; Alex approves the scope
-5. **PRD**: `to-prd` writes the PRD as a GitHub Issue
-6. **Issues**: `to-issues` decomposes into vertical implementation slices
-7. **Triage**: `triage` classifies, labels, and writes agent briefs for each issue
-8. **Execute**: `execute-prd` (AFK-safe) takes it from there — worktrees, branches, PRs
-9. **Review**: workflow-guard checks every `gh pr` action; agent produces evidence, not just exit codes
-10. **Close**: `cleanup-delivery` handles the post-merge housekeeping
-
-At every halt (context limit, human gate, blocked dependency), the running skill produces a `handoff` artifact — a document that lets a fresh session continue exactly where things stopped, with no context rebuild.
-
----
-
-## Design Philosophy
-
-**The system is built behind real workflows, not ahead of them.** Every piece of infrastructure was added because a specific, real workflow demanded it — not speculatively. The CHORUS decision log (F1–F60+) records every design choice and the alternatives that were rejected.
-
-**Isolation by default, coordination by exception.** Agents work independently in their domains. Cross-domain work is explicit, logged, and brokered through Mira. A compromise in one agent's domain stays small.
-
-**Agents have anti-scope.** Every charter includes what the agent *does not own* — and who picks that up. This eliminates the "who handles this?" question that breaks every multi-agent system.
-
-**Humans stay in the loop on the right things.** Reads are autonomous. Routine internal actions run under standing policy. Outward, irreversible, or sensitive actions need Alex's signed consent. The signing key is never in an agent.
-
-**The workflow is the product.** Skills aren't just prompts — they're executable specifications with contracts, step ledgers, human gates, and handoff requirements. A skill that halts leaves evidence. A skill that completes leaves proof.
+One machine-local file needs manual setup post-install: `~/.claude/settings.local.json` (created from template — contains the gbrain MCP path). All credentials are flat files in `$HOME` sourced by `env.zsh` — drop the file, it gets picked up next shell start.
