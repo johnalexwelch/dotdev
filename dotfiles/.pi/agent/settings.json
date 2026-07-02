@@ -1,0 +1,71 @@
+{
+  "lastChangelogVersion": "0.80.3",
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-4-6",
+  "packages": [
+    "npm:pi-web-access",
+    "npm:pi-codex-goal",
+    "npm:pi-agent-browser-native",
+    "npm:pi-mcp-adapter",
+    "git:github.com/elpapi42/pi-fork",
+    "npm:pi-observational-memory",
+    "git:git@github.com:elpapi42/pi-codemapper.git",
+    "npm:@narumitw/pi-caffeinate",
+    "npm:pi-lens",
+    "npm:@ryan_nookpi/pi-extension-headroom",
+    "npm:pi-cache-optimizer",
+    "npm:pi-taskflow",
+    "npm:@gotgenes/pi-github-tools",
+    "git:github.com/forjd/pi-pr-ally",
+    "npm:@diegopetrucci/pi-context-cap",
+    "npm:@diegopetrucci/pi-context-inspector",
+    "npm:@diegopetrucci/pi-dirty-repo-guard",
+    "npm:@diegopetrucci/pi-permission-gate",
+    "npm:@diegopetrucci/pi-triage-comments",
+    "npm:@diegopetrucci/pi-notify",
+    "npm:pi-observability",
+    "npm:pi-tool-display",
+    "npm:@mcowger/pi-better-messages-cache",
+    "npm:@hypabolic/pi-hypa",
+    "npm:@xynogen/pix-optimizer"
+  ],
+  "theme": "dark",
+  "skills": [
+    "~/dotdev/dotfiles/.claude/skills"
+  ],
+  "pi-fork": {
+    "defaultEffort": "balanced",
+    "efforts": {
+      "fast": {
+        "provider": "openrouter",
+        "id": "deepseek/deepseek-v4-flash",
+        "thinking": "off"
+      },
+      "balanced": {
+        "provider": "openrouter",
+        "id": "deepseek/deepseek-v4-pro",
+        "thinking": "low"
+      },
+      "deep": {
+        "provider": "openrouter",
+        "id": "deepseek/deepseek-v4-pro",
+        "thinking": "medium"
+      }
+    }
+  },
+  "observational-memory": {
+    "model": {
+      "provider": "openrouter",
+      "id": "deepseek/deepseek-v4-flash",
+      "thinking": "off"
+    }
+  },
+  "modelRoles": {
+    "fast": "openrouter/deepseek/deepseek-v4-flash",
+    "strong": "openrouter/xiaomi/mimo-v2.5-pro",
+    "thinker": "openrouter/deepseek/deepseek-v4-pro",
+    "arbiter": "openrouter/qwen/qwen3.7-max",
+    "vision": "minimax/MiniMax-M3",
+    "reasoner": "z-ai/glm-5.1"
+  }
+}

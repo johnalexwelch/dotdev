@@ -1,7 +1,6 @@
 tap "anomalyco/tap"
 tap "derailed/k9s"
 tap "hashicorp/tap"
-tap "humanlayer/humanlayer"
 tap "int128/kubelogin"
 tap "manaflow-ai/cmux"
 tap "marcus/tap"
@@ -198,7 +197,6 @@ cask "raycast"
 # Move and resize windows using keyboard shortcuts or snap areas
 cask "rectangle"
 # Beta build of Riptide pointing at beta environment
-cask "humanlayer/humanlayer/riptide-beta"
 # Team communication and collaboration software
 cask "slack"
 # Music streaming service
