@@ -75,8 +75,8 @@ case "$LAYOUT" in
     LG=$(pane_split "$ROOT" right)
     herdr pane run "$LG" "lazygit"
 
-    pane_split "$LG" down > /dev/null
-    # right-bottom stays as shell
+    YZ=$(pane_split "$LG" down)
+    herdr pane run "$YZ" "yazi $PROJECT_DIR"
 
     # gh tab: gh-dash
     GH=$(tab_create "$WS_ID" "gh")
