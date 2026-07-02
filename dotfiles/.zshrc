@@ -34,7 +34,6 @@ if [[ -z "${CODEX_GITHUB_PERSONAL_ACCESS_TOKEN:-}" && -n "${GITHUB_MCP_PAT:-}" ]
 fi
 export PATH="$HOME/.cargo/bin:$PATH"
 
-source /Users/alexwelch/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
 
 # bun completions
 [ -s "/Users/alexwelch/.bun/_bun" ] && source "/Users/alexwelch/.bun/_bun"
@@ -42,3 +41,73 @@ source /Users/alexwelch/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initi
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+source /Users/alexwelch/.safe-chain/scripts/init-posix.sh # Safe-chain Zsh initialization script
+
+# Quick idea capture → Obsidian Idea Bin
+# Usage: idea <thought>        → AI-enriched note
+#        idea -q <thought>     → quick, no AI
+idea() {
+  local dir="$HOME/Documents/Home/Idea Bin"
+  local ts=$(date "+%Y-%m-%d")
+  local quick=0
+
+  [[ "$1" == "-q" || "$1" == "--quick" ]] && { quick=1; shift; }
+
+  local title
+  if [[ $# -eq 0 ]]; then
+    read -r "title?Idea: "
+    [[ -z "$title" ]] && return
+  else
+    title="$*"
+  fi
+
+  local safe="${title//[\/:\*\?\"<>\|]/}"
+  safe="${safe:0:60}"
+  local file="$dir/$(date +%Y-%m-%d) ${safe}.md"
+
+  if [[ $quick -eq 1 ]]; then
+    printf '---\ntitle: %s\ncreated: %s\ncategory: other\ndomain: other\nenergy: 0\nstatus: captured\n---\n\n# %s\n\n> (no pitch — quick capture)\n\n## Next Steps\n\n- TBD\n' \
+      "$title" "$ts" "$title" > "$file"
+    echo "✓ $(basename "$file")"
+    return
+  fi
+
+  echo "⏳ thinking..." >&2
+
+  local prompt="You are a product thinking assistant. Given an idea, return ONLY this exact format with no extra text:
+
+CATEGORY: <one of: tool, app, content, research, business, experiment, feature, creative, home, health, other>
+PITCH: <one crisp sentence — what it is and why it matters>
+TAGS: <2-4 obsidian tags like #app-idea #productivity>
+STEPS:
+- <concrete next step 1>
+- <concrete next step 2>
+- <concrete next step 3>
+
+Idea: $title"
+
+  local ai_out category pitch tags steps
+  ai_out=$(claude -p "$prompt" --model claude-haiku-4-5-20251001 2>/dev/null)
+
+  category=$(echo "$ai_out" | grep '^CATEGORY:' | sed 's/CATEGORY: *//')
+  pitch=$(echo "$ai_out"    | grep '^PITCH:'    | sed 's/PITCH: *//')
+  tags=$(echo "$ai_out"     | grep '^TAGS:'     | sed 's/TAGS: *//')
+  steps=$(echo "$ai_out"    | awk '/^STEPS:/{f=1;next} f && /^- /{print}')
+
+  printf '---\ntitle: %s\ncreated: %s\ncategory: %s\ndomain: %s\nenergy: 0\nstatus: captured\n---\n\n# %s\n\n> %s\n\ntags: #idea %s\n\n## Next Steps\n\n%s\n' \
+    "$title" "$ts" "$category" "$category" "$title" "$pitch" "$tags" "$steps" > "$file"
+
+  echo "✓ [$category] $(basename "$file")"
+  echo "$pitch"
+}
+
+# Idea OS — review, promote, search
+ideas() {
+  local cmd="$1"; shift
+  case "$cmd" in
+    review)  python3 ~/projects/idea-os/bin/ideas-review "$@" ;;
+    promote) python3 ~/projects/idea-os/bin/ideas-promote "$@" ;;
+    search)  grep -ril "$*" "$HOME/Documents/Home/Idea Bin/" "$HOME/Documents/Home/Projects/" 2>/dev/null ;;
+    *)       echo "usage: ideas review | promote <file> | search <term>" ;;
+  esac
+}

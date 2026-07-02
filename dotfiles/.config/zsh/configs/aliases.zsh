@@ -53,5 +53,4 @@ alias chorus='hdev ~/projects/legacy/chorus'
 alias cora='hdev ~/projects/cora'
 alias mira='hdev ~/projects/mira'
 
-# Legacy tmux fallback
-alias tdev='bash ~/dotdev/scripts/tmux-dev.sh'
+

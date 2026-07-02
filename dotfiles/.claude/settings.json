@@ -1,8 +1,8 @@
 {
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "TRACE_TO_LANGFUSE": "true",
-    "LANGFUSE_HOST": "http://192.168.4.43:3050"
+    "LANGFUSE_HOST": "http://192.168.4.43:3050",
+    "TRACE_TO_LANGFUSE": "true"
   },
   "permissions": {
     "allow": [
@@ -51,25 +51,7 @@
     ],
     "defaultMode": "auto"
   },
-  "model": "opus",
   "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash ~/.claude/guardian/run.sh",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "bash ~/.claude/hooks/workflow-guard.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
     "PostToolUse": [
       {
         "matcher": "Bash",
@@ -106,6 +88,40 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/guardian/run.sh",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "bash ~/.claude/hooks/workflow-guard.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/alexwelch/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "for d in /Users/alexwelch/.claude/plugins/cache/claude-plugins-official/remember/*/hooks.d/after_save; do [ -d \"$d\" ] && [ ! -f \"$d/60-journey.sh\" ] && cp /Users/alexwelch/.claude/hooks/60-journey.sh \"$d/60-journey.sh\" && chmod +x \"$d/60-journey.sh\"; done",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -113,40 +129,34 @@
     "command": "sh ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud-cache.sh ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud.mjs"
   },
   "enabledPlugins": {
-    "plugin-dev@claude-plugins-official": true,
-    "slack@claude-plugins-official": true,
-    "ralph-loop@claude-plugins-official": true,
-    "context7@claude-plugins-official": true,
-    "frontend-design@claude-plugins-official": true,
-    "feature-dev@claude-plugins-official": true,
     "agent-sdk-dev@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
-    "playwright@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
-    "typescript-lsp@claude-plugins-official": true,
     "commit-commands@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "data-engineering@claude-plugins-official": true,
+    "feature-dev@claude-plugins-official": true,
+    "figma@claude-plugins-official": false,
+    "frontend-design@claude-plugins-official": true,
+    "git-cleanup@trailofbits": true,
+    "oh-my-claudecode@omc": true,
+    "playwright@claude-plugins-official": true,
+    "plugin-dev@claude-plugins-official": true,
+    "pyright-lsp@claude-plugins-official": true,
+    "ralph-loop@claude-plugins-official": true,
+    "remember@claude-plugins-official": true,
+    "rpi@local": true,
     "security-guidance@claude-plugins-official": true,
     "serena@claude-plugins-official": false,
-    "claude-md-management@claude-plugins-official": true,
-    "pyright-lsp@claude-plugins-official": true,
-    "claude-code-setup@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": true,
-    "figma@claude-plugins-official": false,
-    "rpi@local": true,
-    "data-engineering@claude-plugins-official": true,
-    "git-cleanup@trailofbits": true,
-    "zeroize-audit@trailofbits": false,
-    "oh-my-claudecode@omc": true,
-    "remember@claude-plugins-official": true
+    "slack@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true,
+    "zeroize-audit@trailofbits": false
   },
   "extraKnownMarketplaces": {
-    "trailofbits": {
-      "source": {
-        "source": "github",
-        "repo": "trailofbits/skills"
-      }
-    },
     "caleb-davis-plugins": {
       "source": {
         "source": "github",
@@ -158,11 +168,18 @@
         "source": "git",
         "url": "https://github.com/Yeachan-Heo/oh-my-claudecode.git"
       }
+    },
+    "trailofbits": {
+      "source": {
+        "source": "github",
+        "repo": "trailofbits/skills"
+      }
     }
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
   "advisorModel": "opus",
+  "tui": "fullscreen",
   "skipDangerousModePermissionPrompt": true,
   "skipWorkflowUsageWarning": true,
   "preferredNotifChannel": "ghostty",
@@ -171,13 +188,12 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "tui": "fullscreen",
   "mcpServers": {
     "gbrain": {
-      "command": "/Users/alexwelch/.bun/bin/bun",
       "args": [
         "/Users/alexwelch/gbrain-repo/src/mcp/server.ts"
-      ]
+      ],
+      "command": "/Users/alexwelch/.bun/bin/bun"
     }
   }
 }

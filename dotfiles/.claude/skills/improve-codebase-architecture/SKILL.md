@@ -16,7 +16,7 @@ Human gates: none for analysis; candidate selection requires user choice before 
 ## Context
 
 Typical workflows: architecture improvement (standalone, after /diagnose surfaces structural issues, or as the module discovery lane for workflow-autonomous-backlog)
-Pairs well with: diagnose, repo-audit, grill-with-docs, design-plan, workflow-autonomous-backlog
+Pairs well with: codebase-design, diagnose, repo-audit, grill-with-docs, design-plan, workflow-autonomous-backlog
 
 # Improve Codebase Architecture
 

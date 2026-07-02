@@ -12,6 +12,7 @@ Active skills:
 - `caveman`
 - `clarity-review`
 - `cleanup-delivery`
+- `codebase-design`
 - `council-scaffolding`
 - `dashboard-design`
 - `dashboard-review`
@@ -22,6 +23,7 @@ Active skills:
 - `describe-pr`
 - `design-plan`
 - `diagnose`
+- `domain-modeling`
 - `execute-phase`
 - `execute-prd`
 - `experiment-design`
@@ -30,6 +32,7 @@ Active skills:
 - `handoff`
 - `humanizer`
 - `humanizer-exec`
+- `implement`
 - `improve-codebase-architecture`
 - `incident-retro`
 - `incident-triage`
@@ -42,12 +45,14 @@ Active skills:
 - `omc-reference`
 - `post-mortem`
 - `pr-responder`
+- `pr-review`
 - `product-launch-checklist`
 - `prompt-builder`
 - `prototype`
 - `receive-review`
 - `reconcile-issues`
 - `repo-audit`
+- `resolving-merge-conflicts`
 - `review`
 - `review-scaffolding`
 - `run-backlog`
@@ -57,13 +62,14 @@ Active skills:
 - `slack-update`
 - `slop-cleaner`
 - `sql-review`
+- `stage-v1-concept`
 - `strategic-analysis-review`
 - `tdd`
 - `to-issues`
 - `to-prd`
 - `triage`
 - `user-journey-qa`
-- `v1-idea-grill`
+- `v1-idea-grill` *(deprecated — use grill-with-docs V1 mode)*
 - `v1-system-design`
 - `v1-workflow`
 - `vendor-council`
