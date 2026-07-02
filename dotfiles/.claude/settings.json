@@ -84,7 +84,7 @@
           {
             "type": "command",
             "command": "case \"$CLAUDE_FILE\" in */.claude/guardian/*.ts) cd ~/.claude/guardian && npx tsc && echo 'Guardian recompiled' || echo 'Guardian compile FAILED \u2014 dist/ is stale' ;; esac",
-            "timeout": 10
+            "timeout": 30
           }
         ]
       }
