@@ -3,7 +3,7 @@
 # Delegates to commit-normalize.sh which can live:
 #   1. Next to this hook (per-repo install)
 #   2. In the global git hooks directory
-#   3. In ~/dotdev/dotfiles/config/git/
+#   3. In ~/dotdev/dotfiles/.config/git/
 
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
 NORMALIZE_SCRIPT=""
@@ -11,7 +11,7 @@ NORMALIZE_SCRIPT=""
 # Search order: same directory, global hooks dir, dotdev
 for candidate in \
     "$HOOK_DIR/commit-normalize.sh" \
-    "${XDG_CONFIG_HOME:-$HOME/.config}/git/hooks/commit-normalize.sh" \
+    "${XDG_CONFIG_HOME:-$HOME/.config}/git/commit-normalize.sh" \
     "$HOME/dotdev/dotfiles/.config/git/commit-normalize.sh"; do
     if [ -x "$candidate" ]; then
         NORMALIZE_SCRIPT="$candidate"
