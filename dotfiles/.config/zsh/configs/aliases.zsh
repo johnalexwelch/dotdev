@@ -25,7 +25,6 @@ alias vim='nvim'
 alias zshconfig="code ~/.zshrc"
 alias reload="source ~/.zshrc"
 
-alias ohmyzsh="code ~/.oh-my-zsh"
 
 # Directory shortcuts
 hash -d docs=~/Documents
