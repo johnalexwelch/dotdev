@@ -24,9 +24,11 @@ quorum:
 # ensemble of clones shares blind spots. Static tier map (no router agent:
 # model tier tracks persona ROLE, which rarely changes; stakes->depth is
 # already handled by --fast/default/--round-3).
-# ponytail: within one model family diversity is partial. Ceiling = same-family
-# correlated errors. Upgrade path: if a cross-family model is configured, route
-# `cross_family` roles below to it (biggest decorrelation win).
+# ponytail: within one model family diversity is partial (same-family correlated
+# errors). Upgrade path: route `cross_family` roles below to a cross-family model.
+# CAVEAT (2025 research): model diversity is necessary, NOT sufficient — mixed-model
+# teams still conformed (negative synergy in 6/8 tested configs). Diversity only
+# pays off when paired with preserved independence + the sycophancy guard (#12).
 model_policy:
   synthesis: {model: opus, reasoning: high}
   default:   {model: sonnet, reasoning: high}

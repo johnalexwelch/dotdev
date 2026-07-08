@@ -11,6 +11,14 @@ Run a multi-lens council on an analytical topic — each persona a fresh subagen
 
 **Mechanics:** follow `council-scaffolding` for the full dispatch contract (roster resolution, rounds, synthesis, post-process, persist, report). Only the deltas below are council-specific.
 
+**Dry run first (a full council is expensive).** Before dispatching, preview the roster it would seat, the per-persona models, quorum, and a seat-cost signal without spending a token:
+
+```bash
+scripts/council-explain.py "<topic>"     # keyword-matches optional personas; omit topic for the full roster
+```
+
+Use it to sanity-check scope (right lenses seated? cost proportional to stakes?) before committing to the run.
+
 ## Contract
 
 Consumes: analysis, claim, judgment call, or user-provided analytical context. When the input is a persisted analysis dir (`<date>-<slug>/` per `_docs/analysis-structure.md`), read its README provenance header first — `as_of`, `sources`, `metrics`, `decisions`, and `fingerprint` feed the council directly instead of being re-derived from prose.
