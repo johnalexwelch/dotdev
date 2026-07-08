@@ -1,8 +1,7 @@
 {
   "mcpServers": {
     "github": {
-      "command": "npx",
-      "args": ["-y", "@github/mcp-server"],
+      "command": "/Users/alexwelch/.local/bin/github-mcp-pi",
       "lifecycle": "keep-alive"
     }
   }

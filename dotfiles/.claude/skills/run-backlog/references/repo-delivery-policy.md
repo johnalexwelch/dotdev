@@ -18,6 +18,7 @@ Add repositories here as `owner/name` entries when they must remain human-releas
 ```text
 # owner/repo
 classdojo/astronomer
+classdojo/iris
 ```
 
 ## Rules

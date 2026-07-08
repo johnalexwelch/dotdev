@@ -13,7 +13,7 @@ Run a multi-lens council on an analytical topic — each persona a fresh subagen
 
 ## Contract
 
-Consumes: analysis, claim, judgment call, or user-provided analytical context
+Consumes: analysis, claim, judgment call, or user-provided analytical context. When the input is a persisted analysis dir (`<date>-<slug>/` per `_docs/analysis-structure.md`), read its README provenance header first — `as_of`, `sources`, `metrics`, `decisions`, and `fingerprint` feed the council directly instead of being re-derived from prose.
 Produces: multi-lens council synthesis with disagreement, falsifiers, confidence, and per-expert reads
 Requires: independent expert contexts; graph context optional
 Side effects: may persist synthesis to `.council/analysis/` when the run reaches the persistence step
@@ -37,7 +37,7 @@ Prefer the lightest mode the stakes justify: bias to `--fast` for "quick/before 
 
 ## Roster
 
-Required: `skeptical-data-scientist`, `decision-scientist`. Smart-pick optional by topic: causal language→`causal-reasoner`; cohort/sample-size→`statistician`; missing counterfactual→`counterfactual-check`; judgment call/recommendation (not a data analysis)→`bias-auditor`; child-data/privacy/regulatory→`governance-reviewer`; board/ELT→`exec-audience-stand-in`; ops/SLA→`ops-analyst`; money/pricing→`economist`. Cap at `roster.limits.max_experts`.
+Required: `skeptical-data-scientist`, `decision-scientist`. Smart-pick optional by topic: causal language→`causal-reasoner`; cohort/sample-size→`statistician`; missing counterfactual→`counterfactual-check`; judgment call/recommendation (not a data analysis)→`bias-auditor`; child-data/privacy/regulatory→`governance-reviewer`; board/ELT→`exec-audience-stand-in`; ops/SLA→`ops-analyst`; money/pricing→`economist`; charts-as-code (Vega/matplotlib/plotly/ggplot/SQL-fed figures)→`visualization-critic` (encoding-honesty only; craft goes to `dashboard-review`). Cap at `roster.limits.max_experts`.
 
 ## Graph context (graph-first)
 

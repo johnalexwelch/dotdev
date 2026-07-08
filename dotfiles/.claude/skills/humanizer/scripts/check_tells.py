@@ -48,6 +48,56 @@ AI_VOCAB = [
     r"\bin (today's|the) (rapidly )?evolving landscape\b",
     r"\bvital role\b",
     r"\bkey (insight|takeaway|role)\b",
+    # Common post-2023 vocab the original list missed.
+    r"\bleverage[sd]?\b",
+    r"\brobust\b",
+    r"\bseamless(ly)?\b",
+    r"\butilize[sd]?\b",
+    r"\bmyriad\b",
+    r"\bholistic\b",
+    r"\bnuanced\b",
+    r"\bmultifaceted\b",
+    r"\brealm\b",
+    r"\bmoreover\b",
+    r"\bfurthermore\b",
+    r"\bnotably\b",
+    r"\bcomprehensive\b",
+]
+
+# Filler phrases (#23).
+FILLER = [
+    r"\bin order to\b",
+    r"\bdue to the fact that\b",
+    r"\bat this point in time\b",
+    r"\bin the event that\b",
+    r"\bhas the ability to\b",
+    r"\bit is important to note that\b",
+    r"\bit's worth noting\b",
+    r"\bneedless to say\b",
+]
+
+# Copula avoidance (#8) — elaborate stand-ins for is/are.
+COPULA = [
+    r"\bserves as\b",
+    r"\bstands as\b",
+    r"\bboasts (a|an|over)\b",
+    r"\bfeatures (a|an)\b",
+]
+
+# Persuasive authority tropes (#27).
+AUTHORITY = [
+    r"\bfundamentally\b",
+    r"\bwhat really matters\b",
+    r"\bthe deeper issue\b",
+    r"\bthe heart of the matter\b",
+    r"\bin reality\b",
+]
+
+# Knowledge-cutoff disclaimers (#21).
+KNOWLEDGE_CUTOFF = [
+    r"\bas of my last (training|update|knowledge)\b",
+    r"\bbased on available information\b",
+    r"\bwhile specific details are (limited|scarce)\b",
 ]
 
 # Signposting phrases (pattern catalog #28).
@@ -76,6 +126,7 @@ CHATBOT = [
 NEG_PARALLEL = [
     r"\bit's not (just|merely|only) about\b",
     r"\bnot just .{1,40} but\b",
+    r"\bnot only .{1,40} but( also)?\b",
 ]
 
 # Code-review hedges. Stating a recommendation > hedging around one.
@@ -153,16 +204,55 @@ def count_pattern_list(text: str, patterns: list[str]) -> int:
     return sum(find(p, text) for p in patterns)
 
 
+def count_semicolons(text: str) -> int:
+    return text.count(";")
+
+
 def count_rule_of_three(text: str) -> int:
-    """Catches inline `X, Y, and Z` patterns. Heuristic — false positives expected."""
-    return len(re.findall(
-        r"\b[A-Za-z]+,\s+[A-Za-z]+,?\s+and\s+[A-Za-z]+\b", text
-    ))
+    """Catches inline `X, Y, and Z` triples where each item is 1-4 words.
+    Heuristic — false positives expected (that's why it's a flag, not an autofix)."""
+    seg = r"[A-Za-z]+(?:\s+[A-Za-z]+){0,3}"
+    return len(re.findall(rf"\b{seg},\s+{seg},?\s+and\s+{seg}\b", text))
+
+
+def _selftest() -> int:
+    """Runnable self-check: dirty sample must flag the new groups; clean must be 0."""
+    dirty = (
+        "In order to leverage our robust platform, it's worth noting that it "
+        "serves as a comprehensive solution. Fundamentally, we offer speed, "
+        "quality, and scale; not only fast but also seamless."
+    )
+    clean = "We rewrote the parser. It now handles nested quotes without crashing."
+    d = {
+        "filler": count_pattern_list(dirty, FILLER),
+        "vocab": count_pattern_list(dirty, AI_VOCAB),
+        "copula": count_pattern_list(dirty, COPULA),
+        "authority": count_pattern_list(dirty, AUTHORITY),
+        "neg": count_pattern_list(dirty, NEG_PARALLEL),
+        "semis": count_semicolons(dirty),
+        "three": count_rule_of_three(dirty),
+    }
+    assert d["filler"] >= 2, d
+    assert d["vocab"] >= 4, d          # leverage, robust, comprehensive, seamless
+    assert d["copula"] >= 1, d         # serves as
+    assert d["authority"] >= 1, d      # fundamentally
+    assert d["neg"] >= 1, d            # not only...but also
+    assert d["semis"] == 1, d
+    assert d["three"] >= 1, d          # speed, quality, and scale
+    clean_total = (
+        count_pattern_list(clean, FILLER + AI_VOCAB + COPULA + AUTHORITY + NEG_PARALLEL)
+        + count_semicolons(clean)
+    )
+    assert clean_total == 0, clean_total
+    print("self-test OK")
+    return 0
 
 
 def main() -> int:
+    if len(sys.argv) == 2 and sys.argv[1] == "--self-test":
+        return _selftest()
     if len(sys.argv) != 2:
-        print("usage: check_tells.py <file|->", file=sys.stderr)
+        print("usage: check_tells.py <file|-|--self-test>", file=sys.stderr)
         return 2
 
     src = sys.argv[1]
@@ -175,10 +265,15 @@ def main() -> int:
         "signposting": count_pattern_list(text, SIGNPOSTS),
         "chatbot_artifacts": count_pattern_list(text, CHATBOT),
         "negative_parallelism": count_pattern_list(text, NEG_PARALLEL),
+        "filler_phrases": count_pattern_list(text, FILLER),
+        "copula_avoidance": count_pattern_list(text, COPULA),
+        "authority_tropes": count_pattern_list(text, AUTHORITY),
+        "knowledge_cutoff": count_pattern_list(text, KNOWLEDGE_CUTOFF),
         "hedges": count_pattern_list(text, HEDGES),
         "third_person_abstraction": count_pattern_list(text, THIRD_PERSON),
         "bolded_list_headers": count_bolded_list_headers(text),
         "title_case_headings": count_title_case_headings(text),
+        "semicolons": count_semicolons(text),
         "rule_of_three": count_rule_of_three(text),
     }
 
