@@ -32,6 +32,7 @@ decisions:                   # human judgment as explicit params, not prose
   cohort:   ""
   excluded: ""
   window:   ""
+  rejected: ""               # alternatives considered and killed, + why (stops re-litigation)
 fingerprint:                 # the reproducibility anchor (not raw data)
   rows:
   checksum:

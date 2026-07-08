@@ -41,6 +41,7 @@ decisions:                      # human judgment as explicit params, not prose
   cohort:   "signed_up 2026-01..2026-03, teacher segment only"
   excluded: "test accounts (is_internal), refunds"
   window:   "trailing 90d"
+  rejected: "per-school cohorting (n too small); LTV proxy (no revenue join yet)"
 fingerprint:                    # the real reproducibility anchor (see below)
   rows:     18342
   checksum: sha256:ab12…        # of the sorted extract
