@@ -15,6 +15,33 @@ optional:
 limits:
   min_experts: 2
   max_experts: 5
+# #2 Quorum: synthesis is only valid if EVERY required persona returned
+# status: contributing. Any required persona timed_out/errored => run is
+# INVALID (report partial reads, do not emit a confident synthesis).
+quorum:
+  required_all_contributing: true
+# #1 Decorrelate errors: do NOT run every lens on one base model — an
+# ensemble of clones shares blind spots. Static tier map (no router agent:
+# model tier tracks persona ROLE, which rarely changes; stakes->depth is
+# already handled by --fast/default/--round-3).
+# ponytail: within one model family diversity is partial. Ceiling = same-family
+# correlated errors. Upgrade path: if a cross-family model is configured, route
+# `cross_family` roles below to it (biggest decorrelation win).
+model_policy:
+  synthesis: {model: opus, reasoning: high}
+  default:   {model: sonnet, reasoning: high}
+  by_persona:
+    skeptical-data-scientist: {model: opus,   reasoning: high, cross_family: true}   # primary adversary
+    decision-scientist:       {model: opus,   reasoning: high}
+    bias-auditor:             {model: opus,   reasoning: high, cross_family: true}
+    causal-reasoner:          {model: opus,   reasoning: high}
+    economist:                {model: opus,   reasoning: high}
+    statistician:             {model: sonnet, reasoning: high}
+    counterfactual-check:     {model: sonnet, reasoning: high}
+    governance-reviewer:      {model: sonnet, reasoning: medium}
+    exec-audience-stand-in:   {model: sonnet, reasoning: medium}
+    ops-analyst:              {model: sonnet, reasoning: medium}
+    visualization-critic:     {model: sonnet, reasoning: medium}
 round_1_dispatch: parallel
 post_process:
   humanizer: true
@@ -66,10 +93,18 @@ overlays:
     not the denominator. Defer data critiques to
     skeptical-data-scientist and framing/reversibility to
     decision-scientist; stay on the cognitive biases.
+# #7 Keyword signals below are HINTS, not gates. The orchestrator is an LLM:
+# classify the topic semantically first, then use keywords to confirm/boost.
+# A topic phrased without a trigger word must still pull the right lens.
+# always_seat: one adversary is seated on EVERY default/round run regardless
+# of keywords, so no topic ever gets a soft roster. bias-auditor red-teams the
+# reasoning; it critiques the emerging consensus in round 2 (see #6).
+smart_pick:
+  mode: semantic_first
+  always_seat: [bias-auditor]
 dispatch_signals:
-  # Topic-keyword heuristics for smart-picking optional personas
-  # in default mode. Orchestrator scans the user's invocation
-  # text for these signals.
+  # Topic-keyword heuristics that BOOST smart-picking optional personas
+  # in default mode. Hints only — semantic classification decides.
   statistician:
     keywords: [cohort, retention, sample, p-value, significance, segment, lift, AB test, experiment]
   causal-reasoner:
