@@ -9,6 +9,14 @@ description: Shared chart-integrity rules — chart-type-to-data-shape fit, axis
 
 Shared fragment. A dashboard can support the right decision and still lie or exclude readers. These rules make each chart honest and readable. Referenced by `dashboard-design` (step 3, per chart) and `dashboard-review` (checks table).
 
+## Contract
+
+Consumes: a chart or dashboard spec under design/review — chart type, data shape, axes, color encoding, data conditions
+Produces: integrity rulings + verdict tags (`[AXIS-LIE]`, `[WRONG-TYPE]`, `[A11Y]`, `[COLOR-ALONE]`, `[SMALL-N]`, `[NULL-AS-ZERO]`) applied as guidance — not code artifacts
+Requires: none
+Side effects: none (shared reference fragment; advises, does not mutate files)
+Human gates: none
+
 ## 1. Chart type ← data shape
 
 | Data shape | Use | Never |
