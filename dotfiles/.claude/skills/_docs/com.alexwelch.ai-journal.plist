@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Nightly AI-journey digest. Install:
+       cp ~/.claude/skills/_docs/com.alexwelch.ai-journal.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.alexwelch.ai-journal.plist
+     Uninstall: launchctl unload ... && rm ...
+     The script is watermark-idempotent, so a missed night just widens the next window. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.alexwelch.ai-journal</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/alexwelch/.claude/skills/_docs/journal-digest.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>22</integer><key>Minute</key><integer>30</integer></dict>
+  <key>StandardOutPath</key><string>/tmp/ai-journal.log</string>
+  <key>StandardErrorPath</key><string>/tmp/ai-journal.err</string>
+</dict>
+</plist>

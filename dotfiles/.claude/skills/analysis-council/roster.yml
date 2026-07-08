@@ -11,6 +11,7 @@ optional:
   - exec-audience-stand-in
   - ops-analyst
   - economist
+  - visualization-critic
 limits:
   min_experts: 2
   max_experts: 5
@@ -46,6 +47,18 @@ overlays:
     Activate for: pricing decisions, vendor build-vs-buy,
     unit economics, cohort LTV/CAC, expansion/churn drivers,
     international pricing, free-vs-paid conversion.
+  visualization-critic: |
+    Activate when the analysis ships with charts authored as code
+    (Vega/Vega-Lite, matplotlib, plotly, ggplot, D3, or the SQL/
+    aggregation feeding a figure). Read the spec, not aesthetics.
+    Flag only where the ENCODING changes the conclusion: truncated
+    or dual axes, unlabeled log scale, binning/aggregation that
+    hides variance, chart-type mismatch (e.g. line for categorical),
+    color implying false ordering, cherry-picked time window baked
+    into the query. Defer layout, palette, and craft polish to
+    dashboard-review; stay on whether the picture is honest about
+    the claim. If the chart is a screenshot/GUI export (no source),
+    say so and hand off to dashboard-review.
   bias-auditor: |
     Activate when the input is a judgment call or recommendation
     (a strategy bet, a "we should" memo, a build/kill call) rather
@@ -73,3 +86,5 @@ dispatch_signals:
     keywords: [SLA, ops, process, throughput, latency, incident, on-call]
   economist:
     keywords: [pricing, LTV, CAC, unit economics, vendor, build vs buy, ROI, cost]
+  visualization-critic:
+    keywords: [chart, plot, figure, axis, y-axis, dual-axis, log scale, vega, matplotlib, plotly, ggplot, d3, heatmap, visualization, dashboard]

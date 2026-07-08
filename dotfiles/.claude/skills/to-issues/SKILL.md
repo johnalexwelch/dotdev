@@ -130,7 +130,15 @@ Iterate until the user approves the breakdown.
 
 ### 5. Publish the issues to the issue tracker
 
-For each approved slice, publish a new issue to the issue tracker. Use the issue body template below. Only apply `ready-for-agent` to AFK slices with clear acceptance criteria, dependencies satisfied or explicitly ordered, verification commands, rollback expectation, `low` or explicitly approved `medium` outage risk, and completed module grill evidence when the slice came from a module PRD. If an AFK slice requires human PR validation, also apply `needs-human-review` and include `Human review: required` plus `## Reviewer validation steps`. Publish HITL, high-risk, excluded, blocked, unclear, unverifiable, or ungrilled module slices with the human-implementation state label (`ready-for-human`, or the tracker-equivalent `needs-human`) or `blocked` instead.
+**Idempotency gate (required before any `gh issue create`).** Re-running a breakdown must not create duplicate issues. Before publishing, list existing issues once — `gh issue list --state all --limit 400 --json number,title,state` — and for each approved slice compare its title against that list:
+
+- **Open match** → do not create; reuse the existing issue ID (update its body only if the slice materially changed).
+- **Closed match** → do not silently recreate; surface it to the user (already delivered? needs reopen? genuinely new work needing a distinct title?) and let them decide.
+- **No match** → create it.
+
+This requires titles to be stable and unique per slice (the observable-outcome rule in step 3 already enforces this; prefix with the source's stable task/slice id such as `build-015:` when one exists). Report a dedup summary — created / reused / skipped-closed — in the publish output. This gate is why duplicate issue sets (e.g. two issues for the same `build-NNN:` slice) never reach the tracker.
+
+For each approved slice that passes the idempotency gate, publish a new issue to the issue tracker. Use the issue body template below. Only apply `ready-for-agent` to AFK slices with clear acceptance criteria, dependencies satisfied or explicitly ordered, verification commands, rollback expectation, `low` or explicitly approved `medium` outage risk, and completed module grill evidence when the slice came from a module PRD. If an AFK slice requires human PR validation, also apply `needs-human-review` and include `Human review: required` plus `## Reviewer validation steps`. Publish HITL, high-risk, excluded, blocked, unclear, unverifiable, or ungrilled module slices with the human-implementation state label (`ready-for-human`, or the tracker-equivalent `needs-human`) or `blocked` instead.
 
 Publish issues in dependency order (blockers first) so you can reference real issue identifiers in the "Blocked by" field.
 

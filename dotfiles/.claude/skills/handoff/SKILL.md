@@ -13,7 +13,7 @@ Compress the current session into a handoff document so a fresh agent can contin
 
 ## Contract
 
-Consumes: current conversation context, exit reason (manual, halt, completion), remaining work items
+Consumes: `docs/executions/state.yaml` (primary source for run state / next steps when present), current conversation context, exit reason (manual, halt, completion), remaining work items
 Produces: handoff document at docs/executions/handoffs/<date>-<slug>.md (persistent) or mktemp (ephemeral)
 Requires: none
 Side effects: creates handoff file; for Codex, writes to project directory
@@ -66,11 +66,14 @@ When workflows complete cleanly with NO remaining work, skip the handoff.
 
 ## Process
 
+0. If `docs/executions/state.yaml` exists, read it first — use its `workflow`, `steps`, and `next` as the source of truth for "Where we are" and "Next steps". Fall back to conversation context only when the file is absent. Schema: `../_docs/state-cockpit.md`.
 1. Determine storage path (project repo vs temp).
 2. Determine exit context (manual vs auto, exit reason, remaining items).
 3. If remaining items include ready-for-agent issues, invoke `prompt-builder` for each to generate ready-to-use prompts.
-4. Write the handoff document.
-5. Print the path. If auto-invoked, keep it to one line.
+4. Fill in the **Start here** directive (top of the document structure) with the real first next step and any open blocker.
+5. Write the handoff document.
+6. Print the path, then the paste line the user hands to the next session:
+   `Resume: read <handoff-path> and follow "Start here".` If auto-invoked, keep the whole output to those two lines.
 
 ## Handoff document structure
 
@@ -80,6 +83,24 @@ When workflows complete cleanly with NO remaining work, skip the handoff.
 Exit: [manual | halt: <reason> | completion with follow-ups | backlog run complete]
 Target: [claude | codex | either]
 Generated: [timestamp]
+
+## Start here (resuming agent)
+
+This section makes the handoff self-executing: the next session only needs the
+file path. Paste `Resume: read <this-path> and follow "Start here".` into a fresh
+agent. Because this directive lives inside the handoff, it does NOT tell the agent
+to "read this handoff" — it's already here.
+
+> You are resuming multi-session work in `<repo>`. Recover state before acting:
+>
+> 1. Read `docs/executions/state.yaml` if present — SOURCE OF TRUTH for the active
+>    `workflow`, completed `steps`, and the `next` queue. Resume from `next`; do
+>    not redo completed steps. (Schema: `skills/_docs/state-cockpit.md`.)
+> 2. Read the paths under "Files to read first" (bottom of this doc) to rebuild context.
+>
+> Then do Next step 1: `<first next step>`. If `state.yaml` and this doc disagree,
+> `state.yaml` wins on run status.
+> `<if a blocker is open:>` STOP first and resolve: `<blocker + the decision needed>`.
 
 ## Where we are
 
@@ -153,4 +174,5 @@ This keeps multi-session work from ballooning handoff size.
 - If the exit reason is a blocker, be specific about what decision the human needs to make. "Needs human" alone is not actionable.
 - For Codex targets: include full prompt-builder outputs. Codex cannot ask questions.
 - For Claude targets: prompts can be lighter (Claude can ask the user).
+- Always include the **Start here** directive near the top of the handoff, and print the `Resume: read <path> ...` paste line last. The user pastes the path, not the whole prompt. If no `state.yaml` exists, drop its step 1 and boot off "Files to read first" only. For Codex the directive must be self-contained (no "ask the user"); for Claude it may leave a decision to the user.
 - Always print the handoff file path as the last line of output.

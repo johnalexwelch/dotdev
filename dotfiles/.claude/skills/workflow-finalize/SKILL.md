@@ -185,6 +185,7 @@ When all steps pass:
 - Run `git status --short` before exit. If any source file shows `M` or `??`, the contract is not satisfied; commit or reset and re-check before reporting completion or handoff.
 - If follow-up work was discovered (NEW-NN findings, post-mortem action items, reconciliation drift): **auto-handoff** (exit_reason: completion with follow-ups, remaining: the follow-up items with prompt-builder outputs)
 - If no remaining work and this was not an AFK/backlog/Codex run: skip handoff
+- **Close the run cockpit.** If `docs/executions/state.yaml` exists for this run, set `status: done` and `next: ""` on clean completion (leave the file as a record; the next confirmed route overwrites it). Schema: `../_docs/state-cockpit.md`.
 - After merge or explicit abandonment, use `cleanup-delivery` to remove stale local worktrees/branches and reconcile ticket residue. Do not run cleanup before the merge/abandonment decision.
 
 ## Required Gate Block
@@ -216,8 +217,8 @@ If this block is absent or incomplete, parent workflows must treat `workflow-fin
 
 ## Contract
 
-Consumes: approved review verdict, committed code on branch, issue references, PR reviewer comments
-Produces: PR ready for human review/merge or auto-merge according to repo delivery policy, reconciliation report
+Consumes: approved review verdict, committed code on branch, issue references, PR reviewer comments, `docs/executions/state.yaml` (active run, when present)
+Produces: PR ready for human review/merge or auto-merge according to repo delivery policy, reconciliation report, closed run cockpit (`status: done` in `docs/executions/state.yaml`)
 Requires: gh, git
 Side effects: creates/updates PR, pushes commits (review/CI fixes), posts comments, may mark ready and enable GitHub auto-merge when repo policy allows
 Human gates: missing workflow-review independent review evidence; missing/failed user-journey QA for frontend or user-facing changes unless waived; unresolved reviewer comments; CI exhaustion halts for diagnose; post-mortem presented for review; auto-merge setup failure on auto-merge-eligible repos

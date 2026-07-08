@@ -47,6 +47,14 @@ human_gates: none
 
 # herdr-launch — Stage-Aware Companion Tools
 
+## Contract
+
+Consumes: `stage` (implement|review|ci|cleanup), `worktree_path` (implement), `workspace_id` (review/ci/cleanup), optional `pr_number`/`run_id`/`issue_slug`; env `HERDR_ENV`
+Produces: herdr workspace/tabs/panes running stage-appropriate companion tools; the `workspace_id` (from implement) that later stages require
+Requires: `HERDR_ENV=1`; herdr, lazygit, gh, yazi (implement), delta (review)
+Side effects: creates herdr workspaces, tabs, and panes; does not mutate repo files
+Human gates: none (halts and asks the caller for `workspace_id` if missing on review/ci/cleanup)
+
 ## Precondition
 
 **Check `HERDR_ENV` first.** If `HERDR_ENV` is not `1`, print a single line:

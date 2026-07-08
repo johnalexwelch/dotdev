@@ -57,6 +57,8 @@ For each chart, name:
 - **The comparator** (vs prior period, vs target, vs baseline, vs cohort)
 - **The drill-down** (what does clicking it reveal — or is it terminal?)
 
+For each chart, apply `viz-integrity/SKILL.md`: chart type must fit the data shape, axes must be honest (bars start at zero), palette must be color-blind-safe, and meaning must never be encoded by color alone.
+
 Cap at 6 charts. If you can't, the dashboard is trying to answer multiple decisions — split it into two.
 
 ### 4. Pick the headline
@@ -165,4 +167,4 @@ Human gates: requires user to name a decision; one clarifying question max
 ## Context
 
 Typical workflows: pre-implementation, before opening Metabase / Looker
-Pairs well with: dashboard-review (post-build), analysis-design (when the decision is one-shot, not recurring), sql-review (per-chart SQL)
+Pairs well with: viz-integrity (per-chart honesty/accessibility), dashboard-review (post-build), analysis-design (when the decision is one-shot, not recurring), sql-review (per-chart SQL)

@@ -14,6 +14,14 @@ Design **deep modules**: a lot of behaviour behind a small interface, placed at 
 
 Use these terms exactly — don't substitute "component," "service," "API," or "boundary." Consistent language is the whole point.
 
+## Contract
+
+Consumes: a module/interface/seam being designed, reviewed, or made more testable
+Produces: shared design vocabulary + principles applied as guidance (deletion test, depth assessment, seam placement) — not code artifacts
+Requires: none
+Side effects: none (reference skill; advises, does not mutate files)
+Human gates: none
+
 ## Glossary
 
 **Module** — anything with an interface and an implementation. Deliberately scale-agnostic: a function, class, package, or tier-spanning slice. *Avoid*: unit, component, service.

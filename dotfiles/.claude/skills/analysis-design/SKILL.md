@@ -17,6 +17,11 @@ The output feeds into:
 - `analysis-council` for stress-testing the design before execution
 - `decision-memo` after results are in
 
+When the design is approved and execution starts, persist it in the standard
+layout: scaffold with `_docs/new-analysis.sh <slug>` and fill the provenance
+header. Standard: `_docs/analysis-structure.md`. This design spec becomes the
+README's question + decisions block.
+
 ## When to invoke
 
 - User says "I need to analyze X," "let's look at Y," "can you pull data on Z"

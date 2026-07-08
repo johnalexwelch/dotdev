@@ -35,6 +35,9 @@ Routing:
 | **Headline** | Is there a single top-of-page stat? Does it answer the most-important question first? |
 | **Chart count** | More than 8 charts = trying to do too much. Demote or remove. |
 | **Chart type fit** | Is each chart the right type? (Time-series → line; comparison → bar; distribution → histogram; correlation → scatter; status → single-stat.) |
+| **Axis honesty** | Bars start at zero? No dual-axis correlation illusion? One scale per axis, log labeled? Consistent scales across small multiples? See `viz-integrity/SKILL.md`. |
+| **Accessibility** | Color-blind-safe palette? Meaning never encoded by color alone? Legible font/contrast? |
+| **Data conditions** | null shown as gap not zero? Small-n suppressed? Outliers not flattening the scale? Empty/error states defined? |
 | **Comparators present** | Every number needs a "compared to what." vs prior period, vs target, vs baseline. |
 | **Time grain consistency** | Are charts all on the same grain? Or do day-level and quarter-level mix and confuse? |
 | **Dead-weight charts** | Charts that don't change reader behavior — candidates for cut. |
@@ -110,6 +113,7 @@ What chart *should* be here that isn't? The "what's NOT here" gap is often the b
 - "Keep" verdicts need positive justification, not just "it's there."
 - "Remove" verdicts need a concrete reason, not just "feels like clutter."
 - Don't propose adding 3 charts to fix a dashboard with 9. Subtraction is usually the right move.
+- Axis / accessibility / data-condition findings use `viz-integrity/SKILL.md` verdict tags (`[AXIS-LIE]` `[WRONG-TYPE]` `[A11Y]` `[COLOR-ALONE]` `[SMALL-N]` `[NULL-AS-ZERO]`). These are integrity defects, not taste — flag them even on otherwise-decisive charts.
 
 ## Graph context (GRAPH-FIRST — default behavior)
 
@@ -137,4 +141,4 @@ Human gates: none
 ## Context
 
 Typical workflows: pre-promotion audit, "why isn't this used" investigation, post-design verification
-Pairs well with: dashboard-design (rebuild from spec), sql-review (per-chart SQL), metric-tree-review (the underlying metrics)
+Pairs well with: viz-integrity (chart honesty/accessibility rules), dashboard-design (rebuild from spec), sql-review (per-chart SQL), metric-tree-review (the underlying metrics)
