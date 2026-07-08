@@ -46,7 +46,7 @@ Same skeleton, sharper muscle.
 ## Process
 
 1. **Read** the draft; identify the headline answer. If there's none at all, halt and ask — don't fabricate one (see Gate).
-2. **Base pass:** run the base AI-writing tells (load the catalog for non-trivial drafts), then a quick self-audit — "what still reads as obviously AI?" — and fix it.
+2. **Base pass:** run `humanizer/scripts/check_tells.py` on the draft for the mechanical tells, load the catalog for non-trivial drafts, then a self-audit — "what still reads as obviously AI?" — and fix it. Re-run the script on the final output as an exit gate: `TOTAL` must be `0` or each hit justified.
 3. **Exec pass:** apply the table above. Highest leverage: the opening leads with the answer, the close is the ask (not a summary), each heading answers "so what?". If a graph is present, check voice against prior memos by the author/audience and tag findings `[GRAPH-VOICE]`.
 4. **Compress** ~20% — never at the cost of a real caveat or a stated confidence basis.
 

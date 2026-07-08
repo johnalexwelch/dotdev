@@ -84,6 +84,9 @@ needs_ledger() {
     echo "skills root not found: $root" >&2
     exit 2
 }
+# Resolve symlinks (the skills dir is stow-symlinked). Without this, find on a
+# symlinked root descends into nothing and the whole lint passes vacuously.
+root="$(cd "$root" && pwd -P)"
 
 while IFS= read -r -d '' file; do
     skill="${file#"$root"/}"
@@ -118,6 +121,25 @@ while IFS= read -r -d '' file; do
         done
     else
         warn "$skill lacks contract section"
+    fi
+
+    # Orphaned tooling: a shipped script that no doc references and no sibling
+    # script calls is dead weight (the humanizer check_tells.py bug class).
+    skill_dir="$root/$skill"
+    if [ -d "$skill_dir/scripts" ]; then
+        while IFS= read -r -d '' script; do
+            base="$(basename "$script")"
+            # Skip compiled/junk and tests. A test file is self-justifying
+            # (it's the check behind another script, which we want to exist).
+            case "$base" in
+                *.pyc | test_* | *_test.* | *.test.*) continue ;;
+            esac
+            # referenced by any markdown in the skill?
+            grep -rqIF --include='*.md' "$base" "$skill_dir" 2>/dev/null && continue
+            # called by a sibling script (shared helper)?
+            grep -rqIF --exclude="$base" "$base" "$skill_dir/scripts" 2>/dev/null && continue
+            warn "$skill ships scripts/$base but nothing references or invokes it (orphaned tooling)"
+        done < <(find "$skill_dir/scripts" -type f -not -path '*/__pycache__/*' -print0)
     fi
 done < <(find "$root" -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
 

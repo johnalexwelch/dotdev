@@ -18,6 +18,7 @@ Use this reference before producing the final rewrite, especially for longer tex
 7. Answer briefly with the remaining tells, if any
 8. Prompt: "Now make it not obviously AI generated."
 9. Present the final version, revised after the audit
+10. **Mechanical gate:** run `python3 ../scripts/check_tells.py -` on the final version (pipe the text in). `TOTAL` must be `0`, or each remaining hit is named and justified. A non-zero count you can't justify means step 9 isn't done — revise and re-scan. This is the objective backstop; steps 6–9 are judgment, this is measurement.
 
 ## Output Format
 

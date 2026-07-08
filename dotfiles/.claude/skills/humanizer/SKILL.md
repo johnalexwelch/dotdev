@@ -21,14 +21,18 @@ Human gates: unclear intended meaning, audience, or tone may require clarificati
 ## References — load only what the request needs
 
 - `references/pattern-catalog.md` — the 29 patterns, watch-words, before/after examples. Load it as your checklist for any non-trivial text.
-- `references/voice-calibration.md` — load when the user gives a writing sample, asks for voice-matching, or the draft reads clean but lifeless.
+- `references/voice-calibration.md` — its **Personality and Soul** section is default reading for any prose rewrite (stripping tells without adding voice produces sterile output that reads as slop). Load its **Voice Calibration** section additionally when the user gives a writing sample or asks for voice-matching.
 - `references/final-audit.md` — the final anti-AI pass, output format, and a worked example. Load before the final rewrite on anything longer than a quick line edit.
 
 Keeping this file light is deliberate: most jobs only need one reference, so loading on demand keeps each run cheap.
 
 ## How to work
 
-1. Read the input. For non-trivial text, load `pattern-catalog.md` and scan against it.
-2. Produce a **draft** rewrite: replace AI-isms with natural phrasing, vary sentence length, prefer specific detail over vague claims, keep the core message.
-3. For anything beyond a line edit, run the final audit (`final-audit.md`): ask "What still makes this read as AI-generated?", note the remaining tells, then revise into a **final** version.
-4. Return the draft, the brief list of tells found, and the final rewrite.
+The deterministic detector `scripts/check_tells.py` is not optional — it catches the mechanical tells a self-audit reliably misses. Run it on the way in and again as an exit gate.
+
+1. **Scan the input.** Run `python3 scripts/check_tells.py <file|->` to get a baseline tell count. For non-trivial text, load `pattern-catalog.md` for the subtler patterns the script can't judge (promotional tone, fake significance, synonym cycling).
+2. **Draft** rewrite: replace AI-isms with natural phrasing, vary sentence length, prefer specific detail over vague claims, keep the core message. For prose, apply the **Personality and Soul** pass from `voice-calibration.md` so the result has a pulse, not just an absence of tells.
+3. **Gate the output.** Re-run `check_tells.py` on the **final** rewrite. `TOTAL` must be `0`, or every remaining hit is named and justified (a real em dash the author wants, a legitimately quoted phrase, an intentional semicolon). Rewriting often *introduces* new tells — this re-scan is what catches them. Then run the `final-audit.md` judgment pass for the subtler tells the script doesn't cover.
+4. Return the draft, the tells found (script counts + judgment), and the final rewrite.
+
+> Trivial one-line edits can skip the script; anything longer runs both passes.

@@ -46,6 +46,20 @@ Independence matters more than agent count. Do not use multiple agents merely
 because a workflow says "review"; use `workflow-review`'s risk-sized
 `review_profile`.
 
+## Resume Check (Step 0)
+
+Before classifying, check for an in-progress run in the state cockpit
+(`../_docs/state-cockpit.md` defines the schema; file lives at
+`docs/executions/state.yaml`). If it exists with `status: active|paused`:
+
+- Show its `steps` ledger and ask: `Resume "<run_id>" at <next>? (or start fresh)`
+- On **resume**: treat `done` steps as satisfied, skip re-classification and
+  re-preflight for them, and dispatch straight to `next`.
+- On **start fresh**: overwrite the file and proceed with normal classification.
+
+Skip the resume check when there is no project repo (ephemeral session) — the
+cockpit is an optimization, never a gate.
+
 ## Workflow Progress Reporting
 
 At the start of every run, display a step ledger before executing or dispatching any step.
@@ -69,6 +83,11 @@ Rules:
 - A conditional step may be `skipped` only when the route is direct/read-only and no dispatch occurs; record the reason.
 - Do not dispatch before the ledger shows route confirmation and target preflight complete or not applicable.
 - Include the final ledger in every halt, handoff, and completion response.
+- **Persist the ledger.** In a project repo, after route confirmation write this
+  ledger to `docs/executions/state.yaml` (`status: active`, `next` = first
+  dispatch target) and update `next` + `updated` at each dispatch. Schema and
+  protocol: `../_docs/state-cockpit.md`. Do not inject `state.yaml` into context
+  every turn — read it on demand.
 
 ## Route Confirmation Gate
 
@@ -150,10 +169,10 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
 | "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **workflow effectiveness audit** | workflow-effectiveness-audit |
 | "route this", "choose the workflow", "what flow do we need", "single wrapper", "intake", "which skill should run", "start the right workflow" | **workflow intake** | workflow-router route card, then confirmed target workflow |
-| D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D** | dnd-workflow |
+| D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); creative/D&D skills (`dnd-workflow`, etc.) live in Wren's kit, not here |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
 | "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
-| "write an article", "blog post", "draft", "write about" | **writing** | writing-fragments → writing-shape (argument mode) or writing-beats (narrative/beats mode) → humanizer |
+| "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape`/`writing-beats` → humanizer) lives in Wren's kit |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
 | "generate prompt for", "prep for codex", "prep for AFK" | **prompt generation** | prompt-builder |
@@ -261,30 +280,29 @@ halt, report the missing requirement, and do not proceed.
 | CORA | Can't validate contracts | Skip CORA validation only; do not skip the target workflow's own gates |
 | `playwright-mcp` | Can't run UJ QA | For frontend/user-facing changes, halt for human waiver or setup; do not silently skip |
 | Project test runner | Can't verify | Halt and request setup info |
-| Campaign docs | D&D canon-specific review unavailable | `dnd-grill` may run without docs; `dnd-grill (canon mode)` must halt or explicitly switch to lightweight `dnd-grill` with the user's consent |
-| Raw material file | Writing pipeline needs input | writing-fragments can create from scratch; writing-shape and writing-beats need a file to work from |
 
 ## Process
 
 ```
+0. Resume check: if an active/paused run exists in `docs/executions/state.yaml`, offer to resume at `next` before classifying
 1. Receive work description (user input, issue, or automated trigger)
 2. Classify using signal table above
 3. If ambiguous or confidence is low: ask ONE clarifying question (max 1 — don't interrogate)
 4. Select the smallest safe agent budget
 5. Emit ROUTE_CARD
 6. Wait for user confirmation unless the route qualifies for the direct/read-only skip
-7. After confirmation, run preflight on target workflow
-8. If preflight passes: dispatch to target workflow
+7. After confirmation, run preflight on target workflow; persist the ledger to `docs/executions/state.yaml`
+8. If preflight passes: dispatch to target workflow (update `state.yaml.next` on dispatch)
 9. If preflight fails: report missing requirements
 10. At completion, halt, or user correction: emit ROUTER_LEARNING_NOTE and run or recommend workflow-effectiveness-audit when triggered
 ```
 
 ## Contract
 
-Consumes: work description (user input, issue body, automated trigger)
-Produces: route card, confirmed workflow invocation, preflight report (if failed), router learning note
+Consumes: work description (user input, issue body, automated trigger), existing `docs/executions/state.yaml` (resume)
+Produces: route card, confirmed workflow invocation, preflight report (if failed), router learning note, persisted run ledger in `docs/executions/state.yaml`
 Requires: git
-Side effects: none (routing is a decision, not an action)
+Side effects: writes/updates `docs/executions/state.yaml` in project repos (routing decision + run ledger); none otherwise
 Human gates: route confirmation before non-trivial dispatch; ambiguous classification asks one clarifying question
 
 Runtime note: the router itself only needs git-aware workspace context; target workflows declare their own `Requires` fields.
