@@ -566,3 +566,20 @@ This file is the canonical decision record for workflow-feature flows in this re
 - History rewrite changed all commit SHAs and required refreshing both clones (done). GitHub `refs/pull/*` and cached commit views may still surface the old blob until GitHub GCs — acceptable because the key is dead. The public key (`.pub`, not secret) remains in history by design.
 
 **Source:** wayfinder Tier-0 ticket #69; setup audit FIND-09.
+
+## 2026-07-09 - Wiring-verification method (#70)
+
+**Question:** What signal proves each skill/hook/persona/router is actually invoked at runtime — never silently dead, never ambiguously wired — across pi/claude/codex? Produce a repeatable check for CI.
+
+**Decision:** Two-layer method, because "wired" is two distinct claims. (1) **Reachable** — exists, parses, registered where the harness looks; deterministic → the CI gate: a static wiring audit (skills discoverable per harness, codex `sync-codex-skills.sh` dry-run clean, `disable-model-invocation` set matches #71's list, hook scripts exist+`+x`, symlinks resolve) plus a hook-fire smoke test (feed each hook trigger JSON, assert exit/marker). (2) **Invoked** — a live session actually fired it; non-deterministic (can't force a model to invoke) → telemetry, sampled, never a gate: Langfuse for claude, pi-observability/tool-display/observational-memory for pi, none for codex yet. Cleared route (infra) hands to `/design-plan` → `/execute-phase` to build `scripts/verify-wiring.sh` into CI + a documented telemetry query recipe.
+
+**What else considered:**
+- Single runtime CI gate that asserts every skill fired — rejected: forcing a model to invoke is non-deterministic, would be flaky/false-red.
+- Static-only (does the file exist) — rejected: catches silently-dead but not ambiguously-wired (loaded yet never picked); telemetry needed for the second half.
+- Add new logging/telemetry infra — rejected as premature: Langfuse (claude) + pi-observability (pi) already capture invocation; deconflict/use, don't add.
+
+**Tradeoffs accepted:** Codex runtime invocation stays unproven until a codex trace sink exists (static-sync-clean is the only current codex signal). Runtime evidence is sampled/manual, not gated, so a skill can be reachable-and-green in CI yet still under-invoked — caught only by periodic telemetry review.
+
+**Graduates:** FIND-27 codex fog (verification stance now decided); backs #71 (audit enforces the disable-model-invocation set) and hook-enforcement confidence (smoke test proves it).
+
+**Source:** wayfinder work-mode resolution of ticket #70; research asset `docs/research/2026-07-09-wiring-verification-method.md`.
