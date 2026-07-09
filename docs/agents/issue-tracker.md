@@ -1,30 +1,27 @@
 # Issue tracker: GitHub
 
-Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+Issues and PRDs for this repo (`johnalexwelch/dotdev`) live as GitHub issues. Use the `gh` CLI for all operations. This repo already runs the delivery funnel on itself (see `docs/decision-log.md`: PRD #52 → issue #53 → PRs).
 
 ## PRs as a request surface
 
-**PRs as a request surface**: yes / no (default: no)
+**PRs as a request surface**: no.
 
-If yes, `/triage` pulls external pull requests into the same triage queue as issues and runs them through the same labels and states — a PR is an issue with attached code. Collaborators' in-flight PRs are excluded from discovery (an explicitly named PR is still triaged regardless of author).
-
-- **External author**: the PR author is not a repository collaborator. Check with `gh api repos/{owner}/{repo}/collaborators --jq '[.[].login]'` and compare against the PR's `author.login`.
-- **Read a PR**: `gh pr view <number> --comments`, plus `gh pr diff <number>` for the change itself.
-- **List PRs**: `gh pr list --state open --json number,title,body,labels,author,comments,createdAt` with appropriate `--label` filters; filter out collaborator authors before presenting for triage discovery.
-- **Comment on a PR**: `gh pr comment <number> --body "..."`
-- **Apply / remove labels**: `gh pr edit <number> --add-label "..."` / `--remove-label "..."`
-- **Close**: `gh pr close <number> --comment "..."` (triage closes; it does not merge)
+Solo repo — external pull requests are not a triage intake surface. `/triage` handles issues only.
 
 ## Conventions
 
-- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc for multi-line bodies.
-- **Read an issue**: `gh issue view <number> --comments`, filtering comments by `jq` and also fetching labels.
-- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with appropriate `--label` and `--state` filters.
-- **Comment on an issue**: `gh issue comment <number> --body "..."`
+- **Create an issue**: `gh issue create --title "..." --body "..."`. Use a heredoc or `--body-file` for multi-line bodies.
+- **Read an issue**: `gh issue view <number> --comments`, fetching labels alongside.
+- **List issues**: `gh issue list --state open --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'` with `--label`/`--state` filters.
+- **Comment**: `gh issue comment <number> --body "..."`
 - **Apply / remove labels**: `gh issue edit <number> --add-label "..."` / `--remove-label "..."`
 - **Close**: `gh issue close <number> --comment "..."`
 
-Infer the repo from `git remote -v` — `gh` does this automatically when run inside a clone.
+The repo is inferred from `git remote -v` — `gh` does this automatically inside a clone.
+
+## Triage labels
+
+Canonical five (names as-is): `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`, plus the local additions `needs-human-review` (review gate) and the three-way `wontfix` split (already-implemented / rejected-bug / rejected-enhancement). `workflow-guard.sh` enforces that PRD/spec-shaped parent issues are **never** labelled `ready-for-agent` — only child implementation issues are.
 
 ## When a skill says "publish to the issue tracker"
 
@@ -58,12 +55,12 @@ done
 - **Create then attach** as a sub-issue of the map:
   - `gh issue create --title "<ticket name>" --label "wayfinder:<type>" --body-file <body>`
   - attach: `gh api -X POST repos/{owner}/{repo}/issues/<map>/sub_issues -f sub_issue_id=<ticket-id>` (or the github MCP `sub_issue_write` tool in-session)
-- **Claim** (do this first, before any work): `gh issue edit <ticket> --add-assignee @me` — assignment *is* the claim.
+- **Claim** (first, before any work): `gh issue edit <ticket> --add-assignee @me` — assignment *is* the claim.
 - Type label is one of `wayfinder:research|prototype|grilling|task`.
 
 ### Blocking & the frontier
 
-- **Native**: use GitHub issue dependencies ("blocked by") when available — it renders the frontier in the GitHub UI.
+- **Native**: use GitHub issue dependencies ("blocked by") when available — renders the frontier in the GitHub UI.
 - **Fallback** (always safe): add a `Blocked by: #N` line to the blocked ticket's body and label it `wayfinder:blocked`; drop the label when the last blocker closes.
 - **Frontier query** (open, unblocked, unclaimed children of the map):
   `gh issue list --state open --search "no:assignee -label:wayfinder:blocked" --json number,title,labels,assignees`, then keep only sub-issues of the map whose blockers are all closed.
@@ -75,6 +72,10 @@ done
 3. **Index it**: append one line to the map body's "Decisions so far" (`gh issue edit <map> --body-file ...`)
 4. **Mirror the decision** to `docs/decision-log.md` via `/decision-log` — the canonical record with alternatives/tradeoffs.
 
-### Local-markdown fallback
+### How a cleared route hands off
 
-If no GitHub tracker is available, the map is `docs/wayfinder/<slug>/map.md` and tickets are files under `tickets/`, with `Blocked by:` lines and a front-matter `status:` field standing in for labels/assignment.
+Wayfinder plans; it does not deliver. When a map's route is clear, hand it into the normal funnel by the destination's shape (named in the map's `## Notes`):
+
+- product / feature work → `/to-prd` → `/to-issues` → `/triage`
+- refactor / migration / infra → `/design-plan` → `/execute-phase`
+- strategic decision / roadmap → `/workflow-roadmap` (human gate) or a `/decision-log` entry, then stop.
