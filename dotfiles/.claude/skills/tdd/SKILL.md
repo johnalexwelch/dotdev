@@ -82,15 +82,15 @@ When exploring the codebase, use the project's domain glossary so that test name
 Before writing any code:
 
 - [ ] Confirm with user what interface changes are needed
-- [ ] Confirm with user which behaviors to test (prioritize)
+- [ ] Confirm with user which seams to test — a [seam](../codebase-design/SKILL.md) is the public boundary a test observes behavior through, never internals. No test is written at an unconfirmed seam.
 - [ ] Identify opportunities for [deep modules](deep-modules.md) (small interface, deep implementation)
 - [ ] Design interfaces for [testability](interface-design.md)
-- [ ] List the behaviors to test (not implementation steps)
+- [ ] List the seams and behaviors to test (not implementation steps)
 - [ ] Get user approval on the plan
 
-Ask: "What should the public interface look like? Which behaviors are most important to test?"
+Ask: "What should the public interface look like? Which seams should we test, and which behaviors at each?"
 
-**You can't test everything.** Confirm with the user exactly which behaviors matter most. Focus testing effort on critical paths and complex logic, not every possible edge case.
+**You can't test everything.** Agreeing the seams up front with the user, before any test is written, is how testing effort lands on critical paths and complex logic instead of every possible edge case.
 
 ### 2. Tracer Bullet
 
@@ -119,17 +119,9 @@ Rules:
 - Don't anticipate future tests
 - Keep tests focused on observable behavior
 
-### 4. Refactor
+### 4. Stop at Green
 
-After all tests pass, look for [refactor candidates](refactoring.md):
-
-- [ ] Extract duplication
-- [ ] Deepen modules (move complexity behind simple interfaces)
-- [ ] Apply SOLID principles where natural
-- [ ] Consider what new code reveals about existing code
-- [ ] Run tests after each refactor step
-
-**Never refactor while RED.** Get to GREEN first.
+**Refactoring is not part of this loop.** Once a cycle is GREEN, stop — don't extract duplication, deepen modules, or apply cleanups here. Refactoring happens during review (see the self-review step of `implement`, which runs `pr-review`), not as part of this loop.
 
 ## Checklist Per Cycle
 

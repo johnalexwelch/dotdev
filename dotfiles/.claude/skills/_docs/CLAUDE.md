@@ -18,6 +18,9 @@ Active skills:
 - `dashboard-review`
 - `data-quality-audit`
 - `data-readiness-check`
+- `git-guardrails`
+- `spec-review`
+- `wayfinder`
 - `decision-log`
 - `decision-memo`
 - `describe-pr`

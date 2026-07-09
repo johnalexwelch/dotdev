@@ -34,13 +34,13 @@ If the question is genuinely ambiguous and the user is not reachable, default to
 
 ## Rules that apply to both
 
-1. Throwaway from day one, and clearly marked as such. Name it so a casual reader can see it is a prototype, not production.
+1. Throwaway from day one, and clearly marked as such. Locate the prototype close to where it will actually be used (next to the module or page it's prototyping for) so context is obvious — but name it so a casual reader can see it is a prototype, not production.
 2. One command to run. Whatever the project's existing task runner supports.
-3. No persistence by default. State lives in memory.
+3. No persistence by default. State lives in memory. If the question explicitly involves a database, hit a scratch DB or a local file with a clear "PROTOTYPE — wipe me" name.
 4. Skip the polish. No tests, no error handling beyond what makes the prototype runnable, no abstractions.
 5. Surface the state. After every action, print or render the full relevant state so the user can see what changed.
 6. Delete or absorb when done. When the prototype has answered its question, either delete it or fold the validated decision into the real code.
 
 ## When done
 
-The answer is the only thing worth keeping from a prototype. Capture it somewhere durable (commit message, ADR, issue, or a NOTES.md next to the prototype) along with the question it was answering.
+The answer is the only thing worth keeping from a prototype. Capture it somewhere durable (commit message, ADR, issue, or a NOTES.md next to the prototype) along with the question it was answering. If the user is around, that capture is a quick conversation; if not, leave the placeholder so they (or you, on the next pass) can fill in the verdict before deleting the prototype.

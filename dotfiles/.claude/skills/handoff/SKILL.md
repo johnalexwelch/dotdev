@@ -149,6 +149,12 @@ prompt-builder output ready for copy-paste into Claude or Codex.]
 
 [Full prompt-builder output here]
 
+## Suggested skills
+
+[Skills the next session should consider invoking, given what remains.]
+- `workflow-debug` — PR #143 CI failure needs diagnosis
+- `receive-review` — PR #142 has unresolved review comments
+
 ## Files to read first
 
 [Paths the next agent should read to reconstruct context quickly.]
@@ -169,6 +175,7 @@ This keeps multi-session work from ballooning handoff size.
 ## Rules
 
 - Do NOT duplicate content already in artifacts (PRDs, plans, ADRs, issues, commits). Reference by path or URL.
+- Redact any sensitive information before writing — API keys, passwords, tokens, and personally identifiable information must not appear in the handoff document.
 - Keep it under 200 lines. Compression, not transcription.
 - Auto-handoffs from workflows should be factual and terse. No ceremony.
 - If the exit reason is a blocker, be specific about what decision the human needs to make. "Needs human" alone is not actionable.
