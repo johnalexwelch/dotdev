@@ -91,6 +91,20 @@ Good interfaces make testing natural:
 
 3. **Small surface area.** Fewer methods = fewer tests needed. Fewer params = simpler test setup.
 
+## Relationships
+
+- A **Module** has exactly one **Interface** (the surface it presents to callers and tests).
+- **Depth** is a property of a **Module**, measured against its **Interface**.
+- A **Seam** is where a **Module**'s **Interface** lives.
+- An **Adapter** sits at a **Seam** and satisfies the **Interface**.
+- **Depth** produces **Leverage** for callers and **Locality** for maintainers.
+
+## Rejected framings
+
+- **Depth as ratio of implementation-lines to interface-lines** (Ousterhout): rewards padding the implementation. We use depth-as-leverage instead.
+- **"Interface" as the TypeScript `interface` keyword or a class's public methods**: too narrow — interface here includes every fact a caller must know.
+- **"Boundary"**: overloaded with DDD's bounded context. Say **seam** or **interface**.
+
 ## When to apply this skill
 
 - Designing a new module from scratch
@@ -98,3 +112,8 @@ Good interfaces make testing natural:
 - Evaluating whether a proposed abstraction earns its keep (deletion test)
 - Making an existing module more testable without changing its callers
 - Any time `improve-codebase-architecture` surfaces a deepening opportunity
+
+## Reference docs
+
+- [DEEPENING.md](DEEPENING.md) — dependency categories, seam discipline, and replace-don't-layer testing for deepening a cluster of shallow modules
+- [DESIGN-IT-TWICE.md](DESIGN-IT-TWICE.md) — parallel sub-agent pattern for exploring radically different interfaces before committing to one
