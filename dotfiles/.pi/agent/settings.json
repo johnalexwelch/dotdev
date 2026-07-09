@@ -2,6 +2,16 @@
   "lastChangelogVersion": "0.80.3",
   "defaultProvider": "anthropic",
   "defaultModel": "claude-opus-4-8",
+  "providers": {
+    "anthropic": {
+      "modelOverrides": {
+        "claude-opus-4-8": { "maxTokens": 32000 },
+        "claude-opus-4-5": { "maxTokens": 32000 },
+        "claude-sonnet-4-6": { "maxTokens": 32000 },
+        "claude-haiku-4-5": { "maxTokens": 32000 }
+      }
+    }
+  },
   "packages": [
     "npm:pi-web-access",
     "npm:pi-codex-goal",

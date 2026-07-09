@@ -64,6 +64,10 @@ Automated without extra approval:
 
 - Remove stale `in-progress` label when no PR is open.
 - Add `stale` label to issues with no activity over 30 days.
+- Prune aged global handoff mirrors (dated filenames, low-risk text copies):
+  - `find ~/.chorus/handoffs -name '*.md' -mtime +30 -delete`
+  - `find ~/.chorus/handoffs/_ephemeral -name '*.md' -mtime +7 -delete`
+  Repo copies under `docs/executions/handoffs/` are left untouched (they commit with the branch).
 
 Requires approval:
 

@@ -179,25 +179,25 @@ def count_bolded_list_headers(text: str) -> int:
     return len(re.findall(r"^\s*[-*]\s+\*\*[A-Z][^*]{2,40}:\*\*", text, re.MULTILINE))
 
 
+def _is_title_case_heading(line: str) -> bool:
+    """ATX heading where 3+ main words are capitalized (likely title case)."""
+    m = re.match(r"^#+\s+(.+?)\s*$", line)
+    if not m:
+        return False
+    words = [w for w in re.findall(r"[A-Za-z][A-Za-z'-]+", m.group(1))]
+    if len(words) < 3:
+        return False
+    # Drop common lowercase function words.
+    small = {"a", "an", "the", "and", "or", "but", "for", "of", "in",
+             "on", "to", "with", "vs", "via", "at", "by", "as", "is"}
+    content = [w for w in words if w.lower() not in small]
+    if len(content) < 3:
+        return False
+    return sum(1 for w in content if w[0].isupper()) / len(content) >= 0.75
+
+
 def count_title_case_headings(text: str) -> int:
-    """ATX headings where 3+ main words are capitalized (likely title case)."""
-    hits = 0
-    for line in text.splitlines():
-        m = re.match(r"^#+\s+(.+?)\s*$", line)
-        if not m:
-            continue
-        words = [w for w in re.findall(r"[A-Za-z][A-Za-z'-]+", m.group(1))]
-        if len(words) < 3:
-            continue
-        # Drop common lowercase function words.
-        small = {"a", "an", "the", "and", "or", "but", "for", "of", "in",
-                 "on", "to", "with", "vs", "via", "at", "by", "as", "is"}
-        content = [w for w in words if w.lower() not in small]
-        if len(content) < 3:
-            continue
-        if sum(1 for w in content if w[0].isupper()) / len(content) >= 0.75:
-            hits += 1
-    return hits
+    return sum(1 for line in text.splitlines() if _is_title_case_heading(line))
 
 
 def count_pattern_list(text: str, patterns: list[str]) -> int:
@@ -208,11 +208,107 @@ def count_semicolons(text: str) -> int:
     return text.count(";")
 
 
+_SEG = r"[A-Za-z]+(?:\s+[A-Za-z]+){0,3}"
+RULE_OF_THREE_RE = re.compile(rf"\b{_SEG},\s+{_SEG},?\s+and\s+{_SEG}\b")
+
+
 def count_rule_of_three(text: str) -> int:
     """Catches inline `X, Y, and Z` triples where each item is 1-4 words.
     Heuristic — false positives expected (that's why it's a flag, not an autofix)."""
-    seg = r"[A-Za-z]+(?:\s+[A-Za-z]+){0,3}"
-    return len(re.findall(rf"\b{seg},\s+{seg},?\s+and\s+{seg}\b", text))
+    return len(RULE_OF_THREE_RE.findall(text))
+
+
+# Category -> matchers, reused by locate(). Keeps the location view in sync
+# with the count view: same patterns, just with offsets attached.
+_LITERAL = {"em_dashes": "—", "semicolons": ";"}
+_CURLY = ["\u201c", "\u201d", "\u2018", "\u2019"]
+_PATTERN_GROUPS = {
+    "ai_vocabulary": AI_VOCAB,
+    "signposting": SIGNPOSTS,
+    "chatbot_artifacts": CHATBOT,
+    "negative_parallelism": NEG_PARALLEL,
+    "filler_phrases": FILLER,
+    "copula_avoidance": COPULA,
+    "authority_tropes": AUTHORITY,
+    "knowledge_cutoff": KNOWLEDGE_CUTOFF,
+    "hedges": HEDGES,
+    "third_person_abstraction": THIRD_PERSON,
+}
+_BOLDED_RE = re.compile(r"^\s*[-*]\s+\*\*[A-Z][^*]{2,40}:\*\*", re.MULTILINE)
+
+
+def _line_col(text: str, offset: int) -> tuple[int, int]:
+    line = text.count("\n", 0, offset) + 1
+    col = offset - (text.rfind("\n", 0, offset) + 1) + 1
+    return line, col
+
+
+def _snippet(text: str, start: int, end: int, pad: int = 24) -> str:
+    lo = max(0, start - pad)
+    hi = min(len(text), end + pad)
+    frag = text[lo:hi].replace("\n", " ")
+    return re.sub(r"\s+", " ", frag).strip()
+
+
+# Inline allowlist: a line containing `<!-- slop-ok: cat1 cat2 -->` (or
+# `slop-ok: all`) suppresses hits of those categories located on that line, so a
+# legit data enumeration can pass the gate without being reworded into worse prose.
+_ALLOW_RE = re.compile(r"<!--\s*slop-ok:\s*([^>]*?)\s*-->")
+
+
+def _allowlist(text: str) -> dict[int, set[str]]:
+    allow: dict[int, set[str]] = {}
+    for lineno, line in enumerate(text.splitlines(), 1):
+        for m in _ALLOW_RE.finditer(line):
+            allow.setdefault(lineno, set()).update(m.group(1).split())
+    return allow
+
+
+def _allowed(allow: dict[int, set[str]], line: int, cat: str) -> bool:
+    cats = allow.get(line)
+    return bool(cats) and ("all" in cats or cat in cats)
+
+
+def locate(text: str, apply_allowlist: bool = True) -> list[tuple[int, int, str, str]]:
+    """Return (line, col, category, snippet) for every hit, sorted by position."""
+    hits: list[tuple[int, int, str, str]] = []
+
+    def add(category: str, start: int, end: int) -> None:
+        line, col = _line_col(text, start)
+        hits.append((line, col, category, _snippet(text, start, end)))
+
+    for cat, ch in _LITERAL.items():
+        i = text.find(ch)
+        while i != -1:
+            add(cat, i, i + len(ch))
+            i = text.find(ch, i + 1)
+    for ch in _CURLY:
+        i = text.find(ch)
+        while i != -1:
+            add("curly_quotes", i, i + 1)
+            i = text.find(ch, i + 1)
+    for cat, patterns in _PATTERN_GROUPS.items():
+        for p in patterns:
+            for m in re.finditer(p, text, re.IGNORECASE):
+                add(cat, m.start(), m.end())
+    for m in _BOLDED_RE.finditer(text):
+        add("bolded_list_headers", m.start(), m.end())
+    for m in RULE_OF_THREE_RE.finditer(text):
+        add("rule_of_three", m.start(), m.end())
+    # title_case_headings is line-scoped; report the heading start.
+    offset = 0
+    for raw in text.splitlines(keepends=True):
+        line_text = raw.rstrip("\n")
+        if _is_title_case_heading(line_text):
+            add("title_case_headings", offset, offset + len(line_text))
+        offset += len(raw)
+
+    hits.sort(key=lambda h: (h[0], h[1]))
+    if apply_allowlist:
+        allow = _allowlist(text)
+        if allow:
+            hits = [h for h in hits if not _allowed(allow, h[0], h[2])]
+    return hits
 
 
 def _selftest() -> int:
@@ -244,19 +340,45 @@ def _selftest() -> int:
         + count_semicolons(clean)
     )
     assert clean_total == 0, clean_total
+    # locate() must agree with the counts and carry positions.
+    hits = locate(dirty)
+    assert hits, "locate found nothing on dirty sample"
+    assert all(ln >= 1 and col >= 1 for ln, col, _, _ in hits), hits
+    assert len(locate(clean)) == 0, locate(clean)
+    # Rhetorical triple still flags; a numeric-only triple never did.
+    assert count_rule_of_three("speed, quality, and scale") == 1
+    assert count_rule_of_three("44.6%, 53.3%, and 63.2%") == 0
+    # Inline allowlist suppresses only the named category on that line.
+    ok = "We saw revenue, margin, and growth. <!-- slop-ok: rule_of_three -->"
+    assert count_rule_of_three(ok) == 1  # raw count unchanged
+    assert not [h for h in locate(ok) if h[2] == "rule_of_three"], locate(ok)
     print("self-test OK")
     return 0
 
 
 def main() -> int:
-    if len(sys.argv) == 2 and sys.argv[1] == "--self-test":
+    args = sys.argv[1:]
+    if args == ["--self-test"]:
         return _selftest()
-    if len(sys.argv) != 2:
-        print("usage: check_tells.py <file|-|--self-test>", file=sys.stderr)
+    show_loc = False
+    for flag in ("--locations", "--verbose", "-v"):
+        if flag in args:
+            show_loc = True
+            args.remove(flag)
+    if len(args) != 1:
+        print("usage: check_tells.py [--locations] <file|-|--self-test>", file=sys.stderr)
         return 2
 
-    src = sys.argv[1]
+    src = args[0]
     text = sys.stdin.read() if src == "-" else Path(src).read_text()
+
+    if show_loc:
+        hits = locate(text)
+        cwidth = max((len(c) for _, _, c, _ in hits), default=0)
+        for line, col, cat, snip in hits:
+            print(f"{line}:{col}\t{cat.ljust(cwidth)}  {snip}")
+        print(f"TOTAL : {len(hits)}")
+        return min(len(hits), 255)
 
     checks = {
         "em_dashes": count_em_dashes(text),
@@ -276,6 +398,13 @@ def main() -> int:
         "semicolons": count_semicolons(text),
         "rule_of_three": count_rule_of_three(text),
     }
+
+    # Honor inline `<!-- slop-ok: cat -->` allowlists by subtracting suppressed hits.
+    allow = _allowlist(text)
+    if allow:
+        for line, _, cat, _ in locate(text, apply_allowlist=False):
+            if cat in checks and _allowed(allow, line, cat):
+                checks[cat] = max(0, checks[cat] - 1)
 
     width = max(len(k) for k in checks)
     total = 0

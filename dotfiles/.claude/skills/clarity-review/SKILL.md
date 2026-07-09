@@ -57,6 +57,7 @@ Apply the 5 C's to everything; the metrics rules when the document reports numbe
 4. **Experiment results → expected top-line impact.** An in-experiment lift ≠ rolled-out impact: "+X% lift in Y (+Z% expected lift in top-line V once fully rolled out)". If the top-line effect is negligible, say "no expected top-line effect" rather than implying it.
 5. **Show how unusual metrics are calculated** — numerator and denominator — so readers can interpret and dig in.
 6. **Counter metrics → always give the confidence interval.** "We didn't negatively impact X" hides whether the test could even detect harm. Give the CI.
+7. **Internal arithmetic tie-out.** Recompute the numbers against each other: parts sum to their stated total, percentages match their base (recompute `part/whole`), deltas equal `new - old`, and the *same* metric carries an identical value in every place it appears (headline, body, table, chart caption). Tables must foot (rows and columns add to their totals). A figure that doesn't reconcile is either a typo or a broken claim — quote both values and the recomputed one. (This is the numeric sibling of Internal contradictions below.)
 
 ### Structural and integrity checks (any document; especially specs and instructions)
 

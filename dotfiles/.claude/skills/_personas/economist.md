@@ -5,6 +5,7 @@ default_subagent_type: oh-my-claudecode:analyst
 default_model: opus
 tool_access:
   - graphify
+  - web_fetch  # verify: check external market/pricing/benchmark data against a cited claim
 context_dependencies:
   analysis: []
   vendor: []
