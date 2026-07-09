@@ -23,6 +23,7 @@ Generated: 2026-07-09
 - Named the **destination** with the user (see map body #68): reproducible clean install across pi/claude/codex; understandable flow + in-session visibility for trust; skills/hooks used to full ability and **confidently wired (proven-invoked, not silently dead/ambiguous)**; managed/current docs; token/context-efficient sessions.
 - **opencode ruled out of scope** (harness set is pi/claude/codex).
 - **FIND-09** surfaced as a human decision → user chose **Tier-0 ticket**, rotate-first-then-erase-history (git-filter-repo). Now ticket #69.
+- This handoff lives at `/Users/alexwelch/dotdev/docs/executions/handoffs/2026-07-09-wayfinder-map-charted.md`.
 - Ran `/cleanup-delivery`: committed real WIP (`bc9efa2`, pushed), deleted stale merged remote branch `claude/wayfinder-skill-setup-aptvd9` (PR #67), left the herdr worktree for herdr to reap.
 - Created the map (#68) + 7 sub-issue tickets and attached them.
 
@@ -46,12 +47,12 @@ Codex skill wiring (FIND-27, hangs on #70); MCP fleet capture/wiring (FIND-25, n
 - #74 (token) / #73 (install) — none blocking; user runs when ready.
 - MCP fleet (fog) — needs user endpoints/creds before it can graduate.
 
-## Files to read first
+## Files to read first (absolute paths — worktree sessions cannot resolve relative ones)
 
-- **Map #68** — the canonical state (destination, notes, fog, out-of-scope).
-- `docs/audits/2026-07-09-setup-audit.md` — the fog source (FIND-09…FIND-29).
-- `docs/agents/issue-tracker.md` → "Wayfinding operations" — how the map/tickets/labels/frontier work here.
-- `dotfiles/.claude/skills/wayfinder/SKILL.md` — work-mode procedure.
+- **Map #68** — the canonical state (destination, notes, fog, out-of-scope): https://github.com/johnalexwelch/dotdev/issues/68
+- `/Users/alexwelch/dotdev/docs/audits/2026-07-09-setup-audit.md` — the fog source (FIND-09…FIND-29).
+- `/Users/alexwelch/dotdev/docs/agents/issue-tracker.md` → "Wayfinding operations" — how the map/tickets/labels/frontier work here.
+- `/Users/alexwelch/dotdev/dotfiles/.claude/skills/wayfinder/SKILL.md` — work-mode procedure.
 
 ## Ready-to-use prompt (work session)
 
