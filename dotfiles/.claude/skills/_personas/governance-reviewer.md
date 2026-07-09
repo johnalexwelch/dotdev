@@ -5,6 +5,7 @@ default_subagent_type: oh-my-claudecode:critic
 default_model: opus
 tool_access:
   - graphify
+  - web_fetch  # verify: check live COPPA/FERPA/GDPR text against a cited claim
 context_dependencies:
   analysis: []
   vendor: []
