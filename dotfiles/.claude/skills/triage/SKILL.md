@@ -2,15 +2,15 @@
 name: triage
 model: sonnet
 reasoning: high
-description: Triage issues through a state machine driven by triage roles. Use when user wants to create an issue, triage issues, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow.
+description: Triage issues, and — when enabled — external PRs, through a state machine driven by triage roles. Runs a redundancy check before triaging bugs/feature requests and separates already-implemented from rejected outcomes. Use when user wants to create an issue, triage issues or PRs, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow.
 ---
 
 ## Contract
 
-Consumes: issue list or specific issue from project issue tracker, codebase context
+Consumes: issue/PR list or specific issue/PR from project issue tracker, codebase context
 Produces: labeled and classified issues, triage notes, agent briefs
 Requires: gh (or configured issue tracker CLI)
-Side effects: applies labels, posts comments, may close issues (wontfix)
+Side effects: applies labels, posts comments, may close issues or PRs (wontfix)
 Human gates: classification presented for approval before applying; state transitions confirmed before acting
 
 ## Context
@@ -21,6 +21,8 @@ Pairs well with: grill-with-docs, to-issues, setup-skills
 # Triage
 
 Move issues on the project issue tracker through a small state machine of triage roles.
+
+If `docs/agents/issue-tracker.md` records "PRs as a request surface: yes" (set up via `/setup-skills`), triage covers external pull requests too: **a PR is an issue with attached code** — same category roles, same state roles, same state machine, with a few PR-specific deltas noted below. Collaborators' in-flight PRs are excluded from triage *discovery* (see "Show what needs attention"), but an explicitly named PR is always triaged regardless of author. Resolve a bare `#42` to an issue or PR per the tracker config.
 
 Every comment or issue posted to the issue tracker during triage **must** start with this disclaimer:
 
@@ -46,13 +48,15 @@ Five **state** roles:
 - `needs-info` — waiting on reporter for more information
 - `ready-for-agent` — fully specified, ready for an AFK agent
 - `ready-for-human` — needs human implementation (cannot be delegated to agents)
-- `wontfix` — will not be actioned
+- `wontfix` — will not be actioned (see "Apply the outcome" below for the three closing reasons: already-implemented, rejected-bug, rejected-enhancement)
 
 One **review gate** role:
 
 - `needs-human-review` — agent may implement, but the resulting PR must receive human validation before it can be considered complete or merge-ready. This is not a human-implementation state.
 
 Every triaged issue should carry exactly one category role and one state role. Review gate roles such as `needs-human-review` may coexist with `ready-for-agent`. If state roles conflict, flag it and ask the maintainer before doing anything else.
+
+For a PR (when PR triage is enabled), the same states apply to the attached code: `ready-for-agent` means an agent brief is attached and an agent should take the next step on the diff (the `ready-for-agent` field checklist below still applies); `ready-for-human` means a human should take the diff to completion and merge it. `needs-human-review` still means the agent-produced result needs human validation before merge — it does not change meaning for a PR.
 
 These are canonical role names — the actual label strings used in the issue tracker may differ. The mapping should have been provided to you - run `/setup-skills` if not.
 
@@ -86,7 +90,7 @@ PRD/spec parent issues are not implementation issues and must not be labeled `re
 The maintainer invokes `/triage` and describes what they want in natural language. Interpret the request and act. Examples:
 
 - "Show me anything that needs my attention"
-- "Let's look at #42"
+- "Let's look at #42" (issue or PR)
 - "Move #42 to ready-for-agent"
 - "What's ready for agents to pick up?"
 
@@ -98,24 +102,30 @@ Query the issue tracker and present three buckets, oldest first:
 2. **`needs-triage`** — evaluation in progress.
 3. **`needs-info` with reporter activity since the last triage notes** — needs re-evaluation.
 
+When PR triage is enabled, include external PRs in these same buckets and tag each line `[PR]` or `[issue]`. A collaborator's in-flight PR does not belong in discovery — filter it out using the "external author" check in `docs/agents/issue-tracker.md`. This filter only applies to discovery; if the maintainer explicitly names a PR ("let's look at #42"), triage it regardless of author.
+
 Show counts and a one-line summary per issue. Let the maintainer pick.
 
-## Triage a specific issue
+## Triage a specific issue or PR
 
-1. **Gather context.** Read the full issue (body, comments, labels, reporter, dates). Parse any prior triage notes so you don't re-ask resolved questions. Explore the codebase using the project's domain glossary, respecting ADRs in the area. Read `.out-of-scope/*.md` and surface any prior rejection that resembles this issue.
+1. **Gather context.** Read the full issue or PR (body, comments, labels, reporter/author, dates; for a PR, also read the diff). Parse any prior triage notes so you don't re-ask resolved questions. Explore the codebase using the project's domain glossary, respecting ADRs in the area. Run two checks before recommending anything:
+   - **Redundancy check.** For a bug or feature request (issue or PR), search the codebase for an existing implementation of the requested behavior — by domain concept, not just the request's wording. Report where you looked. If the behavior already exists, this is an **already-implemented** case: skip reproduction/grilling and go straight to `wontfix` (already-implemented) in step 5.
+   - **Prior-rejection check.** Read `.out-of-scope/*.md` and surface any prior rejection that resembles this issue or PR.
 
-2. **Recommend.** Tell the maintainer your category and state recommendation with reasoning, plus a brief codebase summary relevant to the issue. Wait for direction.
+2. **Recommend.** Tell the maintainer your category and state recommendation with reasoning, plus a brief codebase summary relevant to the issue — including the redundancy-check result. Wait for direction.
 
-3. **Reproduce (bugs only).** Before any grilling, attempt reproduction: read the reporter's steps, trace the relevant code, run tests or commands. Report what happened — successful repro with code path, failed repro, or insufficient detail (a strong `needs-info` signal). A confirmed repro makes a much stronger agent brief.
+3. **Reproduce (bugs) / verify (PRs).** Before any grilling, verify the claim. For a bug: read the reporter's steps, trace the relevant code, run tests or commands. For a PR: check it out and confirm the diff actually does what it claims — run the relevant tests or commands, and re-run the redundancy check against the diff specifically (a PR can duplicate existing behavior too). Report what happened — confirmed (with code path), failed, or insufficient detail (a strong `needs-info` signal). A confirmed repro or verification makes a much stronger agent brief.
 
 4. **Grill (if needed).** If the issue needs fleshing out, run a `/grill-with-docs` session.
 
 5. **Apply the outcome:**
-   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)) that includes the exact `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <worktree-path>` requirement. If the issue carries `needs-human-review`, the brief must preserve the `Human review: required` field and `## Reviewer validation steps`.
+   - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)) that includes the exact `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <worktree-path>` requirement. If the issue carries `needs-human-review`, the brief must preserve the `Human review: required` field and `## Reviewer validation steps`. For a PR, the brief describes the next step on the existing diff rather than work from scratch.
    - `ready-for-human` — same structure as an agent brief, but note why it can't be delegated (judgment calls, external access, design decisions, manual testing).
    - `needs-info` — post triage notes (template below).
-   - `wontfix` (bug) — polite explanation, then close.
-   - `wontfix` (enhancement) — write to `.out-of-scope/`, link to it from a comment, then close ([OUT-OF-SCOPE.md](OUT-OF-SCOPE.md)).
+   - `wontfix` — close, with the comment depending on *why*:
+     - **already-implemented** — the redundancy check in step 1 (or 3, for a PR) found the behavior already exists. Point to where it lives in a comment; do **not** write to `.out-of-scope/` (that KB is for *rejected* requests, not built ones).
+     - **rejected-bug** — not actually a bug, or a bug we're knowingly accepting: polite explanation, then close.
+     - **rejected-enhancement** — write to `.out-of-scope/`, link to it from a comment, then close ([OUT-OF-SCOPE.md](OUT-OF-SCOPE.md)).
    - `needs-triage` — apply the role. Optional comment if there's partial progress.
 
 ## Quick state override
@@ -142,4 +152,4 @@ Capture everything resolved during grilling under "established so far" so the wo
 
 ## Resuming a previous session
 
-If prior triage notes exist on the issue, read them, check whether the reporter has answered any outstanding questions, and present an updated picture before continuing. Don't re-ask resolved questions.
+If prior triage notes exist on the issue or PR, read them, check whether the reporter has answered any outstanding questions, and present an updated picture before continuing. Don't re-ask resolved questions.
