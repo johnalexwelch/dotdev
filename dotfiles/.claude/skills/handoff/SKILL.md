@@ -164,9 +164,9 @@ prompt-builder output ready for copy-paste into Claude or Codex.]
 
 ## Files to read first
 
-[Paths the next agent should read to reconstruct context quickly.]
-- docs/plans/2026-05-13-design.md
-- docs/executions/handoffs/ (previous handoffs in this chain)
+[Paths the next agent should read to reconstruct context quickly. **Always ABSOLUTE paths** — the resuming session may run from a git worktree with a different cwd and cannot resolve repo-relative paths. Use URLs for issues/PRs.]
+- /Users/you/repo/docs/plans/2026-05-13-design.md
+- /Users/you/repo/docs/executions/handoffs/ (previous handoffs in this chain)
 ```
 
 ## Handoff chains
