@@ -549,3 +549,20 @@ This file is the canonical decision record for workflow-feature flows in this re
 - The canonical artifact becomes available immediately, while workflow integration remains scoped follow-up work.
 
 **Source:** grill-with-docs conversation on PR right-sizing for future project work.
+
+## 2026-07-09 - Erase the leaked ollama SSH key from git history (FIND-09)
+
+**Question:** A private ed25519 key (`dotfiles/config/ollama/id_ed25519`, fingerprint `SHA256:yR4RAyuDooI1lZMBPaQ9JXgHl77lJcLfb43CpntgKcE`) was committed (449613f) then deleted (3d0a778) without a history rewrite, so it stayed extractable. Rotate and/or erase from history?
+
+**Decision:** Rotate-first-then-erase. The key could not be found trusted anywhere on rotation check → treated as dead (grants nothing). Erased from all history anyway via `git filter-repo --path ... --invert-paths` on a fresh clone; force-pushed main (temporarily toggling branch protection `allow_force_pushes`, then restored) plus the renovate branches and the `v0.1.0` tag; both local checkouts reset to the rewritten history. Verified: private key = 0 objects on origin, commit 449613f GONE. New main HEAD `f1b6455`.
+
+**What else was considered:**
+
+- Leave it in history (rotate only): zero effort, but keeps tripping full-history secret scanners forever — rejected given the "clean/robust" destination.
+- Do nothing: rejected — a committed private key must at least be treated as compromised.
+
+**Tradeoffs accepted:**
+
+- History rewrite changed all commit SHAs and required refreshing both clones (done). GitHub `refs/pull/*` and cached commit views may still surface the old blob until GitHub GCs — acceptable because the key is dead. The public key (`.pub`, not secret) remains in history by design.
+
+**Source:** wayfinder Tier-0 ticket #69; setup audit FIND-09.
