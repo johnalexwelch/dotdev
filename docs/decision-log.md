@@ -622,3 +622,19 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Handoff:** `/design-plan` → `/execute-phase` (infra/scripts). Batch: export/guard `DOTFILES` + core/machine split (FIND-11) · stow path (FIND-12) · oh-my-zsh reconcile (FIND-13) · double-run (FIND-14) · SSH alias + idempotent key-add (FIND-16/17) · Brewfile DSL (FIND-18) · mcp path portability (FIND-19) · `install-core.bats` + CI job + FIND-29 lint fix.
 
 **Source:** wayfinder work-mode resolution of ticket #73; research asset `docs/research/2026-07-09-fresh-mac-install-proof.md`; setup audit FIND-11–19, 29.
+
+## 2026-07-09 - Token/context efficiency: baseline + deconflict context stack (#74)
+
+**Question:** Where does the token/context budget go during sessions, and what's the optimization approach? Establish a baseline, rank levers, and deconflict the pi context-stack (FIND-26: 2 suspected redundant package pairs) — don't add.
+
+**Decision:** Budget splits into **fixed per-turn overhead** (tool schemas, skill listing, style/instruction blocks — paid every call) and **variable** (messages, thinking, tool results). Fixed overhead dominates because it multiplies across turns, and **tool schemas are the single largest fixed cost** (~24 packages register tools; agent-browser/taskflow/lens heaviest). Baseline *instrument* already exists — `context-inspector`'s `/context` — so build no measurement tool. **FIND-26 deconfliction (verified against actual behavior, not names):** drop **`headroom`** (redundant with `hypa` — both reduce tool output, but headroom is a nondeterministic LLM proxy needing `pip install headroom-ai[proxy]` + a running server, a fresh-Mac install liability); **keep both `cache-optimizer` and `pix-optimizer`** — they are *not* redundant (input-side prompt/KV-cache hygiene vs output-side verbosity toggles). Net: one removal, zero additions.
+
+**Why:** Tool-schema pruning multiplies over every turn, so a lean/full session profile is the biggest lever. hypa's local determinism beats headroom's LLM-proxy path and matches the map's portability/reproducibility destination (#73). The audit's second "pair" was a name-based false positive cleared by behavior inspection.
+
+**What else considered:**
+- Building a custom token-profiler — rejected: `context-inspector` already attributes the budget.
+- Keeping `headroom` alongside `hypa` — rejected: redundant reduction + non-portable dependency.
+
+**Handoff:** Immediate — one-line `headroom` removal from `dotfiles/.pi/agent/settings.json` `packages[]`. Deferred build (lever #1, the context-budget lever #71 deferred here) — **session tool-schema profiles (lean/full)** → `/design-plan` → `/execute-phase`, folds into the install/config build.
+
+**Source:** wayfinder work-mode resolution ticket #74; research asset `docs/research/2026-07-09-token-context-efficiency.md`; setup audit FIND-26.
