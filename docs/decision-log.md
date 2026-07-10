@@ -583,3 +583,21 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Graduates:** FIND-27 codex fog (verification stance now decided); backs #71 (audit enforces the disable-model-invocation set) and hook-enforcement confidence (smoke test proves it).
 
 **Source:** wayfinder work-mode resolution of ticket #70; research asset `docs/research/2026-07-09-wiring-verification-method.md`.
+
+## 2026-07-09 - Router-exclusivity: disable-model-invocation set (#71)
+
+**Question:** "workflow-router is the sole entry point" is false — 85 skills, only 12 carry `disable-model-invocation`. Which internal skills become router-exclusive (explicit-invoke only) vs stay model-invokable, and what's the rule for future skills?
+
+**Decision:** **Strict router-entry (provisional, trialing).** `workflow-router` is the single model-invokable *entry* for work. Everything that participates in a route — workflow entries, sub-steps, executors/mutators, orchestrators — plus every shared reference/scaffold is `disable-model-invocation: true`. Self-contained advisory/analysis/writing **tools** stay model-invokable so the agent reaches them by topic. Outcome: **39 open, 46 locked** (12 existing + 34 new). Rule for future skills: *default to locked* unless the skill is `workflow-router` or a no-mutation, no-downstream-route advisory/writing tool.
+
+**Why it's safe (the enabling mechanic):** `disable-model-invocation` only removes (1) the model auto-discovering/firing a skill and (2) its description's per-turn context cost. A parent workflow still loads a locked skill **by path** (`workflow-finalize` → "Load and execute `describe-pr/SKILL.md`"), and a human can still `/slash` it. So locking breaks no orchestration and preserves restart (direct `/slash` to any section + `workflow-router` Resume Check via `state.yaml`).
+
+**What else considered:**
+- Keep `workflow-*` entries model-invokable for topic-reach — rejected for now: strict integrity was chosen ("integrity always takes precedence; budget managed elsewhere"), and the router loading workflows by path costs nothing on recovery.
+- Budget-driven cut line (lock only to save context) — folded out: budget is #74's concern, not this decision's.
+
+**Tradeoffs accepted:** Bigger locked set than the audit's "13 internal" estimate — the agent can no longer auto-suggest a workflow by topic; all work starts at the router card. Owner is skeptical and explicitly wants to trial it live before committing. Judgment calls flagged to watch: `decision-log` kept open (shared recorder); `git-guardrails`/`slack-update`/`tdd` locked but debatable (first to reopen if the gate chafes).
+
+**Follow-up (execution):** 34 frontmatter flips + encoding the rule in `write-a-skill` are mechanical → fold into the `verify-wiring.sh` cleared-route build; a `disable-model-invocation` audit enforces the set (ties to #70).
+
+**Source:** wayfinder work-mode resolution of ticket #71; setup audit FIND-21.
