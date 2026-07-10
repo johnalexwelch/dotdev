@@ -601,3 +601,24 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Follow-up (execution):** 34 frontmatter flips + encoding the rule in `write-a-skill` are mechanical → fold into the `verify-wiring.sh` cleared-route build; a `disable-model-invocation` audit enforces the set (ties to #70).
 
 **Source:** wayfinder work-mode resolution of ticket #71; setup audit FIND-21.
+
+## 2026-07-09 - Fresh-Mac reproducible-install proof (#73)
+
+**Question:** How do we *prove* dotdev installs clean on a fresh Mac across pi/claude/codex? The macOS path is broken today (FIND-11–19, FIND-29). Decide the verification approach before the known fixes route to design-plan→execute-phase.
+
+**Decision:** Prove two deterministic claims for the **portable core**, smoke-test the rest. Split `install.sh` into `install_core` (HOME-relocatable, no sudo/network/GUI) and `install_machine` (sudo/network/GUI). CI runs the core **for real** on a fresh `macos-15` runner against `HOME=$RUNNER_TEMP/fakehome` (proves *applies*), then runs it **again** (proves *idempotent* — every mutation becomes `ensure_*` guard-before-act). Sudo/network/GUI steps (brew bundle, `chsh`, `scutil`, private-repo clones, `pi install`) stay `DRY_RUN` echo plus static parse checks (`bash -n`, `brew bundle list --file Brewfile` for FIND-18). Recommended check: `test/install-core.bats` (bats-core) driving a new `install-core` CI job. Install-proof is harness-agnostic (all three = stowed dotfiles + a clone/package step); harness-specific *reachable* checks stay owned by #70's static wiring audit, not duplicated.
+
+**Why:** Today's `install-dry-run` job runs `install.sh` under `DRY_RUN=1`, but `run_cmd` then only `echo`s "Would execute: …" — so it never sources `terminal.sh`, never runs `stow` for real, never re-runs. Green CI, broken install. Dry-run previews intent; it does not prove the install works. The lever is making the portable core actually executable in a sandbox HOME.
+
+**What else considered:**
+- VM / container mac-ish harness — rejected: macOS can't run in a Linux container, nested-macOS VMs aren't worth it solo, and GitHub already gives fresh macOS runner instances per job.
+- Run whole `install.sh` on a macOS runner as-is — rejected: hard-coded `$HOME/dotdev`, `sudo` (`scutil`/`/etc/shells`/`chsh`), private `github-personal` SSH clones, full Brewfile — none safe/available in CI. That's *why* it stays untested.
+- A single runtime "did every step succeed on a real Mac" gate — rejected: same non-determinism trap as #70; sudo/network/GUI can't be a green/red gate.
+
+**Tradeoffs accepted:** CI proves only the portable core for real; sudo/network/GUI steps remain dry-run + static-parse, so a real-Mac-only break (e.g. a `chsh` edge case) can still slip past green CI — caught only on an actual fresh-Mac run. Accepted: the core is where the FIND-11–19 bugs live, and forcing sudo/creds into CI isn't worth it for a solo repo.
+
+**Graduates:** the install-verification stretch is now decided, so the dangling-tool reconciliation fog (FIND-22/23/24, FIND-10) folds into the same execute-phase install build as **execution**, not a fresh frontier decision (like the #71 follow-up). FIND-29 (Lint red on detect-secrets false positives) fixed in the same batch since it blocks seeing any of this go green.
+
+**Handoff:** `/design-plan` → `/execute-phase` (infra/scripts). Batch: export/guard `DOTFILES` + core/machine split (FIND-11) · stow path (FIND-12) · oh-my-zsh reconcile (FIND-13) · double-run (FIND-14) · SSH alias + idempotent key-add (FIND-16/17) · Brewfile DSL (FIND-18) · mcp path portability (FIND-19) · `install-core.bats` + CI job + FIND-29 lint fix.
+
+**Source:** wayfinder work-mode resolution of ticket #73; research asset `docs/research/2026-07-09-fresh-mac-install-proof.md`; setup audit FIND-11–19, 29.
