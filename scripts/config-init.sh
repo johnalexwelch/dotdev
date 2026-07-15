@@ -28,6 +28,7 @@ config_dirs=(
     "ollama"
     "mise"
     "openwiki"
+    "yazi"
     "raycast"
     "streamdeck"
     "starship"

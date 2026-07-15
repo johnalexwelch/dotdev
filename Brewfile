@@ -124,6 +124,12 @@ brew "whisper-cpp"
 brew "yamlfmt"
 # Blazing fast terminal file manager written in Rust, based on async I/O
 brew "yazi"
+# yazi preview deps: archives (7z), image/HEIC/font (imagemagick), SVG (resvg).
+# Already covered: ffmpeg, poppler, jq, fd, ripgrep, fzf, zoxide. Ghostty renders
+# images via Kitty graphics protocol, so chafa isn't needed.
+brew "sevenzip"
+brew "imagemagick"
+brew "resvg"
 # Process YAML, JSON, XML, CSV and properties documents from the CLI
 brew "yq"
 # Feature-rich command-line audio/video downloader
