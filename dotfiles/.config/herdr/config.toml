@@ -8,3 +8,24 @@ show_agent_labels_on_pane_borders = true
 agent_panel_scope = "all"
 [experimental]
 pane_history = true
+
+# Custom command keybindings — native replacements for third-party plugins.
+# Run in a temp pane in the focused pane's cwd; closes on exit.
+[[keys.command]]
+key = "prefix+alt+h"      # steals hunk.diff plugin: interactive diff review
+type = "pane"
+command = "hunk diff"
+description = "hunk: review working tree"
+
+[[keys.command]]
+key = "prefix+alt+g"
+type = "pane"
+command = "lazygit"
+description = "lazygit"
+
+[[keys.command]]
+key = "prefix+alt+z"      # steals den-tanui/herdr-zoxide: fzf a dir -> new workspace
+type = "pane"
+command = "~/.config/herdr/zoxide-workspace.sh"
+description = "zoxide: open dir as workspace"
+
