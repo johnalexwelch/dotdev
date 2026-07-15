@@ -1,0 +1,20 @@
+id = "pi-dev-layout"
+name = "Pi Dev Layout"
+version = "0.1.0"
+description = "On a new workspace/worktree, lay out: agent pane | nvim + yazi stacked on the right."
+min_herdr_version = "0.7.0"
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "workspace.created"
+command = ["bash", "layout.sh"]
+
+[[events]]
+on = "worktree.created"
+command = ["bash", "layout.sh"]
+
+# Catch-all: some flows (e.g. UI-created worktrees) emit only workspace.focused.
+# The atomic marker + pristine-pane guards make repeated focus events safe no-ops.
+[[events]]
+on = "workspace.focused"
+command = ["bash", "layout.sh"]

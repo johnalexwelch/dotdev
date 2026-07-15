@@ -19,6 +19,7 @@ config_dirs=(
     "ghostty"
     "herdr"
     "git"
+    "hunk"
     "lazygit"
     "macos"
     "mcp"

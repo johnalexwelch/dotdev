@@ -116,3 +116,15 @@ ideas() {
     *)       echo "usage: ideas review | promote <file> | search <term>" ;;
   esac
 }
+
+# prefix history search: type start of command, arrows cycle only matches
+autoload -U up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search    # up
+bindkey '^[[B' down-line-or-beginning-search  # down
+bindkey '^[OA' up-line-or-beginning-search    # up (app mode)
+bindkey '^[OB' down-line-or-beginning-search  # down (app mode)
+
+# fzf fuzzy search: Ctrl-R history, Ctrl-T files, Alt-C cd
+source <(fzf --zsh)

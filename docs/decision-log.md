@@ -549,3 +549,92 @@ This file is the canonical decision record for workflow-feature flows in this re
 - The canonical artifact becomes available immediately, while workflow integration remains scoped follow-up work.
 
 **Source:** grill-with-docs conversation on PR right-sizing for future project work.
+
+## 2026-07-09 - Erase the leaked ollama SSH key from git history (FIND-09)
+
+**Question:** A private ed25519 key (`dotfiles/config/ollama/id_ed25519`, fingerprint `SHA256:yR4RAyuDooI1lZMBPaQ9JXgHl77lJcLfb43CpntgKcE`) was committed (449613f) then deleted (3d0a778) without a history rewrite, so it stayed extractable. Rotate and/or erase from history?
+
+**Decision:** Rotate-first-then-erase. The key could not be found trusted anywhere on rotation check → treated as dead (grants nothing). Erased from all history anyway via `git filter-repo --path ... --invert-paths` on a fresh clone; force-pushed main (temporarily toggling branch protection `allow_force_pushes`, then restored) plus the renovate branches and the `v0.1.0` tag; both local checkouts reset to the rewritten history. Verified: private key = 0 objects on origin, commit 449613f GONE. New main HEAD `f1b6455`.
+
+**What else was considered:**
+
+- Leave it in history (rotate only): zero effort, but keeps tripping full-history secret scanners forever — rejected given the "clean/robust" destination.
+- Do nothing: rejected — a committed private key must at least be treated as compromised.
+
+**Tradeoffs accepted:**
+
+- History rewrite changed all commit SHAs and required refreshing both clones (done). GitHub `refs/pull/*` and cached commit views may still surface the old blob until GitHub GCs — acceptable because the key is dead. The public key (`.pub`, not secret) remains in history by design.
+
+**Source:** wayfinder Tier-0 ticket #69; setup audit FIND-09.
+
+## 2026-07-09 - Wiring-verification method (#70)
+
+**Question:** What signal proves each skill/hook/persona/router is actually invoked at runtime — never silently dead, never ambiguously wired — across pi/claude/codex? Produce a repeatable check for CI.
+
+**Decision:** Two-layer method, because "wired" is two distinct claims. (1) **Reachable** — exists, parses, registered where the harness looks; deterministic → the CI gate: a static wiring audit (skills discoverable per harness, codex `sync-codex-skills.sh` dry-run clean, `disable-model-invocation` set matches #71's list, hook scripts exist+`+x`, symlinks resolve) plus a hook-fire smoke test (feed each hook trigger JSON, assert exit/marker). (2) **Invoked** — a live session actually fired it; non-deterministic (can't force a model to invoke) → telemetry, sampled, never a gate: Langfuse for claude, pi-observability/tool-display/observational-memory for pi, none for codex yet. Cleared route (infra) hands to `/design-plan` → `/execute-phase` to build `scripts/verify-wiring.sh` into CI + a documented telemetry query recipe.
+
+**What else considered:**
+- Single runtime CI gate that asserts every skill fired — rejected: forcing a model to invoke is non-deterministic, would be flaky/false-red.
+- Static-only (does the file exist) — rejected: catches silently-dead but not ambiguously-wired (loaded yet never picked); telemetry needed for the second half.
+- Add new logging/telemetry infra — rejected as premature: Langfuse (claude) + pi-observability (pi) already capture invocation; deconflict/use, don't add.
+
+**Tradeoffs accepted:** Codex runtime invocation stays unproven until a codex trace sink exists (static-sync-clean is the only current codex signal). Runtime evidence is sampled/manual, not gated, so a skill can be reachable-and-green in CI yet still under-invoked — caught only by periodic telemetry review.
+
+**Graduates:** FIND-27 codex fog (verification stance now decided); backs #71 (audit enforces the disable-model-invocation set) and hook-enforcement confidence (smoke test proves it).
+
+**Source:** wayfinder work-mode resolution of ticket #70; research asset `docs/research/2026-07-09-wiring-verification-method.md`.
+
+## 2026-07-09 - Router-exclusivity: disable-model-invocation set (#71)
+
+**Question:** "workflow-router is the sole entry point" is false — 85 skills, only 12 carry `disable-model-invocation`. Which internal skills become router-exclusive (explicit-invoke only) vs stay model-invokable, and what's the rule for future skills?
+
+**Decision:** **Strict router-entry (provisional, trialing).** `workflow-router` is the single model-invokable *entry* for work. Everything that participates in a route — workflow entries, sub-steps, executors/mutators, orchestrators — plus every shared reference/scaffold is `disable-model-invocation: true`. Self-contained advisory/analysis/writing **tools** stay model-invokable so the agent reaches them by topic. Outcome: **39 open, 46 locked** (12 existing + 34 new). Rule for future skills: *default to locked* unless the skill is `workflow-router` or a no-mutation, no-downstream-route advisory/writing tool.
+
+**Why it's safe (the enabling mechanic):** `disable-model-invocation` only removes (1) the model auto-discovering/firing a skill and (2) its description's per-turn context cost. A parent workflow still loads a locked skill **by path** (`workflow-finalize` → "Load and execute `describe-pr/SKILL.md`"), and a human can still `/slash` it. So locking breaks no orchestration and preserves restart (direct `/slash` to any section + `workflow-router` Resume Check via `state.yaml`).
+
+**What else considered:**
+- Keep `workflow-*` entries model-invokable for topic-reach — rejected for now: strict integrity was chosen ("integrity always takes precedence; budget managed elsewhere"), and the router loading workflows by path costs nothing on recovery.
+- Budget-driven cut line (lock only to save context) — folded out: budget is #74's concern, not this decision's.
+
+**Tradeoffs accepted:** Bigger locked set than the audit's "13 internal" estimate — the agent can no longer auto-suggest a workflow by topic; all work starts at the router card. Owner is skeptical and explicitly wants to trial it live before committing. Judgment calls flagged to watch: `decision-log` kept open (shared recorder); `git-guardrails`/`slack-update`/`tdd` locked but debatable (first to reopen if the gate chafes).
+
+**Follow-up (execution):** 34 frontmatter flips + encoding the rule in `write-a-skill` are mechanical → fold into the `verify-wiring.sh` cleared-route build; a `disable-model-invocation` audit enforces the set (ties to #70).
+
+**Source:** wayfinder work-mode resolution of ticket #71; setup audit FIND-21.
+
+## 2026-07-09 - Fresh-Mac reproducible-install proof (#73)
+
+**Question:** How do we *prove* dotdev installs clean on a fresh Mac across pi/claude/codex? The macOS path is broken today (FIND-11–19, FIND-29). Decide the verification approach before the known fixes route to design-plan→execute-phase.
+
+**Decision:** Prove two deterministic claims for the **portable core**, smoke-test the rest. Split `install.sh` into `install_core` (HOME-relocatable, no sudo/network/GUI) and `install_machine` (sudo/network/GUI). CI runs the core **for real** on a fresh `macos-15` runner against `HOME=$RUNNER_TEMP/fakehome` (proves *applies*), then runs it **again** (proves *idempotent* — every mutation becomes `ensure_*` guard-before-act). Sudo/network/GUI steps (brew bundle, `chsh`, `scutil`, private-repo clones, `pi install`) stay `DRY_RUN` echo plus static parse checks (`bash -n`, `brew bundle list --file Brewfile` for FIND-18). Recommended check: `test/install-core.bats` (bats-core) driving a new `install-core` CI job. Install-proof is harness-agnostic (all three = stowed dotfiles + a clone/package step); harness-specific *reachable* checks stay owned by #70's static wiring audit, not duplicated.
+
+**Why:** Today's `install-dry-run` job runs `install.sh` under `DRY_RUN=1`, but `run_cmd` then only `echo`s "Would execute: …" — so it never sources `terminal.sh`, never runs `stow` for real, never re-runs. Green CI, broken install. Dry-run previews intent; it does not prove the install works. The lever is making the portable core actually executable in a sandbox HOME.
+
+**What else considered:**
+- VM / container mac-ish harness — rejected: macOS can't run in a Linux container, nested-macOS VMs aren't worth it solo, and GitHub already gives fresh macOS runner instances per job.
+- Run whole `install.sh` on a macOS runner as-is — rejected: hard-coded `$HOME/dotdev`, `sudo` (`scutil`/`/etc/shells`/`chsh`), private `github-personal` SSH clones, full Brewfile — none safe/available in CI. That's *why* it stays untested.
+- A single runtime "did every step succeed on a real Mac" gate — rejected: same non-determinism trap as #70; sudo/network/GUI can't be a green/red gate.
+
+**Tradeoffs accepted:** CI proves only the portable core for real; sudo/network/GUI steps remain dry-run + static-parse, so a real-Mac-only break (e.g. a `chsh` edge case) can still slip past green CI — caught only on an actual fresh-Mac run. Accepted: the core is where the FIND-11–19 bugs live, and forcing sudo/creds into CI isn't worth it for a solo repo.
+
+**Graduates:** the install-verification stretch is now decided, so the dangling-tool reconciliation fog (FIND-22/23/24, FIND-10) folds into the same execute-phase install build as **execution**, not a fresh frontier decision (like the #71 follow-up). FIND-29 (Lint red on detect-secrets false positives) fixed in the same batch since it blocks seeing any of this go green.
+
+**Handoff:** `/design-plan` → `/execute-phase` (infra/scripts). Batch: export/guard `DOTFILES` + core/machine split (FIND-11) · stow path (FIND-12) · oh-my-zsh reconcile (FIND-13) · double-run (FIND-14) · SSH alias + idempotent key-add (FIND-16/17) · Brewfile DSL (FIND-18) · mcp path portability (FIND-19) · `install-core.bats` + CI job + FIND-29 lint fix.
+
+**Source:** wayfinder work-mode resolution of ticket #73; research asset `docs/research/2026-07-09-fresh-mac-install-proof.md`; setup audit FIND-11–19, 29.
+
+## 2026-07-09 - Token/context efficiency: baseline + deconflict context stack (#74)
+
+**Question:** Where does the token/context budget go during sessions, and what's the optimization approach? Establish a baseline, rank levers, and deconflict the pi context-stack (FIND-26: 2 suspected redundant package pairs) — don't add.
+
+**Decision:** Budget splits into **fixed per-turn overhead** (tool schemas, skill listing, style/instruction blocks — paid every call) and **variable** (messages, thinking, tool results). Fixed overhead dominates because it multiplies across turns, and **tool schemas are the single largest fixed cost** (~24 packages register tools; agent-browser/taskflow/lens heaviest). Baseline *instrument* already exists — `context-inspector`'s `/context` — so build no measurement tool. **FIND-26 deconfliction (verified against actual behavior, not names):** drop **`headroom`** (redundant with `hypa` — both reduce tool output, but headroom is a nondeterministic LLM proxy needing `pip install headroom-ai[proxy]` + a running server, a fresh-Mac install liability); **keep both `cache-optimizer` and `pix-optimizer`** — they are *not* redundant (input-side prompt/KV-cache hygiene vs output-side verbosity toggles). Net: one removal, zero additions.
+
+**Why:** Tool-schema pruning multiplies over every turn, so a lean/full session profile is the biggest lever. hypa's local determinism beats headroom's LLM-proxy path and matches the map's portability/reproducibility destination (#73). The audit's second "pair" was a name-based false positive cleared by behavior inspection.
+
+**What else considered:**
+- Building a custom token-profiler — rejected: `context-inspector` already attributes the budget.
+- Keeping `headroom` alongside `hypa` — rejected: redundant reduction + non-portable dependency.
+
+**Handoff:** Immediate — one-line `headroom` removal from `dotfiles/.pi/agent/settings.json` `packages[]`. Deferred build (lever #1, the context-budget lever #71 deferred here) — **session tool-schema profiles (lean/full)** → `/design-plan` → `/execute-phase`, folds into the install/config build.
+
+**Source:** wayfinder work-mode resolution ticket #74; research asset `docs/research/2026-07-09-token-context-efficiency.md`; setup audit FIND-26.

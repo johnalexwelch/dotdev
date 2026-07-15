@@ -3,7 +3,10 @@
 
 set -euo pipefail
 
-source_root="${SOURCE_SKILLS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
+# Resolve BASH_SOURCE through symlinks: this script is reached via a stowed
+# symlink (~/.claude/skills), so a logical dirname would point source_root at
+# the symlink tree and `find` skips symlinked dirs -> 0 skills synced.
+source_root="${SOURCE_SKILLS_DIR:-$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)}"
 runtime_root="${CODEX_SKILLS_DIR:-$HOME/.codex/skills}"
 runtime_allowlist="${CODEX_RUNTIME_ALLOWLIST:-$source_root/codex-runtime-allowlist.txt}"
 apply=0

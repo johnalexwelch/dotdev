@@ -223,6 +223,14 @@ When the user uses vague or overloaded terms, propose a precise canonical term. 
 
 When domain relationships are being discussed, stress-test them with specific scenarios. Invent scenarios that probe edge cases and force the user to be precise about the boundaries between concepts.
 
+### Recommend on judgment calls, ask on preference calls
+
+When a question turns on the user's *preference* ("do you want humanizer standalone?"), a bare question is right. But when it turns on *judgment the user lacks the evidence to answer cold* — a design tradeoff, a rule to set, a classification across many items — don't hand them a bare binary. Present a **reasoned recommendation alongside the open question** ("here's the cut I'd make and why; react"), so they refine a draft instead of researching from scratch. Withholding synthesis they then have to ask you for is the smell.
+
+### Lead with the recovery story when gating
+
+When the decision **restricts, gates, locks, or removes** a capability, proactively cover the recovery/escape-hatch *before* asking the user to commit: what breaks, how they undo it, how they restart the affected section. "How do I recover if this fails?" is a predictable objection to any gating decision — surface and answer it yourself rather than making the user raise it.
+
 ### Cross-reference with code
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible — which is right?"
