@@ -39,7 +39,7 @@ When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
 ## Flow
 
 ```
-[conditional post-mortem gate] → describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues → verification gate → repo-policy final action
+[conditional post-mortem gate] → describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues → [docs-freshness hook] → verification gate → repo-policy final action
 ```
 
 ## Workflow Progress Reporting
@@ -122,6 +122,16 @@ This gate applies to bot and human review comments. A green CI run does not over
 - Flag any drift before merge
 - If issue-label drift found: report but don't block (info-level)
 - If unresolved reviewer comments remain: block final handoff and route back to Step 2
+
+### Step 4.5: Docs Freshness Hook (conditional, openwiki)
+
+Applies only to **openwiki-enabled repos**. Detect via any of: an `openwiki/` directory, an `<!-- OPENWIKI:START -->` block in `AGENTS.md`/`CLAUDE.md`, or an existing `.github/workflows/openwiki-update.yml`. If none are present, this step is `not_applicable` — skip and record the reason.
+
+- **Do not run `openwiki --update` inline.** Doc regeneration is LLM-driven; running it here would land generated changes after the `WORKFLOW_REVIEW_GATE` (tripping review-freshness, Step 6.4) and add cost/latency to every ship. Docs regenerate out-of-band via the CI hook after merge, so they stay current even when humans push.
+- **Verify the durable hook exists:** confirm `.github/workflows/openwiki-update.yml` is present.
+  - Present → record `present`.
+  - Missing → **info-level flag, do not block.** Recommend wiring it from `workflow-finalize/references/openwiki-update.yml` (copy to `.github/workflows/`, set the provider API-key secret), and record `missing_flagged`. Wiring is one-time setup done outside the finalize hot path so it never mutates the reviewed diff.
+- This step never halts finalization.
 
 ### Step 5: Post-CI Retro Addendum (conditional)
 
@@ -206,6 +216,7 @@ WORKFLOW_FINALIZE_GATE:
   review_comments: all_resolved|human_waived
   ci: green
   issue_reconciliation: complete
+  docs_freshness_hook: present|missing_flagged|not_applicable
   verification: passed
   partial_completion: complete_pushed|wip_pushed|rolled_back
   final_git_status_short: clean
