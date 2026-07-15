@@ -54,6 +54,8 @@ brew "helm"
 brew "herdr"
 # Improved top (interactive process viewer)
 brew "htop"
+# Review-first terminal diff viewer for agent-authored changesets
+brew "hunk"
 # Get events and tasks from the macOS calendar database
 brew "ical-buddy"
 # Lightweight and flexible command-line JSON processor
