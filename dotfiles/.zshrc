@@ -126,5 +126,9 @@ bindkey '^[[B' down-line-or-beginning-search  # down
 bindkey '^[OA' up-line-or-beginning-search    # up (app mode)
 bindkey '^[OB' down-line-or-beginning-search  # down (app mode)
 
-# fzf fuzzy search: Ctrl-R history, Ctrl-T files, Alt-C cd
+# fzf fuzzy search: Ctrl-T files, Alt-C cd (Ctrl-R handed to atuin below)
 source <(fzf --zsh)
+# atuin: SQLite-backed history w/ metadata + cross-machine sync. Loaded AFTER fzf
+# so it owns Ctrl-R; --disable-up-arrow keeps Up as normal prefix history.
+# Cross-machine sync needs a one-time `atuin register`/`atuin login`.
+eval "$(atuin init zsh --disable-up-arrow)"

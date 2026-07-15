@@ -102,8 +102,6 @@ brew "rust"
 brew "shellcheck"
 # Autoformat shell script source code
 brew "shfmt"
-# Create beautiful image of your source code
-brew "silicon"
 # SOund eXchange: universal sound sample translator
 brew "sox"
 # Cross-shell prompt for astronauts
