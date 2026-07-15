@@ -72,7 +72,7 @@ Pure-Bash hook (no LLM). Enforces workflow protocol:
 
 ## The Skills Library
 
-~89 skills in `~/.claude/skills/`. A skill is a Markdown file with YAML frontmatter — model, reasoning level, contract (inputs/outputs/side effects), and a step-by-step playbook. Skills are executable protocols, not prompts.
+~90 skills in `~/.config/agents/skills/` (agent-neutral shared source; also reachable via `~/.claude/skills/`). A skill is a Markdown file with YAML frontmatter — model, reasoning level, contract (inputs/outputs/side effects), and a step-by-step playbook. Skills are executable protocols, not prompts.
 
 Every multi-step skill opens with a **step ledger** and maintains it throughout:
 
@@ -454,30 +454,36 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 26 packages. Grouped by what they enable:
 
 **Codebase navigation**
+
 - `pi-codemapper` — indexes the codebase (symbols, call graphs, dependencies); `map`, `search`, `outline`, `expand`, `path` operations
 - `pi-lens` — LSP diagnostics, ast-grep structural search, tree-sitter rules; runs against the live language server
 
 **Subagent orchestration**
+
 - `pi-fork` — spawns subagents at configurable effort levels (fast/balanced/deep → haiku/sonnet/opus)
 - `pi-taskflow` — orchestrates multi-agent DAGs (parallel branches, sequential chains, gated phases, map-reduce)
 
 **Memory + context**
+
 - `pi-observational-memory` — compresses session learnings into cross-session observations; runs on haiku
 - `pi-context-cap` — warns approaching context limits
 - `pi-context-inspector` — shows context composition
 
 **Guardrails**
+
 - `pi-dirty-repo-guard` — blocks writes on repos with uncommitted changes
 - `pi-permission-gate` — confirmation prompts for destructive operations
 - `pi-codex-goal` — tracks a concrete objective through multi-turn sessions
 
 **Output efficiency**
+
 - `pi-hypa` — compresses shell, read, grep, find, and ls output before it reaches context
 - `pi-cache-optimizer` — prompt cache optimization
 - `pi-better-messages-cache` — message-level caching
 - `pix-optimizer` — token optimization pass
 
 **Real-world integration**
+
 - `pi-web-access` — web search and fetch
 - `pi-agent-browser-native` — real Playwright-backed browser automation
 - `pi-mcp-adapter` — MCP protocol bridge
@@ -485,6 +491,7 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 - `pi-pr-ally` — PR review and response assistance
 
 **Utility**
+
 - `@narumitw/pi-caffeinate` — prevents macOS sleep during long AFK runs
 - `@diegopetrucci/pi-notify` — macOS notifications when the agent needs input or completes
 
@@ -583,6 +590,7 @@ Calls claude-haiku-4-5 to classify (tool/app/research/business/experiment/...), 
 | `lazygit` | git CLI | Terminal git UI |
 
 **Git config**:
+
 - `pull.rebase = true`, `fetch.prune = true`, `rebase.autoStash = true`, `push.autoSetupRemote = true`
 - Global gitignore: macOS artifacts, Python/JS/TS build output, `.env*`, AWS credentials, Terraform state, `.omc/`, `.serena/`, `**/.claude/settings.local.json`
 - Conventional commits via pre-commit hook (`commit-normalize.sh`) in any repo with `pre-commit install`
