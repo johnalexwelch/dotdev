@@ -20,21 +20,22 @@ pre-commit install
 
 ```tree
 dotdev/
-├── dotfiles/
-│   └── .config/      # XDG Base Directory configs
-│       ├── arc/      # Arc browser settings
-│       ├── cursor/   # Cursor editor config
-│       ├── gh-dash/  # GitHub dashboard config
-│       ├── ghostty/  # Ghostty terminal config
-│       ├── git/      # Git configuration
-│       ├── macos/    # macOS specific settings
-│       ├── ollama/   # Ollama AI settings
-│       ├── raycast/  # Raycast finder settings
-│       ├── starship/ # Starship terminal settings
-│       ├── streamdeck/
-│       └── zsh/      # Shell configuration
+├── dotfiles/                 # stowed with GNU Stow → $HOME
+│   ├── .zshrc .gitconfig .gitignore_global
+│   ├── .claude/              # Claude-specific: hooks/, settings.json
+│   │   ├── skills → ../.config/agents/skills   # symlink to shared source
+│   │   └── docs   → ../.config/agents/docs
+│   ├── .pi/agent/            # pi-specific: settings.json
+│   └── .config/              # XDG configs
+│       ├── agents/           # AGENT-AGNOSTIC shared source
+│       │   ├── skills/        # 90+ skills — single source for all agents
+│       │   └── docs/          # shared agent reference
+│       ├── arc/ cursor/ ghostty/ git/ gh-dash/ herdr/
+│       ├── lazygit/ mcp/ nvim/ ollama/ raycast/
+│       ├── starship/ streamdeck/ macos/ zsh/
 ├── scripts/          # Setup and configuration scripts
 ├── docs/             # Documentation
+├── test/             # Bash test suite (run-tests.sh)
 ├── .pre-commit-config.yaml  # Pre-commit hook configuration
 ├── .gitleaks.toml    # Gitleaks security scanner config
 ├── .secrets.baseline # Detect-secrets baseline
@@ -63,7 +64,7 @@ dotdev/
 
 | Tool | Purpose | Documentation |
 |------|---------|---------------|
-| 📟 Warp | Modern terminal | [Docs](https://docs.warp.dev) |
+| 📟 Ghostty | Modern terminal | [Docs](https://ghostty.org/docs) |
 | 🤖 Cursor | AI-powered editor | [Guide](https://cursor.sh/docs) |
 | 🌐 Arc | Browser with spaces | [Help](https://arc.net/help) |
 | 🎮 Stream Deck | Workflow automation | [Docs](https://developer.elgato.com/documentation/) |
@@ -84,7 +85,6 @@ dotdev/
 | 🔍 Raycast | Quick launcher | Custom scripts |
 | ⭐ Starship | Shell prompt | Git integration |
 | 🤖 Ollama | Local AI | Code assistance |
-
 
 ## 🛠️ Standalone Scripts
 
