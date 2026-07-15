@@ -25,6 +25,7 @@ config_dirs=(
     "mcp"
     "nvim"
     "ollama"
+    "openwiki"
     "raycast"
     "streamdeck"
     "starship"
