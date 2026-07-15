@@ -8,12 +8,16 @@ DOTFILES_CONFIG="${DOTFILES:?DOTFILES must be set}/.config"
 echo "Creating config directory structure..."
 mkdir -p "$CONFIG_DIR"
 
-# Define config directories to create
+# Define config directories to create.
+# Real dirs here force Stow to create per-item symlinks instead of tree-folding
+# a whole subtree, so agent-specific files can coexist with shared source.
 config_dirs=(
+    "agents"
     "arc"
     "cursor"
     "gh-dash"
     "ghostty"
+    "herdr"
     "git"
     "hunk"
     "lazygit"
