@@ -180,11 +180,15 @@ Do not bury risk. If a roadmap item changes product behavior, public interfaces,
 
 ## Roadmap Artifact
 
-Default path:
+**One canonical roadmap per scope.** Default path:
 
 ```text
-docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md
+docs/roadmap.md
 ```
+
+Never create a dated roadmap sibling (`docs/roadmaps/YYYY-MM-DD-*.md`) — that is how roadmaps fork and rot. A genuinely separate topic gets `docs/roadmaps/<topic>.md` (no date). When a roadmap is superseded, move it to `docs/roadmaps/archive/` with a banner; update the canonical, do not spawn a new file. Where a repo ships the check, `python3 scripts/chorus/validate.py roadmap` fails on a competing/dated file.
+
+Roadmaps are **capability-altitude and ordered by dependency**, not status trackers. Group items into **Now / Next / Later** bands; order falls out of each item's `depends on`. New idea → append an item with its deps; do not renumber.
 
 Use this structure:
 
@@ -211,23 +215,37 @@ Use this structure:
 
 ## Reliability And Operations Gaps
 
-## Milestones
+## Capability Roadmap (Now / Next / Later)
 
-### Milestone 1: {name}
-Outcome:
-Why now:
+### Now
+
+#### {capability}
+Outcome (what exists when done):
+Unlocks (what becomes possible next):
+Effort: S | M | L | XL
+Priority: P0 | P1 | P2
+Depends on: {other capabilities, or —}
 Feature work:
 Implementation work:
 Architecture/infrastructure work:
 Security/hardening work:
-Dependencies:
 Risks:
 Verification:
 Recommended next workflows:
 Backlog transition plan:
 
-### Milestone 2: {name}
+### Next
+
+#### {capability}
 ...
+
+### Later
+
+#### {capability}
+...
+
+> `unlocks` is a scope gut-check: if a capability's unlock is thin, it is probably mis-scoped or mis-ordered.
+> `priority` is value/urgency and is independent of order — a P0 can still wait on a dependency; a P2 can jump if it unblocks others.
 
 ## Dependency Map
 
@@ -249,6 +267,8 @@ Before creating PRDs, issues, design plans, or autonomous backlog work:
 
 ## Anti-Patterns
 
+- Do not restate execution state (issue status, board progress, agent state, per-issue rollups) in the roadmap. That is what drifts. Order by `depends on`; status lives in GitHub issues + the workboard. The roadmap holds capabilities, not their current build status.
+- Do not create a dated or per-run roadmap file. One canonical roadmap per scope; archive superseded versions to `docs/roadmaps/archive/`.
 - Do not turn every finding into a roadmap item. Sequence only the work that advances the stated outcome.
 - Do not create an infrastructure-first roadmap unless infrastructure is a real blocker.
 - Do not treat security/hardening as a final cleanup phase when it affects architecture or product trust.

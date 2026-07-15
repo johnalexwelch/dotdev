@@ -65,6 +65,8 @@ Always write **two copies** and always print **absolute paths** (never relative)
 
 Derive the absolute repo copy path with `git rev-parse --show-toplevel` (never assume cwd). Create the global dir with `mkdir -p ~/.chorus/handoffs/<repo-name>` and copy the file there after writing.
 
+**Use fully literal absolute paths in the `mkdir -p` and `cp` commands — expand `~`, the repo-name, and the filename yourself before running.** Do NOT rely on `$HOME`, `$DEST`, or other shell variables/locals: the bash tool has been observed to expand them to empty strings, silently running `mkdir`/`cp` against `/` or with empty args. Verify with an `ls -la` of the literal mirror path afterward.
+
 | Context | Repo copy | Global mirror | Why |
 |---------|-----------|---------------|-----|
 | Inside a project repo | `<repo-root>/docs/executions/handoffs/<date>-<slug>.md` | `~/.chorus/handoffs/<repo-name>/<date>-<slug>.md` | Repo copy is discoverable; mirror survives worktree deletion |
@@ -76,7 +78,7 @@ Derive the absolute repo copy path with `git rev-parse --show-toplevel` (never a
 0. If `docs/executions/state.yaml` exists, read it first — use its `workflow`, `steps`, and `next` as the source of truth for "Where we are" and "Next steps". Fall back to conversation context only when the file is absent. Schema: `../_docs/state-cockpit.md`.
 1. Determine storage paths. Resolve the repo root with `git rev-parse --show-toplevel` and build the **absolute** repo-copy path from it. Set `repo-name` to the basename of the repo root.
 2. Determine exit context (manual vs auto, exit reason, remaining items).
-3. If remaining items include ready-for-agent issues, invoke `prompt-builder` for each to generate ready-to-use prompts.
+3. If remaining items include actionable next-step issues, invoke `prompt-builder` for each to generate ready-to-use prompts. Treat the `ready-for-agent` label as a signal, not a strict gate — an issue tagged only `type:task` (or unlabeled) that is otherwise clearly actionable still qualifies; use judgment rather than skipping it on label technicality.
 4. Fill in the **Start here** directive (top of the document structure) with the real first next step and any open blocker.
 5. Write the handoff document to the repo copy, then `mkdir -p` the global dir and copy it to the global mirror.
 6. Print BOTH absolute paths (repo copy + global mirror), then the paste line the user hands to the next session:
@@ -164,7 +166,7 @@ prompt-builder output ready for copy-paste into Claude or Codex.]
 
 ## Files to read first
 
-[Paths the next agent should read to reconstruct context quickly. **Always ABSOLUTE paths** — the resuming session may run from a git worktree with a different cwd and cannot resolve repo-relative paths. Use URLs for issues/PRs.]
+[Paths the next agent should read to reconstruct context quickly. **Always ABSOLUTE paths** — the resuming session may run from a git worktree with a different cwd and cannot resolve repo-relative paths. Use URLs for issues/PRs. Prefer durable repo paths over session-scratch temp files — see Rules.]
 - /Users/you/repo/docs/plans/2026-05-13-design.md
 - /Users/you/repo/docs/executions/handoffs/ (previous handoffs in this chain)
 ```
@@ -182,6 +184,7 @@ This keeps multi-session work from ballooning handoff size.
 ## Rules
 
 - Do NOT duplicate content already in artifacts (PRDs, plans, ADRs, issues, commits). Reference by path or URL.
+- Prefer durable, repo-relative artifact paths over session-scratch temp files (e.g. `/tmp/...`, `/private/tmp/.../scratchpad/...`). If an artifact referenced in the handoff exists only as ephemeral scratch, either copy it into the repo (e.g. under `docs/executions/` or another suitable `docs/` subdir) before referencing it, or explicitly flag it as likely-gone and give the exact command to regenerate it.
 - Redact any sensitive information before writing — API keys, passwords, tokens, and personally identifiable information must not appear in the handoff document.
 - Keep it under 200 lines. Compression, not transcription.
 - Auto-handoffs from workflows should be factual and terse. No ceremony.
