@@ -47,7 +47,7 @@ run_cmd bash "$DOTFILES/scripts/macos/permissions.sh"
 # Create symlinks
 # Ensure target dirs exist so Stow creates per-item symlinks (not tree-folded)
 run_cmd mkdir -p "$HOME/.claude/hooks"
-run_cmd mkdir -p "$HOME/.claude/skills"
+run_cmd mkdir -p "$HOME/.config/agents"
 run_cmd mkdir -p "$HOME/.config"
 run_cmd mkdir -p "$HOME/.pi/agent"
 run_cmd mkdir -p "$HOME/.config/herdr"
@@ -64,4 +64,4 @@ run_cmd bash "$DOTFILES/scripts/ai-setup.sh"
 # Herdr integrations and plugins
 run_cmd bash "$DOTFILES/scripts/herdr-setup.sh"
 
-echo "Installation complete! Please restart your computer."
+echo "Installation complete! A restart is recommended to apply all macOS defaults."
