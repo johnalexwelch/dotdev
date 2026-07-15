@@ -40,25 +40,41 @@ dotfiles/
 
 ---
 
-## Phase 1 — Reconcile drift (do FIRST, before collapsing sources)
+## Phase 1 — Reconcile drift — DISSOLVED (finding, 2026-07-15)
 
-Losing a diverged fork silently is the only real risk here.
+**The premise was wrong.** Codex's divergence is **by design**, not drift:
 
-- [ ] Diff every skill that exists in both `~/.claude/skills` and `~/.codex/skills`:
-      `for d in ~/.codex/skills/*/; do n=$(basename "$d"); diff -q ~/.claude/skills/$n/SKILL.md "$d/SKILL.md" 2>/dev/null; done`
-- [ ] For each difference, pick the correct version (manual review). Known: `brain-ops`.
-- [ ] Record decisions in `docs/decision-log.md`.
+- `dotfiles/.claude/skills/sync-codex-skills.sh` already syncs source → codex runtime
+  with **compatibility filtering**: skips skills whose frontmatter has
+  `codex-compatible: false` (6 skills), and preserves a codex runtime allowlist
+  (`codex-runtime-allowlist.txt`, 6 codex-only skills).
+- The sync is **tested** (`test/test-sync-codex-skills.sh`, run by `test/run-tests.sh`).
+- The SKILL.md diffs seen during review (`brain-ops`, `cleanup-delivery`, …) were
+  **worktree-vs-main branch noise** (`~/.claude/skills` → `~/dotdev` main checkout;
+  work happens in a worktree), not accidental fork loss.
 
-## Phase 2 — Hoist skills to neutral source
+**Consequence for Phase 2:** codex must stay a **filtered copy** (keep the sync
+script). The original "symlink codex → shared source" step is REMOVED — it would
+bypass compatibility filtering and drag in incompatible skills. No manual
+reconciliation needed.
 
-- [ ] `git mv dotfiles/.claude/skills dotfiles/.config/agents/skills`
+## Phase 2 — Hoist skills to neutral source (revised)
+
+- [ ] `git mv dotfiles/.claude/skills dotfiles/.config/agents/skills` (helper scripts
+      `sync-codex-skills.sh` + `lint-skill-suite.sh` + `codex-runtime-allowlist.txt`
+      move WITH it — they self-locate via their own dirname).
 - [ ] `git mv dotfiles/.claude/docs   dotfiles/.config/agents/docs`
-- [ ] Add committed symlinks (stow recreates them at each home):
-      - `dotfiles/.claude/skills   → ../.config/agents/skills`
-      - `dotfiles/.codex/skills    → ../.config/agents/skills`
-      - `dotfiles/.pi/agent/skills → ../../.config/agents/skills`  (only if pi should read the shared set; today it reads `.claude/skills` — point it at the neutral dir instead)
-- [ ] `install.sh`: add `mkdir -p "$HOME/.config/agents"` before stow so items link, not tree-fold.
-- [ ] Remove the codex real-copy: `rm -rf ~/.codex/skills` prior to re-stow (one-time, document in install notes).
+- [ ] Committed compat symlinks so existing consumers keep resolving:
+      - `dotfiles/.claude/skills → ../.config/agents/skills`  (claude stow + pi read via `~/.claude/skills`)
+      - `dotfiles/.claude/docs   → ../.config/agents/docs`
+- [ ] **Codex: NO symlink.** Keep `sync-codex-skills.sh` (filtered copy). Only its
+      source path changes — self-locates from new dir, no edit needed.
+- [ ] Update hardcoded paths: `test/test-sync-codex-skills.sh`,
+      `test/test-skill-suite-lint.sh` (SCRIPT=…), `.gitignore` runtime paths
+      (`.omc/`, `.skill-observations/`), `install.sh` mkdir.
+- [ ] `install.sh`: drop `mkdir ~/.claude/skills` (now a symlink — mkdir would
+      block stow), add `mkdir -p ~/.config/agents`.
+- [ ] Update docs referencing the old path (AI_ENVIRONMENT.md, SETUP_WRITEUP.md).
 
 ## Phase 3 — Per-agent overlays (structure only, no unification)
 
