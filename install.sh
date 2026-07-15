@@ -58,6 +58,11 @@ else
     stow -d "$DOTFILES" -v -R -t "$HOME" dotfiles
 fi
 
+# Yazi plugins declared in dotfiles/.config/yazi/package.toml (reproducible install)
+if command -v ya >/dev/null 2>&1; then
+    run_cmd ya pkg install
+fi
+
 # AI tooling (guardian, headroom, gbrain, pi settings)
 run_cmd bash "$DOTFILES/scripts/ai-setup.sh"
 
