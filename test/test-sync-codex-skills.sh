@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCRIPT="$ROOT/dotfiles/.claude/skills/sync-codex-skills.sh"
+SCRIPT="$ROOT/dotfiles/.config/agents/skills/sync-codex-skills.sh"
 TMPDIR_BASE=$(mktemp -d)
 PASS=0
 FAIL=0
