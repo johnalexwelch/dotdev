@@ -51,7 +51,7 @@ Never delete first. Inventory, classify, present the cleanup plan, then act only
 Use these buckets:
 
 - `safe-remove-worktree`: worktree branch merged, pushed, clean, and no active PR needs it.
-- `safe-delete-local-branch`: branch merged to its intended base or remote no longer needs local copy.
+- `safe-delete-local-branch`: branch merged to its intended base or remote no longer needs local copy. **Confirm merge via PR state (`gh pr view <n> --json state,mergedAt`), not git ancestry alone** — squash/rebase merges leave the branch looking unmerged to `git branch -d`. A branch whose PR is merged is safe to delete with `-D`; that is not "discarding unmerged work" and does not need the unmerged-work approval gate.
 - `needs-user-approval`: dirty worktree, unpushed commits, unmerged branch, remote branch deletion, ticket closure, or PR closure.
 - `keep`: active PR, unresolved review/CI, open issue still in progress, or unclear ownership.
 - `follow-up-needed`: leftover work should become an issue before cleanup.
@@ -126,7 +126,7 @@ Report:
 Before deleting a worktree or branch, verify:
 
 - worktree is clean or the user explicitly approved discarding changes
-- commits are merged, pushed, or intentionally abandoned
+- commits are merged, pushed, or intentionally abandoned (for merge, trust PR state over git ancestry — squash/rebase merges defeat git's merged detection)
 - no open PR depends on the branch
 - branch is not the current branch and not checked out in another worktree
 - ticket state matches PR disposition

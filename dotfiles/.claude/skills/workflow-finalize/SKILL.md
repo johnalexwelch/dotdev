@@ -87,6 +87,7 @@ Rules:
 
 ### Step 1.5: Ensure Draft PR Exists
 
+- Run `git fetch origin --prune` before pushing or stating any branch position. Never report commits ahead/behind, "this PR includes N commits", or a large-diff count from local remote-tracking refs without a fresh fetch first — stale refs after a batch of merges produce false ahead/behind counts.
 - Push the branch to origin.
 - If a PR exists, update the body with the file from `describe-pr`.
 - If no PR exists, create one as draft with `gh pr create --draft --body-file <pr-body-path>`. `auto-merge-eligible` PRs are still created as draft until verification, review-comment resolution, CI, and issue reconciliation pass.
@@ -146,7 +147,7 @@ Before declaring the PR ready for final action, run a verification gate:
    reviewer validation steps. If missing or not last, route back to Step 1
    (`describe-pr`) before creating/updating or handing off the PR. Do not use
    `ready-for-human` or generic `Type: HITL` as this trigger.
-6. **Check for large diffs** — run `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
+6. **Check for large diffs** — run `git fetch origin --prune` first (a stale `origin/<base>` inflates or hides the count), then `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
    - If the changes are logically atomic (single feature, single refactor), proceed but note the size in the PR description
    - If the changes span unrelated concerns, **halt**: identify the independent concerns, resolve `WORKFLOW_BASE_GATE`, create a separate branch for each from the resolved workflow base, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
 

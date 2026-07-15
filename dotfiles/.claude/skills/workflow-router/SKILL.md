@@ -211,6 +211,27 @@ Before dispatching, check the target workflow's `Requires` field:
    - Suggest installation or alternative
    - Do NOT proceed with the workflow
 
+### Prior-Art & Roadmap Gate
+
+**Before dispatching any build, implement, design, ADR, or scaffold route, check for existing or planned work first.** This is a hard gate — it prevents conflicts and double work.
+
+Scan the target repo (when one exists) for prior art matching the request:
+
+1. `docs/roadmap.md` — the **single canonical** capability roadmap. Is this already a capability/band? (Legacy plans live only in `docs/roadmaps/archive/`.)
+2. `docs/adr/` + `docs/decision-log.md` — is the decision already recorded?
+3. `protocol/`, `libs/`, `docs/prd*/`, `docs/contracts/` — does the thing already exist (built or specced)?
+4. Open issues (`gh issue list`) — is it already tracked?
+
+Outcome:
+
+- **Already built/specced** → halt the design/build route. Report where it lives. Redirect to the real gap (wiring, hardening, the existing roadmap phase), not net-new.
+- **Planned but not built** → route to the existing roadmap item / issue, not a fresh plan.
+- **Genuinely absent** → proceed, and cite in the route card that prior art was checked.
+
+**Spec vs built:** before classifying a conflict as blocking, distinguish specced from implemented — inspect code/tests, not just docs. When a charter/spec doc and running code disagree, prefer the running code as ground truth. A doc-level contradiction is often resolved (or its real shape revealed) by what is actually built.
+
+Record the check in the route card `Why this flow` line (e.g. "prior-art scan: no existing roadmap/ADR/lib"). Skip only for read-only or `direct` routes that mutate nothing.
+
 ### Worktree Baseline Gate
 
 Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, load `setup-worktree/references/base-branch-policy.md`, resolve `WORKFLOW_BASE_GATE`, and create or require a fresh isolated worktree from the resolved workflow base:
@@ -240,6 +261,14 @@ For feature planning that will produce PRDs and implementation issues, require a
 - If roadmap evidence exists and is in scope: proceed.
 - If roadmap is missing, stale, or out of scope: route to `workflow-roadmap` first and halt downstream dispatch until approved.
 - Only an explicit user waiver may bypass this gate.
+
+### Roadmap Doc Invariant (drift guard)
+
+The roadmap is a **capability-altitude** artifact, not a status tracker. Enforce, and instruct `workflow-roadmap` to enforce:
+
+- **Exactly one canonical `docs/roadmap.md`.** Never create a dated/named roadmap sibling (`docs/roadmaps/2026-*.md`, `fleet-roadmap.md`). Update the canonical, or move superseded planning to `docs/roadmaps/archive/`. Where a repo ships it, `python3 scripts/chorus/validate.py roadmap` fails on a competing file.
+- **Never restate execution state in the roadmap** — per-issue status, agent/board state, and progress live in GitHub + the workboard. The roadmap holds capabilities ordered by `depends on` (bands Now/Next/Later), each with `outcome` · `unlocks` · `effort` · `priority`. Copied state is what drifts.
+- New idea → append a capability (or backlog-pool entry) with its deps; do not renumber or fork the doc.
 
 ## Learning Loop
 
@@ -291,7 +320,7 @@ halt, report the missing requirement, and do not proceed.
 4. Select the smallest safe agent budget
 5. Emit ROUTE_CARD
 6. Wait for user confirmation unless the route qualifies for the direct/read-only skip
-7. After confirmation, run preflight on target workflow; persist the ledger to `docs/executions/state.yaml`
+7. After confirmation, run preflight on target workflow (incl. Prior-Art & Roadmap Gate for any build/implement/design/ADR route); persist the ledger to `docs/executions/state.yaml`
 8. If preflight passes: dispatch to target workflow (update `state.yaml.next` on dispatch)
 9. If preflight fails: report missing requirements
 10. At completion, halt, or user correction: emit ROUTER_LEARNING_NOTE and run or recommend workflow-effectiveness-audit when triggered
@@ -303,7 +332,7 @@ Consumes: work description (user input, issue body, automated trigger), existing
 Produces: route card, confirmed workflow invocation, preflight report (if failed), router learning note, persisted run ledger in `docs/executions/state.yaml`
 Requires: git
 Side effects: writes/updates `docs/executions/state.yaml` in project repos (routing decision + run ledger); none otherwise
-Human gates: route confirmation before non-trivial dispatch; ambiguous classification asks one clarifying question
+Human gates: route confirmation before non-trivial dispatch; ambiguous classification asks one clarifying question; prior-art/roadmap scan before any build/implement/design/ADR dispatch (halt on conflict/duplicate)
 
 Runtime note: the router itself only needs git-aware workspace context; target workflows declare their own `Requires` fields.
 
