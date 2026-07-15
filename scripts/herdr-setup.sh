@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Invariant: idempotent — integrations skip if current; plugins need a running herdr server + network.
 DRY_RUN=${DRY_RUN:-0}
 
 run_cmd() {

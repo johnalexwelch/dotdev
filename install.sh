@@ -64,4 +64,4 @@ run_cmd bash "$DOTFILES/scripts/ai-setup.sh"
 # Herdr integrations and plugins
 run_cmd bash "$DOTFILES/scripts/herdr-setup.sh"
 
-echo "Installation complete! Please restart your computer."
+echo "Installation complete! A restart is recommended to apply all macOS defaults."

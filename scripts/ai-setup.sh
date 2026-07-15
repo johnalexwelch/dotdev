@@ -1,4 +1,5 @@
 #!/bin/bash
+# Invariant: idempotent — clones AI tooling if absent, refreshes if present. Needs network.
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DRY_RUN=${DRY_RUN:-0}

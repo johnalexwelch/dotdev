@@ -1,4 +1,5 @@
 #!/bin/bash
+# Invariant: idempotent — installs/updates Homebrew formulae + casks from Brewfile. Needs network.
 
 # Set DOTFILES path to the root directory
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
