@@ -29,3 +29,17 @@ type = "pane"
 command = "~/.config/herdr/zoxide-workspace.sh"
 description = "zoxide: open dir as workspace"
 
+# Bind plugin actions that ship no default keybind.
+# prefix+a = attention (needs-you: blocked->done); prefix+alt+a = cycle in-flight agents.
+[[keys.command]]
+key = "prefix+alt+a"
+type = "plugin_action"
+command = "active-agent.jump.next"
+description = "cycle in-flight agents"
+
+[[keys.command]]
+key = "prefix+alt+p"
+type = "plugin_action"
+command = "herdr-picker-plus.open"
+description = "picker-plus: fuzzy jump anywhere"
+

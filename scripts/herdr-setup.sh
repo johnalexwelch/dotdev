@@ -29,6 +29,12 @@ install_plugin JacquesvanWyk/herdr-hunk            # autodiff-on-finish + fzf hu
 install_plugin milkyskies/herdr-attention          # prefix+a: jump to next agent needing attention
 install_plugin paulbkim-dev/vim-herdr-navigation   # ctrl+hjkl across panes <-> nvim splits
 install_plugin usrivastava92/herdr-wakeup/plugin --ref v0.1.0  # hold wake assertion while agents work
+install_plugin shoaibkhanz/herdr-active-agent-jump # prefix+alt+a: cycle in-flight agents
+install_plugin wyattjoh/herdr-plugin-gh-pr         # PR/CI status in sidebar (needs gh, bun)
+install_plugin Davidcreador/herdr-token-dashboard  # prefix+$: per-pane token/cost dashboard (needs go)
+install_plugin thanhdat77/herdr-picker-plus        # prefix+alt+p: unified fuzzy picker (needs cargo)
+install_plugin trapple/herdr-focus                 # focus blocked/done + terminal-to-front (opt global hotkey)
+install_plugin makyinmars/herdr-context.nvim       # nvim: stage code as agent context (pairs w/ nvim spec)
 
 # wakeup needs an explicit start per session (not auto-started on restart)
 run_cmd herdr plugin action invoke start --plugin herdr-wakeup 2>/dev/null || true
