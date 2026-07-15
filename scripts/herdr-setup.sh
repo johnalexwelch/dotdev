@@ -36,6 +36,9 @@ install_plugin thanhdat77/herdr-picker-plus        # prefix+alt+p: unified fuzzy
 install_plugin trapple/herdr-focus                 # focus blocked/done + terminal-to-front (opt global hotkey)
 install_plugin makyinmars/herdr-context.nvim       # nvim: stage code as agent context (pairs w/ nvim spec)
 
+# Local plugin: auto-layout new workspaces/worktrees as agent | nvim + yazi.
+run_cmd herdr plugin link "$HOME/dotdev/herdr-plugins/pi-dev-layout" 2>/dev/null || true
+
 # wakeup needs an explicit start per session (not auto-started on restart)
 run_cmd herdr plugin action invoke start --plugin herdr-wakeup 2>/dev/null || true
 
