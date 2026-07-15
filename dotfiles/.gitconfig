@@ -61,6 +61,8 @@
     last = log -1 HEAD --stat
     contributors = shortlog -s -n
     filehistory = log --follow -p --
+	hdiff = -c core.pager=\"hunk pager\" diff
+	hshow = -c core.pager=\"hunk pager\" show
 
 [color]
     ui = auto

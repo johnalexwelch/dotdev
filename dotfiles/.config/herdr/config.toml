@@ -1,6 +1,6 @@
 onboarding = false
 [ui.toast]
-delivery = "herdr"
+delivery = "terminal"   # native desktop notifications via Ghostty (agent finished / needs input)
 
 [ui]
 show_agent_labels_on_pane_borders = true
