@@ -58,49 +58,54 @@ script). The original "symlink codex → shared source" step is REMOVED — it w
 bypass compatibility filtering and drag in incompatible skills. No manual
 reconciliation needed.
 
-## Phase 2 — Hoist skills to neutral source (revised)
+## Phase 2 — Hoist skills to neutral source (revised) — DONE (ad2f538)
 
-- [ ] `git mv dotfiles/.claude/skills dotfiles/.config/agents/skills` (helper scripts
+- [x] `git mv dotfiles/.claude/skills dotfiles/.config/agents/skills` (helper scripts
       `sync-codex-skills.sh` + `lint-skill-suite.sh` + `codex-runtime-allowlist.txt`
       move WITH it — they self-locate via their own dirname).
-- [ ] `git mv dotfiles/.claude/docs   dotfiles/.config/agents/docs`
-- [ ] Committed compat symlinks so existing consumers keep resolving:
+- [x] `git mv dotfiles/.claude/docs   dotfiles/.config/agents/docs`
+- [x] Committed compat symlinks so existing consumers keep resolving:
       - `dotfiles/.claude/skills → ../.config/agents/skills`  (claude stow + pi read via `~/.claude/skills`)
       - `dotfiles/.claude/docs   → ../.config/agents/docs`
-- [ ] **Codex: NO symlink.** Keep `sync-codex-skills.sh` (filtered copy). Only its
+- [x] **Codex: NO symlink.** Keep `sync-codex-skills.sh` (filtered copy). Only its
       source path changes — self-locates from new dir, no edit needed.
-- [ ] Update hardcoded paths: `test/test-sync-codex-skills.sh`,
+- [x] Update hardcoded paths: `test/test-sync-codex-skills.sh`,
       `test/test-skill-suite-lint.sh` (SCRIPT=…), `.gitignore` runtime paths
       (`.omc/`, `.skill-observations/`), `install.sh` mkdir.
-- [ ] `install.sh`: drop `mkdir ~/.claude/skills` (now a symlink — mkdir would
+- [x] `install.sh`: drop `mkdir ~/.claude/skills` (now a symlink — mkdir would
       block stow), add `mkdir -p ~/.config/agents`.
-- [ ] Update docs referencing the old path (AI_ENVIRONMENT.md, SETUP_WRITEUP.md).
+- [x] Update docs referencing the old path (AI_ENVIRONMENT.md, SETUP_WRITEUP.md).
 
-## Phase 3 — Per-agent overlays (structure only, no unification)
+## Phase 3 — Per-agent overlays (structure only, no unification) — DONE (verify-only, no code change)
 
-- [ ] Confirm `.claude/settings.json`, `hooks/`, `commands/` stay in `dotfiles/.claude/`.
-- [ ] Create `dotfiles/.codex/prompts/` and `dotfiles/.pi/agent/prompts/` only if/when real content exists (YAGNI — don't scaffold empty dirs).
-- [ ] NO shared hooks/commands abstraction — formats diverge per tool.
+Finding: structure already correct. Shared → `.config/agents/{skills,docs}`; claude-specific →
+`.claude/{hooks/workflow-guard.sh, settings.json, settings.local.template.json}`; pi-specific →
+`.pi/agent/settings.json`; codex → runtime-synced filtered copy (no tracked config). No `commands/`
+or `prompts/` authored anywhere → per YAGNI, nothing scaffolded.
 
-## Phase 4 — Fix `zoxide-workspace.sh` gap
+- [x] Confirm `.claude/settings.json`, `hooks/`, `commands/` stay in `dotfiles/.claude/`.
+- [x] Create `dotfiles/.codex/prompts/` and `dotfiles/.pi/agent/prompts/` only if/when real content exists (YAGNI — none exists, none created).
+- [x] NO shared hooks/commands abstraction — formats diverge per tool.
 
-`~/.config/herdr/zoxide-workspace.sh` symlinks into dotdev but the file isn't committed → fresh install breaks.
+## Phase 4 — Fix `zoxide-workspace.sh` gap — DONE (non-issue on integration)
 
-- [ ] Locate the real file (main checkout) and `git add dotfiles/.config/herdr/zoxide-workspace.sh`, or delete the dangling link if obsolete.
-- [ ] `DRY_RUN=1 ./install.sh` to confirm stow recreates it.
+Finding: the "gap" was a worktree-behind-main artifact. The file was already committed on main
+(`0737026`); the refactor branch simply predated it. Merging the branch into main preserved it, and
+it is now live-verified at `~/.config/herdr/zoxide-workspace.sh` after re-stow. No file to add.
 
-## Phase 5 — README drift
+- [x] Locate the real file (main checkout) — already tracked on main; no `git add` needed.
+- [x] `DRY_RUN=1 ./install.sh` clean; live stow recreates `~/.config/herdr/zoxide-workspace.sh`.
 
-Structure block lists dirs that no longer exist (`arc/ cursor/ ghostty/ git/ …`) and mentions Warp (you use Ghostty).
+## Phase 5 — README drift — DONE (a78f86a)
 
-- [ ] Regenerate the `## Structure` tree from the real layout (or drop the tree, link to this doc).
-- [ ] Update Core Components table to match actual tools.
+- [x] Regenerate the `## Structure` tree from the real layout (shows `.config/agents` shared source + per-agent dirs).
+- [x] Update Core Components table (Warp → Ghostty).
 
-## Phase 6 — install.sh / setup-script hygiene (low priority)
+## Phase 6 — install.sh / setup-script hygiene — DONE (6f41c22)
 
-- [ ] Make Application Support `ln -sf` steps idempotent-safe (already mostly are via `-sf`; verify no stacking).
-- [ ] Apply the `herdr-setup.sh` pattern uniformly: each `*-setup.sh` states its invariant (idempotent? needs server? needs network?) in a header comment.
-- [ ] Consider softening the final "restart your computer" to "restart recommended".
+- [x] Application Support `ln -sf` steps already idempotent via `-sf` (verified no stacking).
+- [x] Apply the `herdr-setup.sh` invariant-header pattern to `ai/brew/github/herdr-setup.sh`; `gh-extensions.sh` already had one. Added `agents/`+`herdr/` to `config-init.sh` pre-created dirs.
+- [x] Softened final message to "restart is recommended".
 
 ---
 
