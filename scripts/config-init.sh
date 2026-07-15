@@ -15,6 +15,7 @@ config_dirs=(
     "gh-dash"
     "ghostty"
     "git"
+    "hunk"
     "lazygit"
     "macos"
     "mcp"

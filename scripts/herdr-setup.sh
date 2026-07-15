@@ -10,8 +10,8 @@ run_cmd() {
     "$@"
 }
 
-# Install agent integrations (idempotent — herdr skips if already current)
-for integration in pi claude codex opencode; do
+# Install agent integrations (idempotent — reinstall updates outdated hooks)
+for integration in pi claude codex opencode cursor; do
     run_cmd herdr integration install "$integration"
 done
 
