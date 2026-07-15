@@ -1,0 +1,3 @@
+# Fetched plugin code — reproducible via `ya pkg install` from package.toml.
+plugins/
+flavors/
