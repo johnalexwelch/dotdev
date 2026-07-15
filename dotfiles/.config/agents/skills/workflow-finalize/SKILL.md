@@ -128,9 +128,11 @@ This gate applies to bot and human review comments. A green CI run does not over
 Applies only to **openwiki-enabled repos**. Detect via any of: an `openwiki/` directory, an `<!-- OPENWIKI:START -->` block in `AGENTS.md`/`CLAUDE.md`, or an existing `.github/workflows/openwiki-update.yml`. If none are present, this step is `not_applicable` — skip and record the reason.
 
 - **Do not run `openwiki --update` inline.** Doc regeneration is LLM-driven; running it here would land generated changes after the `WORKFLOW_REVIEW_GATE` (tripping review-freshness, Step 6.4) and add cost/latency to every ship. Docs regenerate out-of-band via the CI hook after merge, so they stay current even when humans push.
-- **Verify the durable hook exists:** confirm `.github/workflows/openwiki-update.yml` is present.
-  - Present → record `present`.
-  - Missing → **info-level flag, do not block.** Recommend wiring it from `workflow-finalize/references/openwiki-update.yml` (copy to `.github/workflows/`, set the provider API-key secret), and record `missing_flagged`. Wiring is one-time setup done outside the finalize hot path so it never mutates the reviewed diff.
+- **Verify a durable hook exists** (either mechanism counts):
+  - **CI hook** — `.github/workflows/openwiki-update.yml` present (GitHub-hosted repos), or
+  - **Local launchd hook** — the repo path is listed in `~/.config/openwiki/repos.conf` (host-agnostic; for repos not on GitHub). See `~/.config/openwiki/com.alexwelch.openwiki.plist`.
+  - Either present → record `present`.
+  - Neither → **info-level flag, do not block.** Recommend wiring one: for GitHub repos copy `workflow-finalize/references/openwiki-update.yml` to `.github/workflows/` (set the provider API-key secret); otherwise add the repo path to `~/.config/openwiki/repos.conf`. Record `missing_flagged`. Wiring is one-time setup outside the finalize hot path, so it never mutates the reviewed diff.
 - This step never halts finalization.
 
 ### Step 5: Post-CI Retro Addendum (conditional)
