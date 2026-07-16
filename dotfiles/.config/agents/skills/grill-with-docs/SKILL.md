@@ -34,6 +34,21 @@ The skill auto-selects mode based on project state:
 | No CONTEXT.md + quick/simple topic | **Lightweight** |
 | CONTEXT.md present OR deep/complex topic OR user says "grill me hard" | **Full** |
 
+### Preflight (ticket-backed / resumed grills)
+
+Before grilling a ticket-backed decision (an issue number, or a handoff that says "grill #N"),
+VERIFY the ticket is still open and undecided — a handoff is a proxy; the tracker is authoritative,
+and a concurrent agent may have resolved it since the handoff was written:
+
+    gh issue view <N> --repo <owner/slug> --json state,comments
+
+- If **CLOSED**, or an existing comment already carries a resolution/decision → **STOP re-deriving.**
+  Switch to *reconcile-mirror* mode: read the locked resolution and mirror it into `docs/decision-log.md`
+  if missing; do not author a fresh, possibly-conflicting decision.
+- Only when the ticket is genuinely open and unresolved do you start the interview below.
+
+(Skip this gate for ad-hoc "grill me" sessions with no backing ticket.)
+
 ### Lightweight mode
 
 - One question at a time (not batches of five)
