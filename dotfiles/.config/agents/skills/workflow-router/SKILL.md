@@ -18,6 +18,7 @@ This skill is the **sole routing authority**. Per ADR-0002:
 - `workflows.md` is reference documentation only — it does not route
 - OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass this router's classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `workflow-review`, and `workflow-finalize`.
 - All other work goes through this router
+- **Naming a skill is a load-and-gate instruction, not a verb.** When any goal, plan, prompt, or handoff names a workflow skill (e.g. `workflow-review`, `workflow-finalize`), load that skill's `SKILL.md` and follow it — including emitting its required gate block. A prose claim that the skill ran (or "basically ran") without its gate block present in the evidence means it did **not** run; treat it as unrun. Do not reconstruct a skill's intent from memory in place of loading it.
 - The router owns classification, confirmation, preflight, and learning notes. Target workflow skills own the actual workflow behavior. Do not copy target workflow procedures into this skill.
 
 ## Audit Loop Retirement Rule
