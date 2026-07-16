@@ -145,6 +145,16 @@ to "read this handoff" — it's already here.
 - PR #142 CI is red — needs diagnose (3 auto-fix attempts exhausted)
 - Review on PR #143 flagged 2 blockers — needs human judgment
 
+## Sibling worktrees / concurrent sessions
+
+[ONLY in a multi-worktree / parallel-agent context (e.g. herdr running several
+worktrees at once). Name the sibling worktrees in flight and whether THIS
+subtree depends on / is blocked by them — framed by WORKTREE, not just ticket
+blockers, since the operator thinks in parallel sessions. Skip entirely for a
+single-worktree session.]
+- worktree-foo (#123): independent, no dependency.
+- worktree-bar (#124): this subtree's report layer depends on it shipping first.
+
 ## Blockers requiring human input
 
 [Only if the exit reason involves a human gate. Be specific about what
