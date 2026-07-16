@@ -131,4 +131,6 @@ Before deleting a worktree or branch, verify:
 - branch is not the current branch and not checked out in another worktree
 - ticket state matches PR disposition
 
+Before classifying anything else as unused/removable (a dependency, tool, config, file), verify against the **running system** — installed runtime deps, live startup diagnostics/warnings, a `which`/runtime probe — not just a source grep. A repo/skills/config search is a proxy that misses host-loaded plugins, extensions, and npm modules; the authoritative signal is what the running program actually loads and warns about.
+
 If any check is unclear, keep the item and ask.
