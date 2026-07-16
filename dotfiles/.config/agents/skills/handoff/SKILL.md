@@ -109,6 +109,11 @@ to "read this handoff" — it's already here.
 
 > You are resuming multi-session work in `<repo>`. Recover state before acting:
 >
+> 0. **Work happens in `<absolute-work-repo-root>`.** `<if cwd ≠ the work repo — e.g.
+>    you are resuming inside a different repo's git worktree:>` your cwd is NOT this
+>    repo. `cd <absolute-work-repo-root>` first, and every `gh` call needs
+>    `--repo <owner/slug>` (a bare `gh issue view` resolves against the cwd repo and
+>    will hit the wrong project).
 > 1. Read `docs/executions/state.yaml` if present — SOURCE OF TRUTH for the active
 >    `workflow`, completed `steps`, and the `next` queue. Resume from `next`; do
 >    not redo completed steps. (Schema: `skills/_docs/state-cockpit.md`.)
@@ -199,6 +204,7 @@ This keeps multi-session work from ballooning handoff size.
 - For Codex targets: include full prompt-builder outputs. Codex cannot ask questions.
 - For Claude targets: prompts can be lighter (Claude can ask the user).
 - Always include the **Start here** directive near the top of the handoff, and print the `Resume: read <path> ...` paste line last. The user pastes the path, not the whole prompt. If no `state.yaml` exists, drop its step 1 and boot off "Files to read first" only. For Codex the directive must be self-contained (no "ask the user"); for Claude it may leave a decision to the user.
-- Always print handoff paths as **absolute** paths (resolved via `git rev-parse --show-toplevel`), never relative.
+- Always print handoff paths as **absolute** paths (resolved via `git rev-parse --show-toplevel`), never relative. This applies to EVERY path in the body too ("Files to read first", "What was done", artifact references), not just the printed Resume line — repo-relative paths like `cora/docs/foo.md` do not resolve when the resumer's cwd is a different repo's worktree, which is the common case.
+- When the handoff's cwd will differ from the work repo (e.g. the session runs inside another repo's worktree while the map/issues/code live elsewhere), the **Start here** directive MUST name the absolute work-repo root AND the required `gh --repo <owner/slug>` flag. Do not assume the resumer can infer the work repo from cwd — a bare `gh` call resolves against the cwd repo and silently targets the wrong project.
 - Always write the global mirror under `~/.chorus/handoffs/<repo-name>/` so the handoff survives worktree destruction. Derive `<repo-name>` from `git rev-parse --absolute-git-dir` (strip `/.git*`, then basename) — never from `--show-toplevel`, which is a transient slug under worktrees.
 - Always print the global mirror path as the last line of output (it is the durable reference).
