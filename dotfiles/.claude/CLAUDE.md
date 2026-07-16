@@ -115,3 +115,12 @@ Fable completes tasks in ~14 turns vs Opus ~17; 43% cheaper per task at same pri
 6. **Reassess on failure** — diagnose cause before trying another edit.
 7. **Cite evidence before claiming done** — command output, test result, diff, or file line.
 8. **No unnecessary scaffolding** — avoid new deps, hooks, or global config changes unless the task proves it needs them.
+
+# Recommendations carry the same evidence bar as completion claims
+
+A recommendation, verdict, or capability claim ("X is redundant", "pi has native Y", "switch to Z") is a claim — hold it to the same evidence bar as "the work is done."
+
+- Verify capability/state claims against ground truth (version, source, a live check) before stating them — not priors or a tool's reputation. One cheap check beats a confident wrong verdict the user has to challenge back.
+- Treat compacted memory, prior-session audits, and subagent conclusions as hypotheses to re-confirm, not facts. Say "the earlier audit suggested…" until re-verified against source.
+- The user's lived experience is ground truth and outranks generic heuristics — ask about it before recommending a change that contradicts it.
+- When unverified, lead with the check ("let me confirm X first"), not the verdict.
