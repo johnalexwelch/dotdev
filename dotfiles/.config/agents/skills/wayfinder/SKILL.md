@@ -149,7 +149,7 @@ User invokes with a loose idea.
 
 User invokes with a map (URL or number). A ticket is optional — without one, you pick the next decision.
 
-1. Load the **map** — the low-res view, not every ticket body.
+1. Load the **map** — the low-res view, not every ticket body. **Pin the working repo path first.** The tracker/map and the code/docs you'll edit may live in a *different* repo than the session's cwd (e.g. a herdr worktree of repo A while the map + work land in repo B). Identify that repo once, state its absolute path, and run git/`gh` there — don't rely on `cd X 2>/dev/null || cd Y` fallbacks, which hide which checkout is live and can strand commits or trigger false "work lost" scares.
 2. Choose the ticket. If the user named one, use it; otherwise compute the frontier with the **canonical query** in the tracker doc (open + unblocked + **`no:assignee`**) and take the first one — never infer the frontier from labels or blocking-impact alone. The `no:assignee` filter is load-bearing under concurrent sessions: a ticket with an assignee is already being worked, skip it. **Claim** your pick (assign to the driving dev) before any work.
 3. Resolve it — **zoom as needed**: fetch the full body of any related/closed ticket on demand; invoke the skills the Notes name and the ticket type requires. If in doubt, `/grill-with-docs` + `/domain-modeling`.
 4. Record the resolution: post the answer as a **resolution comment**, **close** the issue, **append a context pointer** to the map's Decisions-so-far, and **mirror the decision to `docs/decision-log.md`** via `/decision-log`.
