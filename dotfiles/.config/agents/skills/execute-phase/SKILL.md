@@ -164,6 +164,14 @@ Load these files as needed for the active step:
    `plan_path`, `plan_slug`, date, phase number, target outcome file,
    ID scheme, branch prefix, and phase fields. See
    `references/phase-parsing.md` and `references/branch-naming.md`.
+   **Prior-art check (mandatory, before creating anything):** run
+   `git worktree list` and `git log --oneline <base>..<working-branch>`
+   for the full working branch (not just the base). Reconcile against the
+   plan's phase status — if the target phase (or a LATER one) already has
+   a commit, do NOT rebuild it: redirect to the true frontier or finalize.
+   The plan ledger / a compacted summary naming "the frontier" is a PROXY;
+   the branch log is authoritative and wins on conflict. Skipping this
+   check has repeatedly caused duplicated phases.
 2. **Partition tasks.** Split ordered tasks into `[auto]`, `[human]`,
    and unknown tasks. Group `[auto]` tasks into clusters by overlapping
    file/module scope. Unknown tasks are warnings and are not executed.

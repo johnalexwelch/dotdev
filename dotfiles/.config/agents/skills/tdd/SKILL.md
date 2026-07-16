@@ -103,6 +103,12 @@ GREEN: Write minimal code to pass → test passes
 
 This is your tracer bullet - proves the path works end-to-end.
 
+> **Resuming / handed-off work still starts RED.** Picking up a phase
+> mid-stream, from a summary, or from another session's handoff does NOT
+> license writing implementation first. Write the failing test for the next
+> behavior before any code, even when the surrounding scaffolding already
+> exists.
+
 ### 3. Incremental Loop
 
 For each remaining behavior:
