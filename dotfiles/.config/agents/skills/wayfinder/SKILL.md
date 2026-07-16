@@ -54,6 +54,8 @@ The map is an **index**, not a store. It lists the decisions made and points at 
 
 **The concrete GitHub operations** — labels, creating the map, sub-issues, blocking, the frontier query, resolution — live in this repo's `docs/agents/issue-tracker.md` under **"Wayfinding operations"**. Consult it before touching the tracker. If it's absent, run `/setup-skills` (or apply the GitHub defaults it documents).
 
+**Repo readiness (both modes, before any tracker write).** Confirm the target repo is the *live* one and is writable: it is **not archived** (`gh repo view --json isArchived`) and the **active `gh` account has write access** (`gh repo view` resolves it). An archived or wrong-account repo fails only after you've started — a `403 Repository was archived` mid-charting means the map has no home. Fix the account/repo first.
+
 ### The map body
 
 The whole map at low resolution, loaded once per session. Open tickets are **not** listed — they are open child issues, found by the frontier query.
@@ -136,6 +138,7 @@ Two modes. Either way, **never resolve more than one ticket per session**, and *
 
 User invokes with a loose idea.
 
+0. **Confirm the ground first.** Before naming anything, survey for existing implementations and the effort's likely home repo — a loose idea often already has ~half of it built somewhere. The destination *and its handoff target* depend on which repo owns the work, so identify that repo and confirm it is the **live, writable, non-archived** copy (not an archived or stale checkout). Charting against the wrong copy silently invalidates the map.
 1. **Name the destination.** `/grill-with-docs` (lightweight) + `/domain-modeling` to pin down what this map finds its way to *and how it hands off* (to-prd / design-plan / decision). Record the handoff target in the map's Notes. The destination fixes scope, so it's settled first.
 2. **Map the frontier.** Grill again, **breadth-first**: fan out across the whole space, surfacing open decisions and first-takeable steps. **If this surfaces no fog** — the route is already clear and the whole journey fits one session — you don't need a map. Stop and route it straight into `workflow-feature` or the appropriate funnel entry.
 3. **Create the map** (label `wayfinder:map`, per the tracker doc): Destination and Notes filled, Decisions-so-far empty, fog sketched into **Not yet specified**. Do not label it `ready-for-agent`.
