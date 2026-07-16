@@ -87,7 +87,7 @@ Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd
 2. Determine exit context (manual vs auto, exit reason, remaining items).
 3. If remaining items include actionable next-step issues, invoke `prompt-builder` for each to generate ready-to-use prompts. Treat the `ready-for-agent` label as a signal, not a strict gate — an issue tagged only `type:task` (or unlabeled) that is otherwise clearly actionable still qualifies; use judgment rather than skipping it on label technicality.
 4. Fill in the **Start here** directive (top of the document structure) with the real first next step and any open blocker.
-5. Write the handoff document to the repo copy, then `mkdir -p` the global dir and copy it to the global mirror.
+5. Write the handoff document to the repo copy, then `mkdir -p` the global dir and copy it to the global mirror. Copy **one file per command with fully literal paths**, and verify each with `ls` immediately after — shell wrappers can silently reorder or no-op a multi-target `mkdir`/`cp` (observed failure: a mangled `mkdir` created directories *named after* the handoff files). If `cp` misbehaves, `install -m644 <src> <dst>` is a reliable fallback.
 6. Print BOTH absolute paths (repo copy + global mirror), then the paste line the user hands to the next session:
    `Resume: read <absolute-handoff-path> and follow "Start here".` Prefer the global mirror path in the Resume line since it outlives the worktree. If auto-invoked, keep the whole output to those lines.
 
