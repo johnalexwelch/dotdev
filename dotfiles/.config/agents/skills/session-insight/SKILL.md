@@ -21,9 +21,9 @@ turns lived friction into durable improvements to the skill system.
 ## Contract
 
 Consumes: the current session transcript, `~/dotdev/dotfiles/.config/agents/skills/` (canonical Stow source; `~/dotdev/dotfiles/.claude/skills/` is a symlink to it)
-Produces: a reflection artifact + a prioritized, diff-shaped improvement list
+Produces: a prioritized, diff-shaped improvement list, presented inline (the reflection is a working buffer, not a persisted artifact)
 Requires: nothing (stdlib/native only — keeps `codex-compatible: true`)
-Side effects: writes one reflection file; NEVER edits skills without approval
+Side effects: none by default (no file written); NEVER edits skills without approval
 Human gates: approval before editing any skill, CLAUDE.md, or creating issues
 
 ## Context
@@ -51,15 +51,19 @@ Pairs well with: workflow-effectiveness-audit (heavy governance sweep), write-a-
 
 A correction is the strongest signal, but it is not the only one. Report improvement opportunities from Pass B even when nothing went wrong.
 
-### 2. Write the reflection artifact
+### 2. Assemble the reflection (inline, ephemeral)
 
-Path priority (use the first that applies):
-- In a project repo: `docs/executions/reflections/<date>-<slug>.md`
-- Otherwise: `~/.claude/reflections/<date>-<slug>.md`
+**Do not write a file by default.** The reflection's value is the improvement
+list, which lands durably in the skills / CLAUDE.md / decision-log it changes.
+A persisted reflection is write-only clutter — nothing consumes it. Present the
+reflection inline in your response instead.
 
-`<date>` = `YYYY-MM-DD`; `<slug>` = 2-4 word kebab gist. Create the dir first.
+Only persist a file when the user explicitly asks for a saved record, and then
+write to `~/.claude/reflections/<date>-<slug>.md` (scratch, outside any project
+repo — never `docs/executions/reflections/`). `<date>` = `YYYY-MM-DD`; `<slug>`
+= 2-4 word kebab gist.
 
-Structure:
+Structure (inline, or in the opt-in file):
 
 ```markdown
 # Session Reflection: <title>
