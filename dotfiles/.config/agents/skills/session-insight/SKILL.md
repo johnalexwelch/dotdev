@@ -95,6 +95,7 @@ Structure:
 
 - Edits target the **canonical source**: `~/dotdev/dotfiles/.config/agents/skills/<name>/SKILL.md`.
   Note `~/dotdev/dotfiles/.claude/skills` is a **symlink** to `.config/agents/skills` — editing through it works, but `git add` on the `.claude/skills/...` path fails ("beyond a symbolic link"). Resolve the real path with `readlink -f` (or edit/add the `.config/agents/skills/...` path directly) before committing. Editing `~/.claude/skills/` (the runtime mirror, not the dotfiles source) directly is a known defect (audit gap #19) — never do it.
+  The **git repo root is `~/dotdev`, not `~/dotdev/dotfiles`** (dotfiles is a subdir). So `git add`/`git commit` the edit as `dotfiles/.config/agents/skills/<name>/SKILL.md` from the repo root, or `cd ~/dotdev/dotfiles` first — a bare `.config/agents/skills/...` pathspec from the root fails ("pathspec did not match").
 - After an approved edit, remind: run `~/.claude/skills/sync-codex-skills.sh --apply`
   to mirror into `~/.codex/skills`.
 - If a proposed skill needs MCP or interactive tools, set `codex-compatible: false`
