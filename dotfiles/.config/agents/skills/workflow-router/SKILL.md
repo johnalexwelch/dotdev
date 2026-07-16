@@ -38,7 +38,7 @@ Choose the smallest execution shape that preserves quality:
 
 | Budget | Use when | Default review profile |
 |--------|----------|------------------------|
-| `direct` | Trivial ops, single-command answers, simple docs/wording edits, or small local inspections with no delivery gate | none |
+| `direct` | Trivial ops, single-command answers, simple docs/wording edits, or small local inspections with no delivery gate. **Never `direct` if the task will commit or push tracked code** — that is at least `one-reviewer` and must satisfy the worktree + `workflow-review` + `workflow-finalize` gates. | none |
 | `one-reviewer` | Normal single-issue work, narrow code edits, and most skill/config changes | `fast` or `standard` |
 | `multi-lane` | Auth, data, infra, migrations, public APIs, dependencies, broad refactors, concurrency/state, user-facing UX, or large diffs | `full` |
 | `team` | Two or more independent workstreams benefit from parallel execution more than coordination costs | per child workflow |
