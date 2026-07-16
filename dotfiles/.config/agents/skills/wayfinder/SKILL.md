@@ -150,10 +150,10 @@ User invokes with a loose idea.
 User invokes with a map (URL or number). A ticket is optional — without one, you pick the next decision.
 
 1. Load the **map** — the low-res view, not every ticket body.
-2. Choose the ticket. If the user named one, use it; otherwise take the first frontier ticket in order. **Claim it**: assign to the driving dev before any work.
+2. Choose the ticket. If the user named one, use it; otherwise compute the frontier with the **canonical query** in the tracker doc (open + unblocked + **`no:assignee`**) and take the first one — never infer the frontier from labels or blocking-impact alone. The `no:assignee` filter is load-bearing under concurrent sessions: a ticket with an assignee is already being worked, skip it. **Claim** your pick (assign to the driving dev) before any work.
 3. Resolve it — **zoom as needed**: fetch the full body of any related/closed ticket on demand; invoke the skills the Notes name and the ticket type requires. If in doubt, `/grill-with-docs` + `/domain-modeling`.
 4. Record the resolution: post the answer as a **resolution comment**, **close** the issue, **append a context pointer** to the map's Decisions-so-far, and **mirror the decision to `docs/decision-log.md`** via `/decision-log`.
 5. Graduate any fog the answer made specifiable into fresh tickets (create-then-wire), clearing each graduated patch from **Not yet specified**. If the answer reveals a ticket sits beyond the destination, **rule it out of scope**. If a decision invalidates other tickets, update or delete them. **If this resolution clears the whole route** — no open tickets, no fog left toward the destination — don't keep going: hand the route into the funnel named in Notes (`to-prd`/`design-plan`/decision) and say so in the handoff.
-6. Exit with `/handoff` pointing at the map.
+6. Exit with `/handoff` pointing at the map. If the handoff recommends a next ticket, **derive it by running the canonical frontier query (open + unblocked + `no:assignee`) and paste that exact command into the handoff** — do not recommend a ticket you haven't confirmed is unclaimed.
 
 The user may run unblocked tickets in parallel, so expect concurrent edits to the tracker.
