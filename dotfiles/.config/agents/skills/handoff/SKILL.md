@@ -63,7 +63,14 @@ Always write **two copies** and always print **absolute paths** (never relative)
 1. **Repo copy** — `docs/executions/handoffs/<date>-<slug>.md` (discoverable by next agent, commits with the branch).
 2. **Global mirror** — `~/.chorus/handoffs/<repo-name>/<date>-<slug>.md`. Survives worktree destruction, so the handoff is recoverable even after the worktree is deleted.
 
-Derive the absolute repo copy path with `git rev-parse --show-toplevel` (never assume cwd). Create the global dir with `mkdir -p ~/.chorus/handoffs/<repo-name>` and copy the file there after writing.
+Derive the absolute repo copy path with `git rev-parse --show-toplevel` (never assume cwd). **Derive `<repo-name>` separately** — it must stay STABLE across worktrees, so do NOT use `--show-toplevel` for it: under a git worktree that returns a transient slug (e.g. `worktree-brave-field-ff10`), and the mirror would land in a dir destroyed with the worktree — defeating its purpose. Use the main repo's common git dir instead:
+
+    agd=$(git rev-parse --absolute-git-dir)   # always absolute (git >=2.13); worktree-safe
+    repo=$(basename "${agd%%/.git*}")          # stable repo name, e.g. dotdev
+
+Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd` into `mkdir`/`cp` (see the shell-variable warning below). Create the global dir with `mkdir -p ~/.chorus/handoffs/<repo-name>` and copy the file there after writing.
+
+**The path has two parts:** a STABLE group (`<repo-name>`, from git above — keeps a project's handoffs collocated) + a MEANINGFUL per-file slug (`<date>-<slug>`, where the slug is the work gist / caller arg, falling back to the branch name when no arg is given). Put "meaningful to the work" only in the slug, never in the group.
 
 **Use fully literal absolute paths in the `mkdir -p` and `cp` commands — expand `~`, the repo-name, and the filename yourself before running.** Do NOT rely on `$HOME`, `$DEST`, or other shell variables/locals: the bash tool has been observed to expand them to empty strings, silently running `mkdir`/`cp` against `/` or with empty args. Verify with an `ls -la` of the literal mirror path afterward.
 
@@ -76,7 +83,7 @@ Derive the absolute repo copy path with `git rev-parse --show-toplevel` (never a
 ## Process
 
 0. If `docs/executions/state.yaml` exists, read it first — use its `workflow`, `steps`, and `next` as the source of truth for "Where we are" and "Next steps". Fall back to conversation context only when the file is absent. Schema: `../_docs/state-cockpit.md`.
-1. Determine storage paths. Resolve the repo root with `git rev-parse --show-toplevel` and build the **absolute** repo-copy path from it. Set `repo-name` to the basename of the repo root.
+1. Determine storage paths. Resolve the repo root with `git rev-parse --show-toplevel` and build the **absolute** repo-copy path from it. Set `repo-name` from the main repo's git dir (worktree-safe), NOT the toplevel: `agd=$(git rev-parse --absolute-git-dir); repo=$(basename "${agd%%/.git*}")`. Capture the literal value for the later mkdir/cp.
 2. Determine exit context (manual vs auto, exit reason, remaining items).
 3. If remaining items include actionable next-step issues, invoke `prompt-builder` for each to generate ready-to-use prompts. Treat the `ready-for-agent` label as a signal, not a strict gate — an issue tagged only `type:task` (or unlabeled) that is otherwise clearly actionable still qualifies; use judgment rather than skipping it on label technicality.
 4. Fill in the **Start here** directive (top of the document structure) with the real first next step and any open blocker.
@@ -193,5 +200,5 @@ This keeps multi-session work from ballooning handoff size.
 - For Claude targets: prompts can be lighter (Claude can ask the user).
 - Always include the **Start here** directive near the top of the handoff, and print the `Resume: read <path> ...` paste line last. The user pastes the path, not the whole prompt. If no `state.yaml` exists, drop its step 1 and boot off "Files to read first" only. For Codex the directive must be self-contained (no "ask the user"); for Claude it may leave a decision to the user.
 - Always print handoff paths as **absolute** paths (resolved via `git rev-parse --show-toplevel`), never relative.
-- Always write the global mirror under `~/.chorus/handoffs/<repo-name>/` so the handoff survives worktree destruction.
+- Always write the global mirror under `~/.chorus/handoffs/<repo-name>/` so the handoff survives worktree destruction. Derive `<repo-name>` from `git rev-parse --absolute-git-dir` (strip `/.git*`, then basename) — never from `--show-toplevel`, which is a transient slug under worktrees.
 - Always print the global mirror path as the last line of output (it is the durable reference).
