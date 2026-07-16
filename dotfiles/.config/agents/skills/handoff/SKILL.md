@@ -198,6 +198,7 @@ This keeps multi-session work from ballooning handoff size.
 - Do NOT duplicate content already in artifacts (PRDs, plans, ADRs, issues, commits). Reference by path or URL.
 - Prefer durable, repo-relative artifact paths over session-scratch temp files (e.g. `/tmp/...`, `/private/tmp/.../scratchpad/...`). If an artifact referenced in the handoff exists only as ephemeral scratch, either copy it into the repo (e.g. under `docs/executions/` or another suitable `docs/` subdir) before referencing it, or explicitly flag it as likely-gone and give the exact command to regenerate it.
 - Redact any sensitive information before writing — API keys, passwords, tokens, and personally identifiable information must not appear in the handoff document.
+- Do NOT record volatile environment/session state (active `gh`/CLI account, cwd, env vars, selected profile, temp paths) as settled fact — it is a proxy that may be stale by resume time. Emit an explicit verify-and-set step instead (e.g. `gh auth switch -u <user>` as step 1) so the resumer establishes the state rather than trusting a possibly-wrong assertion.
 - Keep it under 200 lines. Compression, not transcription.
 - Auto-handoffs from workflows should be factual and terse. No ceremony.
 - If the exit reason is a blocker, be specific about what decision the human needs to make. "Needs human" alone is not actionable.
