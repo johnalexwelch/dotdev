@@ -32,7 +32,7 @@ Pairs well with: implement, tdd, workflow-finalize, workflow-review, receive-rev
 ## How to work
 
 1. **Clarify the link role.** If the user gives one URL with ambiguous framing ("review this PR, here is an example"), ask which is the review target and which is the standard. Do not infer.
-2. **Fetch the PR.** Use `gh pr view <N> --json` and `gh pr diff <N>` for metadata and content. Note `headRefName` and `baseRefName`.
+2. **Fetch the PR.** Use `gh pr view <N> --json` and `gh pr diff <N>` for metadata and content. Note `headRefName` and `baseRefName`. If the review will run any file-scoped tool (linter, `dbt parse`, formatter), `gh pr checkout <N>` first so those tools see real content — an empty result on a not-checked-out ADDED file is a false pass, not "clean."
 3. **Detect PR type and load standards.** Look at the changed files and load the matching standard:
    - dbt models / snapshots / yml → `dbt` skill (especially `references/snapshots.md` if snapshots are touched) **plus this skill's `references/naming-conventions.md`** and the `sql-standards` skill
    - Python DAGs → `airflow` skill
