@@ -32,6 +32,15 @@ Sets up a `PreToolUse` hook that intercepts and blocks dangerous git commands be
 
 When blocked, Claude sees a message on stderr telling it that it does not have authority to run the command — the tool call itself never executes.
 
+## Agent conduct: stash & branch safety (not hook-enforced)
+
+The hook can't safely block `git stash pop` or `checkout` (both are routinely legitimate), so these are **behavioral rules the agent must follow** — they prevent the most common non-destructive-but-corrupting mistakes:
+
+- **Before `git stash`, run `git status --short`. If the tree is clean, do NOT stash** — `git stash`/`git stash -u` on a clean tree saves nothing and silently leaves the *previous* `stash@{0}` on top. A later `git stash pop` then applies a **foreign stash you didn't create**.
+- **Never `git stash pop`/`apply` a positional `stash@{0}` you didn't just create.** Use named stashes (`git stash push -m "<msg>"`) and pop by inspecting `git stash list` first. If a pop conflicts or the diff surprises you, **verify the stash's provenance** (`git stash show -p stash@{N}`, what branch/tree it's based on) before "resolving" it — don't check foreign content into tracked files.
+- **Prefer reading across refs over checkout for inspection/integration.** `git show <ref>:<path>` and `git diff A..B -- <path>` answer "what's different" without touching the working tree. A branch checkout in a dirty or ambiguous worktree is where things go wrong.
+- **A surprising `git diff <ref>` is a signal, not noise.** If a stash/branch diff is far larger than your change, the ref is likely based on a different branch state — stop and confirm provenance before acting.
+
 ## Steps
 
 ### 1. Ask scope
