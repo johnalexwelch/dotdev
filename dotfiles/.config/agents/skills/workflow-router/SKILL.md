@@ -54,7 +54,13 @@ Before classifying, check for an in-progress run in the state cockpit
 
 - Show its `steps` ledger and ask: `Resume "<run_id>" at <next>? (or start fresh)`
 - On **resume**: treat `done` steps as satisfied, skip re-classification and
-  re-preflight for them, and dispatch straight to `next`.
+re-preflight for them, and dispatch straight to `next`. **First verify the
+ledger against ground truth**: run `git worktree list` and
+`git log --oneline <base>..<run-branch>` and confirm the `next` step is the
+actual frontier. `state.yaml` is a PROXY that can lag or be stale (concurrent
+agents, prior sessions) — if the branch already contains commits for `next`
+or later steps, reconcile the ledger and dispatch to the true frontier, not
+what the file claims.
 - On **start fresh**: overwrite the file and proceed with normal classification.
 
 Skip the resume check when there is no project repo (ephemeral session) — the
