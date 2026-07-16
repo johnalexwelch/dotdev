@@ -235,6 +235,10 @@ When the decision **restricts, gates, locks, or removes** a capability, proactiv
 
 When the user states how something works, check whether the code agrees. If you find a contradiction, surface it: "Your code cancels entire Orders, but you just said partial cancellation is possible — which is right?"
 
+### Verify capability ownership against the target runtime
+
+Before classifying a requirement, facet, or axis as "owned by / covered by another tool" (and therefore out of scope), confirm that tool actually runs **in the runtime the product ships to** — not just that it exists somewhere. "Tool X already does this" is only true if X is available where this product runs. A peer tool from a different harness/platform is not coverage; the axis is *uncovered*, not owned. When unsure, check availability in the target environment rather than assuming parity.
+
 ### Update CONTEXT.md inline
 
 When a term is resolved in staged/existing states, update `CONTEXT.md` right
