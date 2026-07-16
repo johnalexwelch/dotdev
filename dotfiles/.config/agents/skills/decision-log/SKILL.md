@@ -37,6 +37,8 @@ docs/campaign-decisions/decision-log.md
 
 If an ADR, domain decision record, or other durable decision artifact is warranted, create it too, but still add a short decision-log entry that points to the record.
 
+**Monorepos with package-scoped logs:** when a package keeps its own decision log (e.g. `cora/docs/decision-log.md`) alongside a fleet-level `docs/decision-log.md`, record the decision in the log of the package the code lives in, not the fleet log. When a handoff, issue, or downstream artifact references "the decision log", cite the explicit path — a bare "decision-log" is ambiguous once more than one exists and sends the next agent grepping the wrong file.
+
 ## Required Entry Shape
 
 Every accepted decision from any grilling session must preserve:
