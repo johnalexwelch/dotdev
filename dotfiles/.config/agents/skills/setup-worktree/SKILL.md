@@ -85,7 +85,7 @@ standalone, on-demand side-car for halted human gates.
   - **Else if `plan_path` and `phase` set** (most common caller from `/execute-phase` halt):
     - Open the plan, find `### §5.<N> Phase <N>`, extract the phase slug from the header text after `Phase <N> —` (lowercase, non-alphanum → `-`, trim, cap 40 chars — same derivation `/execute-phase` uses).
     - `branch = refactor/phase-<N>-<phase-slug>`
-    - `path = ~/wt/<repo-dirname>/phase-<N>/` where `<repo-dirname>` is `basename $(git rev-parse --show-toplevel)`.
+    - `path = ~/wt/<repo-dirname>/phase-<N>/` where `<repo-dirname>` is the **stable** repo name, worktree- and subdir-safe: `agd=$(git rev-parse --absolute-git-dir); basename "${agd%%/.git*}"`. Do NOT use `basename $(git rev-parse --show-toplevel)` — run from inside an existing worktree it yields a transient slug, nesting new worktrees under it instead of the repo.
   - **Else if `plan_path` empty but `phase` non-zero:** fall back to newest `docs/plans/*.md` for `plan_path`, then derive as above.
   - **Else:** abort with a clear message: need either `(branch, path)` or `(plan_path, phase)` (or at least `phase` with a newest plan on disk).
 - Verify `path` doesn't already exist. Abort if it does (would require `git worktree add --force`, which we won't do silently).

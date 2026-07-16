@@ -20,7 +20,7 @@ turns lived friction into durable improvements to the skill system.
 
 ## Contract
 
-Consumes: the current session transcript, `~/dotdev/dotfiles/.claude/skills/` (Stow source)
+Consumes: the current session transcript, `~/dotdev/dotfiles/.config/agents/skills/` (canonical Stow source; `~/dotdev/dotfiles/.claude/skills/` is a symlink to it)
 Produces: a reflection artifact + a prioritized, diff-shaped improvement list
 Requires: nothing (stdlib/native only — keeps `codex-compatible: true`)
 Side effects: writes one reflection file; NEVER edits skills without approval
@@ -40,7 +40,7 @@ Pairs well with: workflow-effectiveness-audit (heavy governance sweep), write-a-
 - Problem-solving approach; tool-usage patterns (right tool? used well?)
 - Clarifications, iterations, pivots, backtracking
 - **Corrections**: every time the user redirected the agent — the strongest signal
-- **Ground-truth vs proxy**: did the agent trust a proxy (spec/charter doc, git ancestry, cached or assumed state) instead of the authoritative source (running code/tests, PR/API state, a live check)? When a proxy and the authoritative source disagree, the authoritative source wins. Flag any conflict classified as blocking or resolved from a proxy before the code/state was checked.
+- **Ground-truth vs proxy**: did the agent trust a proxy (spec/charter doc, git ancestry, cached or assumed state) instead of the authoritative source (running code/tests, PR/API state, a live check)? When a proxy and the authoritative source disagree, the authoritative source wins. Flag any conflict classified as blocking or resolved from a proxy before the code/state was checked. **When resuming a handoff that proposes a code/skill fix, re-run the fix in its edge contexts (subdirectory, worktree, no-arg) before applying — the proposing session's "proof it works" is a proxy and may have tested only the happy path.**
 
 **Pass B — improvement hunt (fires even with zero failures/corrections).** A smooth session can still expose better skills. Scan for all four:
 - **Friction**: anything clumsy, slow, verbose, or repetitive — even where it *worked* and the user never complained. Manual steps that could be a skill affordance; re-derived context; awkward tool sequences.
@@ -93,8 +93,8 @@ Structure:
 
 ### 4. Respect the Stow + Codex seam (hard rules)
 
-- Edits target the **source**: `~/dotdev/dotfiles/.claude/skills/<name>/SKILL.md`.
-  Editing `~/.claude/skills/` directly is a known defect (audit gap #19) — never do it.
+- Edits target the **canonical source**: `~/dotdev/dotfiles/.config/agents/skills/<name>/SKILL.md`.
+  Note `~/dotdev/dotfiles/.claude/skills` is a **symlink** to `.config/agents/skills` — editing through it works, but `git add` on the `.claude/skills/...` path fails ("beyond a symbolic link"). Resolve the real path with `readlink -f` (or edit/add the `.config/agents/skills/...` path directly) before committing. Editing `~/.claude/skills/` (the runtime mirror, not the dotfiles source) directly is a known defect (audit gap #19) — never do it.
 - After an approved edit, remind: run `~/.claude/skills/sync-codex-skills.sh --apply`
   to mirror into `~/.codex/skills`.
 - If a proposed skill needs MCP or interactive tools, set `codex-compatible: false`
