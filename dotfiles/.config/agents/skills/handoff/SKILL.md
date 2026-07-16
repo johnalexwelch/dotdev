@@ -118,6 +118,10 @@ to "read this handoff" — it's already here.
 >    `workflow`, completed `steps`, and the `next` queue. Resume from `next`; do
 >    not redo completed steps. (Schema: `skills/_docs/state-cockpit.md`.)
 > 2. Read the paths under "Files to read first" (bottom of this doc) to rebuild context.
+> `<if the next step is to work a specific issue/ticket — grill, decide, implement:>`
+>    VERIFY it is still open before starting: `gh issue view <N> --repo <owner/slug> --json state,comments`.
+>    This handoff is a proxy — a concurrent agent may have closed/resolved it since it was written.
+>    If already CLOSED or carrying a resolution, STOP and reconcile (mirror the locked outcome), do not redo the work.
 >
 > Then do Next step 1: `<first next step>`. If `state.yaml` and this doc disagree,
 > `state.yaml` wins on run status.
