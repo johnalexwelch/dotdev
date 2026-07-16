@@ -5,6 +5,16 @@
 - Confirm working tree is clean with `git status --porcelain`. If
   dirty, abort; the phase sync gate requires a clean HEAD to branch
   from.
+- **Re-anchor to authoritative state before trusting the local HEAD.**
+  Run `git branch --contains HEAD` (and `git for-each-ref --contains HEAD
+  refs/remotes`). If the current phase branch's HEAD is already contained
+  in `main`/`origin/main`, the work merged upstream: STOP. Treat `main`
+  as authoritative, do NOT mutate this (now orphaned) worktree, and
+  re-run from a fresh worktree cut off updated `main`. A local worktree
+  HEAD is a proxy — once merged, upstream wins. Likewise, if `git status`
+  output is internally inconsistent across two adjacent reads (staged
+  files appearing/disappearing), suspect a concurrent mutator and
+  re-check the canonical repo refs rather than re-reading the worktree.
 - Resolve `plan_path`:
   - If set, use it. Abort if the file does not exist.
   - Else pick the newest `docs/plans/*.md`. Abort with guidance if

@@ -26,6 +26,12 @@ read and modify>. Do not touch files outside this scope.
 
 - Do not execute any `[human]` task even if you encounter one in
   context.
+- Do NOT `git commit`, `git branch`, `git worktree`, or `git push`, and
+  do NOT implement any phase other than the one in this brief. The
+  orchestrator owns branching and commits; a worker that commits or
+  runs ahead into later phases corrupts the phase ledger (observed:
+  one dispatch produced a duplicate prior-phase commit plus two
+  unrequested later-phase commits).
 - Prefer absolute-path invocations for commands whose output is
   load-bearing evidence (`/bin/ls -la`, `/usr/bin/git`, etc.);
   tool-harness output truncation has been observed on bare `ls`.
