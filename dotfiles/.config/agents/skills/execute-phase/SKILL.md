@@ -128,6 +128,12 @@ The skill enforces these invariants:
 5. **Trace IDs are preserved verbatim.** `FIND-NN`, `REQ-NN`,
    `GAP-NN`, ticket slugs, issue numbers, and mixed schemes are echoed
    into outcome files and commit messages without normalization.
+6. **Cited decisions must exist.** Before committing (Step 8), grep the
+   staged diff for decision references (`decision-log #<n>`,
+   `§<n> ... resolved`, `ADR-<n>`). Any cited id with no matching entry in
+   `docs/decision-log.md` or the ADR set halts the commit — code must not
+   ship a dangling decision reference. Fix by writing the missing entry
+   (or correcting the citation) before the commit gate.
 
 ## Reference Files
 

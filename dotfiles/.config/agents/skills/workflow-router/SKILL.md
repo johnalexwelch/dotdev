@@ -243,6 +243,8 @@ git worktree add -b <workflow-branch> <worktree-path> <workflow-base-ref>
 
 The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If neither `origin/staging` nor the remote default branch can be resolved, halt and ask the user for the replacement base.
 
+**Parallel/`team` fan-out — one isolated worktree per lane (precondition, not recovery).** When two or more lanes run concurrently (`team` budget, parallel phases, AFK drive-to-done), each lane gets its OWN fresh worktree cut from the resolved base *before* any lane is dispatched — never share a worktree or reuse an existing checkout across lanes. Independent lanes branch off `origin/main`/base directly; a dependent lane stacks explicitly on its parent's commit. Resolving "which repo/worktree am I in" mid-fan-out is a signal the gate was skipped.
+
 Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base.
 
 ## Audit Routing Rule
