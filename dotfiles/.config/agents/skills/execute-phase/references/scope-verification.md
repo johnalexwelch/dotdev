@@ -7,12 +7,20 @@ After `[auto]` clusters complete, dispatch one short read-only
 
 ```markdown
 Run `git status --porcelain` and `git diff --name-only HEAD`.
-Compare the changed-files set against the granted scopes of each
-cluster that just ran (inlined below). Report:
+The changed-files set is the UNION of both, including **staged and
+untracked new files** (`A `, `??`) — a subagent that `git add`s a
+scaffolding/prototype file (e.g. `PROTOTYPE_*`, a stray package-root
+file) is an out-of-scope write even though it never landed in a commit.
+Compare that union against the granted scopes of each cluster that just
+ran (inlined below). Report:
 
-- Any file present in the diff but NOT covered by any cluster's
+- Any file present in the set but NOT covered by any cluster's
   granted scope -> **scope violation**. Quote the file path and which
-  cluster's scope it leaked from, if attributable.
+  cluster's scope it leaked from, if attributable. Staged/untracked
+  files outside scope count.
+- HEAD advanced by any commit during dispatch -> **scope violation**:
+  workers must not commit; the orchestrator owns commits. Report the
+  offending commit(s).
 - Any cluster whose granted scope saw zero writes -> note only, not a
   failure.
 

@@ -50,7 +50,7 @@ Never delete first. Inventory, classify, present the cleanup plan, then act only
 
 Use these buckets:
 
-- `safe-remove-worktree`: worktree branch merged, pushed, clean, and no active PR needs it.
+- `safe-remove-worktree`: worktree branch merged, pushed, **clean (empty `git -C <path> status --porcelain`)**, no active PR needs it, **and no live process is cwd'd into it**. A merged branch does NOT override the clean requirement — uncommitted changes in a merged worktree still route to `needs-user-approval`.
 - `safe-delete-local-branch`: branch merged to its intended base or remote no longer needs local copy. **Confirm merge via PR state (`gh pr view <n> --json state,mergedAt`), not git ancestry alone** — squash/rebase merges leave the branch looking unmerged to `git branch -d`. A branch whose PR is merged is safe to delete with `-D`; that is not "discarding unmerged work" and does not need the unmerged-work approval gate.
 - `needs-user-approval`: dirty worktree, unpushed commits, unmerged branch, remote branch deletion, ticket closure, or PR closure.
 - `keep`: active PR, unresolved review/CI, open issue still in progress, or unclear ownership.
@@ -129,6 +129,8 @@ Before deleting a worktree or branch, verify:
 - commits are merged, pushed, or intentionally abandoned (for merge, trust PR state over git ancestry — squash/rebase merges defeat git's merged detection)
 - no open PR depends on the branch
 - branch is not the current branch and not checked out in another worktree
+- worktree has no uncommitted changes (`git -C <path> status --porcelain` is empty) — a merged/pushed branch does NOT waive this; uncommitted work in a merged worktree is still unsaved work
+- no live process is anchored to the worktree (a running command, monitor, or agent session whose cwd is under `<path>`) — removing a worktree out from under an active process silently drops its uncommitted edits and breaks that process
 - ticket state matches PR disposition
 
 Before classifying anything else as unused/removable (a dependency, tool, config, file), verify against the **running system** — installed runtime deps, live startup diagnostics/warnings, a `which`/runtime probe — not just a source grep. A repo/skills/config search is a proxy that misses host-loaded plugins, extensions, and npm modules; the authoritative signal is what the running program actually loads and warns about.
