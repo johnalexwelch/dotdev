@@ -53,6 +53,7 @@ When user-invoked skills multiply past what anyone can remember, that's the poin
 
 The description is the only thing the agent sees when deciding which skill to load, so it earns harder pruning than anything else in the file.
 
+- **Single-quote the value.** Descriptions routinely contain `: `, `"quoted-term": `, and `—`; unquoted, YAML reads `word: x` inside them as a nested mapping and the frontmatter fails to parse. Always wrap the value in single quotes (double any literal `'`).
 - **Front-load the leading word.** Whatever concept should trigger the skill, put it in the first few words — that's where the description does its invocation work.
 - **One trigger per branch.** Listing synonyms for the same trigger ("build features using TDD ... asks for test-first development") is **duplication**, not two branches. Collapse restatements; keep only genuinely distinct triggers.
 - **Cut identity that's already in the body.** The description states what the skill is and lists triggers — it doesn't need to re-explain the process.
@@ -126,7 +127,7 @@ skill-name/
 ---
 name: skill-name
 model: sonnet
-description: Brief description of capability. Use when [specific triggers].
+description: 'Brief description of capability. Use when [specific triggers].'
 # disable-model-invocation: true   # add only if this is user-invoked
 ---
 
@@ -151,6 +152,7 @@ After drafting, verify:
 
 - [ ] Invocation choice is deliberate: model-invoked only if the agent (or another skill) must reach it unprompted
 - [ ] Description front-loads the leading word, and lists one trigger per branch (no duplicated triggers)
+- [ ] Frontmatter parses: `python3 -c "import sys,yaml; yaml.safe_load(open(sys.argv[1]).read().split('---')[1])" SKILL.md` (single-quoted description)
 - [ ] Every step has a checkable, and where relevant exhaustive, completion criterion
 - [ ] Nothing in SKILL.md is a no-op — each line changes behavior versus the model's default
 - [ ] No duplicated meaning between sections, or between SKILL.md and a `references/` file
