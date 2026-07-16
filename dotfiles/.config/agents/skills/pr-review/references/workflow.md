@@ -32,6 +32,8 @@ gh api repos/<OWNER>/<REPO>/contents/<PATH>?ref=<HEAD_REF> \
   -H "Accept: application/vnd.github.raw"
 ```
 
+**Before running any file-scoped tool** (a linter, `dbt parse`, `grep`, a formatter), confirm the diff's files exist in the working tree — otherwise the tool runs against nothing and reports a false pass. The default checkout is usually the base branch, where a newly-ADDED file does not exist. Either `gh pr checkout <N>` first, or verify each changed path with `test -f <path>`. An empty lint result on a file the PR marks as **added** means "not checked out," not "clean" — treat zero findings on a review target as a signal to verify the file is present before reporting it.
+
 ## 2b. Read the PR description carefully
 
 The `body` field from step 2 is not boilerplate — it contains context that should shape every comment. Before writing any review, extract:
