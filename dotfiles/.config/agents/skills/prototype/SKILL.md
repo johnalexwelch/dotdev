@@ -40,6 +40,7 @@ If the question is genuinely ambiguous and the user is not reachable, default to
 4. Skip the polish. No tests, no error handling beyond what makes the prototype runnable, no abstractions.
 5. Surface the state. After every action, print or render the full relevant state so the user can see what changed.
 6. Delete or absorb when done. When the prototype has answered its question, either delete it or fold the validated decision into the real code.
+7. Gate any paid / networked / side-effecting call. When the thing being prototyped needs a real external call (an LLM/API request, a billed operation, a mutating side effect), keep the DEFAULT run offline and free: a self-check plus deterministic aggregation over canned fixtures, so it proves the pipeline *shape* with no spend and is safe to re-run. Put the real call behind an explicit flag AND an env gate (e.g. `--live N` + `MYTOOL_LIVE=1`) so a small real-signal confirmation is one opt-in command away. One throwaway then proves both the shape (free, repeatable) and the real signal (bounded, opt-in) — instead of the usual all-mocked (never validated) or every-run-bills (unsafe) split.
 
 ## When done
 
