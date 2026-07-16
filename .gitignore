@@ -146,3 +146,9 @@ dotfiles/.config/agents/skills/.skill-observations/
 
 # OMC runtime state at repo root (sessions, project-memory, state)
 /.omc/
+
+# pi (~/.pi): track ONLY declarative config, never runtime/secrets/deps.
+# Everything under the stowed .pi/agent tree is ignored except the allowlist below.
+dotfiles/.pi/agent/*
+!dotfiles/.pi/agent/settings.json
+!dotfiles/.pi/agent/mcp.json
