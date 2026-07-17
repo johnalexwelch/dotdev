@@ -91,6 +91,23 @@ See [Shell & Config](/openwiki/operations/shell-and-config.md) for details.
 - **Keybindings**: Customized for dotdev workflows
 - **Launch**: `lg` (from git.zsh alias)
 
+### Diff Review: Hunk
+
+**Hunk** is a terminal diff-review UI (Bun/OpenTUI) that replaces reading raw `git diff` for non-trivial changes.
+
+- **Config**: `dotfiles/.config/hunk/config.toml`
+- **Features**: Multi-file review stream, sidebar, inline agent notes, split/stack layout
+- **Default pager**: Git uses `delta` by default; Hunk is opt-in via aliases
+- **Key aliases**: `git hdiff` (review working tree), `git hshow` (review commits)
+- **Direct commands** (preferred): `hunk diff`, `hunk show`, `hunk patch`, `hunk session` (live daemon integration)
+- **Usage guide**: See `dotfiles/.config/hunk/USAGE.md` for full command reference and agent-session protocol
+
+See [Hunk USAGE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/hunk/USAGE.md) in the repo for:
+- Configuration options (theme, mode, line numbers, agent notes)
+- Per-session overrides
+- Agent-driven live session control (agents must use daemon, not launch interactive TUI)
+- Theme selection
+
 ---
 
 ## Workspace Orchestration: herdr
