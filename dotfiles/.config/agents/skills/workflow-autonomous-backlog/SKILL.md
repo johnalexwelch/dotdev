@@ -208,6 +208,8 @@ Each issue runs through `workflow-build-one` or `workflow-debug`.
 
 Each issue must create its own fresh worktree before work starts. Worktree creation must follow `setup-worktree` or the Cursor `using-git-worktrees` pattern only when it is constrained to the project policy: fetch `origin`, resolve `WORKFLOW_BASE_GATE`, create a fresh branch from the resolved workflow base, run inside that worktree, and emit `WORKTREE_BASELINE_GATE`. Generic worktree creation that omits base resolution, reuses another issue's worktree, or works from the primary checkout does not satisfy this workflow.
 
+Any orchestrator-written briefing/coordination file for a spawned issue-agent (module brief, progress tracker, etc., not an output of an invoked skill) must stay untracked or live outside the worktree (`.git/info/exclude` or the herdr workspace metadata dir). Never let it ride in the PR diff. If `workflow-finalize` Step 1.5 catches scratch files that should have been excluded, record it in the run's handoff as an execution-discipline failure for the spawned agent, not merely a routine cleanup action — this closes the feedback loop for repeat offenders.
+
 ### 6.1. Stacked dependent development
 
 Dependent issues may continue before the parent PR is merged only through a controlled stacked flow:
