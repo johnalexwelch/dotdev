@@ -2,7 +2,7 @@
 name: setup-skills
 model: sonnet
 reasoning: high
-description: "Sets up the \"## Agent skills\" block in AGENTS.md/CLAUDE.md and docs/agents/ so engineering skills know the repo's issue tracker, triage labels, and doc layout. Run before first use of to-issues/to-prd/triage/diagnose/tdd, or when those skills lack repo context."
+description: "Sets up the \"## Agent skills\" block in AGENTS.md/CLAUDE.md and docs/agents/ so engineering skills know the repo's issue tracker, triage labels, and doc layout. Also offers to register the repo for automated OpenWiki doc generation if that's configured on this machine. Run before first use of to-issues/to-prd/triage/diagnose/tdd, or when those skills lack repo context."
 disable-model-invocation: true
 ---
 
@@ -44,7 +44,7 @@ Look at the current repo to understand its starting state. Read whatever exists;
 
 ### 2. Present findings and ask
 
-Summarise what's present and what's missing. Then walk the user through the three decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump all three at once.
+Summarise what's present and what's missing. Then walk the user through the decisions **one at a time** — present a section, get the user's answer, then move to the next. Don't dump them all at once.
 
 Assume the user does not know what these terms mean. Each section starts with a short explainer (what it is, why these skills need it, what changes if they pick differently). Then show the choices and the default.
 
@@ -87,6 +87,16 @@ Confirm the layout:
 
 - **Single-context** — one `CONTEXT.md` + `docs/adr/` at the repo root. Most repos are this.
 - **Multi-context** — `CONTEXT-MAP.md` at the root pointing to per-context `CONTEXT.md` files (typically a monorepo).
+
+**Section D — OpenWiki registration (optional, machine-local).**
+
+Skip this section entirely and silently if `~/.openwiki/.env` doesn't exist — OpenWiki isn't set up on this machine, so there's nothing to offer. Also skip if this repo isn't a git repo (no `.git`), or is already listed in `~/.config/openwiki/repos.conf`.
+
+Otherwise:
+
+> Explainer: OpenWiki is a local nightly job (this machine only, not CI) that regenerates an `openwiki/` doc tree, `AGENTS.md`, and `CLAUDE.md` for registered repos and opens a PR with the diff. It doesn't touch this repo unless you opt in.
+
+Ask: register this repo for nightly OpenWiki doc generation? (default: yes). If yes, append the repo's absolute path to `~/.config/openwiki/repos.conf` (one path per line, `~` expands — see that file's header comment for the format). Don't create the file if it's missing; that means OpenWiki was never initialized (`openwiki --init`) — tell the user and move on.
 
 ### 3. Confirm and edit
 
