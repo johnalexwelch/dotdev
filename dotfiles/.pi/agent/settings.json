@@ -1,7 +1,7 @@
 {
-  "lastChangelogVersion": "0.80.7",
+  "lastChangelogVersion": "0.80.9",
   "defaultProvider": "anthropic",
-  "defaultModel": "claude-opus-4-8",
+  "defaultModel": "claude-sonnet-5",
   "providers": {
     "anthropic": {
       "modelOverrides": {
@@ -23,7 +23,6 @@
   "packages": [
     "npm:pi-web-access",
     "npm:pi-codex-goal",
-    "npm:pi-agent-browser-native",
     "npm:pi-mcp-adapter",
     "git:github.com/elpapi42/pi-fork",
     "npm:pi-observational-memory",
@@ -34,7 +33,6 @@
     "npm:pi-cache-optimizer",
     "npm:pi-taskflow",
     "npm:@gotgenes/pi-github-tools",
-    "git:github.com/forjd/pi-pr-ally",
     "npm:@diegopetrucci/pi-context-cap",
     "npm:@diegopetrucci/pi-context-inspector",
     "npm:@diegopetrucci/pi-dirty-repo-guard",
@@ -61,7 +59,7 @@
       "balanced": {
         "provider": "anthropic",
         "id": "claude-sonnet-4-6",
-        "thinking": "low"
+        "thinking": "high"
       },
       "deep": {
         "provider": "anthropic",
@@ -72,10 +70,11 @@
   },
   "observational-memory": {
     "model": {
-      "provider": "anthropic",
-      "id": "claude-haiku-4-5",
-      "thinking": "off"
-    }
+      "provider": "openai-codex",
+      "id": "gpt-5.4-mini",
+      "thinking": "low"
+    },
+    "passive": false
   },
   "modelRoles": {
     "fast": "anthropic/claude-haiku-4-5",
