@@ -11,6 +11,14 @@ description: Run an auditable independent review gate with a risk-sized review p
 
 Dispatch reviewer lanes on **Opus** (`model: opus`) — review is judgment work where the strongest model pays off. The `fast` integrated reviewer may use Sonnet for low-risk changes.
 
+| Profile | Model floor |
+|---|---|
+| `fast` | claude-sonnet-4-5 or higher |
+| `standard` | claude-opus-4-5 |
+| `full` | claude-opus-4-5 |
+
+If `model_used` is below the profile's floor, set `verdict: NEEDS_HUMAN` (reason: `model_below_floor`) instead of self-certifying `APPROVE`. `model_used` is self-reported/best-effort attestation, not verified — the primary defense is the orchestrator pinning `model` at dispatch time; this field is a diagnostic backstop for catching accidental default-model dispatches, not a security control.
+
 ## Purpose
 
 Run an independent review sized to the change's risk, then synthesize findings into a prioritized verdict. This replaces ad-hoc "review this" with an auditable gate, without forcing every small change through a full council. A valid review needs a *fresh independent reviewer context* — the author approving their own work, green CI, GitHub/Claude/Bugbot/Codex reviews, or resolved PR comments do **not** satisfy it unless this skill is loaded, reviewer lanes are dispatched, and a synthesis verdict is produced.
@@ -52,10 +60,11 @@ WORKFLOW_REVIEW_GATE:
   skill_loaded: true
   review_profile: fast|standard|full
   independent_review: true
+  model_used: <actual model that ran the review, e.g. anthropic/claude-opus-4-5>
   required_lanes:
     <lane>: dispatched|returned|not_applicable_with_reason
   conditional_lanes: <dispatched/skipped-with-reason list>
-  dispatch_evidence: <reviewer context/subagent names/types and return status>
+  dispatch_evidence: <concrete evidence per lane: subagent id/tool-call, files actually read, exact command output (e.g. real test-pass counts) — vague language is treated as unverified>
   verdict: APPROVE|REQUEST_CHANGES|NEEDS_HUMAN
 ```
 
@@ -76,6 +85,8 @@ The full lane roster, subagent mapping, and the progress-ledger format live in `
 ## Dispatch — independent context required
 
 Use a fresh independent reviewer context, not an author-only checklist. Read the brief index `references/reviewer-briefs.md`, then read only the per-lane templates (`references/reviewer-briefs/<lane>.md`) for the *active* lanes; don't improvise prompts unless a template is missing (if an active lane's template is missing, halt `NEEDS HUMAN` — the review wouldn't be reproducible). Prefer subagents, launched in one parallel batch. If the environment can't provide a fresh independent reviewer context, halt `NEEDS HUMAN` — do not silently downgrade to author-only review.
+
+Lane independence for `standard`/`full` requires genuinely separate dispatched subagent calls, one per required lane. A single continuous reasoning pass covering multiple lanes' checklists satisfies `fast` only, even when run in a fresh context. If dispatch is unavailable and the trigger table calls for `standard`/`full`: halt `NEEDS HUMAN` (reason: `dispatch_unavailable_for_required_profile`). Do not self-downgrade to `fast` silently — downgrading below what the trigger table calls for is a human decision; present the option and require an explicit user waiver before treating fast-tier evidence as sufficient for a standard/full-triggered change.
 
 ## Process
 
