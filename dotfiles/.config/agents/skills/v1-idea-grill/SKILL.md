@@ -3,6 +3,7 @@ name: v1-idea-grill
 model: opus
 reasoning: high
 description: "DEPRECATED — use grill-with-docs in V1 product discovery mode instead. v1-workflow Step 1 now invokes grill-with-docs directly."
+disable-model-invocation: true
 ---
 
 # V1 Idea Grill

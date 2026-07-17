@@ -9,6 +9,7 @@ triggers:
   - "what happened vs the plan"
   - "close the loop"
   - "/post-mortem"
+disable-model-invocation: true
 persona: Engineering lead writing a blameless retrospective
 inputs:
   - name: plan_path
