@@ -8,10 +8,6 @@
     "github": {
       "command": "/Users/alexwelch/.local/bin/github-mcp-pi",
       "lifecycle": "keep-alive"
-    },
-    "github2": {
-      "command": "/Users/alexwelch/.local/bin/github-mcp-pi",
-      "lifecycle": "keep-alive"
     }
   }
 }
