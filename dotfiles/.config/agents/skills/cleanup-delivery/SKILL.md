@@ -100,9 +100,11 @@ Before acting, show:
 
 ### 5. Execute Approved Cleanup
 
+**Self-cwd guard (before any `worktree remove`):** if the current working directory is `<path>` or a descendant of it, `cd` to the primary checkout / repo root first. Removing a worktree out from under *this* session's cwd breaks the shell even when no other process is anchored there.
+
 Allowed commands after approval:
 
-- `git worktree remove "<path>"` for clean approved worktrees.
+- `git worktree remove "<path>"` for clean approved worktrees (only after the self-cwd guard).
 - `git worktree prune` after worktree removals.
 - `git branch -d "<branch>"` for merged approved local branches.
 - `git branch -D "<branch>"` only when the user explicitly approves discarding unmerged local work.
@@ -131,8 +133,22 @@ Before deleting a worktree or branch, verify:
 - branch is not the current branch and not checked out in another worktree
 - worktree has no uncommitted changes (`git -C <path> status --porcelain` is empty) — a merged/pushed branch does NOT waive this; uncommitted work in a merged worktree is still unsaved work
 - no live process is anchored to the worktree (a running command, monitor, or agent session whose cwd is under `<path>`) — removing a worktree out from under an active process silently drops its uncommitted edits and breaks that process
+- **this session's cwd is not under `<path>`** — if it is, `cd` to the primary checkout before remove (see Step 5 self-cwd guard)
 - ticket state matches PR disposition
 
 Before classifying anything else as unused/removable (a dependency, tool, config, file), verify against the **running system** — installed runtime deps, live startup diagnostics/warnings, a `which`/runtime probe — not just a source grep. A repo/skills/config search is a proxy that misses host-loaded plugins, extensions, and npm modules; the authoritative signal is what the running program actually loads and warns about.
+
+### Canonicalization / path-layout cleanup
+
+When the task is symlink removal, path canonicalization, or "make X the source of truth," inventory before deleting:
+
+```markdown
+## Symlink + Duplicate-Path Drift Report
+- Symlinks under repo: <path> -> <target> (keep|replace|delete)
+- Duplicate canonical mirrors (same content, two paths): <a> vs <b> (which is canonical?)
+- Post-removal coupling check: any remaining refs to the retired path?
+```
+
+A symlink removal is incomplete until duplicate-path drift is checked and resolved. Prefer eliminating indirection when the user asked for a source of truth.
 
 If any check is unclear, keep the item and ask.
