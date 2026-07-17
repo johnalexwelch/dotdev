@@ -22,7 +22,7 @@ Human gates: missing or unapproved V1 brief halts; high-risk architecture decisi
 ## Context
 
 Typical workflows: technical design after V1 idea discovery
-Pairs well with: decision-log, v1-idea-grill, improve-codebase-architecture, grill-with-docs, to-prd, to-issues, workflow-autonomous-backlog
+Pairs well with: decision-log, grill-with-docs, improve-codebase-architecture, to-prd, to-issues, workflow-autonomous-backlog
 
 ## Purpose
 
@@ -32,9 +32,9 @@ Turn an approved non-technical V1 brief into a system design that can be impleme
 
 ### 1. Validate input
 
-Require an approved `V1_IDEA_BRIEF`. If it is missing, incomplete, or not approved, halt and run `v1-idea-grill`.
+Require an approved `V1_IDEA_BRIEF`. If it is missing, incomplete, or not approved, halt and run `grill-with-docs` in V1 product discovery mode.
 
-Read the decision log entries produced by `v1-idea-grill`. If the brief has accepted recommendations but no decision-log entries, reconstruct them before technical design.
+Read the decision log entries produced by that grill. If the brief has accepted recommendations but no decision-log entries, reconstruct them before technical design.
 
 ### 2. Inspect context
 
