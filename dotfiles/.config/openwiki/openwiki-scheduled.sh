@@ -57,6 +57,12 @@ while IFS= read -r repo || [ -n "$repo" ]; do
 	fi
 
 	(cd "$wt" && openwiki code --update --print) >>"$LOG" 2>&1 || log "WARN $repo openwiki exited nonzero"
+	# ponytail: openwiki treats its own scaffolded GH workflow as fair game to
+	# revert hand-hardening (pinned actions, disabled cron, persist-credentials).
+	# Restore it before diffing so a stray revert can never reach the PR, even
+	# if the add-paths below ever widens. Upgrade: drop this once openwiki ships
+	# a real exclude/ignore mechanism (checked, doesn't exist as of v0.1.2).
+	git -C "$wt" checkout -- .github/workflows/openwiki-update.yml 2>/dev/null || true
 
 	if [ -z "$(git -C "$wt" status --porcelain)" ]; then
 		log "OK   $repo docs already current"
