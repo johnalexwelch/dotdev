@@ -13,7 +13,7 @@ reads:
   - docs/executions/<date>-post-mortem.md (when workflow-finalize requires it)
   - git log, git diff, gh pr view (if gh available)
 writes:
-  - docs/executions/.pr-bodies/<date>-pr-<N>.md
+  - docs/executions/.pr-bodies/<date>-pr-<N>.md (local scratch — keep this path gitignored per-repo; never commit it, see repo-audit history where a tracked/untracked mixup here caused a cleanup mistake)
 ---
 
 # /describe-pr — Deviation-Aware PR Description
