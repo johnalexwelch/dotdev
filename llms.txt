@@ -25,6 +25,8 @@ Repo: https://github.com/johnalexwelch/dotdev
 - [docs/MACOS.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/MACOS.md): System preferences.
 - [docs/SHELL.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/SHELL.md): ZSH setup and customization.
 - [dotfiles/.config/hunk/USAGE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/hunk/USAGE.md): Hunk diff-review tool — our config, commands, agent-session protocol.
+- [dotfiles/.config/openwiki/USAGE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/openwiki/USAGE.md): OpenWiki doc generator — commands, config ceiling, local launchd recurrence setup.
+- [openwiki/quickstart.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/openwiki/quickstart.md): The generated deep-dive wiki — architecture, workflows, skills, ops, integrations.
 - [dotfiles/.config/agents/docs/](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/agents/docs/): Agent-agnostic shared reference docs (e.g. PR sizing policy).
 
 ## Security
