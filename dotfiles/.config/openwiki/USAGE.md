@@ -34,10 +34,20 @@ back to its default scaffold, with no exclude flag to stop it.
 Ceiling: there's no durable way to tell OpenWiki "never touch this file
 again" short of passing a steering message on every single invocation
 (`openwiki code --update --print "keep the CI cron disabled and actions
-pinned"`) or deleting the file so there's nothing to revert. We chose to
-just re-check the workflow diff after every `--update` run and restore
-hardening if it regressed — cheaper than fighting the tool, and low
-frequency (updates are occasional, not every commit).
+pinned"`) or deleting the file so there's nothing to revert.
+
+**The scheduled path is already immune** — `openwiki-scheduled.sh` only ever
+stages `openwiki/ AGENTS.md CLAUDE.md` before committing, and additionally
+runs `git checkout -- .github/workflows/openwiki-update.yml` right after
+the openwiki call to hard-restore it inside the throwaway worktree, which
+then gets deleted regardless. A stray revert can never reach the PR.
+
+**Manual/interactive runs on the live checkout still need discipline** —
+if you ever run `openwiki code --update` (or the interactive `openwiki`
+chat) directly in this repo, re-check `git diff
+.github/workflows/openwiki-update.yml` before committing and `git
+checkout -- <path>` if it regressed. Cheaper than fighting the tool for an
+action this infrequent.
 
 ## Our recurrence: local launchd, not GitHub Actions
 
