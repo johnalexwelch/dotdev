@@ -64,6 +64,24 @@ while IFS= read -r repo || [ -n "$repo" ]; do
 	# a real exclude/ignore mechanism (checked, doesn't exist as of v0.1.2).
 	git -C "$wt" checkout -- .github/workflows/openwiki-update.yml 2>/dev/null || true
 
+	# ponytail: OpenWiki regenerates AGENTS.md/CLAUDE.md stubs and can wipe
+	# content outside the OPENWIKI markers. Re-append the Agent Habits pointer
+	# (durable habits live in docs/agents/habits.md) if the regen dropped it.
+	# realpath: this script is reached via a stow symlink; logical dirname would
+	# miss habits-pointer.md sitting next to the real script in dotfiles.
+	_habits_ptr="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)/habits-pointer.md"
+	if [ -f "$_habits_ptr" ]; then
+		for _stub in AGENTS.md CLAUDE.md; do
+			_stub_path="$wt/$_stub"
+			[ -f "$_stub_path" ] || continue
+			if ! grep -qF 'docs/agents/habits.md' "$_stub_path" 2>/dev/null; then
+				printf '\n' >>"$_stub_path"
+				cat "$_habits_ptr" >>"$_stub_path"
+				log "RESTORED habits pointer -> $repo/$_stub"
+			fi
+		done
+	fi
+
 	if [ -z "$(git -C "$wt" status --porcelain)" ]; then
 		log "OK   $repo docs already current"
 	else

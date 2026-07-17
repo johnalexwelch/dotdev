@@ -47,7 +47,18 @@ if you ever run `openwiki code --update` (or the interactive `openwiki`
 chat) directly in this repo, re-check `git diff
 .github/workflows/openwiki-update.yml` before committing and `git
 checkout -- <path>` if it regressed. Cheaper than fighting the tool for an
-action this infrequent.
+action this infrequent. Also re-check that `AGENTS.md`/`CLAUDE.md` still
+point at `docs/agents/habits.md` — the scheduled job restores that pointer
+automatically; a manual live-checkout run does not.
+
+## Agent Habits (durable, not OpenWiki-owned)
+
+Hand-tuned agent policy lives in `docs/agents/habits.md` (repo-local; not
+under `openwiki/`). `AGENTS.md` and `CLAUDE.md` only carry a short pointer
+to that file. The nightly `openwiki-scheduled.sh` re-appends
+`habits-pointer.md` after `--update` if OpenWiki wiped the stubs — so a
+refresh cannot silently drop the link. Edit habits in `docs/agents/habits.md`;
+never put the full list back into the stubs.
 
 ## Our recurrence: local launchd, not GitHub Actions
 

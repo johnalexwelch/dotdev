@@ -200,7 +200,7 @@ When all steps pass:
 - If follow-up work was discovered (NEW-NN findings, post-mortem action items, reconciliation drift): **auto-handoff** (exit_reason: completion with follow-ups, remaining: the follow-up items with prompt-builder outputs)
 - If no remaining work and this was not an AFK/backlog/Codex run: skip handoff
 - **Close the run cockpit.** If `docs/executions/state.yaml` exists for this run, set `status: done` and `next: ""` on clean completion (leave the file as a record; the next confirmed route overwrites it). Schema: `../_docs/state-cockpit.md`.
-- After merge or explicit abandonment, use `cleanup-delivery` to remove stale local worktrees/branches and reconcile ticket residue. Do not run cleanup before the merge/abandonment decision.
+- After merge or explicit abandonment, **Load and run `cleanup-delivery/SKILL.md`** to remove stale local worktrees/branches and reconcile ticket residue — do not hand-roll the git cleanup commands. Do not run cleanup before the merge/abandonment decision.
 
 ## Required Gate Block
 

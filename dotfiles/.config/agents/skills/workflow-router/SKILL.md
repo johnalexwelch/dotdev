@@ -175,6 +175,10 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
 | "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **workflow effectiveness audit** | workflow-effectiveness-audit |
+| "reflect", "what did we learn", "how could this have gone better", "skillify", "turn this into a skill", "improve the skills based on this" | **session reflection / skill extraction** | session-insight |
+| "process the skill backlog", "review skill improvements", "turn reflections into skill changes", accumulated reflections needing triage | **skill backlog** | skill-backlog |
+| "write a skill", "create a skill", "revise this skill", "fix this skill's description", implement an approved skill-backlog item | **skill authoring/revision** | workflow-skill |
+| "evaluate this skill", "benchmark a skill", "pressure-test a skill", "is this skill any good", "is the new version of this skill better" | **skill evaluation** | skill-evaluator |
 | "route this", "choose the workflow", "what flow do we need", "single wrapper", "intake", "which skill should run", "start the right workflow" | **workflow intake** | workflow-router route card, then confirmed target workflow |
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); creative/D&D skills (`dnd-workflow`, etc.) live in Wren's kit, not here |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
@@ -217,6 +221,17 @@ Before dispatching, check the target workflow's `Requires` field:
    - Report what's missing and why it's needed
    - Suggest installation or alternative
    - Do NOT proceed with the workflow
+
+### Canonicality Gate (path/layout mutations)
+
+**Before dispatching any route that mutates filesystem layout** (symlinks, path moves, "source of truth" / Stow / mirror changes, bulk path rewrites), ask and record in the route card:
+
+> Is canonicality required over compatibility?
+
+- **Canonicality** → eliminate indirection (symlinks, duplicate mirrors); one source of truth; preserve behavior by rewriting callers.
+- **Compatibility** → keep shims/symlinks that older tooling still needs; document the dual path.
+
+Default to the user's stated intent. If they said "source of truth" / "no symlinks" / "canonical," do not optimize for compatibility first. Skip only for read-only routes that mutate no paths.
 
 ### Prior-Art & Roadmap Gate
 
@@ -291,7 +306,7 @@ ROUTER_LEARNING_NOTE:
 - User correction:
 - What made the route right or wrong:
 - Accepted feedback:
-- Durable destination: none|project decision log|backlog|skill-maintenance proposal|memory proposal
+- Durable destination: none|project decision log|backlog|skill-backlog (via session-insight reflection)|memory proposal
 - Skill/workflow improvement suggested:
 ```
 
@@ -300,7 +315,7 @@ Learning rules:
 - Do not silently edit memories or skills.
 - Project-specific lessons go to the project decision log only when the active workflow allows writing project artifacts.
 - Future-work items go to backlog only with user approval or inside a workflow that already owns issue creation.
-- Reusable process lessons become `skill-maintenance` proposals.
+- Reusable process lessons become `session-insight` reflections, harvested and triaged by `skill-backlog`.
 - If the workflow was AFK, multi-stage, corrected by the user, halted for a process gap, or produced planning/execution artifacts, run or recommend `workflow-effectiveness-audit` before final closure.
 - If a recommendation is accepted during a review or audit loop, classify it before persisting: project-specific, future-work, reusable process, or local wording only.
 

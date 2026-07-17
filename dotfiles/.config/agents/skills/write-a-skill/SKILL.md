@@ -24,6 +24,12 @@ A skill exists to wrangle determinism out of a stochastic system. **Predictabili
 
 ## Process
 
+0. **Quality gate (new skills only)** — before authoring a *new* skill, require all three true, or it's documentation, a command, or a one-off, not a skill:
+   - "Could someone Google this in 5 minutes?" → **No**
+   - "Is it specific to this codebase, project, or workflow?" → **Yes**
+   - "Did it take real debugging, design, or operational effort to discover?" → **Yes**
+   Skip this gate when revising an existing skill.
+
 1. **Gather requirements** — ask the user:
    - What task/domain does the skill cover, and is there an existing word or phrase (a **leading word**, see below) the agent should think with while running it?
    - Model-invoked or user-invoked (see Invocation)? If the answer is "it should fire on its own when relevant," it needs a description that earns its keep; if "I'll type its name," it doesn't.
@@ -36,7 +42,7 @@ A skill exists to wrangle determinism out of a stochastic system. **Predictabili
    - Apply progressive disclosure while drafting, not after: put in SKILL.md what every branch needs; push what only some branches need into `references/*.md`.
    - Prune as you go — no filler, no restating what the model already does by default, no meaning duplicated across two spots.
 
-3. **Review with user** — present the draft and run the Review checklist below, out loud if useful.
+3. **Review with user** — present the draft and run the Review checklist below, out loud if useful. For discipline-enforcing or behavior-shaping skills, verify the wording empirically before finalizing: see `references/testing.md`.
 
 ## Invocation: model-invoked vs. user-invoked
 
@@ -99,6 +105,19 @@ Keep each meaning in exactly one **single source of truth** — one authoritativ
 
 Check every remaining line for **relevance** — does it still bear on what the skill does, or has the behavior or context it describes moved on? Then run the **no-op test** sentence by sentence: does this sentence change the agent's behavior versus what it would do anyway? If not, delete the whole sentence — don't trim it down, remove it. Be aggressive; most prose that fails this test should go entirely.
 
+## Match the form to the failure
+
+Before writing a fix, classify the baseline failure — the form that cures one type measurably backfires on another:
+
+| Baseline failure | Right form | Wrong form |
+|---|---|---|
+| Knows the rule, skips it under pressure | Prohibition + rationalization table + red flags (see `references/testing.md`) | Soft "prefer/consider" |
+| Complies, but output is wrong-shaped (bloated, buried verdict, restates the input) | Positive **recipe**/contract: state what the output *is*, its parts in order | Prohibition ("don't restate") |
+| Omits a required element from output it already produces | Structural: a REQUIRED slot in the template it fills | Prose reminder near the template |
+| Behavior should depend on a condition | Conditional keyed to an **observable predicate** ("if the brief exists, reference it") | Unconditional rule + exemption clauses |
+
+Prohibitions backfire on shaping problems: under a competing incentive the agent negotiates with "don't X" and emits *more* of it — a recipe leaves nothing to negotiate. No nuance clauses ("don't X unless…" reopens the negotiation); exemption clauses don't scope ("doesn't apply to code blocks" still suppresses code blocks) — restructure so the rule can't reach the exempt part. This generalizes **Negation** below; reach for prohibition only on genuine discipline failures.
+
 ## Failure modes — check the draft against these
 
 - **No-op** — an instruction the model already follows by default ("be thorough" when it's already thorough-ish). Costs load, changes nothing. Fix: a stronger, more specific word, or delete it.
@@ -160,3 +179,4 @@ After drafting, verify:
 - [ ] No time-sensitive info baked in as if permanent
 - [ ] Concrete examples included, not just abstract rules
 - [ ] `references/` pointers are one level deep and worded so the agent actually follows them
+- [ ] Guidance form matches the failure type (see Match the form to the failure); for discipline/shaping skills, wording micro-tested against a no-guidance control (see `references/testing.md`)

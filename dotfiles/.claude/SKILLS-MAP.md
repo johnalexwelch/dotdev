@@ -8,6 +8,11 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 
 ## When you want to...
 
+### Starting a new project / repo onboarding
+| You want to... | Invoke |
+|---|---|
+| Wire a repo for agent work (issue tracker, triage labels, domain docs, OpenWiki registration) | `setup-skills` |
+
 ### Think harder about something
 | You want to... | Invoke |
 |---|---|
