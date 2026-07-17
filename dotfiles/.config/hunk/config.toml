@@ -1,7 +1,8 @@
-theme = "auto"        # light/dark from terminal background
-mode = "auto"         # auto split/stack by width
+theme = "auto"           # light/dark from terminal background
+mode = "auto"            # auto split/stack by width
 vcs = "git"
 line_numbers = true
 wrap_lines = false
 menu_bar = true
-agent_notes = true    # show inline agent annotation panel
+agent_notes = true       # show inline agent annotation panel
+exclude_untracked = true # hide untracked-file clutter from working tree reviews
