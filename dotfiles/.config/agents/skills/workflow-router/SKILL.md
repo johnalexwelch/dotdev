@@ -30,7 +30,7 @@ The old "Audit Loop" is not an execution route. If a prompt, transcript, repo do
 - Broad repo evidence gathering → `repo-audit`, then route findings through `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan`
 - Multi-phase refactor execution → `design-plan` / `execute-phase`, then `workflow-review` and `workflow-finalize`
 
-Do not dispatch `/review`, `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
+Do not dispatch `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
 
 ## Agent Budget Rule
 
@@ -156,7 +156,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 
 | Signal | Classification | Routes to |
 |--------|---------------|-----------|
-| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture" | **V1** | `v1-workflow` (full gated pipeline: idea grill → approval → decision-log → system design → roadmap → issues — do NOT route directly to `v1-idea-grill` or `v1-system-design`, which skips the approval gates) |
+| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture" | **V1** | `v1-workflow` (full gated pipeline: idea grill via `grill-with-docs` → approval → decision-log → system design → roadmap → issues — do NOT route directly to `v1-system-design`, which skips the approval gates) |
 | "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | workflow-roadmap |
 | "turn this roadmap into PRDs/issues", "roadmap to backlog", "break milestones into PRDs", "break PRDs into issues", approved roadmap needing issue queue | **roadmap-to-backlog transition** | `workflow-roadmap` if no approved roadmap -> `to-prd` for spec parents -> `to-issues` with `references/issue-dependency-audit.md` -> `execute-prd` for parent/dependent trees or `run-backlog` only for independent ready issues |
 | "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
@@ -181,7 +181,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); creative/D&D skills (`dnd-workflow`, etc.) live in Wren's kit, not here |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
 | "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
-| "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape`/`writing-beats` → humanizer) lives in Wren's kit |
+| "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape` (beats mode) → humanizer) lives in Wren's kit |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
 | "generate prompt for", "prep for codex", "prep for AFK" | **prompt generation** | prompt-builder |

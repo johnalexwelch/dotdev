@@ -125,7 +125,7 @@ Per-council, declared in `roster.yml`:
 ```yaml
 post_process:
   humanizer: true                # strip AI patterns from the synthesis section
-  domain_cleaner: analysis-slop-cleaner   # or doc-slop-cleaner, or null
+  domain_cleaner: null                    # or a domain-specific cleanup skill
 ```
 
 Only the **synthesis** section runs through humanizer/cleaner. Per-expert sections preserve each persona's voice — that's the whole point.

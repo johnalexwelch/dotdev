@@ -131,4 +131,4 @@ Bundled resources: `references/reviewer-briefs.md` maps reviewer lanes to per-la
 ## Context
 
 Typical workflows: executive memo review, business analysis refinement, board/ELT update polish, strategic recommendation critique
-Pairs well with: workflow-executive-doc, humanizer, write-to-obsidian, Notion research skills
+Pairs well with: workflow-executive-doc, humanizer, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research skills
