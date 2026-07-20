@@ -124,3 +124,7 @@ A recommendation, verdict, or capability claim ("X is redundant", "pi has native
 - Treat compacted memory, prior-session audits, and subagent conclusions as hypotheses to re-confirm, not facts. Say "the earlier audit suggested…" until re-verified against source.
 - The user's lived experience is ground truth and outranks generic heuristics — ask about it before recommending a change that contradicts it.
 - When unverified, lead with the check ("let me confirm X first"), not the verdict.
+
+# Skill catalog (locked skills)
+
+Analytics, incident, library/reference, and knowledge skills are catalog-tier (DL-0008): they carry `disable-model-invocation: true`, so they don't appear in the model's per-session skill listing. They remain fully usable — invoke via `/name` (e.g. `/sql-review`, `/incident-triage`, `/rowan`) or load by path from another skill. Full inventory: `dotfiles/.config/agents/skills/_docs/skills-index.md`.
