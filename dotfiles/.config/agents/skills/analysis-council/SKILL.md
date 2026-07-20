@@ -1,5 +1,6 @@
 ---
 name: analysis-council
+disable-model-invocation: true
 model: opus
 reasoning: high
 description: "Convenes a 2-5 expert council to stress-test an analysis, claim, or judgment call. Graph-first: pulls prior decisions/ADRs from graphify-out when present. Use for \"challenge my thinking\", \"pressure-test this\", \"what am I missing\", or before any high-stakes analytical conclusion. Supports --fast and --verify."

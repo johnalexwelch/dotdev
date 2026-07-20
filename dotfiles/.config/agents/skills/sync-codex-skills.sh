@@ -115,6 +115,24 @@ while IFS= read -r -d '' skill_file; do
     copy_count=$((copy_count + 1))
 done < <(find "$source_root" -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
 
+# Shared protocol docs live in _docs/ and are referenced by skill bodies
+# (e.g. step-ledger.md, state-cockpit.md). Copy the markdown docs (not
+# scripts or other assets) so those references resolve in the runtime.
+docs_count=0
+if [ -d "$source_root/_docs" ]; then
+    while IFS= read -r -d '' doc_file; do
+        doc="_docs/${doc_file#"$source_root"/_docs/}"
+        action="would sync"
+        [ "$apply" = "1" ] && action="sync"
+        printf '%s %s -> %s\n' "$action" "$doc" "$runtime_root/$doc"
+        if [ "$apply" = "1" ]; then
+            mkdir -p "$runtime_root/_docs"
+            cp "$doc_file" "$runtime_root/$doc"
+        fi
+        docs_count=$((docs_count + 1))
+    done < <(find "$source_root/_docs" -mindepth 1 -maxdepth 1 -name '*.md' -print0)
+fi
+
 if [ "$prune" = "1" ]; then
     while IFS= read -r -d '' runtime_file; do
         skill="${runtime_file#"$runtime_root"/}"
@@ -149,5 +167,5 @@ if [ "$prune" = "1" ]; then
     done < <(find "$runtime_root" -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
 fi
 
-printf 'codex skill sync complete: copy_candidates=%s skipped=%s apply=%s prune=%s runtime=%s\n' \
-    "$copy_count" "$skip_count" "$apply" "$prune" "$runtime_root"
+printf 'codex skill sync complete: copy_candidates=%s docs=%s skipped=%s apply=%s prune=%s runtime=%s\n' \
+    "$copy_count" "$docs_count" "$skip_count" "$apply" "$prune" "$runtime_root"
