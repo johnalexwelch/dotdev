@@ -24,7 +24,7 @@ Create or review executive-facing documents through a sequenced multi-expert wor
 ```
 intake -> research-synthesizer -> [iris numeric check] -> domain experts
           -> executive-memo-architect -> numeric claims audit
-          -> strategic-reviewer -> revision -> [humanizer]
+          -> strategic-reviewer -> revision -> [humanizer-exec]
 ```
 
 ## Workflow Progress Reporting
@@ -127,7 +127,7 @@ Do not hide uncertainty with smoother prose.
 
 ### 9. Final polish
 
-Use `humanizer` only after the reasoning loop is complete. Polish for clarity, brevity, executive tone, and non-AI texture, but preserve the claims, tradeoffs, and caveats produced by the workflow.
+Use `humanizer-exec` only after the reasoning loop is complete — it is the executive-tuned polish for board/ELT/CEO drafts. Polish for clarity, brevity, executive tone, and non-AI texture, but preserve the claims, tradeoffs, and caveats produced by the workflow.
 
 ## Quality bar
 
@@ -149,4 +149,4 @@ Human gates: intake ambiguity; unresolved strategic or political decisions; fina
 ## Context
 
 Typical workflows: standalone executive writing, leadership strategy work, board/ELT memo prep, multi-source synthesis
-Pairs well with: humanizer, write-to-obsidian, Notion research/documentation skills, meeting-intelligence
+Pairs well with: humanizer-exec, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research/documentation skills, meeting-intelligence

@@ -67,4 +67,4 @@ Headline (≤8 lines: agreement first, then splits) · **Where experts disagreed
 
 ## Post-process
 
-`humanizer: true` (synthesis only, not per-expert), `domain_cleaner: slop-cleaner (analysis mode)` → now `slop-cleaner --mode analysis`. Persist to `.council/analysis/`.
+`humanizer: true` (synthesis only, not per-expert), `domain_cleaner: null` (slop-cleaner retired per DL-0008). Persist to `.council/analysis/`.

@@ -136,7 +136,7 @@ OMC is the runtime layer. Skills are the curriculum.
 | Layer | Provides | Examples |
 |-------|----------|----------|
 | OMC (runtime) | Agent dispatch, model routing, team pipeline, execution infrastructure | `executor`, `code-reviewer`, `team-exec`, keyword triggers |
-| Skills (curriculum) | Domain logic, workflow sequencing, contracts, verification criteria | `workflow-build-one`, `diagnose`, `review`, `reconcile-issues` |
+| Skills (curriculum) | Domain logic, workflow sequencing, contracts, verification criteria | `workflow-build-one`, `diagnose`, `workflow-review`, `reconcile-issues` |
 
 **Team pipeline wraps skill execution:**
 
