@@ -1,5 +1,6 @@
 ---
 name: implement
+disable-model-invocation: true
 model: sonnet
 reasoning: medium
 description: Implement a piece of work from a PRD, issue, or spec. Use when the user says "implement this", "build this", "write the code for", or hands you a PRD/issue to execute.

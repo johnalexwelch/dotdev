@@ -1,5 +1,6 @@
 ---
 name: spec-review
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: 'Review the diff between HEAD and a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the diff follow this repo''s own documented coding conventions, using a Fowler code-smell baseline as fallback) and Spec (does the diff match the originating issue or PRD it claims to implement). Runs both axes as parallel, context-isolated sub-agents and reports them under separate headings. This is distinct from the built-in "code-review" skill: that one only checks correctness bugs and reuse/simplification/efficiency cleanups on the current diff, with no concept of repo standards-conformance or an originating spec — use this skill instead when the ask is about standards conformance, spec/PRD conformance, or reviewing a branch "since <ref>".'

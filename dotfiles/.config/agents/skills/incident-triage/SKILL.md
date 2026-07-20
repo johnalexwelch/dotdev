@@ -1,5 +1,6 @@
 ---
 name: incident-triage
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: "During an active data/system incident, establishes facts, scope, blast radius, and responder state as a structured triage card. Not a full incident-management replacement. Use when an incident is active and the responder must think clearly under pressure."
