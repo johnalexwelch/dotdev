@@ -254,18 +254,17 @@ Record the check in the route card `Why this flow` line (e.g. "prior-art scan: n
 
 ### Worktree Baseline Gate
 
-Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, load `setup-worktree/references/base-branch-policy.md`, resolve `WORKFLOW_BASE_GATE`, and create or require a fresh isolated worktree from the resolved workflow base:
+Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, create or require a fresh isolated worktree from the resolved workflow base via `setup-worktree/scripts/worktree-baseline.sh` (D-005's `cut`/`verify`/`emit` interface):
 
 ```bash
-git fetch origin --prune
-git worktree add -b <workflow-branch> <worktree-path> <workflow-base-ref>
+setup-worktree/scripts/worktree-baseline.sh cut --branch <workflow-branch> --path <worktree-path>
 ```
 
-The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If neither `origin/staging` nor the remote default branch can be resolved, halt and ask the user for the replacement base.
+`cut` resolves the workflow base per `base-branch-policy.md` (fetch + prefer `origin/staging`, fall back to the remote default), creates the worktree, and prints the `WORKFLOW_BASE_GATE` block plus the `WORKTREE_BASELINE_GATE` line — record that output verbatim as gate evidence; do not hand-write or reformat it. The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If the script halts (non-zero exit, e.g. code 7 when neither `origin/staging` nor the remote default branch can be resolved), halt and ask the user for the replacement base.
 
-**Parallel/`team` fan-out — one isolated worktree per lane (precondition, not recovery).** When two or more lanes run concurrently (`team` budget, parallel phases, AFK drive-to-done), each lane gets its OWN fresh worktree cut from the resolved base *before* any lane is dispatched — never share a worktree or reuse an existing checkout across lanes. Independent lanes branch off `origin/main`/base directly; a dependent lane stacks explicitly on its parent's commit. Resolving "which repo/worktree am I in" mid-fan-out is a signal the gate was skipped.
+**Parallel/`team` fan-out — one isolated worktree per lane (precondition, not recovery).** When two or more lanes run concurrently (`team` budget, parallel phases, AFK drive-to-done), each lane gets its OWN fresh worktree — invoke `worktree-baseline.sh cut` separately per lane — cut from the resolved base *before* any lane is dispatched — never share a worktree or reuse an existing checkout across lanes. Independent lanes branch off `origin/main`/base directly; a dependent lane stacks explicitly on its parent's commit (`cut --parent-branch <parent> --parent-pr <n>`). Resolving "which repo/worktree am I in" mid-fan-out is a signal the gate was skipped.
 
-Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base.
+Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base — `setup-worktree/scripts/worktree-baseline.sh verify --path <worktree-path>` confirms this.
 
 ## Audit Routing Rule
 
