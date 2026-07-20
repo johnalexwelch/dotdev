@@ -20,7 +20,7 @@ Otherwise dispatch:
 Dispatch the OMC `security-reviewer` agent:
 
 ```text
-You are running a security review. Read the full diff of PR #<pr_number> via `gh pr diff <pr> | head -5000` and any specific files cited. Your remit: identify security-relevant issues introduced by this PR - auth bypasses, injection vectors, secret leaks, missing input validation, broken access control, dependency CVEs, insecure defaults. Use the criteria from `~/.claude/skills/review/SKILL.md`'s "What Counts As A Bug" section, scoped to security. Return a structured report: list of findings (one per issue, severity tagged), or "clean" if nothing meets the bar.
+You are running a security review. Read the full diff of PR #<pr_number> via `gh pr diff <pr> | head -5000` and any specific files cited. Your remit: identify security-relevant issues introduced by this PR - auth bypasses, injection vectors, secret leaks, missing input validation, broken access control, dependency CVEs, insecure defaults. Use the review checklist from `workflow-review/references/reviewer-briefs/security-auditor.md`, scoped to issues introduced by this PR. Return a structured report: list of findings (one per issue, severity tagged), or "clean" if nothing meets the bar.
 ```
 
 ### Conditional: `/review` On Auto-Fix Diff
@@ -28,7 +28,7 @@ You are running a security review. Read the full diff of PR #<pr_number> via `gh
 Run only if `auto_fix_commits` is non-empty:
 
 ```text
-You are reviewing a delta. The original PR diff was already reviewed in-loop pre-PR. Your job is narrower: review ONLY the diff added by `/watch-ci`'s auto-fix commits - `git diff <last-non-auto-fix-commit>..HEAD`. Identify issues the original-author would fix per `~/.claude/skills/review/SKILL.md`. Common concerns to weight: did the formatter or linter mask a real bug; did the type-fix narrow correctly or paper over a wider issue; did the assertion-patch fix the symptom but miss the cause. Return findings or "clean".
+You are reviewing a delta. The original PR diff was already reviewed in-loop pre-PR. Your job is narrower: review ONLY the diff added by `/watch-ci`'s auto-fix commits - `git diff <last-non-auto-fix-commit>..HEAD`. Identify issues the original author would fix, per the checklist in `workflow-review/references/reviewer-briefs/integrated-reviewer.md`. Common concerns to weight: did the formatter or linter mask a real bug; did the type-fix narrow correctly or paper over a wider issue; did the assertion-patch fix the symptom but miss the cause. Return findings or "clean".
 ```
 
 If `auto_fix_commits` is empty, skip `/review` only if the original diff already had its in-loop review. If this skill created reviewer-feedback fix commits, run `/review` on those commits too.
