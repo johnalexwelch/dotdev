@@ -639,6 +639,41 @@ This file is the canonical decision record for workflow-feature flows in this re
 
 **Source:** wayfinder work-mode resolution ticket #74; research asset `docs/research/2026-07-09-token-context-efficiency.md`; setup audit FIND-26.
 
+## DL-0008 — Routing authority model (hybrid)
+
+**Date**: 2026-07-20
+**Context**: 2026-07-20 skill-suite audit (F-1/F-2) + refactor proposal D1; approved by Alex in session
+**Question**: Which of the three competing routing layers (workflow-router, superpowers:using-superpowers, OMC keyword triggers) owns skill invocation?
+**Decision**: Hybrid — workflow-router keeps sole authority over delivery/mutating work; non-delivery clusters get router rows or an explicit documented catalog tier (direct invoke, never routed); OMC keyword auto-fires disabled (`OMC_SKIP_HOOKS=keyword-detector`, applied 2026-07-20); superpowers plugin disabled (`enabledPlugins` false, applied 2026-07-20) — its SessionStart injection and "invoke before any response" mandate conflicted with the Route Confirmation Gate.
+**Alternatives considered**:
+- Router-supreme for all work — rejected: heavy ceremony for analytics/creative/catalog skills.
+- Status quo + documentation — rejected: 2026-07-19 reflection proves prose-only authority doesn't hold.
+**Tradeoffs accepted**: Lose superpowers skills (brainstorming, systematic-debugging — covered by grill-with-docs and diagnose/workflow-debug respectively); OMC modes now require explicit invocation (`/oh-my-claudecode:*` or magic words handled by skill text, not hook regex).
+
+## DL-0009 — Mechanical enforcement without paid branch protection
+
+**Date**: 2026-07-20
+**Context**: refactor proposal D2; repo-audit FIND-31; Alex: "can't use branch protection on a personal account, migrating to something local eventually"
+**Decision**: PENDING AMENDMENT — dotdev is public, so GitHub branch protection IS available free (verified `gh api repos/johnalexwelch/dotdev` → public). Awaiting Alex's call on enabling a minimal ruleset (PR required, no force-push) vs deferring to the future local migration. Interim regardless: make CI green-able (check-only hooks) and wire the test suite into CI so green means something.
+**Alternatives considered**: paid Pro plan (unnecessary — repo is public); local git server migration (Alex's stated long-term direction).
+**Tradeoffs accepted**: until some protection exists, gates remain advisory for direct pushes.
+
+## DL-0010 — Meta-layer diet
+
+**Date**: 2026-07-20
+**Context**: refactor proposal D5; repo-audit FIND-37/FIND-38; approved by Alex in session
+**Decision**: One decision mechanism: `docs/decision-log.md` (this file) is canonical; fold ADR-0002 content into a DL entry and retire both untracked ADR dirs; set a retention policy for `docs/executions/**`; enforce-or-drop the session-insight "no reflections" rule (currently violated 9×). Details to be phased in the design-plan.
+**Alternatives considered**: ADR-first (rejected — decision-log itself calls ADRs overkill for this repo and DL is already the richer record).
+**Tradeoffs accepted**: ADR-0002's routing-authority content must be re-homed (superseded by DL-0008) or it loses provenance.
+
+## DL-0011 — Branch protection enabled on main (amends DL-0009)
+
+**Date**: 2026-07-20
+**Context**: DL-0009 pending amendment; Alex approved enabling protection ("I've enabled branch protections"); UI attempt didn't persist (rulesets API returned empty), so ruleset created via API
+**Decision**: Repository ruleset `main-protection` (id 19215668) active on the default branch: pull request required (0 approvals — solo repo), force pushes blocked, branch deletion blocked, no bypass actors. Verified via `gh api repos/johnalexwelch/dotdev/rules/branches/main`. Direct pushes to main are now mechanically impossible — the workflow-router worktree+PR policy is enforced, not advisory. Also 2026-07-20: skill-invocation telemetry hook added to settings.json (PreToolUse, matcher Skill → ~/.claude/logs/skill-invocations.log) to give deprecation decisions usage ground truth after 30 days.
+**Alternatives considered**: legacy branch-protection API (rulesets are the current mechanism); requiring CI checks (deferred until the revived `tests` job from PR #80 proves stable).
+**Tradeoffs accepted**: solo merges without review remain possible by design; local migration later supersedes this.
+
 ## DL-0012 — #71 lock-set erosion + catalog-tier reapplication (amends #71 under DL-0008)
 
 **Date**: 2026-07-20
