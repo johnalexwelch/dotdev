@@ -170,7 +170,8 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
 | Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` |
 | "Review this", "review my changes" | **review** | workflow-review |
-| "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
+| "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step on a PR already past `workflow-review` (e.g. "just address the review comments on #42, don't finalize/merge yet"), dispatch `receive-review` directly per the owner-vs-sub-step rule below |
+| "ship this", "finalize this PR", "merge this", "close this out", "land this", ready-to-merge / delivery-closure request | **ship / finalize** | workflow-finalize |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
 | "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **workflow effectiveness audit** | workflow-effectiveness-audit |
 | "reflect", "what did we learn", "how could this have gone better", "skillify", "turn this into a skill", "improve the skills based on this" | **session reflection / skill extraction** | session-insight |
@@ -184,7 +185,13 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape` (beats mode) → humanizer) lives in Wren's kit |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
-| "generate prompt for", "prep for codex", "prep for AFK" | **prompt generation** | prompt-builder |
+| "generate prompt for", "prep for codex", "prep for AFK" — a standalone prompt-text request, not a request to run the batch/dispatch | **prompt generation** | prompt-builder (legitimate standalone entry point per its own contract's "manual Codex task" use case — do not repoint to `run-backlog`/`workflow-build-one` unless the user wants the full dispatch, in which case use the **AFK backlog** or **ready issue** rows below instead) |
+
+## Owner vs. sub-step routing rule (SB-021 / SB-022)
+
+**Routes-to names the owning orchestrator, not the first-mentioned or most-obviously-matching skill — unless the user explicitly asks for that sub-step alone.** A request that only superficially matches a mid-chain skill's own trigger wording (e.g. `receive-review`'s description literally says "address/respond to the review comments") still routes to the owner by default, because the owner's precondition and sequencing exist for a reason — `workflow-finalize` gates on a prior `workflow-review` APPROVE before its Step 2 runs `receive-review`. Route to the sub-step directly only when the user's own words scope the request to that step alone (explicit "just," "only," a bare skill name, or an unambiguous statement that the rest of the pipeline already ran or isn't wanted). When in doubt, prefer the owner and let its own gates decide whether the sub-step is reachable yet.
+
+This is why `receive-review` and `prompt-builder` are handled differently above: `receive-review` has no independent use outside a review-gate context (default: route to the owner, `workflow-finalize`, with the explicit-sub-step carve-out); `prompt-builder`'s own contract documents standalone "manual Codex task" use as a first-class case (default: route directly, since the owner-vs-sub-step question is already answered in the skill's own contract).
 
 ## Bug routing rule
 
@@ -205,6 +212,22 @@ If the user corrects the route, treat that correction as fresh routing input and
 | Single issue, no parent context | workflow-build-one |
 
 If unclear: check whether the issues reference a parent. If yes → execute-prd. If no → run-backlog.
+
+## Catalog tier (model-invocation-locked skills)
+
+47 skills carry `disable-model-invocation: true` (DL-0008, applied in PR #83) — they never appear in the ambient per-session skill listing, but remain fully invocable by name (`/skill-name`) or by path from another skill's Flow. The classification table above intentionally carries no per-skill routing row for them. If a request clearly matches one of these, that **is** the route — treat it as catalog tier, not "no route exists," and invoke it directly by name (or ask which one, if more than one plausibly matches).
+
+Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, shorter): `dotfiles/.claude/CLAUDE.md` § "Skill catalog (locked skills)". This section is the router-side cross-reference — do not re-copy full descriptions here; category + invoke pattern only.
+
+**Analytics** (16) — e.g. `/sql-review`: `analysis-council`, `analysis-design`, `dashboard-design`, `dashboard-review`, `data-quality-audit`, `data-readiness-check`, `decision-memo`, `experiment-design`, `lineage-audit`, `metric-council`, `metric-design`, `metric-tree-review`, `sql-review`, `strategic-analysis-review`, `vendor-council`, `viz-integrity`
+
+**Incident** (2) — e.g. `/incident-triage`: `incident-retro`, `incident-triage`
+
+**Library/infra** (13) — shared scaffolding, reference protocols, and repo tooling; e.g. `/setup-worktree`: `council-scaffolding`, `describe-pr`, `docs-audit`, `git-guardrails`, `graph-first`, `herdr-launch`, `omc-reference`, `post-mortem`, `review-scaffolding`, `runbook-author`, `setup-skills`, `setup-worktree`, `watch-ci`
+
+**Knowledge/utility** (10) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `rowan`, `stage-v1-concept`, `wayfinder`, `zoom-out`
+
+**Retirement-leaning** (6, per skill-suite audit F-6 — self-declared superseded, not formally retired yet): `pr-responder` (restates `receive-review` Step 4), `pr-review` / `spec-review` / `review` (superseded by `workflow-review`), `slop-cleaner` (`humanizer` owns the route), `v1-idea-grill` (superseded by `grill-with-docs`). Do not route new requests here; if invoked by name, note the successor.
 
 ## Preflight
 
