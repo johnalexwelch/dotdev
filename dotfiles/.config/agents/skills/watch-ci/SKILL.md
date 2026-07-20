@@ -108,7 +108,7 @@ Load references only at the point they are needed:
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -125,12 +125,10 @@ WORKFLOW_STEPS:
 | Step 8: Surface To User | required | pending | - |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - Conditional steps may be `skipped` only when their trigger does not occur; record the reason.
 - Required steps cannot be skipped. If preflight, CI polling, review monitoring, or outcome writing cannot run, mark the step `blocked` and halt.
-- Include the final ledger in every halt, outcome file, and completion response.
 
 ## Core Flow
 
