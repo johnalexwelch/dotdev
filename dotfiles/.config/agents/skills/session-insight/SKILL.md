@@ -67,6 +67,12 @@ Default path:
 
 `~/dotdev/docs/executions/reflections/<date>-<slug>.md`
 
+**Expand `~` to the absolute home directory yourself before any `mkdir -p` or
+write — never pass a `~`-prefixed path to a shell tool.** Some bash tools
+(observed: pi's) do not tilde-expand, so `mkdir -p ~/dotdev/...` creates a
+literal `~/` directory skeleton inside the cwd (fake home trees were found in
+the chorus repo root and several `.herdr` worktrees this way).
+
 Naming:
 
 - `<date>` = `YYYY-MM-DD`

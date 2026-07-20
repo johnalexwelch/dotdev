@@ -68,7 +68,7 @@ Derive the absolute repo copy path with `git rev-parse --show-toplevel` (never a
     agd=$(git rev-parse --absolute-git-dir)   # always absolute (git >=2.13); worktree-safe
     repo=$(basename "${agd%%/.git*}")          # stable repo name, e.g. dotdev
 
-Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd` into `mkdir`/`cp` (see the shell-variable warning below). Create the global dir with `mkdir -p ~/.chorus/handoffs/<repo-name>` and copy the file there after writing.
+Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd` into `mkdir`/`cp` (see the shell-variable warning below). Create the global dir with `mkdir -p /Users/<you>/.chorus/handoffs/<repo-name>` — the home directory fully expanded (read it from `echo ~` output first if unsure) — and copy the file there after writing. Never pass a `~`-prefixed path to `mkdir`/`cp`: some bash tools (observed: pi's) do not tilde-expand, so `mkdir -p ~/.chorus/...` creates a literal `~/` directory skeleton inside the cwd (fake home trees were found in the chorus repo root and several `.herdr` worktrees this way).
 
 **The path has two parts:** a STABLE group (`<repo-name>`, from git above — keeps a project's handoffs collocated) + a MEANINGFUL per-file slug (`<date>-<slug>`, where the slug is the work gist / caller arg, falling back to the branch name when no arg is given). Put "meaningful to the work" only in the slug, never in the group.
 
