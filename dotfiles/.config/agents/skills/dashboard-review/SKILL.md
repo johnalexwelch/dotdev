@@ -1,5 +1,6 @@
 ---
 name: dashboard-review
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: Reviews an existing dashboard for decision-fit, clarity, chart-type appropriateness, comparator presence, density, and dead-weight charts. Identifies what to keep, sharpen, demote, and remove. Use when auditing a dashboard, before promoting it to a wider audience, or when a dashboard "isn't getting used."

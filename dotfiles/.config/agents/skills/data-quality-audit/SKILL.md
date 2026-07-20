@@ -1,5 +1,6 @@
 ---
 name: data-quality-audit
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: "Audits a table, model, or pipeline for data-quality issues: NULL rates, duplicates, schema drift, distribution shifts, referential integrity, late-arriving data, freshness drift. Produces a prioritized findings list with severity. Use for periodic audits or when an analysis turned up a weird number."

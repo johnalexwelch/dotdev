@@ -1,5 +1,6 @@
 ---
 name: herdr-launch
+disable-model-invocation: true
 description: >
   Open stage-appropriate companion tools in herdr after setup-worktree.
   Stages: implement (workspace + lazygit + yazi), review (gh pr diff + gh pr
