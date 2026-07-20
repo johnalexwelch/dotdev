@@ -36,6 +36,15 @@ jobs:
           for f in **/*.sh; do
             bash -n "$f"
           done
+  tests:
+    name: Test suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run test suites
+        # Suites need only bash/jq/grep/awk (preinstalled on ubuntu-latest);
+        # the workflow-guard suite mocks gh via a stub on PATH.
+        run: ./test/run-tests.sh
   stow-dry-run:
     name: Stow dry run
     runs-on: macos-latest
