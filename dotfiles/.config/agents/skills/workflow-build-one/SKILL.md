@@ -36,7 +36,7 @@ per-issue workflow-base worktree → preflight → triage → execute-phase → 
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger **before executing or dispatching any step**. Use the exact step names from this skill and include conditional or optional steps.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -50,12 +50,10 @@ WORKFLOW_STEPS:
 | Step 5: Finalize (workflow-finalize) | required | pending | - |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`. Update each to `completed`, `skipped`, `blocked`, or `failed` as it resolves.
 - Steps 3 and 5 **cannot be skipped**. If they cannot run, mark `blocked` and halt.
 - Step 4 may be `skipped` only for purely backend/infrastructure/tooling changes — record the reason.
-- Include the final ledger in every halt, handoff, and completion response.
 - A step is only `completed` when its required gate block exists in the output: Step 3 requires `WORKFLOW_REVIEW_GATE`, Step 5 requires `WORKFLOW_FINALIZE_GATE`.
 
 ## Per-Issue Worktree Invariant

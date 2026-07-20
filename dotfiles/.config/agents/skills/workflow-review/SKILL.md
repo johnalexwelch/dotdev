@@ -29,7 +29,7 @@ If a workflow says `workflow-review`, run this skill before proceeding to finali
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -42,12 +42,10 @@ WORKFLOW_STEPS:
 | Step 4: Emit Verdict Gate | required | pending | - |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - Update each step to `completed`, `blocked`, or `failed` as evidence is gathered.
 - Do not mark required review steps as skipped. If independent context is unavailable, mark Step 2 `blocked` and emit `WORKFLOW_REVIEW_GATE.verdict: NEEDS_HUMAN`.
-- Include the final ledger in every halt, handoff, and completion response.
 
 ## Required Gate Block
 

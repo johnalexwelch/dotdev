@@ -24,7 +24,7 @@ Scope the change → Load and run `write-a-skill` → [Load and run `skill-evalu
 
 ## Workflow Progress Reporting
 
-At the start of every run, display the ledger before executing any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -36,8 +36,6 @@ WORKFLOW_STEPS:
 | Step 4: Land + Codex Sync | required | pending | - |
 | Step 5: Report | required | pending | - |
 ```
-
-Initialize every step `pending`; update status + evidence as each finishes. A conditional step may be `skipped` only with a recorded reason. Include the final ledger in every halt and completion.
 
 ### Step 1: Scope the change
 

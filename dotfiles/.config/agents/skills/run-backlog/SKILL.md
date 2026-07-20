@@ -34,7 +34,7 @@ Before Phase 1, load `references/outage-risk-policy.md` and `references/repo-del
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -49,12 +49,10 @@ WORKFLOW_STEPS:
 | Phase 4: Reconcile And Handoff | required | pending | - |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - Required steps cannot be skipped. If repository policy, base resolution, or issue lookup cannot run, mark the step `blocked` and halt.
 - Queue approval may be `skipped` only when the current invocation explicitly requested unattended/AFK execution.
-- Include the final ledger in every halt, handoff, and completion response.
 
 ### Phase 0: Resolve repository delivery policy
 
