@@ -172,6 +172,7 @@ After drafting, verify:
 - [ ] Invocation choice is deliberate: model-invoked only if the agent (or another skill) must reach it unprompted
 - [ ] Description front-loads the leading word, and lists one trigger per branch (no duplicated triggers)
 - [ ] Frontmatter parses: `python3 -c "import sys,yaml; yaml.safe_load(open(sys.argv[1]).read().split('---')[1])" SKILL.md` (single-quoted description)
+- [ ] Tool-agnostic determination made (see docs/decision-log.md DL-0016): does this skill have a hard dependency on an MCP server or interactive-only tool with no fallback path? If yes, set `codex-compatible: false` in frontmatter and state the reason in a one-line comment or the skill's own body. If no (the common case), leave `codex-compatible` unset — the sync tooling defaults to inclusive, so an unset skill still syncs to Codex; don't set `codex-compatible: true` explicitly unless you have a specific reason to document it was checked.
 - [ ] Every step has a checkable, and where relevant exhaustive, completion criterion
 - [ ] Nothing in SKILL.md is a no-op — each line changes behavior versus the model's default
 - [ ] No duplicated meaning between sections, or between SKILL.md and a `references/` file
