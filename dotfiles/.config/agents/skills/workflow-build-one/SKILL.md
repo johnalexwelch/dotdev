@@ -58,7 +58,7 @@ Skill-specific rules (extend `../_docs/step-ledger.md`):
 
 ## Per-Issue Worktree Invariant
 
-Every root issue must cut its own fresh isolated worktree from the resolved workflow base before implementation starts. Load `setup-worktree/references/base-branch-policy.md`, record `WORKFLOW_BASE_GATE`, and use the resolved remote ref in all worktree gates. Stacked dependent issues may instead cut their own fresh worktree from a clean parent branch when the parent PR has complete gate evidence and the child PR targets the parent branch. This is mandatory for single-issue runs, `run-backlog` dispatches, and manual invocations.
+Every root issue must cut its own fresh isolated worktree from the resolved workflow base before implementation starts, via `setup-worktree/scripts/worktree-baseline.sh` (D-005's `cut`/`verify`/`emit` interface — see Step 0). The script owns base-branch resolution (per `setup-worktree/references/base-branch-policy.md`) and `WORKFLOW_BASE_GATE` recording; do not restate that procedure inline. Stacked dependent issues may instead cut their own fresh worktree from a clean parent branch when the parent PR has complete gate evidence and the child PR targets the parent branch. This is mandatory for single-issue runs, `run-backlog` dispatches, and manual invocations.
 
 Do not reuse another issue's worktree. Do not work from the primary checkout. Do not start from local `main`, local `staging`, or an already-dirty branch. If the worktree cannot be created or verified, halt before changing code.
 
@@ -68,13 +68,14 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 - Check `Requires` from target skills' contracts (are tools available?)
 - If missing tools: **auto-handoff** (exit_reason: halt, remaining: install missing tools then retry) and halt
 - If issue is unclear: **auto-handoff** (exit_reason: halt, blocker: what's ambiguous and what question to answer) and halt
-- Create a fresh isolated worktree for this issue before any implementation.
+- Create a fresh isolated worktree for this issue before any implementation, via `setup-worktree/scripts/worktree-baseline.sh`.
   Root issue:
-  `git fetch origin --prune && git worktree add -b <issue-branch> <worktree-path> <workflow-base-ref>`
+  `setup-worktree/scripts/worktree-baseline.sh cut --branch <issue-branch> --path <worktree-path>`
   Stacked dependent issue:
-  `git fetch origin --prune && git worktree add -b <child-branch> <child-worktree-path> <parent-branch>`
-- Run the rest of this workflow from inside that worktree. If already inside a worktree, verify it has `WORKTREE_BASELINE_GATE` or valid `STACKED_WORKTREE_GATE`; otherwise halt and recreate it.
-- Record `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <issue-branch> @ <worktree-path>` or `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete` in the handoff/final summary.
+  `setup-worktree/scripts/worktree-baseline.sh cut --branch <child-branch> --path <child-worktree-path> --parent-branch <parent-branch> --parent-pr <n>`
+  `cut` resolves the workflow base (fetch + prefer `origin/staging`, fall back to the remote default per `base-branch-policy.md`), creates the worktree, copies known env/tool-version files into it, and prints the `WORKFLOW_BASE_GATE` block plus `WORKTREE_BASELINE_GATE`/`STACKED_WORKTREE_GATE` line on stdout. Treat a non-zero exit as a hard halt — read the printed `Blocked: ...` reason (path/branch collision, dirty fetch, unresolved base, missing parent branch) before retrying.
+- Run the rest of this workflow from inside that worktree. If already inside a worktree, verify it with `setup-worktree/scripts/worktree-baseline.sh verify --path <worktree-path>` (add `--parent-branch <parent-branch>` for stacked issues); a non-`PASS` result means halt and recreate the worktree with `cut`.
+- Record the `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE`/`STACKED_WORKTREE_GATE` lines exactly as emitted by the script in the handoff/final summary — do not hand-write or reformat them.
 - From inside the worktree, invoke or re-run `prompt-builder` to gather repo/code context, decision-log rationale, determine execution strategy, identify files to read, and discover verification commands. A prompt-builder output created outside the per-issue worktree is bootstrap context only; it does not satisfy repo/code context gathering.
 
 ### Step 1: Triage (quick)
