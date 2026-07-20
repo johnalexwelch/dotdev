@@ -14,12 +14,12 @@ You are running a periodic audit of Alex's personal Claude Code skill tree to id
 
 | Source | What it tells you |
 |---|---|
-| `~/.claude/skills/` (symlink farm) | Live skills, what's currently discoverable |
-| `~/dotdev/dotfiles/.claude/skills/` | Actual skill files for skills owned by Alex |
+| `~/.claude/skills/` (single symlink to `~/.config/agents/skills`) | Live skills, what's currently discoverable |
+| `~/dotdev/dotfiles/.config/agents/skills/` | Actual skill files for skills owned by Alex (canon, stowed into `~/.config/agents/skills`) |
 | `~/.claude/SKILLS-MAP.md` | Canonical "what should exist" map |
 | `~/Documents/Home/Personal Skills Map.md` | Obsidian-synced copy of the map |
 | Session transcripts at `~/.claude/projects/*/` | Recent invocations (use `grep` for skill names in `.jsonl` files) |
-| Git log on `~/dotdev/dotfiles/.claude/skills/` | When each skill was last edited |
+| Git log on `~/dotdev/dotfiles/.config/agents/skills/` | When each skill was last edited |
 | `~/.claude/skills/_archive/` | Where previously-retired skills live |
 
 ## Detection rules
@@ -27,7 +27,7 @@ You are running a periodic audit of Alex's personal Claude Code skill tree to id
 A skill becomes a **retirement candidate** when ANY of these fire:
 
 1. **Stale**: No invocation found in the last 90 days of session transcripts, AND last edited > 90 days ago.
-2. **Broken symlink**: `~/.claude/skills/<name>` points to a non-existent target.
+2. **Orphaned canon entry**: a directory under `~/dotdev/dotfiles/.config/agents/skills/<name>` has no resolvable `SKILL.md` (there is no per-skill symlink anymore — `~/.claude/skills` is one symlink to `~/.config/agents/skills`, so "broken" now means malformed/missing content in canon, not a dangling link).
 3. **Empty SKILL.md**: SKILL.md exists but is < 200 bytes or has no `description:` frontmatter.
 4. **Duplicate**: Two skills' `description:` frontmatter overlap by > 70% semantic similarity, AND one is clearly the newer / preferred one (mentioned in SKILLS-MAP.md, the other isn't).
 5. **Orphan**: Listed in SKILLS-MAP.md but no longer exists on disk (the reverse — also flag).
@@ -41,9 +41,9 @@ For each candidate:
 | Action | Use when |
 |---|---|
 | **leave-alone** | Foundation libraries (`_personas/`, `_council-scaffolding/`, `_graph-first/`) — never retire these. Or: candidate has been edited in the last 30 days (signal of active development). Or: explicitly listed as "required" in any `roster.yml`. |
-| **deprecate** | Skill is still useful but superseded by a newer one. Add `deprecated: true` + `superseded_by: <name>` to frontmatter. Keep symlink. Will be revisited next audit. |
-| **archive** | Skill is unused / duplicate / orphan but might have referential value. Move underlying files to `~/.claude/skills/_archive/<YYYY-MM-DD>-<skill-name>/`. Remove symlink. Update map. Reversible. |
-| **delete** | Only for broken symlinks pointing to nothing — these are noise, not artifacts. Document each deletion. |
+| **deprecate** | Skill is still useful but superseded by a newer one. Add `deprecated: true` + `superseded_by: <name>` to frontmatter. Leave it in canon. Will be revisited next audit. |
+| **archive** | Skill is unused / duplicate / orphan but might have referential value. Move the canon directory to `~/.claude/skills/_archive/<YYYY-MM-DD>-<skill-name>/`. Update map. Reversible. |
+| **delete** | Only for orphaned canon entries with no real content — these are noise, not artifacts. Document each deletion. |
 
 **Never hard-delete a skill that has real content on first pass.** Archive first. If after 2 archive cycles (~6 months) it hasn't been resurrected, the next audit can recommend hard deletion for human approval.
 
@@ -61,15 +61,15 @@ For each candidate:
 ### 1. Inventory
 
 ```bash
-# Enumerate live skills (symlinks)
+# Enumerate live skills (~/.claude/skills is one symlink to ~/.config/agents/skills)
 ls -la ~/.claude/skills/ > /tmp/skill-inventory.txt
 
-# Enumerate actual files
-find ~/dotdev/dotfiles/.claude/skills/ -name "SKILL.md" -mtime +90 > /tmp/stale-by-mtime.txt
-find ~/dotdev/dotfiles/.claude/skills/ -name "SKILL.md" -mtime -30 > /tmp/recent-edits.txt
+# Enumerate actual files (canon)
+find ~/dotdev/dotfiles/.config/agents/skills/ -name "SKILL.md" -mtime +90 > /tmp/stale-by-mtime.txt
+find ~/dotdev/dotfiles/.config/agents/skills/ -name "SKILL.md" -mtime -30 > /tmp/recent-edits.txt
 
-# Check for broken symlinks
-find ~/.claude/skills/ -maxdepth 1 -type l ! -exec test -e {} \; -print > /tmp/broken-symlinks.txt
+# Check the root symlink itself isn't broken (there is no per-skill symlink farm anymore)
+[ -e ~/.claude/skills ] || echo "BROKEN: ~/.claude/skills -> $(readlink ~/.claude/skills)" > /tmp/broken-symlinks.txt
 
 # Existing archive
 ls ~/.claude/skills/_archive/ 2>/dev/null > /tmp/already-archived.txt
@@ -117,17 +117,18 @@ Cross-check candidates against `roster.yml` files and the foundation-library lis
 For each candidate with proposed action ≠ `leave-alone`:
 
 ```bash
-# Archive
-mv ~/dotdev/dotfiles/.claude/skills/<name>/ ~/.claude/skills/_archive/$(date +%Y-%m-%d)-<name>/
-rm ~/.claude/skills/<name>  # remove symlink
+# Archive (canon is dotfiles/.config/agents/skills; ~/.claude/skills is a single
+# symlink to ~/.config/agents/skills, so there is no per-skill symlink to separately rm —
+# moving it out of canon removes it from the active root too)
+mv ~/dotdev/dotfiles/.config/agents/skills/<name>/ ~/.claude/skills/_archive/$(date +%Y-%m-%d)-<name>/
 
 # Deprecate (frontmatter edit)
 # Add to SKILL.md frontmatter:
 #   deprecated: true
 #   superseded_by: <other-skill>
 
-# Delete (broken symlinks only)
-rm ~/.claude/skills/<name>  # symlink only — no underlying file to delete
+# Delete (orphaned/empty directory only — no separate symlink step)
+rm -rf ~/dotdev/dotfiles/.config/agents/skills/<name>/
 ```
 
 ### 7. Update the map
@@ -145,7 +146,7 @@ Copy the updated map to `~/Documents/Home/Personal Skills Map.md`.
 
 ```bash
 cd ~/dotdev/dotfiles
-git add .claude/skills/
+git add .config/agents/skills/
 git commit -m "chore(skills): retirement audit $(date +%Y-%m-%d) — N archived, M deprecated"
 ```
 
@@ -201,6 +202,6 @@ Recommended quarterly (every 90 days). Can be scheduled via Claude Code's `/sche
 
 - This task involves filesystem mutation outside CWD. If sandbox restrictions block any operation, use `dangerouslyDisableSandbox: true` after explaining the specific operation.
 - The skill map is the source of truth for "what should exist." When in tension between the map and the on-disk reality, prefer the map's intent but flag the discrepancy in the report.
-- If you discover a skill that exists on disk but isn't symlinked into `~/.claude/skills/`, that's a silent skill — flag it (it's probably accidentally undiscoverable).
+- `~/.claude/skills` is a single symlink to `~/.config/agents/skills`, so any skill directory present in canon is automatically discoverable — there's no per-skill linking step left to go stale. If you discover a skill that exists in canon but the symlink itself is broken or missing, that's a host-setup problem (flag it), not a per-skill issue.
 - Foundation libraries (`_personas/`, `_council-scaffolding/`, `_graph-first/`) are never candidates for retirement. They can have individual personas / patterns within them deprecated, but the libraries themselves stay.
 - After the audit, recommend Alex run `analysis-council --fast "is the skill tree still well-shaped after this retirement audit?"` if more than 5 skills were retired in one pass — sanity check that the system still composes.

@@ -1,6 +1,6 @@
 # Skills Corpus — Decision Log
 
-Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.claude/skills`). Append-only; treat entries as settled context unless explicitly reopened.
+Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.config/agents/skills`). Append-only; treat entries as settled context unless explicitly reopened.
 
 ## D-001 — Extract `review-scaffolding`; reviews become thin adapters (2026-06-01)
 
