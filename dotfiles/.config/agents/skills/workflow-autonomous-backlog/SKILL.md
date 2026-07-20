@@ -27,7 +27,7 @@ Human gates: module design summary approval; AFK queue approval unless explicitl
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -44,12 +44,10 @@ WORKFLOW_STEPS:
 | Step 7: Handoff | required | pending | - |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - Conditional steps may be `skipped` only with an explicit reason such as no approved candidates or no AFK execution approval.
 - Required steps cannot be skipped. If discovery, classification, or handoff cannot run, mark blocked and halt.
-- Include the final ledger in every halt, handoff, and completion response.
 
 ## Flow
 

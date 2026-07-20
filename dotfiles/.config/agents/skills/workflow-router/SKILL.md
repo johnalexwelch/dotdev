@@ -69,7 +69,7 @@ cockpit is an optimization, never a gate.
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -84,12 +84,10 @@ WORKFLOW_STEPS:
 | Step 6: Learning Note | conditional | pending | Required for confirmed non-trivial routes, halts, or corrections |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - A conditional step may be `skipped` only when the route is direct/read-only and no dispatch occurs; record the reason.
 - Do not dispatch before the ledger shows route confirmation and target preflight complete or not applicable.
-- Include the final ledger in every halt, handoff, and completion response.
 - **Persist the ledger.** In a project repo, after route confirmation write this
   ledger to `docs/executions/state.yaml` (`status: active`, `next` = first
   dispatch target) and update `next` + `updated` at each dispatch. Schema and
