@@ -127,7 +127,7 @@ Rules:
 
 ### 4. Stop at Green
 
-**Refactoring is not part of this loop.** Once a cycle is GREEN, stop — don't extract duplication, deepen modules, or apply cleanups here. Refactoring happens during review (see the self-review step of `implement`, which runs `pr-review`), not as part of this loop.
+**Refactoring is not part of this loop.** Once a cycle is GREEN, stop — don't extract duplication, deepen modules, or apply cleanups here. Refactoring happens during review (see the self-review step of `implement`, which runs `workflow-review`), not as part of this loop.
 
 ## Checklist Per Cycle
 
