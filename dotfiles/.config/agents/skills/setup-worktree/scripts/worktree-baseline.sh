@@ -56,7 +56,11 @@ usage() {
 #   3. else resolve the remote default branch and use origin/<default>
 #   4. else halt
 #
-# Prints PREFERRED_BASE=, RESOLVED_BASE=, FALLBACK_REASON=, FETCHED= on stdout.
+# Sets the script-scope globals PREFERRED_BASE, RESOLVED_BASE,
+# FALLBACK_REASON, FETCHED directly (rather than printing KEY=VALUE for a
+# caller to eval) so shellcheck can see the assignment — an eval'd
+# assignment is invisible to static analysis and trips SC2154 at every
+# read site.
 resolve_base() {
   if ! git fetch origin --prune >/dev/null 2>&1; then
     die 10 "git fetch origin --prune failed."
@@ -79,8 +83,10 @@ resolve_base() {
     fi
   fi
 
-  printf 'PREFERRED_BASE=%s\nRESOLVED_BASE=%s\nFALLBACK_REASON=%s\nFETCHED=true\n' \
-    "$preferred" "$resolved" "$fallback"
+  PREFERRED_BASE="$preferred"
+  RESOLVED_BASE="$resolved"
+  FALLBACK_REASON="$fallback"
+  FETCHED=true
 }
 
 # Emit the exact WORKFLOW_BASE_GATE block plus WORKTREE_BASELINE_GATE or
@@ -166,6 +172,35 @@ copy_env_files() {
   fi
 }
 
+# Known artifact paths cut() intentionally copies into a fresh worktree.
+# These are untracked by design (that's the whole point of copying them
+# from the source checkout's working tree), so verify's dirty-check must
+# not treat their presence as evidence of a dirty tree.
+is_known_artifact() {
+  local candidate="$1" p
+  for p in "${ENV_FILES[@]}" ".claude/settings.local.json"; do
+    [ "$candidate" = "$p" ] && return 0
+  done
+  return 1
+}
+
+# Filter `git status --porcelain` output, dropping untracked ("??") lines
+# whose path is a known cut-copied artifact. Anything else — modified,
+# staged, or genuinely unexpected untracked files — passes through so the
+# dirty-check still catches real dirtiness.
+filter_known_artifacts() {
+  local input="$1" line status path
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    status="${line:0:2}"
+    path="${line:3}"
+    if [ "$status" = "??" ] && is_known_artifact "$path"; then
+      continue
+    fi
+    printf '%s\n' "$line"
+  done <<<"$input"
+}
+
 cmd_cut() {
   local branch="" path="" parent_branch="" parent_pr=""
 
@@ -189,9 +224,7 @@ cmd_cut() {
     die 4 "branch '$branch' already exists. Choose a different branch name, or remove/resume the existing one."
   fi
 
-  local base_output
-  base_output="$(resolve_base)"
-  eval "$base_output"
+  resolve_base
   # PREFERRED_BASE, RESOLVED_BASE, FALLBACK_REASON, FETCHED now set.
 
   local stacked="false"
@@ -241,7 +274,7 @@ cmd_verify() {
   fi
 
   local dirty
-  dirty="$(git -C "$path" status --porcelain)"
+  dirty="$(filter_known_artifacts "$(git -C "$path" status --porcelain)")"
   if [ -n "$dirty" ]; then
     die 5 "worktree at $path is dirty:
 $dirty"
