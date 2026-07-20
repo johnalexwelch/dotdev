@@ -18,7 +18,7 @@ Human gates: message preview shown for approval before sending
 ## Context
 
 Typical workflows: daily engineering updates (standalone)
-Pairs well with: write-to-obsidian
+Pairs well with: write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus)
 
 # Slack Engineering Update
 

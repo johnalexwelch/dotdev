@@ -201,7 +201,7 @@ When checks pass, load `references/approve-and-review-gates.md`.
 - If `no_review == true`, require either an explicit user waiver or a complete `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review. If neither exists, halt.
 - If `no_review == true`, skip self-review agents only after that evidence/waiver is recorded, and still monitor and resolve any existing PR comments.
 - Otherwise run the always-on OMC `security-reviewer` pass.
-- Run `/review` on auto-fix commits and on any reviewer-feedback fix commits created by this skill.
+- Run a `workflow-review` fast-profile reviewer on auto-fix commits and on any reviewer-feedback fix commits created by this skill.
 - Poll PR reviews and inline comments for reviewer-agent feedback.
 - Invoke `receive-review` to incorporate every actionable item: blockers, non-blockers, observations, comments, questions, and nits.
 - After pushing feedback fixes, return to Step 1 because CI and reviewers may rerun.

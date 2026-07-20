@@ -23,7 +23,7 @@ Routing:
 
 - "Polish this memo I wrote" → `strategic-analysis-review` (review, not draft)
 - "Stress-test this recommendation" → `analysis-council`
-- "Make this less AI-shaped" → `slop-cleaner (analysis mode)` then `humanizer`
+- "Make this less AI-shaped" → `humanizer`
 
 ## Process
 
@@ -165,4 +165,4 @@ Human gates: requires the user to confirm audience + decision; ambiguity gets on
 ## Context
 
 Typical workflows: post-analysis, pre-share, executive communication
-Pairs well with: analysis-design (upstream), analysis-council (stress-test before writing), strategic-analysis-review (review after drafting), slop-cleaner (analysis mode) + humanizer (post-process), workflow-executive-doc (longer-form orchestration)
+Pairs well with: analysis-design (upstream), analysis-council (stress-test before writing), strategic-analysis-review (review after drafting), humanizer (post-process), workflow-executive-doc (longer-form orchestration)

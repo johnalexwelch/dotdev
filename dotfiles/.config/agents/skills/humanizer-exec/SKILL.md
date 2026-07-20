@@ -13,7 +13,6 @@ Final polish for exec/board/customer drafts that were LLM-written. Does everythi
 
 - `humanizer` — its `references/pattern-catalog.md` holds the 29 base AI-writing patterns this extends. If absent, use the common-tells list below.
 - `graph-first` — optional voice/audience context; auto-detects a knowledge graph and skips silently if none (`--graph` forces ingestion, `--no-graph` skips).
-- `slop-cleaner (analysis mode)` — run *before* this on analytical drafts: it removes analytical tells (false precision, generic frameworks), this handles prose register.
 - `decision-memo` / `strategic-analysis-review` — common upstream producers of the drafts you'll polish (not called by this skill).
 
 ## Exec-register patterns (beyond the base 29)
