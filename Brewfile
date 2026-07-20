@@ -54,6 +54,8 @@ brew "helm"
 brew "herdr"
 # Improved top (interactive process viewer)
 brew "htop"
+# Review-first terminal diff viewer for agent-authored changesets
+brew "hunk"
 # Get events and tasks from the macOS calendar database
 brew "ical-buddy"
 # Lightweight and flexible command-line JSON processor
@@ -100,8 +102,6 @@ brew "rust"
 brew "shellcheck"
 # Autoformat shell script source code
 brew "shfmt"
-# Create beautiful image of your source code
-brew "silicon"
 # SOund eXchange: universal sound sample translator
 brew "sox"
 # Cross-shell prompt for astronauts
@@ -122,6 +122,12 @@ brew "whisper-cpp"
 brew "yamlfmt"
 # Blazing fast terminal file manager written in Rust, based on async I/O
 brew "yazi"
+# yazi preview deps: archives (7z), image/HEIC/font (imagemagick), SVG (resvg).
+# Already covered: ffmpeg, poppler, jq, fd, ripgrep, fzf, zoxide. Ghostty renders
+# images via Kitty graphics protocol, so chafa isn't needed.
+brew "sevenzip"
+brew "imagemagick"
+brew "resvg"
 # Process YAML, JSON, XML, CSV and properties documents from the CLI
 brew "yq"
 # Feature-rich command-line audio/video downloader
@@ -268,4 +274,5 @@ npm "@brdemorin/google-docs-mcp-server"
 npm "@earendil-works/pi-coding-agent"
 npm "node-gyp"
 npm "oh-my-claude-sisyphus"
+npm "openwiki"
 npm "remodex"

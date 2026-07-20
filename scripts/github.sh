@@ -1,4 +1,5 @@
 #!/bin/bash
+# Invariant: idempotent — sets up GitHub SSH key + gh auth; skips if already configured. Needs network.
 
 # Check if GitHub CLI is installed
 if ! command -v gh &>/dev/null; then

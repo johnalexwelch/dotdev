@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCRIPT="$ROOT/dotfiles/.claude/skills/lint-skill-suite.sh"
+SCRIPT="$ROOT/dotfiles/.config/agents/skills/lint-skill-suite.sh"
 TMPDIR_BASE=$(mktemp -d)
 PASS=0
 FAIL=0

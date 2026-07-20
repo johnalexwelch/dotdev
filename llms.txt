@@ -1,0 +1,52 @@
+# dotdev
+
+> Personal dotfiles + AI coding-agent environment for macOS (pi/Claude Code/Codex), managed with GNU Stow. Guardian-gated hook pipeline, ~95 shared agent skills, hunk/openwiki/delta review tooling.
+
+Repo: https://github.com/johnalexwelch/dotdev
+
+## Core entry points
+
+- [README.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/README.md): Repo structure, Stow layout, quick start.
+- [AI_ENVIRONMENT.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/AI_ENVIRONMENT.md): How the toolchain fits together — pi + Claude Code, the guardian hook pipeline (PreToolUse/PostToolUse), the skills library.
+- [SETUP_WRITEUP.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/SETUP_WRITEUP.md): Full narrative setup history and rationale.
+- [dotfiles/.claude/CLAUDE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/CLAUDE.md): OMC (oh-my-claudecode) orchestration config — agent routing, model tiers, skill triggers.
+- [dotfiles/.claude/SKILLS-MAP.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/SKILLS-MAP.md): Cheat sheet — "when you want to do X, invoke Y" across the ~95-skill library.
+
+## Installation
+
+- [install.sh](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/install.sh): Stow-based install entrypoint.
+- [docs/INSTALLATION.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/INSTALLATION.md): Detailed setup instructions.
+- [Brewfile](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/Brewfile): Package dependencies (Homebrew).
+- [scripts/](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/scripts/): Setup scripts (ai-setup, herdr-setup, github, security-init, config-init).
+
+## Configuration
+
+- [docs/APPLICATIONS.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/APPLICATIONS.md): App-specific settings.
+- [docs/MACOS.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/MACOS.md): System preferences.
+- [docs/SHELL.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/SHELL.md): ZSH setup and customization.
+- [dotfiles/.config/hunk/USAGE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/hunk/USAGE.md): Hunk diff-review tool — our config, commands, agent-session protocol.
+- [dotfiles/.config/openwiki/USAGE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/openwiki/USAGE.md): OpenWiki doc generator — commands, config ceiling, local launchd recurrence setup.
+- [openwiki/quickstart.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/openwiki/quickstart.md): The generated deep-dive wiki — architecture, workflows, skills, ops, integrations.
+- [dotfiles/.config/agents/docs/](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/agents/docs/): Agent-agnostic shared reference docs (e.g. PR sizing policy).
+
+## Security
+
+- [docs/SECURITY.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/SECURITY.md): Secret scanning, git security hooks, environment safety checks.
+- [.gitleaks.toml](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/.gitleaks.toml): Gitleaks scanner config.
+- [.pre-commit-config.yaml](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/.pre-commit-config.yaml): Pre-commit hook configuration.
+
+## Testing
+
+- [docs/TESTING.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/TESTING.md): Test suite overview.
+- [test/run-tests.sh](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/test/run-tests.sh): Bash test runner entrypoint.
+
+## History
+
+- [docs/decision-log.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/decision-log.md): Running log of environment decisions and why.
+- [docs/audits/](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/audits/): Periodic repo/setup audits.
+- [docs/research/](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/research/): Investigation writeups (token efficiency, install proofs, wiring verification).
+
+## Optional
+
+- [docs/executions/](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/docs/executions/): Point-in-time execution/refactor plans.
+- [herdr-plugins/](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/herdr-plugins/): herdr worktree-orchestration plugins.
