@@ -1,5 +1,6 @@
 ---
 name: stage-v1-concept
+disable-model-invocation: true
 model: sonnet
 reasoning: medium
 description: Flush a completed grill session into a real project on disk. Takes pending_context_entries, pending_decision_log_entries, and an approved V1_IDEA_BRIEF from a scratch/ephemeral grill and writes them to a staged project directory with CONTEXT.md, decision-log.md, and optional ADRs. Use after grill-with-docs completes in scratch or ephemeral state and the user wants to make the concept real.

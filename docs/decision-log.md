@@ -638,3 +638,11 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Handoff:** Immediate — one-line `headroom` removal from `dotfiles/.pi/agent/settings.json` `packages[]`. Deferred build (lever #1, the context-budget lever #71 deferred here) — **session tool-schema profiles (lean/full)** → `/design-plan` → `/execute-phase`, folds into the install/config build.
 
 **Source:** wayfinder work-mode resolution ticket #74; research asset `docs/research/2026-07-09-token-context-efficiency.md`; setup audit FIND-26.
+
+## DL-0012 — #71 lock-set erosion + catalog-tier reapplication (amends #71 under DL-0008)
+
+**Date**: 2026-07-20
+**Context**: DL-0008 catalog-tier lock pass; 2026-07-20 skill-suite audit; PRs #81/#82. DL-0008–0011 are recorded in a parallel lane's pending change to this file; numbering continues from DL-0011.
+**Finding**: The 2026-07-09 router-exclusivity decision (#71) recorded 46 skills locked (`disable-model-invocation: true`), but before this PR only 16 SKILL.md files on main carried the flag in frontmatter. The lock set eroded — most likely during the 2026-07-15 path migration — and nothing enforced it (#70's wiring audit was never built).
+**Decision**: Reapply locks under the DL-0008 tiering rather than restoring #71's exact set: 31 catalog-tier skills (analytics, incident, library/reference, knowledge) get `disable-model-invocation: true` in this PR — 16 + 31 = 47 locked after. They stay user-invocable via `/name` and loadable by path from other skills. `resolving-merge-conflicts` and `clarity-review` stay open (auto-detection earns their slots). `git-guardrails` locked and marked retirement-leaning Tier B (redundant with settings deny-list, guardian hook, and the DL-0011 branch ruleset; telemetry review ~2026-08-20).
+**Tradeoffs accepted**: The lock set can erode again until the static wiring audit exists; the DL-0011 skill-invocation telemetry log is the interim ground truth for future prune decisions.

@@ -1,5 +1,6 @@
 ---
 name: rowan
+disable-model-invocation: true
 description: ROWAN — your Knowledge Operating System and thought partner over the _brain wiki. Use when the user says "/rowan …", asks what needs attention / brain status / what changed this week, asks what they know about a topic or what connects/contradicts ideas, wants to draft or pick a synthesis, triage their review queue, capture/ingest content, or run brain ops (lint, compile, rebuild today). Thin dispatcher over the `brain` CLI — loads only today.md at start, fetches wiki pages on demand.
 ---
 

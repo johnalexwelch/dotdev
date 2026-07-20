@@ -1,5 +1,6 @@
 ---
 name: docs-audit
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: 'Audits documentation drift across a repo: docs that no longer match the code, each other, or the agent-facing entry points, plus skill-frontmatter/invocation drift in this skills library. Checks completeness, accuracy, freshness, and coherence against whatever doc convention the repo actually uses (ADR/PRD/decision-log, or llms.txt/AGENTS.md/openwiki, or both) — not a fixed layout. Use for periodic doc-health checks, "audit docs", "check documentation", "are docs up to date", "doc drift", or after adding a new doc-generating tool.'
