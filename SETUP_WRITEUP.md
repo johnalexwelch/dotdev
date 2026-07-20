@@ -16,14 +16,18 @@ Everything lives in `~/dotdev`. One repo, two concerns:
     .zshrc
     .gitconfig
     .gitignore_global
-    .claude/                # Claude Code + pi config
-      skills/               # 70+ skills (source of truth — stowed to ~/.claude/skills)
-      skills.zip            # distributable archive of the skills dir
+    .claude/                # Claude-SPECIFIC config
+      skills → ../.config/agents/skills   # symlink to neutral shared source
+      docs   → ../.config/agents/docs     # symlink to neutral shared source
       hooks/                # workflow-guard.sh, herdr-agent-state.sh, etc.
       settings.json         # shared Claude config (hooks, plugins, permissions)
       settings.local.template.json  # machine-local template (gbrain MCP)
-    .pi/                    # pi agent config
-    .config/                # zsh, starship, lazygit, cursor, arc, raycast, etc.
+    .pi/                    # pi-specific config (reads shared skills via ~/.claude/skills)
+    .config/
+      agents/               # AGENT-AGNOSTIC shared source (name-neutral)
+        skills/             # 90+ skills — single source of truth for all agents
+        docs/               # shared agent reference
+      ...                   # zsh, starship, lazygit, cursor, arc, raycast, herdr, etc.
   scripts/
     ai-setup.sh             # guardian clone, pi packages, gbrain clone
     brew.sh                 # Homebrew bootstrap
@@ -126,6 +130,7 @@ Stowed from `dotfiles/.claude/settings.json` → `~/.claude/settings.json`.
 **Model**: `opus` (claude-opus-4-5). Extended thinking always on (`alwaysThinkingEnabled`, `effortLevel: high`). Advisor model: `opus`.
 
 **Permissions (allow all by default)**:
+
 ```
 Bash(*), Read, Write, Edit, Glob, Grep, LS, WebFetch, WebSearch,
 Agent, Monitor, SendMessage, Skill(*), LSP,
@@ -135,6 +140,7 @@ AskUserQuestion, NotebookEdit/Read, Task*
 ```
 
 **Hard denies**:
+
 ```
 sudo *, git push --force *, git push -f *, rm -rf / *, rm -rf ~*
 ```
@@ -142,6 +148,7 @@ sudo *, git push --force *, git push -f *, rm -rf / *, rm -rf ~*
 `defaultMode: auto` — runs without asking for every permission.
 
 **Env vars injected into every session**:
+
 - `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` — enables multi-agent team features
 - `LANGFUSE_HOST=http://192.168.4.43:3050` + `TRACE_TO_LANGFUSE=true` — traces to home-network Langfuse instance
 
@@ -160,6 +167,7 @@ sudo *, git push --force *, git push -f *, rm -rf / *, rm -rf ~*
 **Dependencies**: `@anthropic-ai/sdk`, `zod`, `typescript`. No tsx, no esbuild — zero known vulnerabilities.
 
 **Behavior**:
+
 - Evaluates command intent against session context and rules
 - Three outcomes: **allow** (proceed silently), **block** (exit 2, hard stop), **ask** (surface to user)
 - Falls back to `ask` mode if `ANTHROPIC_API_KEY` is not set
@@ -171,6 +179,7 @@ sudo *, git push --force *, git push -f *, rm -rf / *, rm -rf ~*
 **PreToolUse**: blocks `gh issue create/edit` from being labeled `ready-for-agent` if the issue body looks like a PRD (contains "PRD", "spec", "specification", "User Stories", etc.). PRD-parent issues must only be labeled as such; child implementation issues get the label.
 
 **PostToolUse**:
+
 - `gh issue create/edit + ready-for-agent` → prints checklist reminder (acceptance criteria, rollback, AFK/HITL, gates)
 - `gh pr create/ready` → warns not to claim CI success from exit code alone; checks WORKFLOW gates
 - `gh pr merge/close` → runs `git status` + `git worktree list`, tells agent to load `cleanup-delivery` skill
@@ -180,6 +189,7 @@ sudo *, git push --force *, git push -f *, rm -rf / *, rm -rf ~*
 **On every `Bash` call**: workflow-guard (above).
 
 **On every `Edit` or `Write`**:
+
 1. **Linter/formatter** — `ruff check --fix` + `ruff format` for `.py`; `npx eslint --fix` for `.ts/.tsx`
 2. **Secret scanner** — greps for `sk-*`, `AKIA*`, private key headers, `password=` literals; prints `WARNING` if found
 3. **File size guard** — warns if file exceeds 300 lines
@@ -195,10 +205,12 @@ Two hooks run at session start:
 ### 4f. Status Line (HUD)
 
 The bottom status bar is driven by **oh-my-claudecode**:
+
 ```
 sh ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud-cache.sh \
    ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud.mjs
 ```
+
 Installed by the `oh-my-claudecode@omc` plugin. Shows token usage, model, session info. Cache-backed to avoid slowing the prompt.
 
 ### 4g. Enabled Plugins
@@ -226,7 +238,7 @@ Disabled but installed: `code-review`, `commit-commands`, `feature-dev`, `figma`
 
 ### 4h. Skills Library
 
-`~/.claude/skills/` (symlinked from `dotfiles/.claude/skills/`) — **70+ skills**. Examples:
+`~/.config/agents/skills/` (neutral shared source; also reachable via `~/.claude/skills/`) — **90+ skills**. Examples:
 
 **Product / strategy**: `analysis-council`, `analysis-design`, `okr-generator`, `v1-idea-grill`, `v1-system-design`, `strategic-analysis-review`, `experiment-design`, `metric-council`, `metric-design`
 
@@ -270,6 +282,7 @@ Stowed from `dotfiles/.pi/agent/settings.json` → `~/.pi/agent/settings.json`.
 ### Packages (26 total)
 
 **Core intelligence**:
+
 - `pi-web-access` — web search + fetch
 - `pi-codex-goal` — goal tracking
 - `pi-agent-browser-native` — real browser automation
@@ -281,11 +294,13 @@ Stowed from `dotfiles/.pi/agent/settings.json` → `~/.pi/agent/settings.json`.
 - `pi-taskflow` — DAG-based multi-agent orchestration
 
 **GitHub + PR**:
+
 - `@gotgenes/pi-github-tools` — GitHub MCP tools
 - `pi-pr-ally` (git) — PR review + response
 - `@diegopetrucci/pi-triage-comments` — comment triage
 
 **Context management**:
+
 - `@diegopetrucci/pi-context-cap` — context window cap warnings
 - `@diegopetrucci/pi-context-inspector` — context usage visibility
 - `@diegopetrucci/pi-dirty-repo-guard` — blocks writes on dirty repos
@@ -293,6 +308,7 @@ Stowed from `dotfiles/.pi/agent/settings.json` → `~/.pi/agent/settings.json`.
 - `@narumitw/pi-caffeinate` — prevents macOS sleep during long runs
 
 **Output + display**:
+
 - `pi-tool-display` — richer tool result rendering
 - `@mcowger/pi-better-messages-cache` — message cache performance
 - `@hypabolic/pi-hypa` — compressed shell/read/grep/find/ls output
@@ -302,6 +318,7 @@ Stowed from `dotfiles/.pi/agent/settings.json` → `~/.pi/agent/settings.json`.
 - `pi-observability` — session observability
 
 **Notifications**:
+
 - `@diegopetrucci/pi-notify` — macOS notification integration
 
 ### modelRoles
@@ -347,6 +364,7 @@ Observational memory compression runs on haiku-4-5 (cheap, high-frequency).
 ### Conventional Commits
 
 `dotfiles/.config/git/commit-normalize.sh` — normalizes commit messages to Conventional Commits format. Two delivery paths:
+
 1. **Pre-commit hook** — via `.pre-commit-config.yaml` (`stages: [commit-msg]`) when `pre-commit install` is run in a repo
 2. **Manual** — `~/.config/git/commit-msg` searches for the script (same dir → XDG git dir → dotfiles path) when copied to a repo's `.git/hooks/`
 
@@ -364,10 +382,12 @@ Observational memory compression runs on haiku-4-5 (cheap, high-frequency).
 | `opencode` | Registers opencode sessions |
 
 Plugins:
+
 - `persiyanov/herdr-fresh-worktree` — creates clean worktrees pre-attached to herdr panes
 - `cloudmanic/herdr-plus` — extended herdr utilities
 
 **Workspace launchers**:
+
 - `hdev <path>` — opens a herdr workspace in the given directory
 - `hlog <path>` — opens a log-focused herdr workspace
 - `chorus`, `cora`, `mira` — project shortcuts pointing at canonical project dirs
@@ -463,7 +483,7 @@ Mira brokers cross-domain actions. Agents operate autonomously within their tier
 
 **stow tree-folding prevention** — `config-init.sh` pre-creates every target directory before stow runs. Without this, stow symlinks the entire directory rather than individual files, breaking apps that write into those dirs.
 
-**Guardian + pi in the same pipeline** — every Bash call goes through guardian (TypeScript LLM check, ~200ms hot) _then_ pi executes. Guardian runs from precompiled `dist/cli.js`; `tsx` is removed to eliminate the esbuild transitive vulnerability.
+**Guardian + pi in the same pipeline** — every Bash call goes through guardian (TypeScript LLM check, ~200ms hot) *then* pi executes. Guardian runs from precompiled `dist/cli.js`; `tsx` is removed to eliminate the esbuild transitive vulnerability.
 
 **DRY_RUN everywhere** — every script checks `DRY_RUN=${DRY_RUN:-0}` and routes through a `run_cmd()` wrapper. Lets you audit the full install sequence without touching the filesystem.
 

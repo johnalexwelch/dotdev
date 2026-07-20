@@ -47,7 +47,12 @@ run_cmd bash "$DOTFILES/scripts/macos/permissions.sh"
 # Create symlinks
 # Ensure target dirs exist so Stow creates per-item symlinks (not tree-folded)
 run_cmd mkdir -p "$HOME/.claude/hooks"
-run_cmd mkdir -p "$HOME/.claude/skills"
+run_cmd mkdir -p "$HOME/.claude/commands"
+run_cmd mkdir -p "$HOME/.claude/rules"
+run_cmd mkdir -p "$HOME/.claude/prompts"
+run_cmd mkdir -p "$HOME/.claude/reference"
+run_cmd mkdir -p "$HOME/.claude/code-standards-reference"
+run_cmd mkdir -p "$HOME/.config/agents"
 run_cmd mkdir -p "$HOME/.config"
 run_cmd mkdir -p "$HOME/.pi/agent"
 run_cmd mkdir -p "$HOME/.config/herdr"
@@ -58,10 +63,15 @@ else
     stow -d "$DOTFILES" -v -R -t "$HOME" dotfiles
 fi
 
+# Yazi plugins declared in dotfiles/.config/yazi/package.toml (reproducible install)
+if command -v ya >/dev/null 2>&1; then
+    run_cmd ya pkg install
+fi
+
 # AI tooling (guardian, headroom, gbrain, pi settings)
 run_cmd bash "$DOTFILES/scripts/ai-setup.sh"
 
 # Herdr integrations and plugins
 run_cmd bash "$DOTFILES/scripts/herdr-setup.sh"
 
-echo "Installation complete! Please restart your computer."
+echo "Installation complete! A restart is recommended to apply all macOS defaults."

@@ -549,3 +549,179 @@ This file is the canonical decision record for workflow-feature flows in this re
 - The canonical artifact becomes available immediately, while workflow integration remains scoped follow-up work.
 
 **Source:** grill-with-docs conversation on PR right-sizing for future project work.
+
+## 2026-07-09 - Erase the leaked ollama SSH key from git history (FIND-09)
+
+**Question:** A private ed25519 key (`dotfiles/config/ollama/id_ed25519`, fingerprint `SHA256:yR4RAyuDooI1lZMBPaQ9JXgHl77lJcLfb43CpntgKcE`) was committed (449613f) then deleted (3d0a778) without a history rewrite, so it stayed extractable. Rotate and/or erase from history?
+
+**Decision:** Rotate-first-then-erase. The key could not be found trusted anywhere on rotation check → treated as dead (grants nothing). Erased from all history anyway via `git filter-repo --path ... --invert-paths` on a fresh clone; force-pushed main (temporarily toggling branch protection `allow_force_pushes`, then restored) plus the renovate branches and the `v0.1.0` tag; both local checkouts reset to the rewritten history. Verified: private key = 0 objects on origin, commit 449613f GONE. New main HEAD `f1b6455`.
+
+**What else was considered:**
+
+- Leave it in history (rotate only): zero effort, but keeps tripping full-history secret scanners forever — rejected given the "clean/robust" destination.
+- Do nothing: rejected — a committed private key must at least be treated as compromised.
+
+**Tradeoffs accepted:**
+
+- History rewrite changed all commit SHAs and required refreshing both clones (done). GitHub `refs/pull/*` and cached commit views may still surface the old blob until GitHub GCs — acceptable because the key is dead. The public key (`.pub`, not secret) remains in history by design.
+
+**Source:** wayfinder Tier-0 ticket #69; setup audit FIND-09.
+
+## 2026-07-09 - Wiring-verification method (#70)
+
+**Question:** What signal proves each skill/hook/persona/router is actually invoked at runtime — never silently dead, never ambiguously wired — across pi/claude/codex? Produce a repeatable check for CI.
+
+**Decision:** Two-layer method, because "wired" is two distinct claims. (1) **Reachable** — exists, parses, registered where the harness looks; deterministic → the CI gate: a static wiring audit (skills discoverable per harness, codex `sync-codex-skills.sh` dry-run clean, `disable-model-invocation` set matches #71's list, hook scripts exist+`+x`, symlinks resolve) plus a hook-fire smoke test (feed each hook trigger JSON, assert exit/marker). (2) **Invoked** — a live session actually fired it; non-deterministic (can't force a model to invoke) → telemetry, sampled, never a gate: Langfuse for claude, pi-observability/tool-display/observational-memory for pi, none for codex yet. Cleared route (infra) hands to `/design-plan` → `/execute-phase` to build `scripts/verify-wiring.sh` into CI + a documented telemetry query recipe.
+
+**What else considered:**
+- Single runtime CI gate that asserts every skill fired — rejected: forcing a model to invoke is non-deterministic, would be flaky/false-red.
+- Static-only (does the file exist) — rejected: catches silently-dead but not ambiguously-wired (loaded yet never picked); telemetry needed for the second half.
+- Add new logging/telemetry infra — rejected as premature: Langfuse (claude) + pi-observability (pi) already capture invocation; deconflict/use, don't add.
+
+**Tradeoffs accepted:** Codex runtime invocation stays unproven until a codex trace sink exists (static-sync-clean is the only current codex signal). Runtime evidence is sampled/manual, not gated, so a skill can be reachable-and-green in CI yet still under-invoked — caught only by periodic telemetry review.
+
+**Graduates:** FIND-27 codex fog (verification stance now decided); backs #71 (audit enforces the disable-model-invocation set) and hook-enforcement confidence (smoke test proves it).
+
+**Source:** wayfinder work-mode resolution of ticket #70; research asset `docs/research/2026-07-09-wiring-verification-method.md`.
+
+## 2026-07-09 - Router-exclusivity: disable-model-invocation set (#71)
+
+**Question:** "workflow-router is the sole entry point" is false — 85 skills, only 12 carry `disable-model-invocation`. Which internal skills become router-exclusive (explicit-invoke only) vs stay model-invokable, and what's the rule for future skills?
+
+**Decision:** **Strict router-entry (provisional, trialing).** `workflow-router` is the single model-invokable *entry* for work. Everything that participates in a route — workflow entries, sub-steps, executors/mutators, orchestrators — plus every shared reference/scaffold is `disable-model-invocation: true`. Self-contained advisory/analysis/writing **tools** stay model-invokable so the agent reaches them by topic. Outcome: **39 open, 46 locked** (12 existing + 34 new). Rule for future skills: *default to locked* unless the skill is `workflow-router` or a no-mutation, no-downstream-route advisory/writing tool.
+
+**Why it's safe (the enabling mechanic):** `disable-model-invocation` only removes (1) the model auto-discovering/firing a skill and (2) its description's per-turn context cost. A parent workflow still loads a locked skill **by path** (`workflow-finalize` → "Load and execute `describe-pr/SKILL.md`"), and a human can still `/slash` it. So locking breaks no orchestration and preserves restart (direct `/slash` to any section + `workflow-router` Resume Check via `state.yaml`).
+
+**What else considered:**
+- Keep `workflow-*` entries model-invokable for topic-reach — rejected for now: strict integrity was chosen ("integrity always takes precedence; budget managed elsewhere"), and the router loading workflows by path costs nothing on recovery.
+- Budget-driven cut line (lock only to save context) — folded out: budget is #74's concern, not this decision's.
+
+**Tradeoffs accepted:** Bigger locked set than the audit's "13 internal" estimate — the agent can no longer auto-suggest a workflow by topic; all work starts at the router card. Owner is skeptical and explicitly wants to trial it live before committing. Judgment calls flagged to watch: `decision-log` kept open (shared recorder); `git-guardrails`/`slack-update`/`tdd` locked but debatable (first to reopen if the gate chafes).
+
+**Follow-up (execution):** 34 frontmatter flips + encoding the rule in `write-a-skill` are mechanical → fold into the `verify-wiring.sh` cleared-route build; a `disable-model-invocation` audit enforces the set (ties to #70).
+
+**Source:** wayfinder work-mode resolution of ticket #71; setup audit FIND-21.
+
+## 2026-07-09 - Fresh-Mac reproducible-install proof (#73)
+
+**Question:** How do we *prove* dotdev installs clean on a fresh Mac across pi/claude/codex? The macOS path is broken today (FIND-11–19, FIND-29). Decide the verification approach before the known fixes route to design-plan→execute-phase.
+
+**Decision:** Prove two deterministic claims for the **portable core**, smoke-test the rest. Split `install.sh` into `install_core` (HOME-relocatable, no sudo/network/GUI) and `install_machine` (sudo/network/GUI). CI runs the core **for real** on a fresh `macos-15` runner against `HOME=$RUNNER_TEMP/fakehome` (proves *applies*), then runs it **again** (proves *idempotent* — every mutation becomes `ensure_*` guard-before-act). Sudo/network/GUI steps (brew bundle, `chsh`, `scutil`, private-repo clones, `pi install`) stay `DRY_RUN` echo plus static parse checks (`bash -n`, `brew bundle list --file Brewfile` for FIND-18). Recommended check: `test/install-core.bats` (bats-core) driving a new `install-core` CI job. Install-proof is harness-agnostic (all three = stowed dotfiles + a clone/package step); harness-specific *reachable* checks stay owned by #70's static wiring audit, not duplicated.
+
+**Why:** Today's `install-dry-run` job runs `install.sh` under `DRY_RUN=1`, but `run_cmd` then only `echo`s "Would execute: …" — so it never sources `terminal.sh`, never runs `stow` for real, never re-runs. Green CI, broken install. Dry-run previews intent; it does not prove the install works. The lever is making the portable core actually executable in a sandbox HOME.
+
+**What else considered:**
+- VM / container mac-ish harness — rejected: macOS can't run in a Linux container, nested-macOS VMs aren't worth it solo, and GitHub already gives fresh macOS runner instances per job.
+- Run whole `install.sh` on a macOS runner as-is — rejected: hard-coded `$HOME/dotdev`, `sudo` (`scutil`/`/etc/shells`/`chsh`), private `github-personal` SSH clones, full Brewfile — none safe/available in CI. That's *why* it stays untested.
+- A single runtime "did every step succeed on a real Mac" gate — rejected: same non-determinism trap as #70; sudo/network/GUI can't be a green/red gate.
+
+**Tradeoffs accepted:** CI proves only the portable core for real; sudo/network/GUI steps remain dry-run + static-parse, so a real-Mac-only break (e.g. a `chsh` edge case) can still slip past green CI — caught only on an actual fresh-Mac run. Accepted: the core is where the FIND-11–19 bugs live, and forcing sudo/creds into CI isn't worth it for a solo repo.
+
+**Graduates:** the install-verification stretch is now decided, so the dangling-tool reconciliation fog (FIND-22/23/24, FIND-10) folds into the same execute-phase install build as **execution**, not a fresh frontier decision (like the #71 follow-up). FIND-29 (Lint red on detect-secrets false positives) fixed in the same batch since it blocks seeing any of this go green.
+
+**Handoff:** `/design-plan` → `/execute-phase` (infra/scripts). Batch: export/guard `DOTFILES` + core/machine split (FIND-11) · stow path (FIND-12) · oh-my-zsh reconcile (FIND-13) · double-run (FIND-14) · SSH alias + idempotent key-add (FIND-16/17) · Brewfile DSL (FIND-18) · mcp path portability (FIND-19) · `install-core.bats` + CI job + FIND-29 lint fix.
+
+**Source:** wayfinder work-mode resolution of ticket #73; research asset `docs/research/2026-07-09-fresh-mac-install-proof.md`; setup audit FIND-11–19, 29.
+
+## 2026-07-09 - Token/context efficiency: baseline + deconflict context stack (#74)
+
+**Question:** Where does the token/context budget go during sessions, and what's the optimization approach? Establish a baseline, rank levers, and deconflict the pi context-stack (FIND-26: 2 suspected redundant package pairs) — don't add.
+
+**Decision:** Budget splits into **fixed per-turn overhead** (tool schemas, skill listing, style/instruction blocks — paid every call) and **variable** (messages, thinking, tool results). Fixed overhead dominates because it multiplies across turns, and **tool schemas are the single largest fixed cost** (~24 packages register tools; agent-browser/taskflow/lens heaviest). Baseline *instrument* already exists — `context-inspector`'s `/context` — so build no measurement tool. **FIND-26 deconfliction (verified against actual behavior, not names):** drop **`headroom`** (redundant with `hypa` — both reduce tool output, but headroom is a nondeterministic LLM proxy needing `pip install headroom-ai[proxy]` + a running server, a fresh-Mac install liability); **keep both `cache-optimizer` and `pix-optimizer`** — they are *not* redundant (input-side prompt/KV-cache hygiene vs output-side verbosity toggles). Net: one removal, zero additions.
+
+**Why:** Tool-schema pruning multiplies over every turn, so a lean/full session profile is the biggest lever. hypa's local determinism beats headroom's LLM-proxy path and matches the map's portability/reproducibility destination (#73). The audit's second "pair" was a name-based false positive cleared by behavior inspection.
+
+**What else considered:**
+- Building a custom token-profiler — rejected: `context-inspector` already attributes the budget.
+- Keeping `headroom` alongside `hypa` — rejected: redundant reduction + non-portable dependency.
+
+**Handoff:** Immediate — one-line `headroom` removal from `dotfiles/.pi/agent/settings.json` `packages[]`. Deferred build (lever #1, the context-budget lever #71 deferred here) — **session tool-schema profiles (lean/full)** → `/design-plan` → `/execute-phase`, folds into the install/config build.
+
+**Source:** wayfinder work-mode resolution ticket #74; research asset `docs/research/2026-07-09-token-context-efficiency.md`; setup audit FIND-26.
+
+## DL-0008 — Routing authority model (hybrid)
+
+**Date**: 2026-07-20
+**Context**: 2026-07-20 skill-suite audit (F-1/F-2) + refactor proposal D1; approved by Alex in session
+**Question**: Which of the three competing routing layers (workflow-router, superpowers:using-superpowers, OMC keyword triggers) owns skill invocation?
+**Decision**: Hybrid — workflow-router keeps sole authority over delivery/mutating work; non-delivery clusters get router rows or an explicit documented catalog tier (direct invoke, never routed); OMC keyword auto-fires disabled (`OMC_SKIP_HOOKS=keyword-detector`, applied 2026-07-20); superpowers plugin disabled (`enabledPlugins` false, applied 2026-07-20) — its SessionStart injection and "invoke before any response" mandate conflicted with the Route Confirmation Gate.
+**Alternatives considered**:
+- Router-supreme for all work — rejected: heavy ceremony for analytics/creative/catalog skills.
+- Status quo + documentation — rejected: 2026-07-19 reflection proves prose-only authority doesn't hold.
+**Tradeoffs accepted**: Lose superpowers skills (brainstorming, systematic-debugging — covered by grill-with-docs and diagnose/workflow-debug respectively); OMC modes now require explicit invocation (`/oh-my-claudecode:*` or magic words handled by skill text, not hook regex).
+
+## DL-0009 — Mechanical enforcement without paid branch protection
+
+**Date**: 2026-07-20
+**Context**: refactor proposal D2; repo-audit FIND-31; Alex: "can't use branch protection on a personal account, migrating to something local eventually"
+**Decision**: PENDING AMENDMENT — dotdev is public, so GitHub branch protection IS available free (verified `gh api repos/johnalexwelch/dotdev` → public). Awaiting Alex's call on enabling a minimal ruleset (PR required, no force-push) vs deferring to the future local migration. Interim regardless: make CI green-able (check-only hooks) and wire the test suite into CI so green means something.
+**Alternatives considered**: paid Pro plan (unnecessary — repo is public); local git server migration (Alex's stated long-term direction).
+**Tradeoffs accepted**: until some protection exists, gates remain advisory for direct pushes.
+
+## DL-0010 — Meta-layer diet
+
+**Date**: 2026-07-20
+**Context**: refactor proposal D5; repo-audit FIND-37/FIND-38; approved by Alex in session
+**Decision**: One decision mechanism: `docs/decision-log.md` (this file) is canonical; fold ADR-0002 content into a DL entry and retire both untracked ADR dirs; set a retention policy for `docs/executions/**`; enforce-or-drop the session-insight "no reflections" rule (currently violated 9×). Details to be phased in the design-plan.
+**Alternatives considered**: ADR-first (rejected — decision-log itself calls ADRs overkill for this repo and DL is already the richer record).
+**Tradeoffs accepted**: ADR-0002's routing-authority content must be re-homed (superseded by DL-0008) or it loses provenance.
+
+## DL-0011 — Branch protection enabled on main (amends DL-0009)
+
+**Date**: 2026-07-20
+**Context**: DL-0009 pending amendment; Alex approved enabling protection ("I've enabled branch protections"); UI attempt didn't persist (rulesets API returned empty), so ruleset created via API
+**Decision**: Repository ruleset `main-protection` (id 19215668) active on the default branch: pull request required (0 approvals — solo repo), force pushes blocked, branch deletion blocked, no bypass actors. Verified via `gh api repos/johnalexwelch/dotdev/rules/branches/main`. Direct pushes to main are now mechanically impossible — the workflow-router worktree+PR policy is enforced, not advisory. Also 2026-07-20: skill-invocation telemetry hook added to settings.json (PreToolUse, matcher Skill → ~/.claude/logs/skill-invocations.log) to give deprecation decisions usage ground truth after 30 days.
+**Alternatives considered**: legacy branch-protection API (rulesets are the current mechanism); requiring CI checks (deferred until the revived `tests` job from PR #80 proves stable).
+**Tradeoffs accepted**: solo merges without review remain possible by design; local migration later supersedes this.
+
+## DL-0012 — #71 lock-set erosion + catalog-tier reapplication (amends #71 under DL-0008)
+
+**Date**: 2026-07-20
+**Context**: DL-0008 catalog-tier lock pass; 2026-07-20 skill-suite audit; PRs #81/#82. DL-0008–0011 are recorded in a parallel lane's pending change to this file; numbering continues from DL-0011.
+**Finding**: The 2026-07-09 router-exclusivity decision (#71) recorded 46 skills locked (`disable-model-invocation: true`), but before this PR only 16 SKILL.md files on main carried the flag in frontmatter. The lock set eroded — most likely during the 2026-07-15 path migration — and nothing enforced it (#70's wiring audit was never built).
+**Decision**: Reapply locks under the DL-0008 tiering rather than restoring #71's exact set: 31 catalog-tier skills (analytics, incident, library/reference, knowledge) get `disable-model-invocation: true` in this PR — 16 + 31 = 47 locked after. They stay user-invocable via `/name` and loadable by path from other skills. `resolving-merge-conflicts` and `clarity-review` stay open (auto-detection earns their slots). `git-guardrails` locked and marked retirement-leaning Tier B (redundant with settings deny-list, guardian hook, and the DL-0011 branch ruleset; telemetry review ~2026-08-20).
+**Tradeoffs accepted**: The lock set can erode again until the static wiring audit exists; the DL-0011 skill-invocation telemetry log is the interim ground truth for future prune decisions.
+
+## DL-0013 — Fold ADR-0002 (sole routing authority) into the decision log
+
+**Date**: 2026-07-20
+**Context**: Phase 5 of `docs/plans/2026-07-20-remaining-refactor-design.md` (REQ-4/FIND-38), executing DL-0010's "fold ADR-0002 content into a DL entry" task. Source: `docs/adr/0002-sole-routing-authority.md` — an untracked file that existed only in a working tree, never committed to `origin/main` (confirmed via `git show origin/main:docs/adr` → path does not exist).
+**Question**: Now that `docs/adr/` is retired as a decision-record mechanism (DL-0010), where does ADR-0002's rationale live so it isn't lost?
+**Decision**: Preserved verbatim in substance, here: `workflow-router` is the single entry point that classifies incoming work and dispatches it to the appropriate workflow skill. `dotfiles/.claude/reference/workflows.md` is reference documentation only — it describes the canonical loop but never routes on its own. OMC keyword shortcuts (`autopilot`, `ralph`, `ultrawork`, etc.) bypass only the router's classification step; any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `workflow-review`, and `workflow-finalize`. All other work goes through the router. This is the historical record of the original decision; DL-0008 (routing authority model, hybrid) is the **operative** decision for the current state — it refines this by adding the catalog tier and by disabling OMC keyword auto-fire entirely (`OMC_SKIP_HOOKS=keyword-detector`) rather than merely pinning shortcut output to delivery gates.
+**Alternatives considered** (from the original ADR):
+- Let `workflows.md` double as a routing document — rejected: two sources of routing truth drift; the router's classification table would inevitably diverge from the prose diagram.
+- Require OMC shortcuts to also pass through the router's classification step — rejected: the shortcuts exist specifically to skip classification for known power-user intents; instead their outputs are pinned to the same delivery gates as router-dispatched work, so skipping classification never skips safety.
+**Tradeoffs accepted**: This entry and DL-0008 now both describe workflow-router's routing authority — append-only convention means the original isn't rewritten, only superseded in place. A reader should treat DL-0008 as authoritative for current behavior and this entry as provenance for why the authority model exists at all. `docs/adr/` no longer exists in any form (it was never tracked on `main` to begin with — no `git rm` was needed to retire it).
+
+## DL-0014 — Machine-local ADR rationale preserved before `~/.claude/docs/adr/` deletion
+
+**Date**: 2026-07-20
+**Context**: Phase 5 task 2 (`docs/plans/2026-07-20-remaining-refactor-design.md` §5.5) — Alex: "those can likely be cleaned up," referring to `~/.claude/docs/adr/` (3 files, machine-local, outside this repo, not git-tracked anywhere). Before deleting, each file was read in full and checked against this log, ADR-0002/DL-0013, and the corpus-level `dotfiles/.config/agents/skills/_docs/decision-log.md` for unique content.
+**Question**: Does any of the 3 machine-local ADR files carry rationale that would be lost entirely if the directory is deleted?
+**Decision**: Two of the three carry unique content not captured anywhere in-repo; both are folded in below. The third is a pure duplicate and needed no fold-in.
+- **`0001-stow-plus-cora-dual-layer-installation.md`** (unique, preserved as historical rationale — the mechanism it describes is now partially superseded, see note): skills were authored in the `dotdev` repo; GNU Stow created symlinks from `dotfiles/.claude/skills/` into `~/.claude/skills/`, and CORA one-way-synced from `~/.claude/skills/` to `~/.codex/skills/`, filtering out skills marked `codex-compatible: false` and anything under `deprecated/`. This was chosen over CORA syncing directly from dotdev (couples CORA to Stow's package layout), Stow managing both Claude and Codex targets (Stow can't do conditional frontmatter filtering), or dropping CORA's sync entirely (losing validation, normalization, and overlap detection). CORA had to detect Stow-managed symlinks and skip normalization for them, since `shutil.move` on a symlink target would break the Stow link and detach the version-controlled source. **Note**: Phase 1 of the same refactor plan (REQ-2/FIND-33) already retired the `dotfiles/.claude/skills` Stow indirection — `scripts/ai-setup.sh` now links `~/.claude/skills` directly to `~/.config/agents/skills` (`ln -sfn "$HOME/.config/agents/skills" "$HOME/.claude/skills"`) — so the Stow half of this pattern is historical, not current architecture. The CORA→Codex sync half (via `sync-codex-skills.sh`) is still live and is the direct ancestor of DL-0016 below.
+- **`0003-hard-soft-contract-split.md`** (unique, preserved verbatim in substance): every core skill's Contract section splits into a **hard contract** (Consumes, Produces, Requires, Side effects, Human gates — testable guarantees CORA validates) and **soft context** (Typical workflows, Pairs well with — advisory information for humans and routers, never validated). Chosen over all-hard contracts (workflow-sequencing as a hard guarantee creates O(N) maintenance on every routing change) and all-soft/no-contracts (contracts become untrusted documentation, or atomic skills become black boxes). This split is why only workflow skills need updating when sequencing changes; atomic skills just declare inputs/outputs.
+- **`0002-workflow-router-as-single-routing-authority.md`**: no unique content — fully duplicates the topic already captured by DL-0008 (operative) and DL-0013 (historical fold of the in-repo ADR-0002). Nothing further folded.
+**Alternatives considered**: Delete all 3 without a read-through (rejected — would have silently lost the Stow+CORA and hard/soft-contract rationale, which are not written down anywhere else); keep the 3 files indefinitely instead of deleting (rejected — Alex explicitly asked for the cleanup, and provenance is now preserved here as plain text).
+**Tradeoffs accepted**: This entry condenses two originally-separate, differently-scoped ADRs into one DL entry rather than two. If either topic needs its own supersession later, the follow-up entry should reference DL-0014 by number rather than splitting it retroactively. `~/.claude/docs/adr/` and its 3 files are deleted (machine-local `rm`, not a repo commit — outside `dotdev`'s git tree).
+
+## DL-0015 — Reflection retention policy for `docs/executions/reflections/`
+
+**Date**: 2026-07-20
+**Context**: Phase 5 task 3 (`docs/plans/2026-07-20-remaining-refactor-design.md` §5.5); DL-0010's "set a retention policy for `docs/executions/**`"; retention window confirmed by Alex ("that's fine") on the plan's own recommendation of 60 days.
+**Question**: `docs/executions/reflections/` accumulates one file per `session-insight` run with no pruning mechanism. What retention rule keeps it from growing unbounded while not silently destroying personal working-session records?
+**Decision**: Time-based, 60 days, archive-not-delete. A reflection file under `docs/executions/reflections/` is eligible for archival once **both** hold: (1) its filename date (`<YYYY-MM-DD>-<slug>.md`) is more than 60 days before the current date, and (2) it has no inbound reference (by filename or date+slug) from an active item in `docs/executions/skill-backlog.md`. Eligible files move to `docs/executions/reflections/archive/` — never hard-deleted, since these are personal working-session records and archival preserves them for later grep/audit while keeping the live directory small. Applied once as a one-time cleanup in this same PR (see DL-0016's sibling verification note / PR body for the before/after count): as of 2026-07-20, all 7 files on `origin/main` are dated 2026-07-09 through 2026-07-17 (11–41 days old), so **none** met the 60-day threshold — the rule is recorded and exercised (checked against every file), but produced zero archivals this run. Re-apply this same check on each future `session-insight` or repo-audit pass; do not let it silently stop being checked just because this run found nothing to move.
+**Alternatives considered**: hard-delete instead of archive — rejected, these are personal session records with recovery value, and archival costs nothing extra; count-based retention (keep last N) — rejected, doesn't correlate with actual staleness, a burst of sessions would prune recent-and-relevant files; no policy (status quo) — rejected, this is exactly the unbounded-growth gap DL-0010/FIND-38 flagged.
+**Tradeoffs accepted**: The skill-backlog cross-reference check is manual (grep by filename/date/slug) unless/until a script automates it; a reflection could still be pruned while informally "remembered" by a human even if no skill-backlog line references it — acceptable, since skill-backlog is the corpus's own mechanism for marking a finding as still-live.
+
+## DL-0016 — Tool-agnostic-by-default policy for new skill authoring
+
+**Date**: 2026-07-20
+**Context**: Decision made in the Phase 5 session (not originally scoped in `docs/plans/2026-07-20-remaining-refactor-design.md`'s written text) — folded in as new task 5 per Alex's direction during this run.
+**Question**: Should new custom skills default to portable (usable across Claude Code, Codex, and any other harness), or should tool-specific dependencies be the unmarked default?
+**Decision**: New custom skills must default to tool-agnostic/portable unless there is a genuine hard dependency (an MCP server, an interactive-only tool) with no fallback — in which case the skill must explicitly set `codex-compatible: false` in frontmatter with the reason stated in the skill body. Verified ground truth as of 2026-07-20 (frontmatter-only grep across all 93 corpus `SKILL.md` files, not body-text mentions): 11 skills carry `codex-compatible: true`, 3 carry `codex-compatible: false` (`brain-ops`, `slack-update`, `user-journey-qa` — each has a stated MCP/interactive-tool dependency in its own body text), and 79 have no explicit flag. `sync-codex-skills.sh` (lines ~103, ~152) is inclusive by default — it excludes a skill only when its frontmatter literally reads `codex-compatible: false`; an unflagged skill syncs to Codex — so the 79 unflagged skills are not a silent-exclusion bug, they're syncing today by the tool's own designed default. The actual gap: `write-a-skill/SKILL.md` (the skill governing new-skill authoring) never mentions `codex-compatible` at all (confirmed via direct grep — zero matches) — the determination is currently only caught reactively, by `workflow-effectiveness-audit`'s own gap-pattern #20, which is itself referenced only in two *other* skills' body text (`workflow-skill`, `session-insight`) as a note to authors, not enforced at authoring time. This entry records the policy; a follow-up task (out of scope for this phase) will add an explicit authoring-time question to `write-a-skill/SKILL.md` requiring every new skill to state its tool-agnostic determination before being considered complete.
+**Alternatives considered**:
+- Tool-specific-by-default, opt in to portability — rejected: inverts the actual value; most skills (prose + Bash/Read/Edit/Grep) have no real Claude-Code-only dependency, so defaulting to restriction would silently strand the majority on one harness for no reason.
+- Enforce mechanically now (a lint rule blocking skills with no explicit flag) — rejected for this phase: 79 skills are currently unflagged and syncing correctly under the tool's inclusive default; a blocking lint would create noise without a clear migration path. Authoring-time guidance in `write-a-skill` is the right lever, not a retroactive lint sweep.
+- Leave the determination purely reactive (status quo) — rejected: this is the exact gap `workflow-effectiveness-audit` gap-pattern #20 already flagged; leaving it reactive means it keeps recurring instead of being decided once at authoring time.
+**Tradeoffs accepted**: This entry records the policy but does not itself implement the `write-a-skill` authoring-time question — that's explicitly deferred to a follow-up task, not silently dropped. Until that lands, tool-agnostic-by-default is a stated norm, not a mechanically enforced one; the 3 explicitly-false skills were spot-checked this session and are legitimately justified, but nothing currently prevents a future skill from acquiring an unstated hard dependency without the flag.

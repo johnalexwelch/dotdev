@@ -1,4 +1,5 @@
 #!/bin/bash
+# Invariant: idempotent — clones AI tooling if absent, refreshes if present. Needs network.
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DRY_RUN=${DRY_RUN:-0}
@@ -16,6 +17,11 @@ if [ ! -f "$HOME/.claude/settings.local.json" ]; then
     run_cmd cp "$DOTFILES/dotfiles/.claude/settings.local.template.json" "$HOME/.claude/settings.local.json"
     echo "Created ~/.claude/settings.local.json from template"
 fi
+
+# Claude Code hardcodes ~/.claude/skills — point it at the canonical skills
+# source (~/.config/agents/skills) instead of duplicating files. Not a Stow
+# item since dotfiles/.claude/skills no longer exists (retired indirection).
+run_cmd ln -sfn "$HOME/.config/agents/skills" "$HOME/.claude/skills"
 
 # Install Headroom proxy
 if command -v pip3 &>/dev/null; then

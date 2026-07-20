@@ -1,0 +1,5 @@
+# smart-enter: <Enter> opens a file or enters a directory in one key.
+[[mgr.prepend_keymap]]
+on   = "<Enter>"
+run  = "plugin smart-enter"
+desc = "Open file or enter dir"
