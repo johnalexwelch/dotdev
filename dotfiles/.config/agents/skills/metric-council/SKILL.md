@@ -37,4 +37,4 @@ Headline (≤8 lines: answers its question? failure modes real? ship/iterate/red
 
 ## Post-process
 
-`humanizer: true` (synthesis), `domain_cleaner: slop-cleaner --mode analysis`. Persist to `.council/metric/`.
+`humanizer: true` (synthesis), `domain_cleaner: null` (slop-cleaner retired per DL-0008). Persist to `.council/metric/`.

@@ -21,7 +21,7 @@ Human gates: review verdicts require user input; ingest confirmation for large s
 ## Soft Context
 
 Typical workflows: knowledge capture (after meetings, reading, sessions), retrieval (before decisions, briefings, prep), maintenance (weekly lint, review queue triage)
-Pairs well with: write-to-obsidian (output persistence), handoff (brain context for next session), prompt-builder (brain context injection for Codex)
+Pairs well with: write-to-obsidian (output persistence; in the `core` plugin namespace — plugin-only, not in this corpus), handoff (brain context for next session), prompt-builder (brain context injection for Codex)
 
 ## Environment
 
