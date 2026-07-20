@@ -42,6 +42,9 @@ alias redshift='lazysql "$REDSHIFT_URL"'
 alias myip='curl ifconfig.me'
 alias ports='netstat -tulanp'
 
+# pi — load heavy agent-browser package on demand (kept out of default sessions)
+alias pib='pi -e npm:pi-agent-browser-native'
+
 # Editor aliases
 alias code="cursor"  # Make 'code' command open Cursor
 alias cur="cursor"   # Shorter alias for Cursor

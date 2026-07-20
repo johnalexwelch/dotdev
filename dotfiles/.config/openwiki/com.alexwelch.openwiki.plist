@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Scheduled OpenWiki doc refresh. launchd survives restarts and fires missed
+     runs on wake, so a powered-off Mac just delays the next run.
+     Install:
+       cp ~/.config/openwiki/com.alexwelch.openwiki.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.alexwelch.openwiki.plist
+     Uninstall: launchctl unload ~/Library/LaunchAgents/com.alexwelch.openwiki.plist && rm ...
+     Run now (test): launchctl start com.alexwelch.openwiki
+     Edit target repos in ~/.config/openwiki/repos.conf. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.alexwelch.openwiki</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/alexwelch/.config/openwiki/openwiki-scheduled.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>/tmp/openwiki-scheduled.log</string>
+  <key>StandardErrorPath</key><string>/tmp/openwiki-scheduled.err</string>
+</dict>
+</plist>

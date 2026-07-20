@@ -1,0 +1,15 @@
+# Yazi config. Defaults are good; this only sets a few opinionated tweaks.
+# ponytail: intentionally minimal — plugins/flavors are the add-later upgrade path
+# (see the note at the bottom). Add `ya pkg add <repo>` deps to package.toml when
+# you actually want git-status columns, smart-enter, etc.
+
+[mgr]
+ratio = [1, 3, 4]
+show_hidden = true
+sort_by = "natural"
+sort_dir_first = true
+linemode = "size"
+
+[preview]
+max_width = 1200
+max_height = 1200
