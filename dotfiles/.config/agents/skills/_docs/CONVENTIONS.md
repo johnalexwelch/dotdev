@@ -19,7 +19,7 @@ Do **not** rely on flow-arrow prose (`grill-with-docs → to-prd → to-issues`)
 
 ### 2. Resolution
 
-`<name>/SKILL.md` resolves against the **active skills root** (`~/.claude/skills` on a Claude host) — the symlink farm, with `~/dotdev/dotfiles/.claude/skills` (canon) as the source of truth behind the links. A referenced skill must be **linked into the active root**, not merely present in canon. A skill that exists in canon but isn't linked is invisible at runtime — referencing it produces a hollow loop (an orchestrator that dies at a step it can't load).
+`<name>/SKILL.md` resolves against the **active skills root** (`~/.claude/skills` on a Claude host) — a single symlink to `~/.config/agents/skills`, with `~/dotdev/dotfiles/.config/agents/skills` (canon) as the source of truth behind it (stowed via `~/.config/agents`). A referenced skill must be **present in the active root**, not merely present in canon. A skill that exists in canon but isn't linked in (e.g. not yet stowed) is invisible at runtime — referencing it produces a hollow loop (an orchestrator that dies at a step it can't load).
 
 ### 3. Availability guard
 

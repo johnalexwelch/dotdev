@@ -42,7 +42,7 @@ for d in "$root"/*/; do
         checked=$((checked + 1))
         if ! is_active "$ref"; then
             incanon="(not in canon either)"
-            [ -e "$HOME/dotdev/dotfiles/.claude/skills/$ref/SKILL.md" ] && incanon="(in canon, NOT linked)"
+            [ -e "$HOME/dotdev/dotfiles/.config/agents/skills/$ref/SKILL.md" ] && incanon="(in canon, NOT linked)"
             printf '  DANGLING: %-26s → %-22s %s\n' "$name" "$ref" "$incanon"
             dangling=$((dangling + 1))
         fi
