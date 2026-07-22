@@ -1,5 +1,23 @@
 # smart-enter: <Enter> opens a file or enters a directory in one key.
 [[mgr.prepend_keymap]]
-on   = "<Enter>"
-run  = "plugin smart-enter"
+on = "<Enter>"
+run = "plugin smart-enter"
 desc = "Open file or enter dir"
+
+# smart-paste: paste into the hovered dir instead of always the CWD.
+[[mgr.prepend_keymap]]
+on = "p"
+run = "plugin smart-paste"
+desc = "Paste into hovered dir"
+
+# toggle-pane: maximize the preview pane to actually read something, then restore.
+[[mgr.prepend_keymap]]
+on = "T"
+run = "plugin toggle-pane max-preview"
+desc = "Maximize/restore preview pane"
+
+# chmod: change mode on the selection without dropping to a shell.
+[[mgr.prepend_keymap]]
+on = ["c", "m"]
+run = "plugin chmod"
+desc = "Chmod selected files"
