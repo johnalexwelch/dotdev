@@ -12,7 +12,7 @@ Welcome to `dotdev`: a sophisticated personal development environment for AI-ass
 
 1. **System configuration** — dotfiles for macOS (zsh, git, applications) managed with GNU Stow
 2. **AI agent infrastructure** — hooks, guardrails, and skill libraries for Claude and pi agents
-3. **Workflow orchestration** — ~90 skills that route requests, manage execution phases, review PRs, and close delivery
+3. **Workflow orchestration** — ~93 skills that route requests, manage execution phases, review PRs, and close delivery
 4. **Documentation** — decision logs, diagrams, runbooks, and operational guides
 
 Everything lives in **one Git repository** (`~/dotdev`). The dotfiles symlink to `$HOME` via Stow; the skills live in `~/.config/agents/skills` and are symlinked from agent-specific config directories (`~/.claude/skills`, `~/.pi/agent`, etc.).
@@ -104,6 +104,12 @@ Gate blocks are not prose claims — they're **evidence records** with specific 
 ### Caveman Mode
 
 During implementation loops, narration is compressed ("caveman style") — drop articles, filler, pleasantries; prefer `[thing] [action] [reason]. [next].` This cuts token usage during the grind. Full prose returns for findings, blockers, and final handoffs.
+
+### Agent Habits
+
+Recurring correction patterns discovered across sessions (ground truth over speculation, scoped searches, newly-wired tools, mutating regen tools, post-rewrite semantic sanity).
+
+See [`docs/agents/habits.md`](../docs/agents/habits.md) for the definitive list. Referenced in [`AGENTS.md`](../AGENTS.md) and [`CLAUDE.md`](../CLAUDE.md).
 
 ---
 
