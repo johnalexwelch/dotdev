@@ -102,15 +102,19 @@ Before acting, show:
 
 **Self-cwd guard (before any `worktree remove`):** if the current working directory is `<path>` or a descendant of it, `cd` to the primary checkout / repo root first. Removing a worktree out from under *this* session's cwd breaks the shell even when no other process is anchored there.
 
+**Re-verify immediately before each destructive action when a concurrent session was detected during Gather State.** State drifts: a branch merged/deleted, a worktree touched, or a PR reopened between plan and execution. Right before each removal/deletion, re-check just that item (`git status --porcelain <path>`, `git branch -vv | grep <branch>`, `gh pr view <n> --json state,mergeStateStatus`) — the plan from Step 4 is stale the moment another agent commits. Skip only when no concurrent session was observed.
+
 Allowed commands after approval:
 
 - `git worktree remove "<path>"` for clean approved worktrees (only after the self-cwd guard).
 - `git worktree prune` after worktree removals.
 - `git branch -d "<branch>"` for merged approved local branches.
-- `git branch -D "<branch>"` only when the user explicitly approves discarding unmerged local work.
+- `git branch -D "<branch>"` only when the user explicitly approves discarding unmerged local work. Prefer one branch per command — `git branch -D a b c` deletes the branches it can, then exits non-zero on the first failure, so a batch can partially succeed while looking like it failed. Delete individually (or re-check state) when the exit code is non-zero.
 - `git push origin --delete "<branch>"` only with explicit remote-deletion approval.
 
 Do not use `git reset --hard`, force-push, or delete branches checked out in another worktree.
+
+**Draft-PR merge preflight:** if cleanup involves merging a PR that is still a draft, run `gh pr ready <n>` first — `gh pr merge` fails on a draft. Confirm the merge is approved and gates pass before marking ready.
 
 ### 6. Final Report
 

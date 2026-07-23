@@ -97,6 +97,7 @@ Skills with `count = 0` are usage-stale. Cross-reference with mtime-stale list t
 Read each `SKILL.md`'s frontmatter `description:` field. Compute pairwise semantic similarity (any reasonable approach — string overlap, embedding similarity, or LLM judgment). Flag pairs above 70% overlap.
 
 For each flagged pair: which one is canonical?
+
 - Listed in `~/.claude/SKILLS-MAP.md` wins
 - More recent edits win
 - More complete SKILL.md wins
@@ -134,6 +135,7 @@ rm -rf ~/dotdev/dotfiles/.config/agents/skills/<name>/
 ### 7. Update the map
 
 Edit `~/.claude/SKILLS-MAP.md`:
+
 - Remove archived/deleted skills from the "When you want to..." tables
 - Remove from "Trigger phrases"
 - Remove from "Persona library" if it's a persona

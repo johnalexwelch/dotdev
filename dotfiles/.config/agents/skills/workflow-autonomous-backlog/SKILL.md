@@ -41,6 +41,7 @@ WORKFLOW_STEPS:
 | Step 4: Create PRDs And Issues | conditional | pending | Runs for approved candidates |
 | Step 5: Prepare AFK Queue | conditional | pending | Runs when execution requested |
 | Step 6: Execute Backlog | conditional | pending | Runs after AFK approval |
+| Step 6.5: Post Auto-Merge Meta + Cleanup | conditional | pending | Runs only for items finalized as ready_auto_merge_enabled |
 | Step 7: Handoff | required | pending | - |
 ```
 
@@ -204,6 +205,15 @@ The run must record `REPO_DELIVERY_POLICY` before dispatch:
 
 Each issue runs through `workflow-build-one` or `workflow-debug`.
 
+AFK execution must enforce this per-issue sequence; do not skip or reorder:
+
+1. `tdd` first (red -> green -> refactor) before code delivery work begins. If TDD is not applicable (for example docs-only or metadata-only issue), record `tdd_not_applicable_with_reason` in the issue run evidence.
+2. Execute implementation via `workflow-build-one` or `workflow-debug`.
+3. Run `workflow-review` and require `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
+4. Run `workflow-finalize` and require a complete `WORKFLOW_FINALIZE_GATE`.
+
+An AFK issue run is not successful unless this chain is complete with evidence, or a `tdd_not_applicable_with_reason` entry was recorded for Step 1.
+
 Each issue must create its own fresh worktree before work starts. Worktree creation must follow `setup-worktree` or the Cursor `using-git-worktrees` pattern only when it is constrained to the project policy: fetch `origin`, resolve `WORKFLOW_BASE_GATE`, create a fresh branch from the resolved workflow base, run inside that worktree, and emit `WORKTREE_BASELINE_GATE`. Generic worktree creation that omits base resolution, reuses another issue's worktree, or works from the primary checkout does not satisfy this workflow.
 
 Any orchestrator-written briefing/coordination file for a spawned issue-agent (module brief, progress tracker, etc., not an output of an invoked skill) must stay untracked or live outside the worktree (`.git/info/exclude` or the herdr workspace metadata dir). Never let it ride in the PR diff. If `workflow-finalize` Step 1.5 catches scratch files that should have been excluded, record it in the run's handoff as an execution-discipline failure for the spawned agent, not merely a routine cleanup action — this closes the feedback loop for repeat offenders.
@@ -234,6 +244,15 @@ Required gates per PR:
 
 Missing gate evidence marks the item `needs-human`; it is not a successful AFK item.
 
+### 6.5. Post auto-merge meta + cleanup (conditional)
+
+When `workflow-finalize` reports `pr_state: ready_auto_merge_enabled` for an issue, run both:
+
+1. `session-insight` to capture process-level lessons from that AFK execution wave.
+2. `cleanup-delivery` after merge or explicit abandonment to reconcile stale worktrees/branches/ticket residue.
+
+If either step is skipped, record an explicit reason in the handoff. Do not claim auto-merge completion hygiene without evidence from both skills or a documented skip reason.
+
 ### 7. Handoff
 
 At completion, write a handoff with:
@@ -244,6 +263,8 @@ At completion, write a handoff with:
 - AFK queue and explicit approval evidence
 - per-issue status
 - PR links and repo delivery policy outcome
+- per-issue AFK execution chain evidence (`tdd` -> implementation -> `workflow-review` -> `workflow-finalize`) including any `tdd_not_applicable_with_reason`
+- post-auto-merge follow-through evidence for `session-insight` and `cleanup-delivery` (or explicit skip reason)
 - all gate blocks or missing-gate blockers
 - failed/retryable prompts
 - human release decisions still required for `human-only`, blocked, or failed items
@@ -262,4 +283,4 @@ This workflow completes only when:
 ## Context
 
 Typical workflows: autonomous module discovery, overnight AFK backlog execution, periodic backlog processing
-Pairs well with: repo-audit, to-prd, to-issues, triage, run-backlog, workflow-effectiveness-audit
+Pairs well with: repo-audit, to-prd, to-issues, triage, run-backlog, skill-system-audit

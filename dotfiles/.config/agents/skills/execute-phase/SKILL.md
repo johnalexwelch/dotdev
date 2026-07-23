@@ -182,6 +182,13 @@ Load these files as needed for the active step:
    `general-purpose` subagent with explicit scope, ordered verbatim
    tasks, no-`[human]` constraints, rollback reference, and required
    reporting. Parallelize only when scopes are disjoint.
+   **Small-cluster exception:** a single cluster touching ≤2 files with
+   unambiguous, verbatim-mechanical tasks may be executed directly
+   instead of dispatched — the subagent's isolation buys nothing when
+   there is no scope-decomposition or exploration to isolate. Steps 5
+   (scope check) and 7 (independent verifier) still run unchanged, so
+   the audit trail is preserved. When in doubt, or if the task needs any
+   judgment/exploration, dispatch.
 5. **Verify scope.** Run a separate read-only scope check against
    `git status --porcelain` and `git diff --name-only HEAD`. Halt on
    any out-of-scope write.

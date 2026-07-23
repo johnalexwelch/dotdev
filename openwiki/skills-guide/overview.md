@@ -324,6 +324,7 @@ WORKFLOW_STEPS:
 ## Gate Blocks (if decision-heavy)
 
 Structured evidence blocks with specific fields.
+
 ```
 
 ### Best Practices
@@ -353,6 +354,7 @@ When you create a new skill, verify it:
 When a prompt, goal, or handoff **names a skill**, the skill is **loaded and followed**:
 
 ```
+
 Agent: "I'll run workflow-finalize now"
     ↓
 [load ~/.config/agents/skills/workflow-finalize/SKILL.md]
@@ -360,6 +362,7 @@ Agent: "I'll run workflow-finalize now"
 [follow every step in the Process section]
     ↓
 [emit all required gate blocks before claiming completion]
+
 ```
 
 **Non-negotiable rule**: If the skill's steps or gate blocks are not present in the output, the skill did not run — no matter what the prose says.
@@ -395,4 +398,3 @@ This step is no longer used. Replaced by Step 5 (2026-01-15).
 - **Workflows**: [Workflows Overview](/openwiki/workflows/overview.md) (how skills are routed)
 - **Architecture**: [System Design](/openwiki/architecture/system-design.md) (how skills fit in the system)
 - **write-a-skill**: `~/.config/agents/skills/write-a-skill/SKILL.md` (detailed skill authoring guide)
-

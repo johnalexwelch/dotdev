@@ -127,11 +127,19 @@ For each issue in queue order:
       - `human-only`: create or update only a draft PR unless an existing non-draft PR already exists; do not mark ready, approve, merge, or enable auto-merge.
       - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer auto-merge over direct immediate merge.
       - Human-review-required issues override auto-merge eligibility: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until the human validation is complete.
+   - The prompt must require the AFK execution chain and evidence:
+      - `tdd` first (or `tdd_not_applicable_with_reason`)
+      - implementation via `workflow-build-one` or `workflow-debug`
+      - `workflow-review` with `WORKFLOW_REVIEW_GATE.verdict: APPROVE`
+      - `workflow-finalize` with a complete `WORKFLOW_FINALIZE_GATE`
    - The prompt must include the Partial-Completion Contract from `workflow-build-one`: before exit the worker must be Complete (all changes committed and pushed), WIP-paused (pushed `wip:` commit naming exactly what remains), or Rolled back (`git reset --hard <baseline>` with a clean worktree).
    - The prompt must require final `git status --short`; if any source file shows `M` or `??`, the worker must commit or reset and re-check before exiting.
 4. Dispatch:
    - **Codex mode**: require `omc`; if unavailable, halt for user approval before switching modes. Do not silently downgrade AFK isolation to direct Claude execution.
-   - **Claude mode**: invoke workflow-build-one with the generated prompt as context
+   - **Claude mode**:
+      - bug/regression issue -> invoke `workflow-debug` with the generated prompt as context
+      - non-bug issue -> invoke `workflow-build-one` with the generated prompt as context
+      - do not route bug work to `workflow-build-one`
 5. Each dispatch is independent — failure of one does not block others
 
 ### Phase 3: Monitor
@@ -142,12 +150,14 @@ For each issue in queue order:
    - Stacked PR does not target its parent branch, or parent gate evidence is missing/stale → flag `needs-human`
    - PR lacks a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE` → flag `needs-human`; green CI or GitHub/Claude/Codex/Bugbot review does not satisfy the review gate
    - PR lacks a complete `WORKFLOW_FINALIZE_GATE` block → flag `needs-human`; a PR URL, draft PR, or green CI alone does not satisfy finalization
+   - PR or handoff lacks AFK execution-chain evidence (`tdd` run or `tdd_not_applicable_with_reason`, then implementation workflow, `WORKFLOW_REVIEW_GATE` APPROVE, `WORKFLOW_FINALIZE_GATE`) → flag `needs-human`
    - Issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, but the PR body does not end with `## Reviewer validation steps` → flag `needs-human`; rerun finalization only after the issue contains concrete reviewer validation steps
    - PR or handoff lacks Partial-Completion Contract evidence → flag `needs-human`; require one of Complete, WIP-paused, or Rolled back plus final `git status --short`
    - Handoff reports dirty source files after final `git status --short` → flag `needs-human`; do not accept work that exits with uncommitted source changes
    - `human-only` repo: PR is not draft and does not have `pr_state: existing_non_draft_not_modified` in `WORKFLOW_FINALIZE_GATE` → flag `needs-human`; do not mark ready or accept silently promoted PRs
    - `auto-merge-eligible` repo with no human-review requirement: PR is not marked ready or does not have auto-merge enabled after all gates pass → rerun finalization once; if still missing, flag `needs-human`
    - Human-review-required issue: require `WORKFLOW_FINALIZE_GATE.pr_state: pending_human_validation` or an equivalent draft/pending-human state; do not mark the issue `done` until human validation is recorded or the PR is merged by a human
+   - `WORKFLOW_FINALIZE_GATE.pr_state: ready_auto_merge_enabled` but missing post-auto-merge follow-through evidence (`session-insight` and `cleanup-delivery`, or explicit skip reason) → flag `needs-human`
    - PR failed CI → leave for watch-ci auto-fix (or flag for human if exhausted)
    - PR needs review → leave (workflow-build-one handles its own review cycle)
    - PR merged by GitHub auto-merge and all required gate blocks are present → update issue label to `done`, remove `in-progress`
@@ -172,7 +182,8 @@ For each issue in queue order:
    - Always produce a handoff, even on 100% success (the summary alone is valuable context)
    - exit_reason: `backlog run complete`
    - remaining: failed issues (with error context), pending-review PRs, any `needs-human` items flagged during run
-   - Include AFK approval evidence, queue risk decisions, repo delivery policy, PR final action status, and gate status for every dispatched issue
+   - Include AFK approval evidence, queue risk decisions, repo delivery policy, PR final action status, AFK execution-chain evidence, and gate status for every dispatched issue
+   - Include post-auto-merge follow-through evidence (`session-insight` and `cleanup-delivery`) for issues finalized as `ready_auto_merge_enabled`, or explicit skip reasons
    - Include prompt-builder outputs for any failed issues that are retryable
    - Store at `docs/executions/handoffs/<date>-backlog-run.md`
 
@@ -201,6 +212,8 @@ Work queue artifact is written to `docs/executions/backlog-runs/[date].md` for a
 - Every dispatched worker must satisfy the Partial-Completion Contract before exit: Complete and pushed, WIP-paused with a pushed `wip:` commit naming exactly what remains, or Rolled back to the baseline with a clean worktree. A dirty source tree after `git status --short` is never an acceptable AFK exit.
 - Apply `references/outage-risk-policy.md` before dispatch and again before marking outcomes successful
 - Apply `references/repo-delivery-policy.md` before dispatch and before any final PR action
+- Enforce AFK execution chain evidence per issue: `tdd` (or `tdd_not_applicable_with_reason`) -> implementation workflow -> `WORKFLOW_REVIEW_GATE` APPROVE -> complete `WORKFLOW_FINALIZE_GATE`
+- For items finalized as `ready_auto_merge_enabled`, require post-auto-merge follow-through evidence from `session-insight` and `cleanup-delivery` (or explicit skip reason)
 - `human-only` repos: do not mark PRs ready, approve, merge, enable auto-merge, force-push, rebase, or perform destructive git in an AFK run
 - `auto-merge-eligible` repos: after all required gates pass, mark PRs ready and enable GitHub auto-merge; do not force-push, rebase, or perform destructive git
 
@@ -225,4 +238,4 @@ Before Phase 1:
 ## Context
 
 Typical workflows: standalone (periodic AFK execution), after workflow-feature (processes produced issues), workflow-autonomous-backlog (module discovery through backlog handoff)
-Pairs well with: workflow-build-one (Claude mode), reconcile-issues (post-run cleanup), triage (pre-run preparation), prompt-builder (generates per-issue prompts before dispatch), handoff (mandatory end-of-run exit), workflow-effectiveness-audit (post-run governance)
+Pairs well with: workflow-build-one (Claude mode), reconcile-issues (post-run cleanup), triage (pre-run preparation), prompt-builder (generates per-issue prompts before dispatch), handoff (mandatory end-of-run exit), skill-system-audit (post-run governance)

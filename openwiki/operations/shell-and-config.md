@@ -332,6 +332,7 @@ source ~/.zshrc
 **Cause**: Changes not reloaded.
 
 **Fix**:
+
 ```bash
 source ~/.zshrc
 ```
@@ -341,6 +342,7 @@ source ~/.zshrc
 **Cause**: Too many files being sourced or slow command in config.
 
 **Fix**:
+
 ```bash
 # Time startup
 time zsh -i -c exit
@@ -355,6 +357,7 @@ time source ~/.config/zsh/configs/aliases.zsh
 **Cause**: Atuin not initialized or database corrupted.
 
 **Fix**:
+
 ```bash
 # Check Atuin status
 atuin --version
@@ -371,6 +374,7 @@ source ~/.zshrc
 **Cause**: `git.zsh` not sourced or syntax error.
 
 **Fix**:
+
 ```bash
 source ~/.config/zsh/tools/git.zsh
 
@@ -383,6 +387,7 @@ bash -n ~/.config/zsh/tools/git.zsh
 **Cause**: `~/.aws/config` not set up or profile not selected.
 
 **Fix**:
+
 ```bash
 # List profiles
 aws-profiles
@@ -403,4 +408,3 @@ echo $AWS_PROFILE
 - [Atuin Docs](https://atuin.sh/) — History sync and backup
 - [Homebrew](https://brew.sh/) — Package manager
 - `~/.config/zsh/` — All configuration files (source of truth)
-

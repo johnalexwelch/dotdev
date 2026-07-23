@@ -65,12 +65,14 @@ Fix anything the merge broke. Do not move on until checks pass.
 ## 5. Finish the merge or rebase
 
 **Merge:**
+
 ```bash
 git add <resolved files>
 git commit   # git will pre-fill the merge commit message; keep it
 ```
 
 **Rebase:**
+
 ```bash
 git add <resolved files>
 git rebase --continue   # repeat phases 2–5 for each remaining commit

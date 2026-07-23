@@ -103,6 +103,7 @@ See [Shell & Config](/openwiki/operations/shell-and-config.md) for details.
 - **Usage guide**: See `dotfiles/.config/hunk/USAGE.md` for full command reference and agent-session protocol
 
 See [Hunk USAGE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.config/hunk/USAGE.md) in the repo for:
+
 - Configuration options (theme, mode, line numbers, agent notes)
 - Per-session overrides
 - Agent-driven live session control (agents must use daemon, not launch interactive TUI)
@@ -151,6 +152,7 @@ hlog --search term   # Search log history
 ```
 
 Useful for:
+
 - Capturing context before session switch
 - Daily standup notes
 - Session recovery after interruption
@@ -432,28 +434,33 @@ tap "johnalexwelch/personal"
 ## Adding a New Tool
 
 1. **Install via Homebrew** (if available):
+
    ```bash
    brew install my-tool
    echo 'my-tool' >> Brewfile
    ```
 
 2. **Add config** (if needed):
+
    ```bash
    mkdir -p dotfiles/.config/my-tool
    cp ~/path/to/my-tool/config dotfiles/.config/my-tool/
    ```
 
 3. **Update config-init.sh** (if top-level config dir):
+
    ```bash
    mkdir -p "$HOME/.config/my-tool"
    ```
 
 4. **Re-stow**:
+
    ```bash
    cd ~/dotdev && stow -d . -R -t $HOME dotfiles
    ```
 
 5. **Test**:
+
    ```bash
    my-tool --version
    ```
@@ -466,4 +473,3 @@ tap "johnalexwelch/personal"
 - [Operations: Shell & Config](/openwiki/operations/shell-and-config.md) — Detailed shell setup
 - [Architecture: System Design](/openwiki/architecture/system-design.md) — Agent hooks, guardian, workflow-guard
 - Individual tool documentation (external links)
-

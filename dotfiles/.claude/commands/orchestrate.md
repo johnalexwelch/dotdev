@@ -11,6 +11,7 @@ is the only confirmed way to set this.
 
 2. Verify `.claude/agents.env` exists in the current project directory.
    If not found, print the following and stop:
+
    ```
    Missing .claude/agents.env in this project. Create one with:
 

@@ -1,12 +1,12 @@
 ---
-name: workflow-effectiveness-audit
+name: skill-system-audit
 model: sonnet
 reasoning: high
 description: Evaluate whether skills and workflows are actually working. Audits recent agent transcripts, GitHub PRs/issues, and execution artifacts for skipped steps, missing subagents, unresolved review comments, weak handoffs, and routing gaps.
 codex-compatible: true
 ---
 
-# Workflow Effectiveness Audit
+# Skill System Audit
 
 ## Purpose
 
@@ -91,7 +91,7 @@ Produce a scorecard with these dimensions:
 | Issue hygiene | Were Closes/Fixes/Addresses dispositions used correctly? |
 | Verification quality | Were tests/CI/lints actually run and evidenced? |
 | Handoff quality | Did halts and completions produce usable handoff artifacts? |
-| Autonomous backlog safety | Did module PRDs/issues preserve provenance, candidate confidence, grill-with-docs module answers, MODULE_GRILL_CONSENSUS artifacts, CONTEXT/ADR updates when needed, scoped second-pass decisions, rollback expectations, queue approval, outage-risk controls, and all gate blocks per PR? |
+| Autonomous backlog safety | Did module PRDs/issues preserve provenance, candidate confidence, grill-with-docs module answers, MODULE_GRILL_CONSENSUS artifacts, CONTEXT/ADR updates when needed, scoped second-pass decisions, rollback expectations, queue approval, outage-risk controls, AFK execution-chain evidence (including `tdd` or explicit non-applicability), post-auto-merge follow-through evidence when applicable, and all gate blocks per PR? |
 | Sync health | Did Claude/Codex skill copies and Stow source remain aligned? |
 
 Use a simple rating:
@@ -109,7 +109,7 @@ Load `references/gap-patterns.md` and always check for every numbered pattern in
 Return:
 
 ```markdown
-# Workflow Effectiveness Audit
+# Skill System Audit
 
 ## Scope
 - Window:

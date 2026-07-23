@@ -25,6 +25,7 @@ Bot reviews land (Claude, Codex, Bugbot, Copilot); a human submits a review; the
 ## Process
 
 1. **Gather all open comments.** `gh pr view <n> --json reviews,comments` or `gh api repos/<o>/<r>/pulls/<n>/comments`. Filter resolved/outdated. Per comment capture: id, author (bot vs human), severity signal (blocker/suggestion/nit/question/praise), file+line, suggested change.
+   - If `gh` returns **"Could not resolve to a Repository"** (or 404 on a repo you know exists), run `gh auth status` first — the usual cause is an auth-account flip (the active `gh` account lacks access to that org/repo), not a wrong slug. Also pass `--repo <owner/slug>` explicitly when cwd may be a different repo's worktree. Fix auth before assuming the PR/number is wrong.
 2. **Verify before acting** (the anti-blind-agreement core). For each non-trivial suggestion: read the *surrounding* code (not just the hunk); is it technically correct (compiles, edge cases, matches patterns)?; is it contextually appropriate (does the reviewer have full intent)?; does it actually improve the code vs. style preference?
 3. **Classify each comment** with a verdict + action:
 
