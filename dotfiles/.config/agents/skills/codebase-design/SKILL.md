@@ -55,6 +55,7 @@ Deep module                          Shallow module (avoid)
 ```
 
 When designing an interface, ask:
+
 - Can I reduce the number of methods?
 - Can I simplify the parameters?
 - Can I hide more complexity inside?
@@ -71,6 +72,7 @@ When designing an interface, ask:
 Good interfaces make testing natural:
 
 1. **Accept dependencies, don't create them.**
+
    ```typescript
    // Testable
    function processOrder(order, paymentGateway) {}
@@ -82,6 +84,7 @@ Good interfaces make testing natural:
    ```
 
 2. **Return results, don't produce side effects.**
+
    ```typescript
    // Testable
    function calculateDiscount(cart): Discount {}

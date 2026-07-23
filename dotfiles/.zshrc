@@ -1,6 +1,16 @@
 export XDG_CONFIG_HOME="$HOME/.config"
 export ZSH_CONFIG="$XDG_CONFIG_HOME/zsh"
 
+# Recover automatically if the current directory was deleted (e.g., removed worktree).
+_recover_invalid_cwd() {
+  if [[ ! -d "$PWD" ]]; then
+    builtin cd -- "$HOME" 2>/dev/null || builtin cd -- /
+  fi
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd _recover_invalid_cwd
+_recover_invalid_cwd
+
 # Source configs
 for conf in "$ZSH_CONFIG/configs"/*.zsh; do
   # shellcheck source=/dev/null
@@ -132,3 +142,6 @@ source <(fzf --zsh)
 # so it owns Ctrl-R; --disable-up-arrow keeps Up as normal prefix history.
 # Cross-machine sync needs a one-time `atuin register`/`atuin login`.
 eval "$(atuin init zsh --disable-up-arrow)"
+
+# Hermes Agent — ensure ~/.local/bin is on PATH
+export PATH="$HOME/.local/bin:$PATH"

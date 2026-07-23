@@ -44,6 +44,8 @@ Routing:
 | **Type coercion** | Implicit string-to-number, date-to-string, boolean handling. |
 | **Unsafe mutations** | DELETE / UPDATE without WHERE, missing transaction, no LIMIT during test. |
 | **Dialect-specific** | Redshift sort/dist keys; BigQuery `_PARTITIONTIME`; Snowflake `QUALIFY`; Postgres array gotchas. |
+| **dbt layering** | Staging models conform names/types/casing only — **no business logic**; `int_`/mart models own joins, filtering, and business rules. Flag business logic in staging or raw-source coupling that skips `ref()`/`source()`. |
+| **Comparison/reconciliation targets** | When the query compares or reconciles two objects, confirm both sides are the intended models via `ref()`/lineage, not name similarity. A reconciliation against the wrong (e.g. legacy-shaped) table passes green while proving nothing. |
 
 ## Process
 

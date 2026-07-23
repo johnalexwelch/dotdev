@@ -25,7 +25,7 @@ Shared = `skills/`, `docs/`. Per-agent = `settings`, `hooks`, `commands`/`prompt
 dotfiles/
 ├── .config/agents/          # NEUTRAL shared source → ~/.config/agents/
 │   ├── skills/              # single skills source (was .claude/skills)
-│   └── docs/                # shared reference (was .claude/docs)
+│   └── docs/                # shared reference (was .config/agents/docs)
 ├── .claude/
 │   ├── skills → ../.config/agents/skills
 │   ├── settings.json  hooks/  commands/     # Claude-specific
@@ -63,10 +63,10 @@ reconciliation needed.
 - [x] `git mv dotfiles/.claude/skills dotfiles/.config/agents/skills` (helper scripts
       `sync-codex-skills.sh` + `lint-skill-suite.sh` + `codex-runtime-allowlist.txt`
       move WITH it — they self-locate via their own dirname).
-- [x] `git mv dotfiles/.claude/docs   dotfiles/.config/agents/docs`
+- [x] `git mv dotfiles/.config/agents/docs   dotfiles/.config/agents/docs`
 - [x] Committed compat symlinks so existing consumers keep resolving:
       - `dotfiles/.claude/skills → ../.config/agents/skills`  (claude stow + pi read via `~/.claude/skills`)
-      - `dotfiles/.claude/docs   → ../.config/agents/docs`
+      - `dotfiles/.config/agents/docs   → ../.config/agents/docs`
 - [x] **Codex: NO symlink.** Keep `sync-codex-skills.sh` (filtered copy). Only its
       source path changes — self-locates from new dir, no edit needed.
 - [x] Update hardcoded paths: `test/test-sync-codex-skills.sh`,

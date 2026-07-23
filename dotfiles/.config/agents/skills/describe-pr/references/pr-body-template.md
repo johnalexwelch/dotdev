@@ -37,7 +37,15 @@ Write to `docs/executions/.pr-bodies/<date>-pr-<N>.md` or `<date>-pr-<branch>.md
 
 ## How to verify
 
-<From the plan's Verification blocks and phase-run outcome files' `## Verification` PASS/FAIL. Cite any UNVERIFIED load-bearing claim as a reviewer focus item.>
+<From the plan's Verification blocks and phase-run outcome files' `## Verification` PASS/FAIL. Cite any UNVERIFIED load-bearing claim as a reviewer focus item.
+
+When the PR makes an **equivalence / no-impact / output-preserving** claim (refactor, migration, strategy swap, perf rewrite), structure the evidence MECE — each layer answers one distinct question, together exhaustive. Order cheapest-first:
+1. **Diff hygiene** — is the change only what we claim? (`git diff` scope)
+2. **Compiled/lowered artifact** — does the derived logic change? (compiled SQL / bytecode / plan diff = identical)
+3. **Semantics** — are the two forms equivalent by construction? (generated DDL/query, edge-case reasoning)
+4. **Empirical output** — does real output differ? Run BOTH old and new against the stack and reconcile (row-diff both directions; cover **initial AND repeat/subsequent runs** for anything stateful/incremental)
+5. **Precondition invariant** — is the assumption that makes them equivalent actually true in prod?
+State a **residual limitation** for any layer proven on a sample rather than exhaustively. Do NOT ship this scaffold for changes that don't assert equivalence — omit the layers that don't apply.>
 
 ## Vertical slice progress
 

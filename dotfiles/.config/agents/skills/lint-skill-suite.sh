@@ -146,8 +146,8 @@ done < <(find "$root" -mindepth 2 -maxdepth 2 -name SKILL.md -print0)
 # Generated skills index must be fresh (openwiki thesis: generate from source,
 # don't let it drift). Deterministic and one-command-fixable.
 if [ -x "$root/_docs/skills-index.sh" ]; then
-    "$root/_docs/skills-index.sh" --check >/dev/null 2>&1 \
-        || warn "_docs/skills-index.md is stale — run _docs/skills-index.sh --write"
+    "$root/_docs/skills-index.sh" --check >/dev/null 2>&1 ||
+        warn "_docs/skills-index.md is stale — run _docs/skills-index.sh --write"
 fi
 
 if [ "$check_runtime" = "1" ] && [ -d "$runtime_root" ]; then

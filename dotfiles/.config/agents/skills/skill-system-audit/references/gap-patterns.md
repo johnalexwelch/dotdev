@@ -1,6 +1,6 @@
 # Known Gap Patterns
 
-Checklist for step 4 of `workflow-effectiveness-audit`. Always check for these:
+Checklist for step 4 of `skill-system-audit`. Always check for these:
 
 1. `workflow-review` claimed completion but no independent review evidence exists.
 2. `WORKFLOW_REVIEW_GATE` missing, incomplete, self-reported by the author, missing `review_profile`, missing `independent_review: true`, or not backed by the selected profile's required reviewer outputs.
@@ -37,3 +37,5 @@ Checklist for step 4 of `workflow-effectiveness-audit`. Always check for these:
 23. `workflow-router` completed, halted, or received user route correction without a `ROUTER_LEARNING_NOTE`.
 24. `workflow-finalize` referenced a `needs-human-review`, `Human review: required`, or equivalent human-review-required issue, but the PR body did not end with a `## Reviewer validation steps` section containing concrete ordered validation actions from the issue.
 25. `describe-pr` or `workflow-finalize` treated `ready-for-human` or generic `Type: HITL` as a PR reviewer-validation trigger.
+26. `run-backlog` (or `workflow-autonomous-backlog` via `run-backlog`) accepted an AFK item without per-issue execution-chain evidence: `tdd` or `tdd_not_applicable_with_reason`, implementation workflow evidence, `WORKFLOW_REVIEW_GATE` APPROVE, and complete `WORKFLOW_FINALIZE_GATE`.
+27. `run-backlog` or `workflow-autonomous-backlog` marked a `ready_auto_merge_enabled` item complete without post-auto-merge follow-through evidence from `session-insight` and `cleanup-delivery`, or an explicit documented skip reason.

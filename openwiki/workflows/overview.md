@@ -92,11 +92,13 @@ SIMPLE DEFINED                                  COMPLEX
 ```
 
 **Key gates**:
+
 - WORKTREE_BASELINE_GATE (from setup-worktree)
 - WORKFLOW_REVIEW_GATE (from workflow-review, must be APPROVE)
 - WORKFLOW_FINALIZE_GATE (from workflow-finalize, confirms merge + cleanup)
 
 **Approval gates**:
+
 - workflow-review is independent (never author reviewing own work)
 - workflow-finalize is mandatory before merge
 
@@ -109,10 +111,12 @@ SIMPLE DEFINED                                  COMPLEX
 **Route**: Load policy → Fetch issues → Dispatch via Codex (one context per issue) → Check outage risk → Auto-merge or draft
 
 **Dispatch modes**:
+
 - **AFK default**: Each issue gets its own Codex context (natural isolation, parallel-safe)
 - **Interactive**: Sequential workflow-build-one for each issue
 
 **Approval gates**:
+
 - outage-risk-policy determines if AFK-safe; high-risk issues are flagged for human review
 - repo-policy determines auto-merge vs draft
 - Each issue still requires workflow-review + workflow-finalize internally
@@ -140,6 +144,7 @@ SIMPLE DEFINED                                  COMPLEX
 ```
 
 **Approval gates**:
+
 - workflow-roadmap: Human decides to proceed, pause, or reject
 - to-prd: PRD is written and posted as GitHub issue
 - to-issues: Decomposed into vertical slices, each with clear acceptance criteria
@@ -156,6 +161,7 @@ SIMPLE DEFINED                                  COMPLEX
 **Route**: Diagnose → Fix → Regression test → Review → Finalize
 
 **Diagnosis modes**:
+
 - **Quick**: Single likely cause, skip ranking, jump to fix
 - **Standard**: Full loop (reproduce → minimize → rank → test → fix)
 - **Production**: Read-only first, rollback plan required
@@ -164,6 +170,7 @@ SIMPLE DEFINED                                  COMPLEX
 **Output**: Diagnosis artifact (`docs/diag-<date>-<slug>.md`) that proves understanding, then normal code review.
 
 **Approval gates**:
+
 - workflow-review: Independent reviewer verifies fix
 - workflow-finalize: Merge + regression test deployed
 
@@ -176,11 +183,13 @@ SIMPLE DEFINED                                  COMPLEX
 **Route**: Analyze children → Order by dependency → For each child: setup-worktree → Implement → Review → Finalize → Reconcile parent → Final handoff
 
 **Dependency handling**:
+
 - **Linear**: Execute children in sequence
 - **Parallel**: Execute independent children in parallel (AFK mode uses Codex dispatch)
 - **Blocked**: Child waits for parent completion before starting
 
 **Approval gates**:
+
 - Each child issue goes through workflow-review + workflow-finalize
 - Parent issue status updated by reconcile-issues
 - On halt: handoff artifact with all PRs + evidence for resumption
@@ -191,7 +200,8 @@ SIMPLE DEFINED                                  COMPLEX
 
 **When**: Large refactor, migration, or architecture change.
 
-**Route**: 
+**Route**:
+
 1. **design-plan**: Turn requirement into phased plan with FIND/PLAN/EXECUTE structure
 2. **execute-phase**: Run one or more phases end-to-end
 3. Repeat for each phase until complete
@@ -213,6 +223,7 @@ SIMPLE DEFINED                                  COMPLEX
 ```
 
 **Approval gates**:
+
 - design-plan: Architecture decision reviewed
 - Per-phase: Separate worktrees and review gates
 - execute-phase: Requires decision-ref integrity gate
@@ -259,6 +270,7 @@ SIMPLE DEFINED                                  COMPLEX
 ## Common Paths
 
 ### "I have an idea"
+
 ```
 workflow-feature
   → grill-with-docs (stress-test against docs)
@@ -270,6 +282,7 @@ workflow-feature
 ```
 
 ### "I have a ready issue"
+
 ```
 workflow-build-one
   → setup-worktree
@@ -282,6 +295,7 @@ workflow-build-one
 ```
 
 ### "Bug report with unknown root cause"
+
 ```
 workflow-debug
   → diagnose (reproduce → minimize → rank → test → fix)
@@ -291,6 +305,7 @@ workflow-debug
 ```
 
 ### "Large refactor"
+
 ```
 design-plan
   → phases: [Prepare, Execute, Cleanup, ...]
@@ -303,6 +318,7 @@ design-plan
 ```
 
 ### "Multiple ready issues, unattended"
+
 ```
 run-backlog
   → dispatch via Codex (one context per issue)
@@ -356,4 +372,3 @@ If a session is interrupted, the next run checks this file and offers to resume 
 - [Skills Guide](/openwiki/skills-guide/overview.md) — All ~90 skills and categories
 - [Decision Log](/docs/decision-log.md) — Architectural decisions made during design
 - [AI_ENVIRONMENT.md](/AI_ENVIRONMENT.md) — Original overview (this wiki is derived from it)
-

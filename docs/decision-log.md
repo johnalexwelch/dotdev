@@ -574,6 +574,7 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Decision:** Two-layer method, because "wired" is two distinct claims. (1) **Reachable** — exists, parses, registered where the harness looks; deterministic → the CI gate: a static wiring audit (skills discoverable per harness, codex `sync-codex-skills.sh` dry-run clean, `disable-model-invocation` set matches #71's list, hook scripts exist+`+x`, symlinks resolve) plus a hook-fire smoke test (feed each hook trigger JSON, assert exit/marker). (2) **Invoked** — a live session actually fired it; non-deterministic (can't force a model to invoke) → telemetry, sampled, never a gate: Langfuse for claude, pi-observability/tool-display/observational-memory for pi, none for codex yet. Cleared route (infra) hands to `/design-plan` → `/execute-phase` to build `scripts/verify-wiring.sh` into CI + a documented telemetry query recipe.
 
 **What else considered:**
+
 - Single runtime CI gate that asserts every skill fired — rejected: forcing a model to invoke is non-deterministic, would be flaky/false-red.
 - Static-only (does the file exist) — rejected: catches silently-dead but not ambiguously-wired (loaded yet never picked); telemetry needed for the second half.
 - Add new logging/telemetry infra — rejected as premature: Langfuse (claude) + pi-observability (pi) already capture invocation; deconflict/use, don't add.
@@ -593,6 +594,7 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Why it's safe (the enabling mechanic):** `disable-model-invocation` only removes (1) the model auto-discovering/firing a skill and (2) its description's per-turn context cost. A parent workflow still loads a locked skill **by path** (`workflow-finalize` → "Load and execute `describe-pr/SKILL.md`"), and a human can still `/slash` it. So locking breaks no orchestration and preserves restart (direct `/slash` to any section + `workflow-router` Resume Check via `state.yaml`).
 
 **What else considered:**
+
 - Keep `workflow-*` entries model-invokable for topic-reach — rejected for now: strict integrity was chosen ("integrity always takes precedence; budget managed elsewhere"), and the router loading workflows by path costs nothing on recovery.
 - Budget-driven cut line (lock only to save context) — folded out: budget is #74's concern, not this decision's.
 
@@ -611,6 +613,7 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Why:** Today's `install-dry-run` job runs `install.sh` under `DRY_RUN=1`, but `run_cmd` then only `echo`s "Would execute: …" — so it never sources `terminal.sh`, never runs `stow` for real, never re-runs. Green CI, broken install. Dry-run previews intent; it does not prove the install works. The lever is making the portable core actually executable in a sandbox HOME.
 
 **What else considered:**
+
 - VM / container mac-ish harness — rejected: macOS can't run in a Linux container, nested-macOS VMs aren't worth it solo, and GitHub already gives fresh macOS runner instances per job.
 - Run whole `install.sh` on a macOS runner as-is — rejected: hard-coded `$HOME/dotdev`, `sudo` (`scutil`/`/etc/shells`/`chsh`), private `github-personal` SSH clones, full Brewfile — none safe/available in CI. That's *why* it stays untested.
 - A single runtime "did every step succeed on a real Mac" gate — rejected: same non-determinism trap as #70; sudo/network/GUI can't be a green/red gate.
@@ -627,17 +630,20 @@ This file is the canonical decision record for workflow-feature flows in this re
 
 **Question:** Where does the token/context budget go during sessions, and what's the optimization approach? Establish a baseline, rank levers, and deconflict the pi context-stack (FIND-26: 2 suspected redundant package pairs) — don't add.
 
-**Decision:** Budget splits into **fixed per-turn overhead** (tool schemas, skill listing, style/instruction blocks — paid every call) and **variable** (messages, thinking, tool results). Fixed overhead dominates because it multiplies across turns, and **tool schemas are the single largest fixed cost** (~24 packages register tools; agent-browser/taskflow/lens heaviest). Baseline *instrument* already exists — `context-inspector`'s `/context` — so build no measurement tool. **FIND-26 deconfliction (verified against actual behavior, not names):** drop **`headroom`** (redundant with `hypa` — both reduce tool output, but headroom is a nondeterministic LLM proxy needing `pip install headroom-ai[proxy]` + a running server, a fresh-Mac install liability); **keep both `cache-optimizer` and `pix-optimizer`** — they are *not* redundant (input-side prompt/KV-cache hygiene vs output-side verbosity toggles). Net: one removal, zero additions.
+**Decision:** Budget splits into **fixed per-turn overhead** (tool schemas, skill listing, style/instruction blocks — paid every call) and **variable** (messages, thinking, tool results). Fixed overhead dominates because it multiplies across turns, and **tool schemas are the single largest fixed cost** (~24 packages register tools; agent-browser/taskflow/lens heaviest). Baseline *instrument* already exists — `context-inspector`'s `/context` — so build no measurement tool. **FIND-26 deconfliction:** keep both `cache-optimizer`/`pix-optimizer` (input-side prompt/KV-cache hygiene vs output-side verbosity toggles — not redundant) **and** keep both `headroom`/`hypa`. Net: zero removals, zero additions.
 
-**Why:** Tool-schema pruning multiplies over every turn, so a lean/full session profile is the biggest lever. hypa's local determinism beats headroom's LLM-proxy path and matches the map's portability/reproducibility destination (#73). The audit's second "pair" was a name-based false positive cleared by behavior inspection.
+**Why:** Tool-schema pruning multiplies over every turn, so a lean/full session profile is the biggest lever. The audit's two "pairs" were both name-based false positives, cleared by behavior inspection: `cache-optimizer`/`pix-optimizer` act at different layers (input hygiene vs output verbosity), and so do `headroom`/`hypa` — `hypa` rewrites shell commands at emit-time with deterministic local reducers (errors/warnings/diffs/exit codes, shell-only); `headroom` is a pre-LLM-call safety net that compresses any oversized `toolResult` (shell or not) once context crosses a token threshold, via a local proxy with alignment guards, not a cloud LLM call. They form a pipeline (hypa shrinks at the source, headroom backstops what's left), not a duplicate pair.
+
+**Amendment (2026-07-22):** original decision below called `headroom` redundant with `hypa` and slated it for removal. That call was categorical ("both reduce tool output") without checking mechanism — corrected above. `headroom` was never actually removed from `settings.json`/`ai-setup.sh`; the proxy has been running locally throughout (confirmed via `/health`, no drift to reconcile).
 
 **What else considered:**
+
 - Building a custom token-profiler — rejected: `context-inspector` already attributes the budget.
-- Keeping `headroom` alongside `hypa` — rejected: redundant reduction + non-portable dependency.
+- Dropping `headroom` for `hypa` alone — rejected on amendment: different layer (pre-LLM-call semantic backstop vs shell emit-time deterministic reducer), not redundant.
 
-**Handoff:** Immediate — one-line `headroom` removal from `dotfiles/.pi/agent/settings.json` `packages[]`. Deferred build (lever #1, the context-budget lever #71 deferred here) — **session tool-schema profiles (lean/full)** → `/design-plan` → `/execute-phase`, folds into the install/config build.
+**Handoff:** No package removal. Deferred build (lever #1, the context-budget lever #71 deferred here) — **session tool-schema profiles (lean/full)** → `/design-plan` → `/execute-phase`, folds into the install/config build.
 
-**Source:** wayfinder work-mode resolution ticket #74; research asset `docs/research/2026-07-09-token-context-efficiency.md`; setup audit FIND-26.
+**Source:** wayfinder work-mode resolution ticket #74; research asset `docs/research/2026-07-09-token-context-efficiency.md`; setup audit FIND-26; amended 2026-07-22 per live-behavior research (headroom proxy `/health` check, package READMEs).
 
 ## DL-0008 — Routing authority model (hybrid)
 

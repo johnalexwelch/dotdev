@@ -24,6 +24,7 @@ Pairs well with: tdd, workflow-review, diagnose, improve-codebase-architecture
 ## 0. Before writing any code
 
 Read:
+
 - The full PRD or issue body including acceptance criteria
 - CONTEXT.md (if present) — use its vocabulary in all code and commits
 - ADRs in the area you're touching — do not re-litigate settled decisions

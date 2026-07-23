@@ -1,7 +1,7 @@
 # Skill Audit Report
 
 Date: 2026-06-21
-Root: `/Users/alexwelch/dotdev/dotfiles/.claude/skills`
+Root: `/Users/alexwelch/dotdev/dotfiles/.config/agents/skills`
 
 ## Status
 
@@ -71,7 +71,7 @@ All previously archived skills were restored:
 - `v1-workflow`
 - `vendor-council`
 - `workflow-autonomous-backlog`
-- `workflow-effectiveness-audit`
+- `skill-system-audit`
 - `workflow-executive-doc`
 - `workflow-feature`
 - `workflow-roadmap`

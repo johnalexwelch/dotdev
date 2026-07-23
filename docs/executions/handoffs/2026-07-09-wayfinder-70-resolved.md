@@ -28,6 +28,7 @@ Flat frontier of independent investigation tickets under map #68. Destination: r
 ## What is NOT done
 
 Five open frontier tickets, all unclaimed/unblocked:
+
 - **#71** `grilling` (HITL) — router-exclusivity: which internal skills get `disable-model-invocation` (12/85 today). Backed by #70.
 - **#72** `prototype` (HITL) — in-session visibility/trust: what a session should surface.
 - **#73** `research` (AFK) — fresh-Mac reproducible-install verification across pi/claude/codex (FIND-11–19, 29).
@@ -53,7 +54,7 @@ None gate the next session. HITL *within* tickets: #71, #72, #75 need live excha
 
 ## Files to read first
 
-- **Map #68** (source of truth): https://github.com/johnalexwelch/dotdev/issues/68
+- **Map #68** (source of truth): <https://github.com/johnalexwelch/dotdev/issues/68>
 - /Users/alexwelch/dotdev/docs/research/2026-07-09-wiring-verification-method.md — #70 asset (this session)
 - /Users/alexwelch/dotdev/docs/audits/2026-07-09-setup-audit.md — fog (FIND-09…29)
 - /Users/alexwelch/dotdev/docs/agents/issue-tracker.md → "Wayfinding operations" — tracker ops
