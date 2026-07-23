@@ -28,8 +28,6 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.lang.toml" },
     -- formatting
     { import = "lazyvim.plugins.extras.formatting.prettier" },
-    -- editor
-    { import = "lazyvim.plugins.extras.editor.harpoon2" },
     -- import/override with your plugins
     { import = "plugins" },
   },
