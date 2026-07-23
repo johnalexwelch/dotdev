@@ -78,4 +78,4 @@ Everything in `docs/audits/2026-07-09-setup-audit.md` (FIND-09…FIND-29) — do
 - `dotfiles/.claude/skills/wayfinder/SKILL.md` — the skill you're about to run.
 - `AI_ENVIRONMENT.md`, `SETUP_WRITEUP.md` — current setup writeups (note: drift-flagged in FIND-20).
 - `docs/audits/2026-07-02-repo-audit.md` — prior audit (FIND-01…08).
-- PR #67 — https://github.com/johnalexwelch/dotdev/pull/67 (draft; contains the skill work above).
+- PR #67 — <https://github.com/johnalexwelch/dotdev/pull/67> (draft; contains the skill work above).

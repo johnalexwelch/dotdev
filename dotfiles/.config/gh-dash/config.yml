@@ -11,7 +11,6 @@ prSections:
     filters: "is:open repo:johnalexwelch/chorus"
   - title: "My PRs"
     filters: "is:open repo:johnalexwelch/chorus author:@me"
-
 issuesSections:
   - title: "Needs Me"
     filters: "is:open repo:johnalexwelch/chorus label:ready-for-human,needs-human,needs-human-review,needs-info"
@@ -23,7 +22,6 @@ issuesSections:
     filters: "is:open repo:johnalexwelch/chorus label:blocked,blocked-planning,on-hold"
   - title: "Planning"
     filters: "is:open repo:johnalexwelch/chorus label:planning"
-
 defaults:
   prsLimit: 20
   issuesLimit: 30
@@ -39,7 +37,6 @@ defaults:
     issues:
       repoName:
         hidden: true
-
 keybindings:
   prs:
     - key: T
@@ -50,6 +47,7 @@ keybindings:
       name: comment
       command: >
         gh issue comment {{.IssueNumber}} --repo {{.RepoName}} --body "$(gum write --placeholder 'comment...')"
+
     - key: l
       name: label ready-for-agent
       command: gh issue edit {{.IssueNumber}} --repo {{.RepoName}} --add-label ready-for-agent --remove-label needs-triage

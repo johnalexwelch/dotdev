@@ -13,6 +13,7 @@ You are resuming multi-session `/wayfinder` **work-mode** in `johnalexwelch/dotd
 3. Do **Next step 1**. **Never resolve more than one ticket per session.** No open blocker gates the next session.
 
 **Next step 1:** Run `/wayfinder` against map #68. Take **one** frontier ticket. Frontier is now **#72, #73, #74, #75** (all open, unassigned, unblocked). Options:
+
 - **#73** (research, AFK, agent-drivable) — fresh-Mac reproducible-install proof across pi/claude/codex (FIND-11–19, 29). Recommended if going AFK.
 - **#74** (research, AFK) — token/context-efficiency baseline + approach (FIND-26). Note: **#71 deferred budget to #74** ("integrity wins; budget managed elsewhere") — so #74 now owns the context-budget lever explicitly.
 - **#72** (prototype, HITL) — in-session visibility/trust; needs live exchange + `/prototype`.
@@ -44,8 +45,8 @@ None gate the next session. HITL *within* tickets: #72, #75 need live exchange; 
 
 ## Files to read first
 
-- **Map #68** (source of truth): https://github.com/johnalexwelch/dotdev/issues/68
-- #71 resolution comment (full 39/46 per-skill lists): https://github.com/johnalexwelch/dotdev/issues/71
+- **Map #68** (source of truth): <https://github.com/johnalexwelch/dotdev/issues/68>
+- #71 resolution comment (full 39/46 per-skill lists): <https://github.com/johnalexwelch/dotdev/issues/71>
 - /Users/alexwelch/dotdev/docs/decision-log.md — decisions (latest: #71, 2026-07-09)
 - /Users/alexwelch/dotdev/docs/research/2026-07-09-wiring-verification-method.md — #70 asset (verify-wiring.sh spec that absorbs #71's apply)
 - /Users/alexwelch/dotdev/docs/audits/2026-07-09-setup-audit.md — fog (FIND-09…29)

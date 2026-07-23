@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture review — dotdev</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+    </script>
+    <style>
+      .seam { stroke-dasharray: 4 4; }
+      .leak { stroke: #dc2626; }
+      .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+      .mass-iface { background: #fef3c7; border: 2px solid #d97706; }
+      .mass-impl { background: #e2e8f0; border: 2px solid #64748b; }
+      .mass-deep-iface { background: #d1fae5; border: 2px solid #059669; height: 2rem; }
+      .mass-deep-impl { background: #0f172a; color: #e2e8f0; border: 2px solid #0f172a; }
+    </style>
+  </head>
+  <body class="bg-stone-50 text-slate-900 font-sans">
+    <main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+      <header class="space-y-4 border-b border-stone-200 pb-8">
+        <p class="text-xs uppercase tracking-widest text-stone-500">Architecture review</p>
+        <h1 class="font-serif text-4xl text-slate-900">dotdev — workflow skills</h1>
+        <p class="text-stone-600 text-sm">2026-07-17 · informed by <code class="text-xs bg-stone-200 px-1 rounded">.claude/CONTEXT.md</code> (Librarian) · no <code class="text-xs bg-stone-200 px-1 rounded">docs/adr/</code> present · decision-log only</p>
+        <div class="flex flex-wrap gap-4 text-xs text-stone-600 pt-2">
+          <span class="inline-flex items-center gap-2"><span class="w-4 h-4 border-2 border-slate-800 bg-white"></span> module</span>
+          <span class="inline-flex items-center gap-2"><span class="w-6 border-t-2 border-dashed border-slate-500"></span> seam</span>
+          <span class="inline-flex items-center gap-2"><span class="w-6 border-t-2 border-red-600"></span> leakage</span>
+          <span class="inline-flex items-center gap-2"><span class="w-4 h-4 bg-slate-900"></span> deep module</span>
+        </div>
+      </header>
+
+      <section id="candidates" class="space-y-10">
+
+        <!-- C1 -->
+        <article id="c1" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-stone-100 flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl">1. Deepen Worktree Baseline</h2>
+            <div class="flex gap-2">
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">local-substitutable</span>
+            </div>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <p class="font-mono text-xs text-stone-500 leading-relaxed">
+              setup-worktree/SKILL.md · setup-worktree/references/base-branch-policy.md ·
+              workflow-build-one · run-backlog · execute-prd · workflow-finalize ·
+              workflow-debug · prompt-builder · workflow-review
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 bg-stone-50 p-3">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">Before — invariant leaks</p>
+                <pre class="mermaid text-sm">
+flowchart TB
+  BO[workflow-build-one] -->|restates invariant| G1[WORKTREE_BASE_GATE]
+  RB[run-backlog] -->|restates invariant| G1
+  EP[execute-prd] -->|restates invariant| G1
+  WF[workflow-finalize] -->|checks gate prose| G1
+  SW[setup-worktree] -.->|deprecated sidecar| G1
+  G1 -.leak.-> CALLERS[6+ caller interfaces]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class G1,CALLERS leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-3 text-slate-100">
+                <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — one deep module</p>
+                <div class="space-y-3 text-xs">
+                  <div class="border border-emerald-500/60 rounded p-3">
+                    <p class="uppercase tracking-wider text-emerald-400 mb-1">Interface</p>
+                    <p>cut / verify / emit <code>WORKFLOW_BASE_GATE</code> + <code>WORKTREE_BASELINE_GATE</code> / <code>STACKED_WORKTREE_GATE</code></p>
+                  </div>
+                  <div class="deep rounded p-4 space-y-1 opacity-90">
+                    <p class="uppercase tracking-wider text-slate-400">Implementation (private)</p>
+                    <p>base-branch-policy · fetch/prune · env copy · stacked parent checks · path defaults</p>
+                  </div>
+                  <p class="text-slate-400">Callers: invoke module · never restate invariant</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</h3>
+                <p>Worktree rules leak across every delivery skill — interface nearly as wide as <code>setup-worktree</code>'s implementation, so one wrong restatement causes halt cascades.</p>
+              </div>
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</h3>
+                <p>Deepen Worktree Baseline: one interface for cut/verify/emit gates; delete duplicated invariant paragraphs from callers.</p>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Vertical slice shape</h3>
+              <p class="text-sm">Make <code>workflow-build-one</code> Step 0 call only the Worktree Baseline interface; strip its local invariant prose; prove one issue run still emits valid gate blocks.</p>
+            </div>
+            <ul class="text-sm space-y-1 text-slate-700">
+              <li>· <strong>locality:</strong> baseline bugs concentrate in one module</li>
+              <li>· <strong>leverage:</strong> one interface, N workflow call sites</li>
+              <li>· <strong>interface shrinks;</strong> implementation absorbs gate formats</li>
+              <li>· <strong>deletion test:</strong> deleting caller copies concentrates complexity (earns keep)</li>
+              <li>· tests: golden gate-block strings at the seam</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- C2 -->
+        <article id="c2" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-stone-100 flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl">2. Collapse Step Ledger protocol</h2>
+            <div class="flex gap-2">
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">in-process</span>
+            </div>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <p class="font-mono text-xs text-stone-500 leading-relaxed">
+              17 skills with WORKFLOW_STEPS · _docs/state-cockpit.md ·
+              workflow-router · workflow-build-one · workflow-finalize · run-backlog · …
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 bg-stone-50 p-4 space-y-2">
+                <p class="text-xs uppercase tracking-wider text-stone-500">Before — mass diagram</p>
+                <div class="space-y-3">
+                  <div>
+                    <p class="text-[10px] uppercase text-stone-400 mb-1">skill A</p>
+                    <div class="mass-iface h-10 flex items-center px-2 text-xs">Rules + statuses + halt rules</div>
+                    <div class="mass-impl h-12 flex items-center px-2 text-xs">step table</div>
+                  </div>
+                  <div>
+                    <p class="text-[10px] uppercase text-stone-400 mb-1">skill B (drifted copy)</p>
+                    <div class="mass-iface h-10 flex items-center px-2 text-xs">almost-same Rules</div>
+                    <div class="mass-impl h-12 flex items-center px-2 text-xs">step table</div>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4 space-y-2 text-slate-100">
+                <p class="text-xs uppercase tracking-wider text-slate-400">After</p>
+                <div class="mass-deep-iface flex items-center px-2 text-xs text-emerald-900">link → step-ledger protocol</div>
+                <div class="mass-deep-impl rounded h-28 flex flex-col justify-center px-3 text-xs space-y-1">
+                  <p>status vocabulary · skip rules · cockpit write protocol</p>
+                  <p class="text-slate-400">per-skill: only the step table remains</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</h3>
+                <p>Ledger Rules blocks are shallow copies with status-set drift (<code>not_applicable</code> in finalize, absent elsewhere); cockpit schema already lives alone in <code>_docs/state-cockpit.md</code>.</p>
+              </div>
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</h3>
+                <p>One Step Ledger protocol module; skills declare steps only. Lint forbids re-pasted Rules.</p>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Vertical slice shape</h3>
+              <p class="text-sm">Extract <code>_docs/step-ledger.md</code>; migrate <code>workflow-router</code> + <code>workflow-build-one</code>; extend <code>lint-skill-suite.sh</code> to flag duplicated Rules blocks.</p>
+            </div>
+            <ul class="text-sm space-y-1">
+              <li>· <strong>locality:</strong> ledger semantics change once</li>
+              <li>· <strong>leverage:</strong> N skills share one protocol</li>
+              <li>· <strong>deletion test:</strong> deleting copies concentrates (keep protocol)</li>
+              <li>· cockpit + ledger finally one seam</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- C3 -->
+        <article id="c3" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-stone-100 flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl">3. Materialize phantom ADRs + workflow CONTEXT</h2>
+            <div class="flex gap-2">
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Strong</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">in-process</span>
+            </div>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <p class="font-mono text-xs text-stone-500">
+              workflow-router (cites ADR-0002) · docs/decision-log.md ·
+              .claude/CONTEXT.md · grill-with-docs/ADR-FORMAT.md · missing docs/adr/
+            </p>
+
+            <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Warning: router claims authority “Per ADR-0002” but <code>docs/adr/</code> does not exist — decision lives only as skill prose.
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 bg-stone-50 p-3">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">Before</p>
+                <pre class="mermaid">
+flowchart LR
+  R[workflow-router] -->|cites| A2[ADR-0002 vapor]
+  CTX[CONTEXT.md Librarian] -.->|wrong domain| SKILLS[workflow skills]
+  DL[decision-log] --> ISSUES[issue-scoped DLs]
+  A2 -.-> X[404]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class A2,X leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-100 text-xs space-y-3">
+                <p class="text-xs uppercase tracking-wider text-slate-400">After — two contexts</p>
+                <div class="border border-dashed border-slate-500 rounded p-3 space-y-2">
+                  <p class="uppercase tracking-wider text-emerald-400">CONTEXT-MAP</p>
+                  <p><strong>brain</strong> → Librarian / ROWAN terms</p>
+                  <p><strong>agents</strong> → router, ledger, gate, worktree, delivery policy</p>
+                </div>
+                <div class="deep rounded p-3">docs/adr/0002-sole-routing-authority.md + siblings extracted from skill prose</div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</h3>
+                <p>Domain language for workflows is scattered across openwiki + skill bodies; ADRs are cited but absent — AI explorers re-litigate settled seams.</p>
+              </div>
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</h3>
+                <p>CONTEXT-MAP with agents vocabulary; write real ADRs from existing prose (start with routing authority).</p>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Vertical slice shape</h3>
+              <p class="text-sm">Create <code>docs/adr/0002-sole-routing-authority.md</code> from router Authority section; add agents terms (Step Ledger, Gate Block, Worktree Baseline, Delivery Policy) to CONTEXT; leave Librarian terms intact.</p>
+            </div>
+            <ul class="text-sm space-y-1">
+              <li>· <strong>locality:</strong> decisions stop living inside 367-line router</li>
+              <li>· <strong>leverage:</strong> grill / improve-architecture / to-prd find ADRs</li>
+              <li>· does not contradict DL-0003 (still no pytest for markdown specs)</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- C4 -->
+        <article id="c4" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-stone-100 flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl">4. Unify Gate Evidence schemas</h2>
+            <div class="flex gap-2">
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-900">Worth exploring</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">in-process</span>
+            </div>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <p class="font-mono text-xs text-stone-500">
+              WORKFLOW_REVIEW_GATE · WORKFLOW_FINALIZE_GATE · WORKFLOW_BASE_GATE ·
+              STACKED_WORKTREE_GATE · REPO_DELIVERY_POLICY · WORKTREE_BASELINE_GATE
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 p-4 space-y-1">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">Before — cross-section</p>
+                <div class="h-8 border-l-4 border-amber-500 bg-amber-50 px-2 text-xs flex items-center">review gate schema in workflow-review</div>
+                <div class="h-8 border-l-4 border-amber-500 bg-amber-50 px-2 text-xs flex items-center">finalize gate schema in workflow-finalize</div>
+                <div class="h-8 border-l-4 border-amber-500 bg-amber-50 px-2 text-xs flex items-center">base/stacked gates inlined in callers</div>
+                <div class="h-8 border-l-4 border-amber-500 bg-amber-50 px-2 text-xs flex items-center">delivery policy block in run-backlog</div>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-100">
+                <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</p>
+                <div class="h-24 border-l-4 border-emerald-400 deep px-3 flex flex-col justify-center text-xs rounded-r">
+                  <p class="uppercase tracking-wider text-emerald-400 mb-1">Gate Evidence module</p>
+                  <p>canonical field lists · required vs optional · lintable</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</h3>
+                <p>Gate blocks are the real test surface for workflows, but schemas live inside producer skills — consumers re-describe valid evidence.</p>
+              </div>
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</h3>
+                <p><code>_docs/gate-blocks.md</code> as the interface; producers/consumers link; suite lint checks required keys.</p>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Vertical slice shape</h3>
+              <p class="text-sm">Extract <code>WORKFLOW_REVIEW_GATE</code> schema; point <code>workflow-review</code> + <code>workflow-finalize</code> precondition at it; add one lint case for missing <code>independent_review</code>.</p>
+            </div>
+            <ul class="text-sm space-y-1">
+              <li>· <strong>interface is the test surface</strong> — gates become lintable</li>
+              <li>· <strong>locality:</strong> field renames stop N-file hunts</li>
+              <li>· pairs with candidates 1–2</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- C5 -->
+        <article id="c5" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-stone-100 flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl">5. Collapse PR-comment response cluster</h2>
+            <div class="flex gap-2">
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-900">Worth exploring</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">ports &amp; adapters</span>
+            </div>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <p class="font-mono text-xs text-stone-500">
+              receive-review/SKILL.md · pr-responder/SKILL.md ·
+              workflow-finalize Step 2 · watch-ci (bot wait)
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 bg-stone-50 p-3">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">Before</p>
+                <pre class="mermaid">
+flowchart TB
+  F[workflow-finalize] --> RR[receive-review]
+  RR -->|evaluate| ACT[fix/reply]
+  PR[pr-responder] -->|also actions queue| ACT
+  RR -.leak.-> PR
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class PR,RR leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-100 text-xs space-y-2">
+                <p class="text-xs uppercase tracking-wider text-slate-400">After</p>
+                <div class="border border-emerald-500/50 rounded p-3">
+                  Interface: process open threads → resolved summary
+                </div>
+                <div class="deep rounded p-3 opacity-90">
+                  verify · classify · fix · reply · push · (gh adapter)
+                </div>
+                <p class="text-slate-400">pr-responder: delete or alias — deletion test: complexity vanishes</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</h3>
+                <p><code>receive-review</code> already claims end-to-end actioning; <code>pr-responder</code> is a shallow second entry (“actioning step after”) — two adapters without a justified seam.</p>
+              </div>
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</h3>
+                <p>One deep PR Response module; retire <code>pr-responder</code>; finalize keeps calling the single interface.</p>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Vertical slice shape</h3>
+              <p class="text-sm">Mark <code>pr-responder</code> deprecated pointing at <code>receive-review</code>; ensure finalize + index only name one skill; delete after one quiet release.</p>
+            </div>
+            <ul class="text-sm space-y-1">
+              <li>· <strong>one adapter today → hypothetical seam</strong>; don't keep two</li>
+              <li>· <strong>leverage:</strong> one place to harden anti-blind-agreement</li>
+              <li>· gh remains the port; in-memory fixtures for later lint</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- C6 -->
+        <article id="c6" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-stone-100 flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl">6. Collapse Review entrypoints</h2>
+            <div class="flex gap-2">
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-900">Worth exploring</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">in-process</span>
+            </div>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <p class="font-mono text-xs text-stone-500">
+              workflow-review · review (deprecated helper) · pr-review ·
+              router Audit Loop Retirement Rule
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 bg-stone-50 p-3">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">Before — call-graph</p>
+                <pre class="mermaid">
+flowchart LR
+  U[user: review this] --> R[review deprecated]
+  U2[review this PR] --> PR[pr-review]
+  U3[delivery gate] --> WR[workflow-review]
+  WR --> R
+  PR -.parallel path.-> F[finalize?]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class PR,F leak
+                </pre>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4 text-xs text-slate-100 space-y-2">
+                <p class="uppercase tracking-wider text-slate-400">After</p>
+                <div class="border border-emerald-500/50 rounded p-3">workflow-review = sole Review Gate interface</div>
+                <div class="deep rounded p-3 space-y-1">
+                  <p>lanes: inline reviewer · standards/PR adapter · synthesis</p>
+                  <p class="text-slate-400">pr-review becomes lane or renamed non-gate skill</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</h3>
+                <p>Three modules named “review”; understanding the delivery gate requires bouncing across deprecated helpers and a parallel GitHub standards path.</p>
+              </div>
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</h3>
+                <p>Deepen <code>workflow-review</code> as the only gate; fold or rename <code>pr-review</code>; finish retiring standalone <code>review</code>.</p>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Vertical slice shape</h3>
+              <p class="text-sm">Router + skills-index: all “review this” triggers → <code>workflow-review</code>; <code>pr-review</code> either lane under it or renamed <code>standards-pr-comments</code> with explicit non-gate contract.</p>
+            </div>
+            <ul class="text-sm space-y-1">
+              <li>· <strong>locality:</strong> gate invariants stop leaking into helpers</li>
+              <li>· <strong>leverage:</strong> one place for independent_review rules</li>
+              <li>· respects existing deprecation of <code>review</code> (2026-05-21)</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- C7 -->
+        <article id="c7" class="rounded-xl border border-stone-200 bg-white shadow-sm overflow-hidden">
+          <div class="px-6 py-5 border-b border-stone-100 flex flex-wrap items-start justify-between gap-3">
+            <h2 class="font-serif text-2xl">7. Shrink Delivery Closure caller interface</h2>
+            <div class="flex gap-2">
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-200 text-slate-700">Speculative</span>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-slate-100 text-slate-700">ports &amp; adapters</span>
+            </div>
+          </div>
+          <div class="px-6 py-5 space-y-5">
+            <p class="font-mono text-xs text-stone-500">
+              workflow-finalize · workflow-build-one · run-backlog ·
+              execute-prd · describe-pr · reconcile-issues · cleanup-delivery
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="rounded-lg border border-stone-200 p-4">
+                <p class="text-xs uppercase tracking-wider text-stone-500 mb-2">Before — mass</p>
+                <div class="mass-iface h-20 flex items-center px-2 text-xs">Callers must know: review gate shape, worktree gates, UJQA, delivery policy, post-mortem triggers…</div>
+                <div class="mass-impl h-16 flex items-center px-2 text-xs">finalize steps + child skills</div>
+              </div>
+              <div class="rounded-lg border border-slate-800 bg-slate-900 p-4 text-slate-100">
+                <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After</p>
+                <div class="mass-deep-iface flex items-center px-2 text-xs text-emerald-900">inputs: APPROVE gate + branch evidence</div>
+                <div class="mass-deep-impl rounded h-20 flex items-center px-3 text-xs">all preconditions checked inside finalize</div>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 text-sm">
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Problem</h3>
+                <p><code>workflow-finalize</code> is already deep internally, but callers restate its preconditions — the external interface stays shallow/wide.</p>
+              </div>
+              <div>
+                <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Solution</h3>
+                <p>Callers only invoke finalize; precondition enforcement and child orchestration stay behind one interface.</p>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-xs uppercase tracking-wider text-stone-500 mb-1">Vertical slice shape</h3>
+              <p class="text-sm">Not ready alone — do after candidates 1 and 4 so gate/worktree evidence is already one seam. Then strip duplicated precondition prose from <code>workflow-build-one</code>.</p>
+            </div>
+            <ul class="text-sm space-y-1">
+              <li>· depends on Worktree Baseline + Gate Evidence</li>
+              <li>· <strong>leverage:</strong> AFK paths stop half-implementing finalize</li>
+            </ul>
+          </div>
+        </article>
+
+      </section>
+
+      <section id="top-recommendation" class="rounded-xl border-2 border-emerald-700 bg-emerald-50 p-8 space-y-3">
+        <p class="text-xs uppercase tracking-widest text-emerald-800">Top recommendation</p>
+        <h2 class="font-serif text-3xl text-emerald-950">
+          <a href="#c1" class="hover:underline">1. Deepen Worktree Baseline</a>
+        </h2>
+        <p class="text-emerald-900 text-sm max-w-2xl">
+          Highest operational leverage: gate leakage here produces real halt/NEEDS_HUMAN cascades across build-one, backlog, and finalize. One interface, delete six restatements, golden-test the gate blocks.
+        </p>
+      </section>
+
+      <footer class="text-xs text-stone-500 pt-4 border-t border-stone-200 space-y-1">
+        <p>Out of scope / already done: agent-agnostic skills hoist (2026-07-15 plan Phase 2 DONE). execute-prd vs run-backlog vs build-one kept as distinct modules (different interfaces, pass deletion test).</p>
+        <p>Vocabulary: module · interface · implementation · depth · seam · adapter · leverage · locality (LANGUAGE.md).</p>
+      </footer>
+    </main>
+  </body>
+</html>

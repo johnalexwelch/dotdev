@@ -55,4 +55,5 @@ Human gates: none
 - Outliers: cap or annotate so one point doesn't flatten the rest of the scale.
 
 ## Verdict tags (for review use)
+
 `[AXIS-LIE]` `[WRONG-TYPE]` `[A11Y]` `[COLOR-ALONE]` `[SMALL-N]` `[NULL-AS-ZERO]`

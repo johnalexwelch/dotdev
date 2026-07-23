@@ -6,11 +6,13 @@ delivery = "terminal"   # native desktop notifications via Ghostty (agent finish
 show_agent_labels_on_pane_borders = true
 
 agent_panel_scope = "all"
+agent_panel_sort = "priority"
 [experimental]
-pane_history = true
+pane_history = false
 
 # Custom command keybindings — native replacements for third-party plugins.
 # Run in a temp pane in the focused pane's cwd; closes on exit.
+switch_ascii_input_source_in_prefix = true
 [[keys.command]]
 key = "prefix+alt+h"      # steals hunk.diff plugin: interactive diff review
 type = "pane"
@@ -43,3 +45,5 @@ type = "plugin_action"
 command = "herdr-picker-plus.open"
 description = "picker-plus: fuzzy jump anywhere"
 
+[ui.sound]
+enabled = false

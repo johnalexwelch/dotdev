@@ -52,6 +52,7 @@ This is infra/tooling → per map Notes, route the *build* via `/design-plan` �
 ### Runnable-check spec (for the later session)
 
 `scripts/verify-wiring.sh` — exit non-zero on any failure:
+
 1. For each `SKILL.md`: assert `---` frontmatter parses and has `name:` + `description:`.
 2. `SOURCE_SKILLS_DIR=... sync-codex-skills.sh` (dry-run): assert diff is empty modulo allowlist.
 3. Assert `{disable-model-invocation:true}` skill set == the #71-decided list (checked-in manifest).

@@ -1,5 +1,12 @@
 # Appearance
-theme = Catppuccin Macchiato
+theme = Kanagawa Wave
+
+# Depth — soften the flat dark wall (subtle translucency + blur)
+background-opacity = 0.96
+background-blur = 20
+# Nudge the base a touch darker so bright text sits calmer
+# (comment out the next line if it reads too dim)
+minimum-contrast = 1.05
 
 # Font
 font-family = JetBrainsMono Nerd Font
@@ -12,6 +19,10 @@ window-padding-x = 8
 window-padding-y = 8
 macos-titlebar-style = tabs
 window-save-state = always
+
+# Native ghostty splits (herdr manages its own panes, so this only
+# affects splits you make directly in ghostty — harmless either way).
+unfocused-split-opacity = 0.55
 
 # Cursor
 cursor-style = bar

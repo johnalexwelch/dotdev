@@ -1,6 +1,6 @@
 # Workflow Routing
 
-> **`workflow-router` is the sole routing authority** (per ADR-0002 + `~/.claude/skills/workflow-router/SKILL.md`). This file is reference documentation only — it does not route. When a session begins or a new task arrives, invoke `workflow-router` first.
+> **`workflow-router` is the sole routing authority** (per `docs/adr/0002-sole-routing-authority.md` + `~/.claude/skills/workflow-router/SKILL.md`). This file is reference documentation only — it does not route. When a session begins or a new task arrives, invoke `workflow-router` first.
 
 ## The Canonical Loop
 
@@ -48,6 +48,7 @@ For all product / feature / delivery work:
 ```
 
 **Gate invariants — these never get skipped:**
+
 - Every non-trivial branch goes through `workflow-review` with dispatched subagents (not inline reasoning, not green CI, not Claude/Bugbot/Codex reviews) — the `WORKFLOW_REVIEW_GATE` block is the only valid evidence.
 - Every PR goes through `workflow-finalize` — `WORKFLOW_FINALIZE_GATE` is the only valid evidence.
 - The executor never reviews its own code. Reviewer never reviews their own review (each round is a fresh subagent context).
@@ -88,7 +89,7 @@ These cover work that doesn't fit the canonical loop and have their own routing 
 | D&D / campaign / session prep | `/dnd-workflow` | Creative routing |
 | Receiving review comments | `/receive-review` | Always before implementing reviewer feedback |
 | Cleanup after merge / closed / abandoned PR | `/cleanup-delivery` | Worktrees, branches, ticket state |
-| Workflow effectiveness audit | `/workflow-effectiveness-audit` | Did skills/workflows actually fire correctly? |
+| Workflow effectiveness audit | `/skill-system-audit` | Did skills/workflows actually fire correctly? |
 | Session wrap | `/handoff` | At session exit |
 
 ## Worktree Rules

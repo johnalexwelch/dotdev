@@ -96,7 +96,7 @@ Each ticket is a **child issue (sub-issue)** of the map; the issue id is its ide
 
 Each ticket carries a `wayfinder:<type>` label — `research`, `prototype`, `grilling`, or `task` (see [Ticket Types](#ticket-types)).
 
-A session **claims** a ticket by assigning it to the driving dev **first**, before any work, so concurrent sessions skip it. That assignee _is_ the claim: an open, unassigned ticket is unclaimed.
+A session **claims** a ticket by assigning it to the driving dev **first**, before any work, so concurrent sessions skip it. That assignee *is* the claim: an open, unassigned ticket is unclaimed.
 
 Blocking uses GitHub's native dependency relationship where available (it renders the frontier visually in the GitHub UI); otherwise the `Blocked by: #N` + `wayfinder:blocked` body convention documented in the tracker doc. A ticket is **unblocked** when every ticket blocking it is closed; the **frontier** is the open, unblocked, unclaimed children — the edge of the known.
 
@@ -113,11 +113,11 @@ Every ticket is **HITL** — worked *with* a human who speaks for themselves —
 
 ## Fog of war
 
-The map is _deliberately_ incomplete: don't chart what you can't yet see. Beyond the live tickets lies the **fog of war** — decisions you can tell are coming but can't yet pin down, because they hang on open questions. Resolving a ticket clears the fog ahead of it, graduating whatever's now specifiable into fresh tickets — until the route is clear and no tickets remain.
+The map is *deliberately* incomplete: don't chart what you can't yet see. Beyond the live tickets lies the **fog of war** — decisions you can tell are coming but can't yet pin down, because they hang on open questions. Resolving a ticket clears the fog ahead of it, graduating whatever's now specifiable into fresh tickets — until the route is clear and no tickets remain.
 
-**Not yet specified** on the map is where that dim view is written: the suspected question, the area to revisit. It's the frontier _toward_ the destination — in scope, just not sharp enough to ticket. It doubles as a signpost for collaborators reading where the effort is headed.
+**Not yet specified** on the map is where that dim view is written: the suspected question, the area to revisit. It's the frontier *toward* the destination — in scope, just not sharp enough to ticket. It doubles as a signpost for collaborators reading where the effort is headed.
 
-**Fog or ticket?** The test is whether you can state the question precisely now — _not_ whether you can answer it now.
+**Fog or ticket?** The test is whether you can state the question precisely now — *not* whether you can answer it now.
 
 - **Ticket when** the question is already sharp — even if blocked.
 - **Not yet specified when** you can't phrase it that sharply. Don't pre-slice the fog; one patch may graduate into several tickets, or none.
@@ -126,7 +126,7 @@ The map is _deliberately_ incomplete: don't chart what you can't yet see. Beyond
 
 ## Out of scope
 
-The destination fixes the scope, so work beyond it is **out of scope** — not fog, and it doesn't belong in **Not yet specified**. It gets its own section: work consciously ruled out of _this_ effort. Out-of-scope work never graduates; it returns only if the destination is redrawn, as a fresh effort.
+The destination fixes the scope, so work beyond it is **out of scope** — not fog, and it doesn't belong in **Not yet specified**. It gets its own section: work consciously ruled out of *this* effort. Out-of-scope work never graduates; it returns only if the destination is redrawn, as a fresh effort.
 
 When a ticket turns out to sit past the destination — mis-scoped in, or exposed by a resolution — **close it** and leave one line in **Out of scope**: the gist plus why, linking the closed ticket. It stays out of **Decisions so far**, which records only the route actually walked.
 

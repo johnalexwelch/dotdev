@@ -31,19 +31,19 @@ quorum:
 # pays off when paired with preserved independence + the sycophancy guard (#12).
 model_policy:
   synthesis: {model: opus, reasoning: high}
-  default:   {model: sonnet, reasoning: high}
+  default: {model: sonnet, reasoning: high}
   by_persona:
-    skeptical-data-scientist: {model: opus,   reasoning: high, cross_family: true}   # primary adversary
-    decision-scientist:       {model: opus,   reasoning: high}
-    bias-auditor:             {model: opus,   reasoning: high, cross_family: true}
-    causal-reasoner:          {model: opus,   reasoning: high}
-    economist:                {model: opus,   reasoning: high}
-    statistician:             {model: sonnet, reasoning: high}
-    counterfactual-check:     {model: sonnet, reasoning: high}
-    governance-reviewer:      {model: sonnet, reasoning: medium}
-    exec-audience-stand-in:   {model: sonnet, reasoning: medium}
-    ops-analyst:              {model: sonnet, reasoning: medium}
-    visualization-critic:     {model: sonnet, reasoning: medium}
+    skeptical-data-scientist: {model: opus, reasoning: high, cross_family: true} # primary adversary
+    decision-scientist: {model: opus, reasoning: high}
+    bias-auditor: {model: opus, reasoning: high, cross_family: true}
+    causal-reasoner: {model: opus, reasoning: high}
+    economist: {model: opus, reasoning: high}
+    statistician: {model: sonnet, reasoning: high}
+    counterfactual-check: {model: sonnet, reasoning: high}
+    governance-reviewer: {model: sonnet, reasoning: medium}
+    exec-audience-stand-in: {model: sonnet, reasoning: medium}
+    ops-analyst: {model: sonnet, reasoning: medium}
+    visualization-critic: {model: sonnet, reasoning: medium}
 round_1_dispatch: parallel
 post_process:
   humanizer: true

@@ -82,32 +82,42 @@ lazygit (and optionally yazi) as companion tools.
 ### Steps
 
 1. Create the workspace:
+
    ```bash
    herdr workspace create --cwd <worktree_path> --label "<issue_slug>"
    ```
+
    Parse `workspace_id` from `result.workspace.workspace_id` (or equivalent
    field). Record it — caller needs it for later stages.
 
 2. List panes in the new workspace to find the root pane id:
+
    ```bash
    herdr pane list
    ```
+
    Find the pane belonging to the new workspace. Record as `ROOT_PANE`.
 
 3. Split the root pane right and open lazygit:
+
    ```bash
    herdr pane split <ROOT_PANE> --direction right --no-focus
    ```
+
    Parse `LAZYGIT_PANE` from `result.pane.pane_id`.
+
    ```bash
    herdr pane run <LAZYGIT_PANE> "lazygit"
    ```
 
 4. If `open_yazi` is true, open a yazi tab:
+
    ```bash
    herdr tab create --workspace <workspace_id> --label "files"
    ```
+
    Parse `FILES_TAB_PANE` (root pane of new tab).
+
    ```bash
    herdr pane run <FILES_TAB_PANE> "yazi <worktree_path>"
    ```
@@ -115,6 +125,7 @@ lazygit (and optionally yazi) as companion tools.
 ### Output
 
 Report to chat:
+
 ```
 herdr-launch [implement]
   workspace : <workspace_id>  label: <issue_slug>
@@ -133,26 +144,33 @@ Pass workspace_id=<workspace_id> to next herdr-launch call.
 ### Steps
 
 1. Detect PR number if not provided:
+
    ```bash
    gh pr view --json number --jq .number
    ```
 
 2. Create review tab in existing workspace:
+
    ```bash
    herdr tab create --workspace <workspace_id> --label "review"
    ```
+
    Parse `REVIEW_PANE` (root pane of new tab).
 
 3. Open PR diff through delta:
+
    ```bash
    herdr pane run <REVIEW_PANE> "gh pr diff <pr_number> | delta --paging always"
    ```
 
 4. Split right and open PR view (comments, status):
+
    ```bash
    herdr pane split <REVIEW_PANE> --direction right --no-focus
    ```
+
    Parse `PR_VIEW_PANE`.
+
    ```bash
    herdr pane run <PR_VIEW_PANE> "gh pr view <pr_number>"
    ```
@@ -173,16 +191,21 @@ herdr-launch [review]
 ### Steps
 
 1. Create ci tab:
+
    ```bash
    herdr tab create --workspace <workspace_id> --label "ci"
    ```
+
    Parse `CI_PANE`.
 
 2. Start watching. If `run_id` provided:
+
    ```bash
    herdr pane run <CI_PANE> "gh run watch <run_id> --exit-status"
    ```
+
    Otherwise (auto-pick latest for current branch):
+
    ```bash
    herdr pane run <CI_PANE> "gh run watch --exit-status"
    ```
@@ -204,21 +227,27 @@ herdr-launch [ci]
 ### Steps
 
 1. Create cleanup tab:
+
    ```bash
    herdr tab create --workspace <workspace_id> --label "cleanup"
    ```
+
    Parse `CLEANUP_PANE`.
 
 2. Open lazygit in cleanup pane:
+
    ```bash
    herdr pane run <CLEANUP_PANE> "lazygit"
    ```
 
 3. Split right for worktree + branch overview:
+
    ```bash
    herdr pane split <CLEANUP_PANE> --direction right --no-focus
    ```
+
    Parse `WT_PANE`.
+
    ```bash
    herdr pane run <WT_PANE> "git worktree list && echo '---' && git branch -vv"
    ```

@@ -68,7 +68,7 @@ None gate the next session. Live human input is needed *within* certain tickets 
 
 ## Ready-to-use prompt (work session)
 
-> `/wayfinder` — work the dotdev overhaul map (#68, https://github.com/johnalexwelch/dotdev/issues/68).
+> `/wayfinder` — work the dotdev overhaul map (#68, <https://github.com/johnalexwelch/dotdev/issues/68>).
 > Take one frontier ticket — recommend #70 (wiring-verification method). Claim it
 > (assign to me) before any work, resolve just that one, post a resolution comment,
 > close it, append one line to the map's Decisions-so-far, mirror the decision via
@@ -85,7 +85,7 @@ None gate the next session. Live human input is needed *within* certain tickets 
 
 ## Files to read first
 
-- **Map #68** (source of truth): https://github.com/johnalexwelch/dotdev/issues/68
+- **Map #68** (source of truth): <https://github.com/johnalexwelch/dotdev/issues/68>
 - `/Users/alexwelch/dotdev/docs/audits/2026-07-09-setup-audit.md` — the fog (FIND-09…FIND-29).
 - `/Users/alexwelch/dotdev/docs/agents/issue-tracker.md` → "Wayfinding operations" — how the map/tickets/labels/frontier work here.
 - `/Users/alexwelch/dotdev/dotfiles/.claude/skills/wayfinder/SKILL.md` — work-mode procedure.

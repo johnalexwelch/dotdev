@@ -1,6 +1,6 @@
 # Skills Corpus — Decision Log
 
-Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.claude/skills`). Append-only; treat entries as settled context unless explicitly reopened.
+Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.config/agents/skills`). Append-only; treat entries as settled context unless explicitly reopened.
 
 ## D-001 — Extract `review-scaffolding`; reviews become thin adapters (2026-06-01)
 
@@ -58,3 +58,19 @@ Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.claude/sk
 **Activation (host-side, pending).** New skills authored in canon. Must be symlinked into the active root (`~/.claude/skills`) and `okr-generator` + `product-launch-checklist` added to `workflow-router` (done in canon) before they resolve at runtime — see apply/activation commands in the session handoff.
 
 **Status.** Authored in canon; activation + git commit pending on host.
+
+## D-005 — Deepen Worktree Baseline into one testable cut/verify/emit interface (2026-07-17)
+
+**Decision.** Extract worktree-gate logic (base-branch resolution, `fetch --prune`, stacked-parent ancestry check, path/branch derivation, env-file copy) behind one Interface with three ops: `cut`, `verify`, `emit` (`WORKFLOW_BASE_GATE` + `WORKTREE_BASELINE_GATE`/`STACKED_WORKTREE_GATE`). Callers invoke it and record what it emits; they stop restating the resolution/derivation procedure.
+
+**Reversal of a prior call.** `setup-worktree/SKILL.md`'s own changelog (2026-05-21 port) deliberately dropped `scripts/create_worktree.sh` for inlined `git worktree add`. This decision reverses that: a real script (`setup-worktree/scripts/worktree-baseline.sh`, `cut`/`verify`/`emit` subcommands) is required because DEEPENING.md's testing bar ("golden gate-block strings at the seam") cannot be met against prose — one adapter (real git) is a hypothetical seam per LANGUAGE.md without a second, local-substitutable adapter (tmp-git-repo test harness, `test/test-worktree-baseline.sh`, same shape as `test/test-workflow-guard.sh`).
+
+**Scope.** 20 callers restate this invariant today (grep-confirmed), not the architecture report's estimated "6+": `setup-worktree`, `execute-phase`, `execute-prd` (+ its `child-execution-brief-template.md`), `prompt-builder`, `run-backlog` (+ `outage-risk-policy.md`, `repo-delivery-policy.md`), `to-issues`, `to-prd`, `triage` (+ `AGENT-BRIEF.md`), `workflow-autonomous-backlog`, `workflow-build-one`, `workflow-debug`, `skill-system-audit`, `workflow-executive-doc`, `workflow-feature`, `workflow-finalize`, `workflow-review`, `workflow-router`. All 20 are the eventual target; only `workflow-build-one` Step 0 is the first vertical slice.
+
+**Vertical slice.** `workflow-build-one` Step 0 calls the script instead of inlining the "Per-Issue Worktree Invariant" section; verify one real issue run still emits a valid gate block. Remaining 19 callers follow after the slice proves the interface, tracked as backlog — not blocked on this decision.
+
+**second_pass.** `not_needed` — cut/verify/emit is one coherent interface, no hidden multi-concept split.
+
+**Alternatives considered & rejected.** Prose-only interface (no script) — rejected because it cannot be tested at the seam, only re-read by an agent, which is what caused the drift this candidate exists to fix.
+
+**Status.** Design accepted (grill complete); no code, script, or SKILL.md edits made yet — implementation pending explicit go-ahead.

@@ -23,6 +23,7 @@ Pairs well with: tdd, pr-review, diagnose, improve-codebase-architecture
 ## 0. Before writing any code
 
 Read:
+
 - The full PRD or issue body including acceptance criteria
 - CONTEXT.md (if present) — use its vocabulary in all code and commits
 - ADRs in the area you're touching — do not re-litigate settled decisions
@@ -67,6 +68,7 @@ Do not leave uncommitted changes when handing off.
 ## 5. Self-review before declaring done
 
 Run `pr-review` (or equivalent) against the branch before calling it done. Check:
+
 - Standards axis: does the code follow repo conventions?
 - Spec axis: does every acceptance criterion have a corresponding passing test?
 

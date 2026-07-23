@@ -9,7 +9,7 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "$0")" && pwd -P)"
-root="$(dirname "$here")"           # skills dir = parent of _docs
+root="$(dirname "$here")" # skills dir = parent of _docs
 out="$here/skills-index.md"
 
 generate() {
@@ -43,13 +43,20 @@ generate() {
 }
 
 case "${1:-}" in
-    --write) generate > "$out"; echo "wrote $out" >&2 ;;
+    --write)
+        generate >"$out"
+        echo "wrote $out" >&2
+        ;;
     --check)
         if ! diff -q <(generate) "$out" >/dev/null 2>&1; then
             echo "skills-index.md is stale — run: _docs/skills-index.sh --write" >&2
             exit 1
         fi
-        echo "skills-index.md up to date" >&2 ;;
+        echo "skills-index.md up to date" >&2
+        ;;
     "") generate ;;
-    *) echo "usage: skills-index.sh [--write|--check]" >&2; exit 2 ;;
+    *)
+        echo "usage: skills-index.sh [--write|--check]" >&2
+        exit 2
+        ;;
 esac

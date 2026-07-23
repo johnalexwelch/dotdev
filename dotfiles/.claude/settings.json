@@ -2,7 +2,8 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "LANGFUSE_HOST": "http://192.168.4.43:3050",
-    "TRACE_TO_LANGFUSE": "true"
+    "TRACE_TO_LANGFUSE": "true",
+    "OMC_SKIP_HOOKS": "keyword-detector"
   },
   "permissions": {
     "allow": [
@@ -91,6 +92,16 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); mkdir -p \"$HOME/.claude/logs\"; echo \"$(date '+%Y-%m-%d %H:%M')\t$(echo \"$input\" | jq -r '.tool_input.skill // \"unknown\"')\" >> \"$HOME/.claude/logs/skill-invocations.log\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {
@@ -152,7 +163,7 @@
     "serena@claude-plugins-official": false,
     "skill-creator@claude-plugins-official": true,
     "slack@claude-plugins-official": true,
-    "superpowers@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": false,
     "typescript-lsp@claude-plugins-official": true,
     "zeroize-audit@trailofbits": false
   },

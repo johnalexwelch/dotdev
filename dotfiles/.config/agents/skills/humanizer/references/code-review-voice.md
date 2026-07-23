@@ -40,6 +40,7 @@ Code review comments should:
 A single review comment is one thought. If you have three thoughts about one location, write three comments anchored separately. Stuffing them into one comment with `**1.** ... **2.** ... **3.** ...` reads as AI structure.
 
 **Bad:**
+
 ```
 **1. Strategy.** The timestamp strategy is fragile.
 **2. Naming.** Rename to snap_*.
@@ -47,6 +48,7 @@ A single review comment is one thought. If you have three thoughts about one loc
 ```
 
 **Good (three separate comments on three different lines):**
+
 ```
 [on the config block]
 The timestamp strategy is fragile here because updatedat is app-managed...
@@ -63,6 +65,7 @@ Worth adding a uniqueness test on the SCD2 grain...
 The link belongs inline where it supports the point, not collected at the bottom.
 
 **Bad:**
+
 ```
 The timestamp strategy assumes the source updates the column reliably.
 
@@ -73,6 +76,7 @@ References:
 ```
 
 **Good:**
+
 ```
 The timestamp strategy assumes the source updates the column reliably.
 See [snap_production__district_history.sql](link) for the check-strategy
@@ -84,6 +88,7 @@ pattern, and [dbt docs](link) for background.
 Open with the concrete failure mode in this specific file, not the abstract principle. The principle can follow if it adds context.
 
 **Bad:**
+
 ```
 Snapshots should declare a target_schema that adapts to the dbt target
 to support local development workflows. Hardcoding the schema name
@@ -92,6 +97,7 @@ Currently this file hardcodes 'history'.
 ```
 
 **Good:**
+
 ```
 target_schema='history' is hardcoded, so anyone running this snapshot
 in a dev target writes to the shared production schema. A Jinja
@@ -138,6 +144,7 @@ The distinction: status statements describe the comment's weight. Hedges describ
 > **Summary:** The current configuration relies on the `timestamp` strategy, which is a pivotal decision that warrants careful consideration.
 >
 > **The Problem:**
+>
 > - 🔴 The `timestamp` strategy depends on reliable `updated_at` column maintenance
 > - 🔴 For application-managed columns, this assumption may not hold
 > - 🔴 Failures are silent and difficult to detect after the fact
@@ -150,11 +157,13 @@ The distinction: status statements describe the comment's weight. Hedges describ
 > ```
 >
 > **Benefits:**
+>
 > - Eliminates the dependency on application behavior
 > - Provides deterministic change detection
 > - Aligns with our established best practices
 >
 > **References:**
+>
 > - dbt snapshot strategies documentation
 > - PR #8909 exemplar implementation
 > - SQL standards rule catalog

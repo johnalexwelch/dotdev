@@ -34,6 +34,7 @@ Then fetch specific pages on demand with `brain query` / `brain get-page`. Prefe
 ## Intent dispatch
 
 **1. Attention** — "what needs attention?", "brain status?", "what changed this week?"
+
 - Attention → the `## Needs Your Attention` section of `today.md` (already loaded).
 - `brain status?` → report: compile freshness (`stat -f '%Sm' ~/Documents/Home/_brain/index.md`),
   lint error count (`grep -ci error ~/Documents/Home/_brain/lint-report.md`),
@@ -43,26 +44,31 @@ Then fetch specific pages on demand with `brain query` / `brain get-page`. Prefe
 
 **2. Query** — "what do I know about X?", "what connects X and Y?", "what contradictions
 around X?", "surprise me"
+
 - `brain query "X" --json` to find pages, then `brain get-page <slug>` for the ones that
   matter. For connections/contradictions, pull the relevant pages and read their links /
   `## Contradictions` sections. Answer with wiki-link citations; state source counts.
 
 **3. Synthesis** — "draft synthesis X", "what should I synthesize next?", "what have I
 changed my mind about?"
+
 - Drafting a synthesis is autonomous but **surfaced** — write the draft, tell Alex.
 - "what to synthesize next" → stubs with high source-count (`brain query` + inspect).
 - "changed my mind" → the latest `mind-changes-*.md`.
 
 **4. Triage** — "triage my queue", "what's in my queue?"
+
 - Read `~/Documents/Home/_brain/review-queue.md` and walk candidates top-ranked first.
   Verdicts (ingest / skip / archive) are **human-owned** — present each, let Alex decide,
   then execute (`brain ingest <path>` for accepts).
 
 **5. Capture** — "ingest this: [content]", "save back"
+
 - Write the content to `~/Documents/Home/_brain/raw/inbox/<slug>.md`, then
   `brain ingest <that path>`. Report created/updated pages.
 
 **6. Operations** — "run lint", "rebuild today", "compile now"
+
 - `brain lint` · `brain today` · `brain compile` (add `--full` only for a full backfill).
 
 ## Hard limits (never autonomous)

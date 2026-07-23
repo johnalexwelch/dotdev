@@ -2,13 +2,8 @@ name: OpenWiki Update
 
 on:
   workflow_dispatch:
-  # ponytail: cron disabled — this repo already has a local launchd job
-  # (dotfiles/.config/openwiki/) doing the scheduled run with the existing
-  # ANTHROPIC_API_KEY. Re-enable the schedule below only if you'd rather run
-  # this in CI instead — needs OPENROUTER_API_KEY (or swap to Anthropic) +
-  # LANGSMITH_API_KEY as repo secrets first (neither is set today).
-  # schedule:
-  #   - cron: "0 8 * * *"
+  schedule:
+    - cron: "0 8 * * *"
 
 permissions:
   contents: write
@@ -19,19 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        # v4.3.1
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
-        with:
-          persist-credentials: false
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        # v4.4.0
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Install OpenWiki
-        run: npm install --global openwiki@0.2.0
+        run: npm install --global openwiki
 
       - name: Run OpenWiki
         run: openwiki code --update --print
@@ -44,10 +35,8 @@ jobs:
           LANGCHAIN_TRACING_V2: "true"
 
       - name: Create OpenWiki update pull request
-        # yamllint disable-line rule:line-length
         uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           add-paths: |
             openwiki
             AGENTS.md

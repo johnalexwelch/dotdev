@@ -11,11 +11,13 @@ After gathering context, invoke the `workflow-router` skill (the live routing au
 ## Build a Feature
 
 Minimum context needed:
+
 - **What it does** — the behavior or outcome
 - **Where it lives** — which part of the codebase it touches
 - **Who/what triggers it** — user action, API call, cron, etc.
 
 Ask if missing:
+
 - Where should this be triggered from? (UI, CLI, API, scheduled)
 - Are there existing patterns in the codebase I should follow?
 - Should this handle errors silently or surface them to the user?
@@ -26,11 +28,13 @@ Example (vague): "Add meeting prep" — ask what triggers it and what output the
 ## Design a Schema / Template / System
 
 Minimum context needed:
+
 - **What it models** — the thing being categorized or structured
 - **How it's used** — who reads it, where it's consumed
 - **Scale hint** — how many items, how often it changes
 
 Ask if missing:
+
 - How many categories/levels do you actually need? (Remember: start with 3-5 max)
 - What are your naming preferences? (e.g., t-shirt sizes vs numbers vs custom labels)
 - Does this need to integrate with an existing system?
@@ -41,11 +45,13 @@ Example (vague): "Add effort tracking to Asana" — ask how many levels and what
 ## Set Up an Integration
 
 Minimum context needed:
+
 - **Which service** — the external system
 - **What data flows** — what you're reading/writing
 - **Auth method** — do you already have credentials/tokens?
 
 Ask if missing:
+
 - What access level do you have? (admin, member, read-only)
 - Is this a work account with IT restrictions?
 - Which MCP server or API method should we use?
@@ -56,6 +62,7 @@ Example (vague): "Add Gmail" — ask which account, what access, and whether OAu
 ## Debug / Fix an Issue
 
 Minimum context needed:
+
 - **What's broken** — the symptom or error
 - **When it started** — what changed recently
 - **How to reproduce** — steps or trigger
@@ -64,6 +71,7 @@ Minimum context needed:
 > The skill handles root cause analysis, hypothesis testing, and fix verification.
 
 Ask if missing:
+
 - Can you share the error message or logs?
 - Did this work before? What changed?
 - Is this blocking something urgent?
@@ -74,11 +82,13 @@ Example (vague): "Morning briefing is broken" — ask what specific step fails a
 ## Refactor / Reorganize Code
 
 Minimum context needed:
+
 - **What's wrong with current state** — why refactor
 - **Target outcome** — what "better" looks like
 - **Scope boundary** — what NOT to touch
 
 Ask if missing:
+
 - Should this change behavior or just structure?
 - Are there files/modules that are off-limits?
 - Do we need to maintain backwards compatibility?
