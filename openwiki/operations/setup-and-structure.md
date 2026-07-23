@@ -202,21 +202,25 @@ stow -d ~/dotdev -R -t $HOME dotfiles -D
 ### Adding a New Tool
 
 1. **Create config directory**:
+
    ```bash
    mkdir -p dotfiles/.config/my-tool
    ```
 
 2. **Add config files**:
+
    ```bash
    cp ~/path/to/my-tool/config dotfiles/.config/my-tool/
    ```
 
 3. **Add to config-init.sh** (if new top-level config dir):
+
    ```bash
    mkdir -p "$HOME/.config/my-tool"
    ```
 
 4. **Stow and test**:
+
    ```bash
    cd ~/dotdev
    stow -d . -R -t $HOME dotfiles
@@ -249,6 +253,7 @@ source ~/.slack         # SLACK_TOKEN, etc.
 ```
 
 These files are:
+
 - **Not tracked** in dotdev (listed in `.gitignore`)
 - **Created manually** on each machine
 - **Sourced at login** (dotfiles/.zshrc runs them)
@@ -310,6 +315,7 @@ bash test/run-tests.sh
 ```
 
 Tests cover:
+
 - Shell syntax (bash -n)
 - Pre-commit hooks
 - Stow symlink safety
@@ -347,6 +353,7 @@ openwiki --update "Add new section"
 **Cause**: `config-init.sh` didn't run or didn't create target directories.
 
 **Fix**:
+
 ```bash
 bash scripts/config-init.sh
 stow -d ~/dotdev -R -t $HOME dotfiles
@@ -357,6 +364,7 @@ stow -d ~/dotdev -R -t $HOME dotfiles
 **Cause**: `Brewfile` changed but `brew bundle` didn't run.
 
 **Fix**:
+
 ```bash
 brew bundle
 ```
@@ -366,6 +374,7 @@ brew bundle
 **Cause**: Not installed or incorrect config.
 
 **Fix**:
+
 ```bash
 cd ~/dotdev
 pre-commit install
@@ -377,6 +386,7 @@ pre-commit run --all-files  # Test hooks
 **Cause**: TypeScript error in `~/.claude/hooks/guardian/*.ts`.
 
 **Fix**:
+
 ```bash
 cd ~/.claude/hooks
 npx tsc  # Check for errors
@@ -389,6 +399,7 @@ npx tsc  # Check for errors
 **Cause**: Symlink broken or `.zshrc` not sourced.
 
 **Fix**:
+
 ```bash
 # Check if ~/.zshrc is a symlink
 ls -la ~/.zshrc
@@ -422,4 +433,3 @@ source ~/.zshrc
 - [Architecture: Hooks](/openwiki/architecture/system-design.md#hook-pipeline) — Guardian, workflow-guard, pre/post-commit
 - [Installation docs](docs/INSTALLATION.md) — Original install guide
 - [Setup Writeup](SETUP_WRITEUP.md) — Detailed fresh-install walkthrough
-

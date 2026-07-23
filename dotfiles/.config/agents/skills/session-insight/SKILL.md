@@ -10,7 +10,7 @@ codex-compatible: true
 
 ## Purpose
 
-Forward-looking, proactive reflection loop. Complements `workflow-effectiveness-audit`
+Forward-looking, proactive reflection loop. Complements `skill-system-audit`
 (which is backward-looking, failure-gated, and compliance-focused across many
 transcripts). This skill runs on a *single* session — including a smooth one — and
 turns lived friction into durable improvements to the skill system.
@@ -30,7 +30,7 @@ Human gates: approval before editing any skill, `docs/agents/habits.md` (or othe
 ## Context
 
 Typical use: end-of-session, post-correction, weekly personal retro
-Pairs well with: workflow-effectiveness-audit (heavy governance sweep), write-a-skill
+Pairs well with: skill-system-audit (heavy governance sweep), write-a-skill
 (when a lesson becomes a new skill), workflow-router (ROUTER_LEARNING_NOTE feeds this)
 
 ## Process
@@ -38,12 +38,14 @@ Pairs well with: workflow-effectiveness-audit (heavy governance sweep), write-a-
 ### 1. Analyze the session (META, not output)
 
 **Pass A — what happened.** Review the conversation and identify:
+
 - Problem-solving approach; tool-usage patterns (right tool? used well?)
 - Clarifications, iterations, pivots, backtracking
 - **Corrections**: every time the user redirected the agent — the strongest signal
 - **Ground-truth vs proxy**: did the agent trust a proxy (spec/charter doc, git ancestry, cached or assumed state) instead of the authoritative source (running code/tests, PR/API state, a live check)? When a proxy and the authoritative source disagree, the authoritative source wins. Flag any conflict classified as blocking or resolved from a proxy before the code/state was checked. **When resuming a handoff that proposes a code/skill fix, re-run the fix in its edge contexts (subdirectory, worktree, no-arg) before applying — the proposing session's "proof it works" is a proxy and may have tested only the happy path.**
 
 **Pass B — improvement hunt (fires even with zero failures/corrections).** A smooth session can still expose better skills. Scan for all of these:
+
 - **Friction**: anything clumsy, slow, verbose, or repetitive — even where it *worked* and the user never complained. Manual steps that could be a skill affordance; re-derived context; awkward tool sequences.
 - **Enhancement**: an existing skill did its job but could do it better — a missing default, a helpful check, a sharper output shape, a faster path.
 - **Gap**: work that had **no owning skill**, or a skill that silently didn't cover the case that arose. Name the narrowest skill that *should* own it (or flag a `write-a-skill` candidate — but only for a genuinely repeatable pattern, not a one-off).
@@ -52,6 +54,7 @@ Pairs well with: workflow-effectiveness-audit (heavy governance sweep), write-a-
 - **Skill extraction (skillify)**: did the session accomplish a repeatable multi-step workflow worth capturing as its *own* new skill? A Gap or a Better-way-found often is one. When it clears the quality gate below, don't leave it as a one-line flag — capture the full draft payload (see Skill Extraction Candidates) so the downstream backlog can act on it without re-deriving the session.
 
 **Skill-extraction quality gate** — before proposing any *new* skill, require all three true (else it's documentation or a one-off, not a skill):
+
 - "Could someone Google this in 5 minutes?" → **No**
 - "Is it specific to this codebase, project, or workflow?" → **Yes**
 - "Did it take real debugging, design, or operational effort to discover?" → **Yes**

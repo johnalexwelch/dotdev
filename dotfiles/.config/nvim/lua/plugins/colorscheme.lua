@@ -1,32 +1,20 @@
 return {
+  -- Kanagawa: warm, muted, low-contrast dark — matches ghostty (Kanagawa Wave),
+  -- with yazi/hunk/pi inheriting the terminal for a coherent stack.
   {
-    "catppuccin/nvim",
-    name = "catppuccin",
+    "rebelot/kanagawa.nvim",
     priority = 1000,
     opts = {
-      flavour = "macchiato",
-      integrations = {
-        cmp = true,
-        gitsigns = true,
-        nvimtree = true,
-        treesitter = true,
-        telescope = { enabled = true },
-        which_key = true,
-        mini = { enabled = true },
-        harpoon = true,
-        mason = true,
-        noice = true,
-        notify = true,
-        lsp_trouble = true,
-        illuminate = { enabled = true },
-      },
+      theme = "wave", -- wave (default dark) | dragon (darker/muted) | lotus (light)
+      background = { dark = "wave", light = "lotus" },
+      dimInactive = true, -- dim inactive splits — the multi-pane focus win
     },
   },
   -- override LazyVim default colorscheme
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "catppuccin",
+      colorscheme = "kanagawa",
     },
   },
 }

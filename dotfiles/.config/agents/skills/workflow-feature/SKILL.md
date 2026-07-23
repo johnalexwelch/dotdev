@@ -94,7 +94,7 @@ This gate applies to every feature regardless of perceived simplicity. "Simple" 
 
 Load and run `workflow-roadmap/SKILL.md` (or confirm an equivalent current roadmap exists) and capture:
 
-- roadmap artifact path (`docs/roadmaps/YYYY-MM-DD-<topic>-roadmap.md`)
+- roadmap artifact path (`docs/roadmap.md` by default; `docs/roadmaps/<topic>.md` only for a genuinely separate topic roadmap)
 - explicit user approval evidence
 - milestone sequencing relevant to this feature
 - identified vertical-slice path for the first implementation slice

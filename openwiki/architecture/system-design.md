@@ -344,4 +344,3 @@ Certain workflow actions require human approval:
 - **Skills library**: `~/.config/agents/skills/`
 - **Hook configuration**: `~/.claude/settings.json`, `~/.pi/agent/settings.json`
 - **State tracking**: `docs/executions/state.yaml` (schema in `~/.config/agents/skills/_docs/state-cockpit.md`)
-

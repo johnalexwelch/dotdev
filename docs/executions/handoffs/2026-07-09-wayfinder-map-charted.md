@@ -49,7 +49,7 @@ Codex skill wiring (FIND-27, hangs on #70); MCP fleet capture/wiring (FIND-25, n
 
 ## Files to read first (absolute paths — worktree sessions cannot resolve relative ones)
 
-- **Map #68** — the canonical state (destination, notes, fog, out-of-scope): https://github.com/johnalexwelch/dotdev/issues/68
+- **Map #68** — the canonical state (destination, notes, fog, out-of-scope): <https://github.com/johnalexwelch/dotdev/issues/68>
 - `/Users/alexwelch/dotdev/docs/audits/2026-07-09-setup-audit.md` — the fog source (FIND-09…FIND-29).
 - `/Users/alexwelch/dotdev/docs/agents/issue-tracker.md` → "Wayfinding operations" — how the map/tickets/labels/frontier work here.
 - `/Users/alexwelch/dotdev/dotfiles/.claude/skills/wayfinder/SKILL.md` — work-mode procedure.

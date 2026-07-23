@@ -161,7 +161,7 @@ The specific user stories from the PRD that this slice addresses (copy or refere
 
 ### Research / documentation notes
 
-_Optional. Include when this slice depends on external APIs, third-party specs, domain constraints, or prior art that implementers will need. Link or inline the key details so an agent can start without a separate research step. Omit when not applicable._
+*Optional. Include when this slice depends on external APIs, third-party specs, domain constraints, or prior art that implementers will need. Link or inline the key details so an agent can start without a separate research step. Omit when not applicable.*
 
 ## Acceptance criteria
 

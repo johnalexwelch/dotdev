@@ -13,7 +13,7 @@ The single routing authority for all incoming work. Classifies the task, present
 
 ## Authority
 
-This skill is the **sole routing authority**. Per ADR-0002:
+This skill is the **sole routing authority**. Per `docs/adr/0002-sole-routing-authority.md`:
 
 - `workflows.md` is reference documentation only — it does not route
 - OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass this router's classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `workflow-review`, and `workflow-finalize`.
@@ -133,7 +133,7 @@ Rules:
 
 - `Will mutate/create` must explicitly say `none` for read-only routes.
 - `Human gates` must include every known approval point before implementation, AFK execution, PR action, or cleanup.
-- `Follow-up audit` should say whether `workflow-effectiveness-audit` is expected at the end and why.
+- `Follow-up audit` should say whether `skill-system-audit` is expected at the end and why.
 - If confidence is `low`, ask one clarifying question instead of asking the user to approve a route.
 - If confidence is `medium`, recommend the best route and include the closest alternative.
 - Do not perform target workflow preflight, create a worktree, scaffold a repo, write docs, create issues, or dispatch agents until the route is confirmed.
@@ -174,7 +174,8 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "Review this", "review my changes" | **review** | workflow-review |
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
-| "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **workflow effectiveness audit** | workflow-effectiveness-audit |
+| "audit branches", "clean up worktrees", "prune stale worktrees", branch/worktree sprawl across many repos on the machine (not one delivery's residue) | **git worktree audit** | git-worktree-audit |
+| "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **skill system audit** | skill-system-audit |
 | "reflect", "what did we learn", "how could this have gone better", "skillify", "turn this into a skill", "improve the skills based on this" | **session reflection / skill extraction** | session-insight |
 | "process the skill backlog", "review skill improvements", "turn reflections into skill changes", accumulated reflections needing triage | **skill backlog** | skill-backlog |
 | "write a skill", "create a skill", "revise this skill", "fix this skill's description", implement an approved skill-backlog item | **skill authoring/revision** | workflow-skill |
@@ -267,7 +268,7 @@ The workflow must run inside that worktree. Do not run mutating delivery workflo
 
 **Parallel/`team` fan-out — one isolated worktree per lane (precondition, not recovery).** When two or more lanes run concurrently (`team` budget, parallel phases, AFK drive-to-done), each lane gets its OWN fresh worktree cut from the resolved base *before* any lane is dispatched — never share a worktree or reuse an existing checkout across lanes. Independent lanes branch off `origin/main`/base directly; a dependent lane stacks explicitly on its parent's commit. Resolving "which repo/worktree am I in" mid-fan-out is a signal the gate was skipped.
 
-Read-only workflows (`workflow-review`, `workflow-effectiveness-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base.
+Read-only workflows (`workflow-review`, `skill-system-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base.
 
 ## Audit Routing Rule
 
@@ -316,7 +317,7 @@ Learning rules:
 - Project-specific lessons go to the project decision log only when the active workflow allows writing project artifacts.
 - Future-work items go to backlog only with user approval or inside a workflow that already owns issue creation.
 - Reusable process lessons become `session-insight` reflections, harvested and triaged by `skill-backlog`.
-- If the workflow was AFK, multi-stage, corrected by the user, halted for a process gap, or produced planning/execution artifacts, run or recommend `workflow-effectiveness-audit` before final closure.
+- If the workflow was AFK, multi-stage, corrected by the user, halted for a process gap, or produced planning/execution artifacts, run or recommend `skill-system-audit` before final closure.
 - If a recommendation is accepted during a review or audit loop, classify it before persisting: project-specific, future-work, reusable process, or local wording only.
 
 ## Graceful degradation
@@ -347,7 +348,7 @@ halt, report the missing requirement, and do not proceed.
 7. After confirmation, run preflight on target workflow (incl. Prior-Art & Roadmap Gate for any build/implement/design/ADR route); persist the ledger to `docs/executions/state.yaml`
 8. If preflight passes: dispatch to target workflow (update `state.yaml.next` on dispatch)
 9. If preflight fails: report missing requirements
-10. At completion, halt, or user correction: emit ROUTER_LEARNING_NOTE and run or recommend workflow-effectiveness-audit when triggered
+10. At completion, halt, or user correction: emit ROUTER_LEARNING_NOTE and run or recommend skill-system-audit when triggered
 ```
 
 ## Contract

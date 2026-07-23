@@ -19,6 +19,7 @@ Active skills:
 - `data-quality-audit`
 - `data-readiness-check`
 - `git-guardrails`
+- `git-worktree-audit`
 - `spec-review`
 - `wayfinder`
 - `decision-log`
@@ -80,7 +81,7 @@ Active skills:
 - `workflow-autonomous-backlog`
 - `workflow-build-one`
 - `workflow-debug`
-- `workflow-effectiveness-audit`
+- `skill-system-audit`
 - `workflow-executive-doc`
 - `workflow-feature`
 - `workflow-finalize`

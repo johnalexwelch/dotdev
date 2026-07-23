@@ -15,23 +15,29 @@ SKILLS_REPO="${SKILLS_REPO:-$HOME/.claude/skills}"
 # so we can also harvest config/tooling/model changes tracked there.
 REPO="$(git -C "$SKILLS_REPO" rev-parse --show-toplevel 2>/dev/null || echo "$SKILLS_REPO")"
 STATE="${STATE:-$SKILLS_REPO/_docs/.journal-last}"
-DRY=false; [ "${1:-}" = "--dry" ] && DRY=true
+DRY=false
+[ "${1:-}" = "--dry" ] && DRY=true
 
 # Watermark: last run time + last rtk snapshot. Default window = 7 days.
-since="7 days ago"; prev_saved="(first run)"; prev_cmds="(first run)"
+since="7 days ago"
+prev_saved="(first run)"
+prev_cmds="(first run)"
 if [ -f "$STATE" ]; then
-  # shellcheck disable=SC1090
-  . "$STATE"
-  since="${last_run:-$since}"; prev_saved="${rtk_saved:-n/a}"; prev_cmds="${rtk_cmds:-n/a}"
+    # shellcheck disable=SC1090
+    . "$STATE"
+    since="${last_run:-$since}"
+    prev_saved="${rtk_saved:-n/a}"
+    prev_cmds="${rtk_cmds:-n/a}"
 fi
-now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"; today="$(date +%Y-%m-%d)"
+now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+today="$(date +%Y-%m-%d)"
 
 # --- Skill evolution from git (A=new, M=changed, D=deprecated) ---
 skill_changes() {
-  # Stow layout: real paths are deep (…/skills/<name>/SKILL.md), so key on the
-  # dir segment immediately before SKILL.md, not the first path segment.
-  git -C "$REPO" log --since="$since" --pretty=format: --name-status \
-      -- '*/SKILL.md' 2>/dev/null | awk '
+    # Stow layout: real paths are deep (…/skills/<name>/SKILL.md), so key on the
+    # dir segment immediately before SKILL.md, not the first path segment.
+    git -C "$REPO" log --since="$since" --pretty=format: --name-status \
+        -- '*/SKILL.md' 2>/dev/null | awk '
     function skill(path){ sub(/\/SKILL\.md$/,"",path); n=split(path,p,"/"); return p[n] }
     /^[AMD]/ { s=skill($2); if ($1=="A") add[s]=1; else if ($1=="D") del[s]=1; else mod[s]=1 }
     /^R/     { mod[skill($3)]=1 }
@@ -45,8 +51,8 @@ skill_changes() {
 }
 raw="$(skill_changes)"
 join() { xargs -n1 2>/dev/null | sort -u | paste -sd, - | sed 's/,/, /g'; }
-added="$(printf '%s\n'    "$raw" | sed -n 's/^ADD://p' | join)"
-deleted="$(printf '%s\n'  "$raw" | sed -n 's/^DEL://p' | join)"
+added="$(printf '%s\n' "$raw" | sed -n 's/^ADD://p' | join)"
+deleted="$(printf '%s\n' "$raw" | sed -n 's/^DEL://p' | join)"
 modified="$(printf '%s\n' "$raw" | sed -n 's/^MOD://p' | join)"
 total_skills="$(find -L "$SKILLS_REPO" -maxdepth 2 -name SKILL.md 2>/dev/null | wc -l | tr -d ' ')"
 
@@ -54,18 +60,20 @@ total_skills="$(find -L "$SKILLS_REPO" -maxdepth 2 -name SKILL.md 2>/dev/null | 
 # Model + provider choices live in settings.json / mcp.json, so a diff here is the
 # deterministic "I changed models/tools" signal. The 'why' stays a manual note.
 config="$(git -C "$REPO" log --since="$since" --pretty=format: --name-only -- \
-  '*settings.json' '*mcp*.json' 'Brewfile' '*/hooks/*' '*keybind*' '*theme*' '*/.pi/agent/*' 2>/dev/null \
-  | awk 'NF' | sed 's#^dotfiles/##; s#\.config/##' | sort -u | paste -sd, - | sed 's/,/, /g')"
+    '*settings.json' '*mcp*.json' 'Brewfile' '*/hooks/*' '*keybind*' '*theme*' '*/.pi/agent/*' 2>/dev/null |
+    awk 'NF' | sed 's#^dotfiles/##; s#\.config/##' | sort -u | paste -sd, - | sed 's/,/, /g')"
 
 # --- Token / cache savings from rtk ---
-saved="n/a"; cmds="n/a"
+saved="n/a"
+cmds="n/a"
 if command -v rtk >/dev/null 2>&1; then
-  g="$(rtk gain 2>/dev/null || true)"
-  saved="$(printf '%s\n' "$g" | sed -n 's/.*Tokens saved:[[:space:]]*//p' | head -1)"
-  cmds="$(printf '%s\n'  "$g" | sed -n 's/.*Total commands:[[:space:]]*//p' | head -1)"
+    g="$(rtk gain 2>/dev/null || true)"
+    saved="$(printf '%s\n' "$g" | sed -n 's/.*Tokens saved:[[:space:]]*//p' | head -1)"
+    cmds="$(printf '%s\n' "$g" | sed -n 's/.*Total commands:[[:space:]]*//p' | head -1)"
 fi
 
-block="$(cat <<EOF
+block="$(
+    cat <<EOF
 $today — auto-digest (since ${since})
 - **Skills** (repo total: ${total_skills})
 	- New: ${added:-none}
@@ -81,10 +89,20 @@ $today — auto-digest (since ${since})
 EOF
 )"
 
-if $DRY; then printf '%s\n' "$block"; exit 0; fi
+if $DRY; then
+    printf '%s\n' "$block"
+    exit 0
+fi
 
 # Prepend (journal is newest-first) then advance the watermark.
-tmp="$(mktemp)"; printf '%s\n' "$block" > "$tmp"; [ -f "$JOURNAL" ] && cat "$JOURNAL" >> "$tmp"
-mkdir -p "$(dirname "$JOURNAL")"; mv "$tmp" "$JOURNAL"
-{ echo "last_run='$now'"; echo "rtk_saved='${saved:-n/a}'"; echo "rtk_cmds='${cmds:-n/a}'"; } > "$STATE"
+tmp="$(mktemp)"
+printf '%s\n' "$block" >"$tmp"
+[ -f "$JOURNAL" ] && cat "$JOURNAL" >>"$tmp"
+mkdir -p "$(dirname "$JOURNAL")"
+mv "$tmp" "$JOURNAL"
+{
+    echo "last_run='$now'"
+    echo "rtk_saved='${saved:-n/a}'"
+    echo "rtk_cmds='${cmds:-n/a}'"
+} >"$STATE"
 echo "digest written to $JOURNAL"

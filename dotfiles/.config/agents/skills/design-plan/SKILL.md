@@ -2,7 +2,7 @@
 name: design-plan
 model: opus
 reasoning: high
-description: Use when turning a repo-audit report, refactor-scale brief, migration, or existing plan revision into an executable phased plan with FIND-NN/REQ-NN anchors, [auto]/[human] tasks, pilot/canary coverage, rollback, and sync gates. Do not use as the default feature workflow; use grill-with-docs → decision-log → to-prd → to-issues → triage for product work.
+description: Use when turning a repo-audit report, refactor-scale brief, migration, an already-decided governance/infrastructure change, or existing plan revision into an executable phased plan with FIND-NN/REQ-NN anchors, [auto]/[human] tasks, pilot/canary coverage, rollback, and sync gates. Do not use as the default feature workflow; use grill-with-docs → decision-log → to-prd → to-issues → triage for product work.
 triggers:
   - "write a design doc"
   - "create a refactor plan"
@@ -22,7 +22,7 @@ inputs:
   - name: brief
     type: string
     default: ""
-    description: 'Refactor-scale, migration, or investigation brief: inline string, `@path/to/file`, or URL. Mutually exclusive with `audit_path`. Product features should use the PRD/issues workflow instead.'
+    description: 'Refactor-scale, migration, investigation, or already-decided governance/infrastructure-change brief: inline string, `@path/to/file`, or URL. Mutually exclusive with `audit_path`. Product features should use the PRD/issues workflow instead.'
   - name: existing_plan
     type: string
     default: ""
@@ -110,7 +110,7 @@ Load only the references needed for the invocation:
 ## Required Behaviors
 
 - Preserve stable ID vocabulary: `FIND-NN`, `REQ-NN`, `NEW-NN`, ticket slugs, and phase numbers.
-- Brief-mode is only for refactor-scale or migration briefs. Product features should use `workflow-feature`/`to-prd`/`to-issues`.
+- Brief-mode covers refactor-scale, migration, and small already-decided governance/infrastructure fixes (the scope is settled; you need the phased execution plan, not discovery). Product features should use `workflow-feature`/`to-prd`/`to-issues`.
 - Audit-mode is the refactor-scale evidence path after `repo-audit`.
 - Phase count flexes with scope: 1 phase for bugs, 2-3 for small features, 4-6 for refactors.
 - Each phase must name the vertical behavior it makes real and the layers it crosses. Rewrite horizontal layer phases before presenting the plan.

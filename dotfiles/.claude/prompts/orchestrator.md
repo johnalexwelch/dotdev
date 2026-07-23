@@ -115,6 +115,7 @@ Prefix every message to the user with: [USER INPUT NEEDED]
 Ask exactly ONE question per escalation. Wait for response before continuing.
 
 Escalate ONLY for:
+
 - Ambiguous or missing acceptance criteria
 - Genuinely competing architectural approaches with real tradeoffs
 - Specialist failure after allowed retries

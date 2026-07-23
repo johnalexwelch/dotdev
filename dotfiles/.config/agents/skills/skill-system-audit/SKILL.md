@@ -1,12 +1,12 @@
 ---
-name: workflow-effectiveness-audit
+name: skill-system-audit
 model: sonnet
 reasoning: high
 description: Evaluate whether skills and workflows are actually working. Audits recent agent transcripts, GitHub PRs/issues, and execution artifacts for skipped steps, missing subagents, unresolved review comments, weak handoffs, and routing gaps.
 codex-compatible: true
 ---
 
-# Workflow Effectiveness Audit
+# Skill System Audit
 
 ## Purpose
 
@@ -74,7 +74,7 @@ For each workflow invocation, derive the expected trace from the skill:
 
 | Workflow | Required trace |
 |----------|----------------|
-| `workflow-autonomous-backlog` | improve-codebase-architecture discovery evidence -> optional repo-audit supporting evidence -> candidate classification -> grill-with-docs module grill with recommended answers and CONTEXT/ADR updates -> MODULE_GRILL_CONSENSUS -> scoped second-pass decision -> module design summary approval for every module PRD -> to-prd -> to-issues -> triage -> AFK queue approval evidence -> run-backlog -> repo-policy-controlled PR handoff |
+| `workflow-autonomous-backlog` | improve-codebase-architecture discovery evidence -> optional repo-audit supporting evidence -> candidate classification -> grill-with-docs module grill with recommended answers and CONTEXT/ADR updates -> MODULE_GRILL_CONSENSUS -> scoped second-pass decision -> module design summary approval for every module PRD -> to-prd -> to-issues -> triage -> AFK queue approval evidence -> run-backlog with per-issue AFK execution-chain evidence (`tdd` or `tdd_not_applicable_with_reason` -> implementation workflow -> `WORKFLOW_REVIEW_GATE` APPROVE -> `WORKFLOW_FINALIZE_GATE`) -> repo-policy-controlled PR handoff -> for `ready_auto_merge_enabled` items, post-auto-merge follow-through evidence (`session-insight` + `cleanup-delivery` or explicit skip reason) |
 | `workflow-review` | worktree baseline evidence -> risk-sized review_profile -> independent reviewer evidence -> synthesized verdict |
 | `workflow-finalize` | worktree baseline evidence -> optional post-mortem -> describe-pr, including reviewer validation footer when referenced issues carry `needs-human-review`, `Human review: required`, or equivalent explicit human-review gate -> ensure draft PR -> receive-review -> watch-ci -> reconcile-issues -> verification gate -> repo-policy final action |
 | `describe-pr` | PR body -> issue disposition -> record review expectations only |
@@ -104,7 +104,7 @@ Produce a scorecard with these dimensions:
 | Issue hygiene | Were Closes/Fixes/Addresses dispositions used correctly? |
 | Verification quality | Were tests/CI/lints actually run and evidenced? |
 | Handoff quality | Did halts and completions produce usable handoff artifacts? |
-| Autonomous backlog safety | Did module PRDs/issues preserve provenance, candidate confidence, grill-with-docs module answers, MODULE_GRILL_CONSENSUS artifacts, CONTEXT/ADR updates when needed, scoped second-pass decisions, rollback expectations, queue approval, outage-risk controls, and all gate blocks per PR? |
+| Autonomous backlog safety | Did module PRDs/issues preserve provenance, candidate confidence, grill-with-docs module answers, MODULE_GRILL_CONSENSUS artifacts, CONTEXT/ADR updates when needed, scoped second-pass decisions, rollback expectations, queue approval, outage-risk controls, AFK execution-chain evidence (including `tdd` or explicit non-applicability), post-auto-merge follow-through evidence when applicable, and all gate blocks per PR? |
 | Sync health | Did Claude/Codex skill copies and Stow source remain aligned? |
 
 Use a simple rating:
@@ -152,13 +152,15 @@ Always check for these:
 23. `workflow-router` completed, halted, or received user route correction without a `ROUTER_LEARNING_NOTE`.
 24. `workflow-finalize` referenced a `needs-human-review`, `Human review: required`, or equivalent human-review-required issue, but the PR body did not end with a `## Reviewer validation steps` section containing concrete ordered validation actions from the issue.
 25. `describe-pr` or `workflow-finalize` treated `ready-for-human` or generic `Type: HITL` as a PR reviewer-validation trigger.
+26. `run-backlog` (or `workflow-autonomous-backlog` via `run-backlog`) accepted an AFK item without per-issue execution-chain evidence: `tdd` or `tdd_not_applicable_with_reason`, implementation workflow evidence, `WORKFLOW_REVIEW_GATE` APPROVE, and complete `WORKFLOW_FINALIZE_GATE`.
+27. `run-backlog` or `workflow-autonomous-backlog` marked a `ready_auto_merge_enabled` item complete without post-auto-merge follow-through evidence from `session-insight` and `cleanup-delivery`, or an explicit documented skip reason.
 
 ### 5. Output
 
 Return:
 
 ```markdown
-# Workflow Effectiveness Audit
+# Skill System Audit
 
 ## Scope
 - Window:

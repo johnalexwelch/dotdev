@@ -35,6 +35,7 @@ When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
 - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer GitHub auto-merge over direct immediate merge.
 - Human-review-required issues (`needs-human-review`, `Human review: required`, or equivalent explicit human-review gate) override `auto-merge-eligible`: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until that human validation is recorded.
 - Missing policy defaults to `human-only`.
+- **Before asserting a blanket "a human must merge this" blocker, check `.github/CODEOWNERS` (and branch protection) against the changed paths.** A merge-authority claim not grounded in an actual CODEOWNERS entry or protection rule for the touched files is a guess, not a gate — an earlier blanket blocker was later reversed once CODEOWNERS showed no required reviewer for those paths. State the specific rule/owner that blocks, or don't claim the block. Absence of any CODEOWNERS/protection rule does not by itself authorize an auto-merge — `REPO_DELIVERY_POLICY` (default `human-only`) still governs.
 
 ## Flow
 

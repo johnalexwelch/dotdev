@@ -48,7 +48,7 @@ out.extend(c['body'] for c in d.get('comments', []))
 open('/tmp/pr-<N>-bodies.md','w').write('\n---\n'.join(out))
 "
 
-python3 ~/dotdev/dotfiles/.claude/skills/humanizer/scripts/check_tells.py /tmp/pr-<N>-bodies.md
+python3 ~/dotdev/dotfiles/.config/agents/skills/humanizer/scripts/check_tells.py /tmp/pr-<N>-bodies.md
 ```
 
 The check must return `TOTAL: 0` before posting. If it returns any hits:

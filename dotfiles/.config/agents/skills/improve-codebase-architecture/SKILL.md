@@ -49,7 +49,7 @@ This skill is *informed* by the project's domain model. The domain language give
 
 ### 1. Explore
 
-Read the project's domain glossary and any ADRs in the area you're touching first.
+Read the project's domain glossary and any ADRs in the area you're touching first. If `CONTEXT.md`, `LANGUAGE.md`, or `docs/adr/` is absent, say so in one line and proceed with code-derived vocabulary — state the fallback immediately rather than silently skipping, so the reader knows the analysis isn't grounded in a recorded domain model.
 
 Then use the Agent tool with `subagent_type=Explore` to walk the codebase. Don't follow rigid heuristics — explore organically and note where you experience friction:
 

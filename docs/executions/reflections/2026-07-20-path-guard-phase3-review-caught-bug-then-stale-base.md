@@ -1,0 +1,32 @@
+# Session Reflection: workflow-review caught a real bug in path-guard Phase 3 — then a stale worktree base caused a mid-flight conflict
+**Date**: 2026-07-20
+**Goal**: Execute path-guard Phase 3 (evidence wiring), run the full `execute-phase` → `workflow-review` → `workflow-finalize` chain properly this time (direct follow-on to the prior session's workflow-finalize-skip correction), get a human merge decision.
+
+## What Went Well
+
+- Followed `execute-phase`'s fresh-worktree + preflight discipline: new worktree at `~/.herdr/worktrees/chorus/phase-3-path-guard` cut from `origin/main`, decision-log entry written *before* code per the plan's own §0 instruction, scope stayed exactly to the five files touched.
+- Ran the actual gate this time: loaded `workflow-review/SKILL.md`, picked `standard` profile with a justified escalation reason (security-adjacent governance invariant), dispatched 3 genuinely independent fresh-context reviewer lanes via `taskflow` using the skill's own per-lane brief templates verbatim (not improvised prompts) — this is the direct behavioral fix for the prior reflection's finding (`2026-07-19-skill-compliance-no-mechanical-enforcement.md`).
+- The gate had teeth: Logic & Edge-Case lane found and **live-verified** a real bug (`merge_base == commit` → empty diff → false "verified clean" instead of "unverifiable") that Security and TDD lanes' clean review would not have caught. Fixed before merge, with a direct regression test pinning the fix. This is evidence the review step is not theater when actually run as designed.
+- After review, posted a PR comment + marked ready-for-review and then **stopped and asked the human to merge**, instead of running `gh pr merge` myself — again the direct fix for the prior session's root-cause finding, applied without needing a fresh correction this time.
+
+## What Went Wrong / Friction
+
+- **Ground-truth-vs-proxy gap, self-caught but late.** I placed the Phase 3 outcome file at `docs/executions/.phase-runs/...`, mirroring Phase 1/2's own committed file location — a *proxy* (prior-phase precedent in git history) instead of checking the current `docs/RETENTION.md` / CI floor set at the time I wrote it. Between opening the PR and finishing the review round, an unrelated PR (#680) landed on `main` introducing exactly the opposite rule: no run evidence under `docs/executions/` at all. My own file tripped the new floor. Caught it via CI (`docs-retention` check failing), not via a proactive check — should have re-read `docs/RETENTION.md` (or just run the validator) against current `main` before committing a new file into a path that two whole phases' worth of precedent said was fine but that had since been *deliberately reversed by policy*, not just drifted.
+- **Stale worktree base across a review round.** The worktree/branch were cut from `origin/main` before the review lanes were dispatched. The 3-lane review + fixes took enough wall-clock time that 4 unrelated PRs (including the retention-floor one) landed on `main` in the meantime. By the time I checked mergeability, the PR was `CONFLICTING` — not because of my changes, but because the base had moved. Nothing in `workflow-review` or `workflow-finalize` explicitly says "re-fetch the base and re-check merge-cleanliness after a review round that took real time," even though the Gate Invariant already requires reviewing against "a branch/worktree cut from the resolved workflow base" — that requirement is about the *start* of review, not staleness accumulated *during* it.
+- **Tooling noise, not a skill issue but worth flagging**: a small `git branch -a | grep phase-3` sanity check returned a giant irrelevant dump of unrelated content from other repos/projects on the machine, as if `grep` had been silently intercepted by something that ignored stdin and ran its own global search. Re-ran with `/usr/bin/grep` and got the correct, empty/clean result. Cheap to route around once noticed, but could mislead a future session that doesn't sanity-check an obviously-wrong result shape.
+
+## Lessons
+
+1. **Prior-phase file placement is precedent, not policy** — when a plan spans multiple phases with real wall-clock gaps between them, re-check the *current* repo-wide constraints (retention policy, CI floors, CODEOWNERS) before writing a new file, even into a path a previous phase used successfully. Precedent can be deliberately reversed between phases, and the diff-scope docs a plan cites are frozen at plan-write time, not merge time.
+2. **A review round is real elapsed time against a moving base.** Any workflow chain with an independent-review step (`workflow-review`) that takes meaningful time should re-verify `mergeStateStatus`/base freshness immediately before the terminal merge-adjacent action, not just once at PR-open. This session caught it (via CI, correctly, before merge) — but it cost an extra rebase-and-refix cycle that a one-line preflight check would have caught earlier and cheaper.
+3. **Sanity-check tool output shape before trusting it**, especially for should-be-trivial commands (`grep` over 3 branch names shouldn't return filesystem-wide matches). An obviously-wrong-shaped result is itself a signal, independent of whether it happens to be "just noise."
+
+## Proposed Improvements
+
+- [ ] `workflow-finalize/SKILL.md` — add an explicit preflight step: immediately before the terminal merge/ready-for-review action, `git fetch origin <base>` + re-check `mergeStateStatus`/`mergeable` live, even if `workflow-review` already returned `APPROVE` — treat a non-`CLEAN` result as a required fix-and-recheck loop, not a surprise to react to. (priority: med — this session's exact gap, caught but late)
+- [ ] `workflow-review/SKILL.md` (Gate Invariant or Process §1) — note that a `standard`/`full` review round can take enough wall-clock time for the base to move; recommend re-fetching/re-diffing against the base immediately after the review synthesis, before acting on its verdict. (priority: low — same root cause as above, alternate owner)
+- [ ] `execute-phase/SKILL.md` or `docs/agents/habits.md` — add a durable habit: *"When placing a new file into a path a previous phase/session used, re-check current repo-wide constraints (retention policy, CI floors) at write time — prior-phase precedent is not current policy."* (priority: med)
+
+## Skill Extraction Candidates
+
+None — both findings are refinements to the existing `workflow-review`/`workflow-finalize` chain, not a new repeatable workflow.

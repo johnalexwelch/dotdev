@@ -6,14 +6,16 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 
 ---
 
-## When you want to...
+## When you want to
 
 ### Starting a new project / repo onboarding
+
 | You want to... | Invoke |
 |---|---|
 | Wire a repo for agent work (issue tracker, triage labels, domain docs, OpenWiki registration) | `setup-skills` |
 
 ### Think harder about something
+
 | You want to... | Invoke |
 |---|---|
 | Challenge your thinking on a claim, draft, or interpretation | `analysis-council` |
@@ -24,6 +26,7 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 | Stress-test a memo's structure (not its thinking) | `strategic-analysis-review` |
 
 ### Design analysis / metrics / experiments
+
 | You want to... | Invoke | Then |
 |---|---|---|
 | Design an analysis from a question | `analysis-design` | → `analysis-council` for stress-test → `decision-memo` |
@@ -33,6 +36,7 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 | Write the decision memo | `decision-memo` | → `humanizer-exec` → `analysis-slop-cleaner` → send |
 
 ### Audit data
+
 | You want to... | Invoke |
 |---|---|
 | Review a SQL query before running | `sql-review` |
@@ -43,11 +47,13 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 | Periodic data-quality audit | `data-quality-audit` |
 
 ### Vendor / build-vs-buy
+
 | You want to... | Invoke |
 |---|---|
 | Stress-test a vendor decision | `vendor-council` |
 
 ### Incidents
+
 | You want to... | Invoke |
 |---|---|
 | Triage an active incident | `incident-triage` |
@@ -55,6 +61,7 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 | Write a runbook | `runbook-author` |
 
 ### Fiction / worldbuilding
+
 | You want to... | Invoke |
 |---|---|
 | Challenge a world, region, culture, faction | `worldbuilding-council` |
@@ -72,6 +79,7 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 | Session prep | `dnd-session-prep` |
 
 ### Polish / cleanup
+
 | You want to... | Invoke |
 |---|---|
 | Strip AI patterns from prose | `humanizer` |
@@ -80,6 +88,7 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 | Clean AI patterns from technical docs | `doc-slop-cleaner` |
 
 ### PRs / code
+
 | You want to... | Invoke |
 |---|---|
 | Process all PR review comments | `pr-responder` |
@@ -91,37 +100,44 @@ Last updated: 2026-05-23. Built across the 2026-05-22 → 2026-05-23 design sess
 ## Pipelines (multi-step flows)
 
 ### Decision pipeline (daily-driver CDO)
+
 ```
 question → analysis-design → execute analysis → analysis-council (stress-test)
                                               → decision-memo → analysis-slop-cleaner → humanizer-exec → send
 ```
 
 ### Metric pipeline
+
 ```
 "need a new metric" → metric-design → metric-council → add-metric → validate-metric-trees
 ```
 
 ### Experiment pipeline
+
 ```
 hypothesis → experiment-design → analysis-council (stress-test) → implement → post-results → analysis-design → decision-memo
 ```
 
 ### Worldbuilding pipeline
+
 ```
 loose idea → worldbuilding-council (breadth) → worldbuilding-deep-dive (depth per element) → dnd-lore-ingestion (promote to canon)
 ```
 
 ### Story pipeline
+
 ```
 premise → story-outline → narrative-purpose-guide --from-outline (mission cards) → scene-craft per scene → pacing-review (mid-draft) → narrative-council (saga-level audit)
 ```
 
 ### Incident pipeline
+
 ```
 alert → incident-triage (active) → resolve → incident-retro → runbook-author (for new patterns)
 ```
 
 ### Vendor pipeline
+
 ```
 build-vs-buy question → vendor-council → decision-memo → strategic-analysis-review (high-stakes)
 ```
@@ -139,6 +155,7 @@ build-vs-buy question → vendor-council → decision-memo → strategic-analysi
 | `narrative-council` | Multi-arc saga, generational sweep, through-line audit | **Waves** |
 
 All councils:
+
 - 2 rounds by default (lens → response)
 - Graph-first by default (auto-loads `graphify-out/`)
 - Persist to `.council/<sub>/<date>-<slug>.md`
@@ -149,6 +166,7 @@ All councils:
 ## Persona library (use via `--council <names>`)
 
 ### Analysis-side (8)
+
 - `skeptical-data-scientist` — data integrity, sample selection, confounders, base rates
 - `decision-scientist` — decision quality, EV, optionality, reversibility, decision-vs-outcome
 - `statistician` — sample size, power, significance vs. importance, distributions
@@ -160,6 +178,7 @@ All councils:
 - `economist` — unit economics, opportunity cost, elasticity, incentives (dual-use)
 
 ### Worldbuilding-side (9)
+
 - `anthropologist` — kinship, status, ritual, food, taboo, group identity
 - `cartographer` — terrain, water, trade routes, chokepoints, distance, settlement logic
 - `historian` — origin events, schisms, succession, demographic shocks, living memory
@@ -199,11 +218,13 @@ Personas live in `~/.claude/skills/_personas/`. Each one has voice, lens, anti-p
 ## Architecture (foundation)
 
 ### Shared libraries (`_*` directories, never invoked directly)
+
 - `_personas/` — 17 reusable expert lenses
 - `_council-scaffolding/` — council pattern: dispatch, rounds, synthesis, persistence
 - `_graph-first/` — graphify integration protocol: detection paths, query shape, context block format
 
 ### Modes
+
 - **`--fast`** (councils): required personas only, 1 round
 - **`--verify`** (councils): personas may use tool_access to test claims
 - **`--graph`** (everything): force graphify ingestion first
@@ -212,6 +233,7 @@ Personas live in `~/.claude/skills/_personas/`. Each one has voice, lens, anti-p
 - **`--round-3`** (councils): force a third round when round 2 surfaced new challenges
 
 ### Outputs
+
 - Councils → `.council/<sub>/<date>-<slug>.md` + JSON sidecar
 - Designs → `.analyses/`, `.metrics/designs/`, `.experiments/`, `.dashboards/`
 - Worldbuilding → `.worldbuilding/`, `.council/missions/`
@@ -221,6 +243,7 @@ Personas live in `~/.claude/skills/_personas/`. Each one has voice, lens, anti-p
 - Fallback: `~/.council-sessions/<project-slug>/` if cwd not writable
 
 ### Composition
+
 - Analysis: `analysis-design` → `analysis-council` → `decision-memo` → `humanizer-exec` + `analysis-slop-cleaner`
 - Metric: `metric-design` → `metric-council` → `add-metric`
 - Fiction: `worldbuilding-council` → `worldbuilding-deep-dive` → `story-outline` → `scene-craft` (embeds `narrative-purpose-guide`)

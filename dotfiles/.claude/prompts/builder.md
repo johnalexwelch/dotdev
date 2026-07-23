@@ -9,6 +9,7 @@ Before writing anything, produce a structured implementation plan and message th
 Orchestrator with BUILDER_PLAN. Do not touch any files until you receive PLAN_APPROVED.
 
 Your plan must include:
+
 - Approach: what you will build and why this approach fits the codebase
 - Files to create or modify: exact paths and what changes in each
 - Test strategy: what you will test and how
