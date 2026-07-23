@@ -124,7 +124,7 @@ A council orchestrator (the `SKILL.md` of `analysis-council`, etc.) does the fol
    - Per-expert sections, 80-line cap each
    - **Minority report (#10):** surface any round-1 challenge or dissent that round 2 dropped, with why it was abandoned. A correct point that lost to consensus (the "oracle gap") must not vanish — empirically, councils generate the right answer then discard it during agreement.
    - Confidence overall, with a **deterministic cap (#3)**: any unrebutted `[HIGH]` challenge caps overall confidence at `medium`; any `[VERIFIED: claim breaks]` caps at `low`. **Self-reported confidence is narrative-only (#13)** — it is never a mechanical weight or tie-breaker (LLM verbalized confidence correlates ~0 with correctness and debate degrades it further). Rank challenges by evidence/falsifier strength, not stated confidence.
-6. **Post-process**: run `humanizer` and the council's `domain_cleaner` (e.g., `slop-cleaner (analysis mode)`) per `post_process` config.
+6. **Post-process**: run `humanizer` and the council's `domain_cleaner` (if one is configured) per `post_process` config.
 7. **Persist**: write to `.council/<sub>/<YYYY-MM-DD>-<slug>.md` with a JSON sidecar. The sidecar records a **run fingerprint (#9)** for reproducibility/drift detection: `{ topic_hash, roster: [personas], models: {persona: model+reasoning}, mode, rounds, graph_fingerprint, quorum_met, confidence, capped_by }`. Same topic_hash + different confidence across runs = drift to investigate.
 
 ## Verify mode (`--verify`)
@@ -165,4 +165,4 @@ Human gates: none by default — council is fire-and-read
 ## Context
 
 Typical workflows: invoked by sibling council skills, not by users directly
-Pairs well with: graphify, humanizer, slop-cleaner (analysis mode), slop-cleaner (docs mode)
+Pairs well with: graphify, humanizer

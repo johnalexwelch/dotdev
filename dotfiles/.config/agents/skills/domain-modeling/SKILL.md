@@ -1,5 +1,6 @@
 ---
 name: domain-modeling
+disable-model-invocation: true
 model: sonnet
 reasoning: medium
 description: Build and sharpen a project's domain model. Update CONTEXT.md, challenge term usage, record ADRs. Use when sharpening vocabulary mid-session, resolving ambiguous terms, or when another skill needs to maintain the domain model without a full grill session.

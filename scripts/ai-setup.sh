@@ -18,6 +18,11 @@ if [ ! -f "$HOME/.claude/settings.local.json" ]; then
     echo "Created ~/.claude/settings.local.json from template"
 fi
 
+# Claude Code hardcodes ~/.claude/skills — point it at the canonical skills
+# source (~/.config/agents/skills) instead of duplicating files. Not a Stow
+# item since dotfiles/.claude/skills no longer exists (retired indirection).
+run_cmd ln -sfn "$HOME/.config/agents/skills" "$HOME/.claude/skills"
+
 # Install Headroom proxy
 if command -v pip3 &>/dev/null; then
     run_cmd pip3 install --quiet headroom-ai[proxy]

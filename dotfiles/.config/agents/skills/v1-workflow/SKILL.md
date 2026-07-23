@@ -54,22 +54,7 @@ ready-to-implement issues
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
-
-```markdown
-WORKFLOW_STEPS:
-| Step | Required? | Status | Evidence / Skip Reason |
-|------|-----------|--------|------------------------|
-| <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed | <evidence or reason> |
-```
-
-Rules:
-
-- Initialize every known step as `pending`; conditional steps remain `pending` until their trigger is evaluated.
-- As each step finishes or is skipped, update the ledger with the new status and evidence or reason.
-- Do not mark required gates as skipped. If a gate cannot run, mark it `blocked` or `failed` and halt.
-- At every halt, STOP, handoff, and final completion, include the final ledger in the response.
-- The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and explain all non-completed statuses.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ---
 

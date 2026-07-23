@@ -30,7 +30,7 @@ The old "Audit Loop" is not an execution route. If a prompt, transcript, repo do
 - Broad repo evidence gathering → `repo-audit`, then route findings through `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan`
 - Multi-phase refactor execution → `design-plan` / `execute-phase`, then `workflow-review` and `workflow-finalize`
 
-Do not dispatch `/review`, `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
+Do not dispatch `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
 
 ## Agent Budget Rule
 
@@ -69,7 +69,7 @@ cockpit is an optimization, never a gate.
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -84,12 +84,10 @@ WORKFLOW_STEPS:
 | Step 6: Learning Note | conditional | pending | Required for confirmed non-trivial routes, halts, or corrections |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - A conditional step may be `skipped` only when the route is direct/read-only and no dispatch occurs; record the reason.
 - Do not dispatch before the ledger shows route confirmation and target preflight complete or not applicable.
-- Include the final ledger in every halt, handoff, and completion response.
 - **Persist the ledger.** In a project repo, after route confirmation write this
   ledger to `docs/executions/state.yaml` (`status: active`, `next` = first
   dispatch target) and update `next` + `updated` at each dispatch. Schema and
@@ -158,7 +156,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 
 | Signal | Classification | Routes to |
 |--------|---------------|-----------|
-| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture" | **V1** | `v1-workflow` (full gated pipeline: idea grill → approval → decision-log → system design → roadmap → issues — do NOT route directly to `v1-idea-grill` or `v1-system-design`, which skips the approval gates) |
+| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture" | **V1** | `v1-workflow` (full gated pipeline: idea grill via `grill-with-docs` → approval → decision-log → system design → roadmap → issues — do NOT route directly to `v1-system-design`, which skips the approval gates) |
 | "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | workflow-roadmap |
 | "turn this roadmap into PRDs/issues", "roadmap to backlog", "break milestones into PRDs", "break PRDs into issues", approved roadmap needing issue queue | **roadmap-to-backlog transition** | `workflow-roadmap` if no approved roadmap -> `to-prd` for spec parents -> `to-issues` with `references/issue-dependency-audit.md` -> `execute-prd` for parent/dependent trees or `run-backlog` only for independent ready issues |
 | "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
@@ -172,7 +170,8 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
 | Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` |
 | "Review this", "review my changes" | **review** | workflow-review |
-| "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | receive-review |
+| "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step on a PR already past `workflow-review` (e.g. "just address the review comments on #42, don't finalize/merge yet"), dispatch `receive-review` directly per the owner-vs-sub-step rule below |
+| "ship this", "finalize this PR", "merge this", "close this out", "land this", ready-to-merge / delivery-closure request | **ship / finalize** | workflow-finalize |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
 | "audit branches", "clean up worktrees", "prune stale worktrees", branch/worktree sprawl across many repos on the machine (not one delivery's residue) | **git worktree audit** | git-worktree-audit |
 | "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **skill system audit** | skill-system-audit |
@@ -184,10 +183,16 @@ If the user corrects the route, treat that correction as fresh routing input and
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); creative/D&D skills (`dnd-workflow`, etc.) live in Wren's kit, not here |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
 | "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
-| "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape`/`writing-beats` → humanizer) lives in Wren's kit |
+| "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape` (beats mode) → humanizer) lives in Wren's kit |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
-| "generate prompt for", "prep for codex", "prep for AFK" | **prompt generation** | prompt-builder |
+| "generate prompt for", "prep for codex", "prep for AFK" — a standalone prompt-text request, not a request to run the batch/dispatch | **prompt generation** | prompt-builder (legitimate standalone entry point per its own contract's "manual Codex task" use case — do not repoint to `run-backlog`/`workflow-build-one` unless the user wants the full dispatch, in which case use the **AFK backlog** or **ready issue** rows below instead) |
+
+## Owner vs. sub-step routing rule (SB-021 / SB-022)
+
+**Routes-to names the owning orchestrator, not the first-mentioned or most-obviously-matching skill — unless the user explicitly asks for that sub-step alone.** A request that only superficially matches a mid-chain skill's own trigger wording (e.g. `receive-review`'s description literally says "address/respond to the review comments") still routes to the owner by default, because the owner's precondition and sequencing exist for a reason — `workflow-finalize` gates on a prior `workflow-review` APPROVE before its Step 2 runs `receive-review`. Route to the sub-step directly only when the user's own words scope the request to that step alone (explicit "just," "only," a bare skill name, or an unambiguous statement that the rest of the pipeline already ran or isn't wanted). When in doubt, prefer the owner and let its own gates decide whether the sub-step is reachable yet.
+
+This is why `receive-review` and `prompt-builder` are handled differently above: `receive-review` has no independent use outside a review-gate context (default: route to the owner, `workflow-finalize`, with the explicit-sub-step carve-out); `prompt-builder`'s own contract documents standalone "manual Codex task" use as a first-class case (default: route directly, since the owner-vs-sub-step question is already answered in the skill's own contract).
 
 ## Bug routing rule
 
@@ -208,6 +213,22 @@ If the user corrects the route, treat that correction as fresh routing input and
 | Single issue, no parent context | workflow-build-one |
 
 If unclear: check whether the issues reference a parent. If yes → execute-prd. If no → run-backlog.
+
+## Catalog tier (model-invocation-locked skills)
+
+47 skills carry `disable-model-invocation: true` (DL-0008, applied in PR #83) — they never appear in the ambient per-session skill listing, but remain fully invocable by name (`/skill-name`) or by path from another skill's Flow. The classification table above intentionally carries no per-skill routing row for them. If a request clearly matches one of these, that **is** the route — treat it as catalog tier, not "no route exists," and invoke it directly by name (or ask which one, if more than one plausibly matches).
+
+Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, shorter): `dotfiles/.claude/CLAUDE.md` § "Skill catalog (locked skills)". This section is the router-side cross-reference — do not re-copy full descriptions here; category + invoke pattern only.
+
+**Analytics** (16) — e.g. `/sql-review`: `analysis-council`, `analysis-design`, `dashboard-design`, `dashboard-review`, `data-quality-audit`, `data-readiness-check`, `decision-memo`, `experiment-design`, `lineage-audit`, `metric-council`, `metric-design`, `metric-tree-review`, `sql-review`, `strategic-analysis-review`, `vendor-council`, `viz-integrity`
+
+**Incident** (2) — e.g. `/incident-triage`: `incident-retro`, `incident-triage`
+
+**Library/infra** (13) — shared scaffolding, reference protocols, and repo tooling; e.g. `/setup-worktree`: `council-scaffolding`, `describe-pr`, `docs-audit`, `git-guardrails`, `graph-first`, `herdr-launch`, `omc-reference`, `post-mortem`, `review-scaffolding`, `runbook-author`, `setup-skills`, `setup-worktree`, `watch-ci`
+
+**Knowledge/utility** (10) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `rowan`, `stage-v1-concept`, `wayfinder`, `zoom-out`
+
+**Retirement-leaning** (6, per skill-suite audit F-6 — self-declared superseded, not formally retired yet): `pr-responder` (restates `receive-review` Step 4), `pr-review` / `spec-review` / `review` (superseded by `workflow-review`), `slop-cleaner` (`humanizer` owns the route), `v1-idea-grill` (superseded by `grill-with-docs`). Do not route new requests here; if invoked by name, note the successor.
 
 ## Preflight
 
@@ -257,18 +278,17 @@ Record the check in the route card `Why this flow` line (e.g. "prior-art scan: n
 
 ### Worktree Baseline Gate
 
-Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, load `setup-worktree/references/base-branch-policy.md`, resolve `WORKFLOW_BASE_GATE`, and create or require a fresh isolated worktree from the resolved workflow base:
+Before dispatching any workflow that mutates code, commits, creates a PR, or runs a delivery loop, create or require a fresh isolated worktree from the resolved workflow base via `setup-worktree/scripts/worktree-baseline.sh` (D-005's `cut`/`verify`/`emit` interface):
 
 ```bash
-git fetch origin --prune
-git worktree add -b <workflow-branch> <worktree-path> <workflow-base-ref>
+setup-worktree/scripts/worktree-baseline.sh cut --branch <workflow-branch> --path <worktree-path>
 ```
 
-The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If neither `origin/staging` nor the remote default branch can be resolved, halt and ask the user for the replacement base.
+`cut` resolves the workflow base per `base-branch-policy.md` (fetch + prefer `origin/staging`, fall back to the remote default), creates the worktree, and prints the `WORKFLOW_BASE_GATE` block plus the `WORKTREE_BASELINE_GATE` line — record that output verbatim as gate evidence; do not hand-write or reformat it. The workflow must run inside that worktree. Do not run mutating delivery workflows from the primary checkout or from a branch based on local `main`/`staging`. If the script halts (non-zero exit, e.g. code 7 when neither `origin/staging` nor the remote default branch can be resolved), halt and ask the user for the replacement base.
 
-**Parallel/`team` fan-out — one isolated worktree per lane (precondition, not recovery).** When two or more lanes run concurrently (`team` budget, parallel phases, AFK drive-to-done), each lane gets its OWN fresh worktree cut from the resolved base *before* any lane is dispatched — never share a worktree or reuse an existing checkout across lanes. Independent lanes branch off `origin/main`/base directly; a dependent lane stacks explicitly on its parent's commit. Resolving "which repo/worktree am I in" mid-fan-out is a signal the gate was skipped.
+**Parallel/`team` fan-out — one isolated worktree per lane (precondition, not recovery).** When two or more lanes run concurrently (`team` budget, parallel phases, AFK drive-to-done), each lane gets its OWN fresh worktree — invoke `worktree-baseline.sh cut` separately per lane — cut from the resolved base *before* any lane is dispatched — never share a worktree or reuse an existing checkout across lanes. Independent lanes branch off `origin/main`/base directly; a dependent lane stacks explicitly on its parent's commit (`cut --parent-branch <parent> --parent-pr <n>`). Resolving "which repo/worktree am I in" mid-fan-out is a signal the gate was skipped.
 
-Read-only workflows (`workflow-review`, `skill-system-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base.
+Read-only workflows (`workflow-review`, `skill-system-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base — `setup-worktree/scripts/worktree-baseline.sh verify --path <worktree-path>` confirms this.
 
 ## Audit Routing Rule
 

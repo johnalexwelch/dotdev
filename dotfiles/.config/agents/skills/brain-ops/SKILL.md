@@ -1,5 +1,6 @@
 ---
 name: brain-ops
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: Interact with Alex's Karpathy-style second brain from any Claude session. Ingest sources, query concepts, capture thoughts, run the review queue, or check brain health. Use when the user mentions "brain", "ingest", "what do I know about", "capture this", "brain lint", "brain review", or references the wiki/concept pages.
@@ -21,7 +22,7 @@ Human gates: review verdicts require user input; ingest confirmation for large s
 ## Soft Context
 
 Typical workflows: knowledge capture (after meetings, reading, sessions), retrieval (before decisions, briefings, prep), maintenance (weekly lint, review queue triage)
-Pairs well with: write-to-obsidian (output persistence), handoff (brain context for next session), prompt-builder (brain context injection for Codex)
+Pairs well with: write-to-obsidian (output persistence; in the `core` plugin namespace — plugin-only, not in this corpus), handoff (brain context for next session), prompt-builder (brain context injection for Codex)
 
 ## Environment
 

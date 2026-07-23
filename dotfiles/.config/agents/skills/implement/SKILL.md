@@ -1,5 +1,6 @@
 ---
 name: implement
+disable-model-invocation: true
 model: sonnet
 reasoning: medium
 description: Implement a piece of work from a PRD, issue, or spec. Use when the user says "implement this", "build this", "write the code for", or hands you a PRD/issue to execute.
@@ -16,7 +17,7 @@ Human gates: public interface confirmation before writing tests or code (see tdd
 ## Context
 
 Typical workflows: feature development (after to-prd/to-issues/triage); for worktree-tracked AFK work use workflow-build-one instead
-Pairs well with: tdd, pr-review, diagnose, improve-codebase-architecture
+Pairs well with: tdd, workflow-review, diagnose, improve-codebase-architecture
 
 # Implement
 
@@ -67,8 +68,7 @@ Do not leave uncommitted changes when handing off.
 
 ## 5. Self-review before declaring done
 
-Run `pr-review` (or equivalent) against the branch before calling it done. Check:
-
+Run `workflow-review` (or equivalent) against the branch before calling it done. Check:
 - Standards axis: does the code follow repo conventions?
 - Spec axis: does every acceptance criterion have a corresponding passing test?
 
@@ -83,7 +83,7 @@ After all ACs are satisfied, check them off on the originating issue: `gh issue 
 [ ] Typechecks pass
 [ ] Full test suite passes
 [ ] No uncommitted changes
-[ ] pr-review run and findings addressed (fixed, filed, or documented — none dropped)
+[ ] workflow-review run and findings addressed (fixed, filed, or documented — none dropped)
 [ ] Commit message references the issue
 [ ] Acceptance criteria checked off on the originating issue
 ```

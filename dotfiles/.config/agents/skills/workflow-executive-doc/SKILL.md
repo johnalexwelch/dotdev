@@ -24,12 +24,12 @@ Create or review executive-facing documents through a sequenced multi-expert wor
 ```
 intake -> research-synthesizer -> [iris numeric check] -> domain experts
           -> executive-memo-architect -> numeric claims audit
-          -> strategic-reviewer -> revision -> [humanizer]
+          -> strategic-reviewer -> revision -> [humanizer-exec]
 ```
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step. Use the exact step names from this skill and include conditional or optional steps.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -37,15 +37,6 @@ WORKFLOW_STEPS:
 |------|-----------|--------|------------------------|
 | <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
 ```
-
-Rules:
-
-- Initialize every known step as `pending`; conditional steps remain `pending` until their trigger is evaluated.
-- As each step finishes or is skipped, update the ledger with the new status and evidence or reason.
-- A step may be `skipped` only when this skill explicitly makes it optional/conditional or a routing decision stops the workflow; record the exact reason.
-- Do not mark required gates as skipped. If a required gate cannot run, mark it `blocked` or `failed` and halt according to this workflow.
-- At every halt, STOP, handoff, and final completion, include the final ledger in the response or artifact.
-- The final ledger must distinguish `completed`, `skipped`, `blocked`, `failed`, and `not_applicable`, and every non-completed status must include a reason.
 
 ## Process
 
@@ -136,7 +127,7 @@ Do not hide uncertainty with smoother prose.
 
 ### 9. Final polish
 
-Use `humanizer` only after the reasoning loop is complete. Polish for clarity, brevity, executive tone, and non-AI texture, but preserve the claims, tradeoffs, and caveats produced by the workflow.
+Use `humanizer-exec` only after the reasoning loop is complete — it is the executive-tuned polish for board/ELT/CEO drafts. Polish for clarity, brevity, executive tone, and non-AI texture, but preserve the claims, tradeoffs, and caveats produced by the workflow.
 
 ## Quality bar
 
@@ -158,4 +149,4 @@ Human gates: intake ambiguity; unresolved strategic or political decisions; fina
 ## Context
 
 Typical workflows: standalone executive writing, leadership strategy work, board/ELT memo prep, multi-source synthesis
-Pairs well with: humanizer, write-to-obsidian, Notion research/documentation skills, meeting-intelligence
+Pairs well with: humanizer-exec, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research/documentation skills, meeting-intelligence

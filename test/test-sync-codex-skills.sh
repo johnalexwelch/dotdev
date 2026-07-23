@@ -155,6 +155,19 @@ SOURCE_SKILLS_DIR="$source" CODEX_SKILLS_DIR="$runtime" CODEX_RUNTIME_ALLOWLIST=
 assert_path_exists "apply full prune keeps allowlisted runtime-only skill" "$runtime/runtime-only/SKILL.md"
 assert_path_missing "apply full prune removes unlisted runtime-only skill" "$runtime/stale-runtime-only"
 
+IFS=$'\t' read -r source runtime < <(new_fixture docs_sync)
+mkdir -p "$source/_docs"
+printf '# step ledger protocol\n' >"$source/_docs/step-ledger.md"
+printf '#!/usr/bin/env bash\n' >"$source/_docs/some-script.sh"
+output=$(SOURCE_SKILLS_DIR="$source" CODEX_SKILLS_DIR="$runtime" "$SCRIPT")
+assert_contains "dry run previews _docs markdown" "$output" \
+    "would sync _docs/step-ledger.md"
+assert_not_contains "dry run does not preview _docs scripts" "$output" \
+    "some-script.sh"
+SOURCE_SKILLS_DIR="$source" CODEX_SKILLS_DIR="$runtime" "$SCRIPT" --apply >/dev/null
+assert_path_exists "apply copies _docs markdown into runtime" "$runtime/_docs/step-ledger.md"
+assert_path_missing "apply does not copy _docs scripts" "$runtime/_docs/some-script.sh"
+
 echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"

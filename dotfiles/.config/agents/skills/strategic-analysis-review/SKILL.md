@@ -1,5 +1,6 @@
 ---
 name: strategic-analysis-review
+disable-model-invocation: true
 model: opus
 reasoning: high
 description: "Reviews executive-facing analyses for argument strength, Pyramid/SCQA structure, insight quality, and wording. Use for strategy memos, board/ELT updates, recommendations, or \"review this memo\", \"pressure-test this recommendation\", \"make this board update sharper\"."
@@ -131,4 +132,4 @@ Bundled resources: `references/reviewer-briefs.md` maps reviewer lanes to per-la
 ## Context
 
 Typical workflows: executive memo review, business analysis refinement, board/ELT update polish, strategic recommendation critique
-Pairs well with: workflow-executive-doc, humanizer, write-to-obsidian, Notion research skills
+Pairs well with: workflow-executive-doc, humanizer, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research skills

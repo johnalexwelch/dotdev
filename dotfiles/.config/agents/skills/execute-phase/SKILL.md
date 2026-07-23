@@ -89,7 +89,7 @@ approved `design-plan` exists. Normal vertical issues created by
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -108,11 +108,9 @@ WORKFLOW_STEPS:
 | Step 9: Halt Or Auto-Proceed | required | pending | - |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - Conditional steps may be `skipped` only for `dry_run`, no auto work, no human work, or an explicit halt reason from this skill.
-- Include the final ledger in every halt, handoff, and completion response.
 
 The skill enforces these invariants:
 

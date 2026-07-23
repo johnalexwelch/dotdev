@@ -1,5 +1,6 @@
 ---
 name: lineage-audit
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: Traces a metric, dashboard, or table backward to its upstream sources and forward to its downstream dependents. Surfaces orphan tables, single-points-of-failure, transformation logic risks, and dependents that may break if upstream changes. Use before refactoring a model, deprecating a table, or investigating a data incident.

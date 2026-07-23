@@ -77,8 +77,8 @@ These cover work that doesn't fit the canonical loop and have their own routing 
 | Task type | Route | Notes |
 |-----------|-------|-------|
 | Bug fix | `/workflow-debug` (which begins with `superpowers:systematic-debugging`) | Bugs ALWAYS go through diagnose-first; never `workflow-build-one` |
-| V1 product idea grilling | `/v1-idea-grill` → produces `V1_IDEA_BRIEF` | Pre-PRD shaping |
-| V1 technical system design | `/v1-system-design` (after `v1-idea-grill`) | Pre-implementation architecture |
+| V1 product idea grilling | `/grill-with-docs` (V1 discovery mode) → produces `V1_IDEA_BRIEF` | Pre-PRD shaping |
+| V1 technical system design | `/v1-system-design` (after the V1 grill) | Pre-implementation architecture |
 | Product/engineering roadmap | `/workflow-roadmap` | Multi-area sequencing; usually fed by `/repo-audit` |
 | Parent-PRD execution | `/execute-prd` | When child issues have dependencies |
 | AFK backlog | `/run-backlog` | Independent ready-for-agent issues; batched |
@@ -153,7 +153,7 @@ The owning agent (the main session orchestrating the loop) emits the board — n
 ## Quick Reference
 
 - **Don't know where to start?** → `/workflow-router`
-- **Have a vague idea?** → `/workflow-router` → it'll route to `/workflow-feature` or `/v1-idea-grill`
+- **Have a vague idea?** → `/workflow-router` → it'll route to `/workflow-feature` or `/v1-workflow`
 - **Have a clear `ready-for-agent` issue?** → `/workflow-router` → `/workflow-build-one`
 - **Have a parent PRD with children?** → `/workflow-router` → `/execute-prd`
 - **Have a bug?** → `/workflow-router` → `/workflow-debug`
