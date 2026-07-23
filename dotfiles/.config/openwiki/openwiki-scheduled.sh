@@ -56,7 +56,15 @@ while IFS= read -r repo || [ -n "$repo" ]; do
         continue
     fi
 
-    (cd "$wt" && openwiki code --update --print) >>"$LOG" 2>&1 || log "WARN $repo openwiki exited nonzero"
+    # ponytail: a failed generation must never fall through to the "docs already
+    # current" OK line — a crash leaves no diff, which is indistinguishable from
+    # genuinely-current docs. Log ERROR and skip publish; cleanup still runs.
+    if ! (cd "$wt" && openwiki code --update --print) >>"$LOG" 2>&1; then
+        log "ERROR $repo generation failed (see above)"
+        git -C "$repo" worktree remove --force "$wt" 2>>"$LOG" || true
+        rm -rf "$(dirname "$wt")"
+        continue
+    fi
     # ponytail: openwiki treats its own scaffolded GH workflow as fair game to
     # revert hand-hardening (pinned actions, disabled cron, persist-credentials).
     # Restore it before diffing so a stray revert can never reach the PR, even

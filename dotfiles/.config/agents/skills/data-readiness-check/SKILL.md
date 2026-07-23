@@ -1,5 +1,6 @@
 ---
 name: data-readiness-check
+disable-model-invocation: true
 model: haiku
 reasoning: high
 description: "Before an analysis or metric, checks whether the needed data exists, is fresh, correctly grained, and governed for the use. Catches analyses that assume missing/stale/off-limits data. Use as the first check in analysis-design or before depending on an unverified source."

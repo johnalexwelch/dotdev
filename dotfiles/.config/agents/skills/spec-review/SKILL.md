@@ -1,5 +1,6 @@
 ---
 name: spec-review
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: 'Review the diff between HEAD and a fixed point (commit, branch, tag, or merge-base) along two axes — Standards (does the diff follow this repo''s own documented coding conventions, using a Fowler code-smell baseline as fallback) and Spec (does the diff match the originating issue or PRD it claims to implement). Runs both axes as parallel, context-isolated sub-agents and reports them under separate headings. This is distinct from the built-in "code-review" skill: that one only checks correctness bugs and reuse/simplification/efficiency cleanups on the current diff, with no concept of repo standards-conformance or an originating spec — use this skill instead when the ask is about standards conformance, spec/PRD conformance, or reviewing a branch "since <ref>".'
@@ -16,7 +17,7 @@ Human gates: fixed point confirmed (must resolve, diff must be non-empty) before
 ## Context
 
 Typical workflows: pre-merge review of a branch or PR against a fixed point; self-review gate inside `implement`
-Pairs well with: implement, diagnose, to-prd, to-issues, setup-skills, pr-review
+Pairs well with: implement, diagnose, to-prd, to-issues, setup-skills, workflow-review
 
 # Spec Review
 
@@ -109,4 +110,4 @@ Reporting them separately stops one axis from masking the other.
 ## Relationship to other review skills
 
 - The built-in **code-review** skill checks the current diff for correctness bugs and reuse/simplification/efficiency cleanups. It has no fixed-point comparison, no Standards axis, and no Spec axis — it does not know what issue or PRD the diff is supposed to satisfy. Use it for a quick pass on uncommitted or recently-committed work; use `spec-review` when the question is "does this branch actually match repo convention and the ticket it claims to close."
-- **pr-review** does a similar Standards+Spec comparison but is GitHub-PR-shaped: it fetches a specific PR via `gh pr view`/`gh pr diff`, runs the comparison inline (not via parallel sub-agents), and produces file/line-anchored comments meant to be posted to the PR. Use `spec-review` for a local branch or arbitrary fixed-point comparison before a PR exists, or when you want the two axes fully context-isolated; use `pr-review` when you want GitHub-postable line comments against an already-open PR.
+- **workflow-review** is the auditable review gate for delivery work: it dispatches independent reviewer lanes sized to risk and produces a synthesis verdict. Use `spec-review` for a local branch or arbitrary fixed-point comparison before a PR exists, or when you want the Standards and Spec axes fully context-isolated; use `workflow-review` for the pre-merge review gate on an already-open PR.

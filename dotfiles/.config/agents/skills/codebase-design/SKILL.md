@@ -1,5 +1,6 @@
 ---
 name: codebase-design
+disable-model-invocation: true
 description: Shared vocabulary and principles for designing deep modules. Use when designing or improving a module's interface, deciding where a seam goes, or making code more testable. Also the reference vocabulary for improve-codebase-architecture and tdd.
 ---
 

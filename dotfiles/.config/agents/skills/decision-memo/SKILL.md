@@ -1,5 +1,6 @@
 ---
 name: decision-memo
+disable-model-invocation: true
 model: opus
 reasoning: high
 description: Transforms a completed analysis (or analysis-council output) into a Pyramid Principle / SCQA structured executive memo. Audience-tuned (board, ELT, CEO, customer). Use after analysis-design + execution, when the analyst has findings and needs to communicate a decision recommendation to a specific audience.
@@ -23,7 +24,7 @@ Routing:
 
 - "Polish this memo I wrote" → `strategic-analysis-review` (review, not draft)
 - "Stress-test this recommendation" → `analysis-council`
-- "Make this less AI-shaped" → `slop-cleaner (analysis mode)` then `humanizer`
+- "Make this less AI-shaped" → `humanizer`
 
 ## Process
 
@@ -165,4 +166,4 @@ Human gates: requires the user to confirm audience + decision; ambiguity gets on
 ## Context
 
 Typical workflows: post-analysis, pre-share, executive communication
-Pairs well with: analysis-design (upstream), analysis-council (stress-test before writing), strategic-analysis-review (review after drafting), slop-cleaner (analysis mode) + humanizer (post-process), workflow-executive-doc (longer-form orchestration)
+Pairs well with: analysis-design (upstream), analysis-council (stress-test before writing), strategic-analysis-review (review after drafting), humanizer (post-process), workflow-executive-doc (longer-form orchestration)

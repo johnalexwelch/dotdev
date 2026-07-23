@@ -1,5 +1,6 @@
 ---
 name: viz-integrity
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: Shared chart-integrity rules — chart-type-to-data-shape fit, axis honesty, color-blind accessibility, encoding accuracy. Referenced by dashboard-design (per-chart) and dashboard-review (checks). Not invoked standalone.

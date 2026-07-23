@@ -1,5 +1,6 @@
 ---
 name: humanizer-exec
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: Executive-tuned humanizer — strips AI-writing tells and sharpens exec register (active verbs, concrete numbers, lead-with-the-answer, compression). Use as the final polish on any board/ELT/CEO/customer-facing draft, or after decision-memo or strategic-analysis-review. Trigger on "make this exec-ready", "tighten for the board", "de-AI this memo", or any LLM-drafted memo, board update, or deck narrative.
@@ -13,7 +14,6 @@ Final polish for exec/board/customer drafts that were LLM-written. Does everythi
 
 - `humanizer` — its `references/pattern-catalog.md` holds the 29 base AI-writing patterns this extends. If absent, use the common-tells list below.
 - `graph-first` — optional voice/audience context; auto-detects a knowledge graph and skips silently if none (`--graph` forces ingestion, `--no-graph` skips).
-- `slop-cleaner (analysis mode)` — run *before* this on analytical drafts: it removes analytical tells (false precision, generic frameworks), this handles prose register.
 - `decision-memo` / `strategic-analysis-review` — common upstream producers of the drafts you'll polish (not called by this skill).
 
 ## Exec-register patterns (beyond the base 29)

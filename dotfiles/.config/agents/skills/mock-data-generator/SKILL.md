@@ -1,5 +1,6 @@
 ---
 name: mock-data-generator
+disable-model-invocation: true
 model: sonnet
 reasoning: high
 description: >-

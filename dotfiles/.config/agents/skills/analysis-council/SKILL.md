@@ -1,5 +1,6 @@
 ---
 name: analysis-council
+disable-model-invocation: true
 model: opus
 reasoning: high
 description: "Convenes a 2-5 expert council to stress-test an analysis, claim, or judgment call. Graph-first: pulls prior decisions/ADRs from graphify-out when present. Use for \"challenge my thinking\", \"pressure-test this\", \"what am I missing\", or before any high-stakes analytical conclusion. Supports --fast and --verify."
@@ -67,4 +68,4 @@ Headline (≤8 lines: agreement first, then splits) · **Where experts disagreed
 
 ## Post-process
 
-`humanizer: true` (synthesis only, not per-expert), `domain_cleaner: slop-cleaner (analysis mode)` → now `slop-cleaner --mode analysis`. Persist to `.council/analysis/`.
+`humanizer: true` (synthesis only, not per-expert), `domain_cleaner: null` (slop-cleaner retired per DL-0008). Persist to `.council/analysis/`.

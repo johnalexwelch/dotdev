@@ -1,9 +1,12 @@
 ---
 name: git-guardrails
+disable-model-invocation: true
 model: haiku
 reasoning: medium
 description: Set up a Claude Code PreToolUse hook that blocks dangerous git commands (force-push, reset --hard, clean -f, branch -D, checkout/restore .) before they execute. Use when the user wants to prevent destructive git operations, add git safety hooks, or block git push/reset in Claude Code.
 ---
+
+> Retirement-leaning Tier B (2026-07-20 audit): redundant with settings deny-list, guardian hook, and branch ruleset — telemetry review ~2026-08-20.
 
 ## Contract
 

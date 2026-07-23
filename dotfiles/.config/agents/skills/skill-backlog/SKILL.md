@@ -26,6 +26,8 @@ Harvest → Ground-truth probe → Cluster by failure mode → Evaluate → Plan
 
 ## Workflow Progress Reporting
 
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
+
 ```markdown
 WORKFLOW_STEPS:
 | Step | Required? | Status | Evidence / Skip Reason |
@@ -38,8 +40,6 @@ WORKFLOW_STEPS:
 | Step 5: Dispatch To workflow-skill | conditional | pending | Per approved item |
 | Step 6: Update Ledger | required | pending | - |
 ```
-
-Initialize `pending`; update as each finishes; include the final ledger in every halt and completion.
 
 ### Step 1: Harvest
 

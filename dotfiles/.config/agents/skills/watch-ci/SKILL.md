@@ -108,7 +108,7 @@ Load references only at the point they are needed:
 
 ## Workflow Progress Reporting
 
-At the start of every run, display a step ledger before executing or dispatching any step.
+Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -125,12 +125,10 @@ WORKFLOW_STEPS:
 | Step 8: Surface To User | required | pending | - |
 ```
 
-Rules:
+Skill-specific rules (extend `../_docs/step-ledger.md`):
 
-- Initialize every step as `pending`.
 - Conditional steps may be `skipped` only when their trigger does not occur; record the reason.
 - Required steps cannot be skipped. If preflight, CI polling, review monitoring, or outcome writing cannot run, mark the step `blocked` and halt.
-- Include the final ledger in every halt, outcome file, and completion response.
 
 ## Core Flow
 
@@ -201,7 +199,7 @@ When checks pass, load `references/approve-and-review-gates.md`.
 - If `no_review == true`, require either an explicit user waiver or a complete `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` plus an explicit user waiver for skipping `/watch-ci` self-review. If neither exists, halt.
 - If `no_review == true`, skip self-review agents only after that evidence/waiver is recorded, and still monitor and resolve any existing PR comments.
 - Otherwise run the always-on OMC `security-reviewer` pass.
-- Run `/review` on auto-fix commits and on any reviewer-feedback fix commits created by this skill.
+- Run a `workflow-review` fast-profile reviewer on auto-fix commits and on any reviewer-feedback fix commits created by this skill.
 - Poll PR reviews and inline comments for reviewer-agent feedback.
 - Invoke `receive-review` to incorporate every actionable item: blockers, non-blockers, observations, comments, questions, and nits.
 - After pushing feedback fixes, return to Step 1 because CI and reviewers may rerun.
