@@ -67,6 +67,10 @@ Say "setup omc" or run `/oh-my-claudecode:omc-setup`.
 <!-- OMC:END -->
 
 <!-- User customizations -->
+# Agent habits (cross-runtime, read first)
+
+Durable cross-runtime agent habits (ground truth over speculation, scoped filesystem searches, verify newly-wired tools before manual work, treat mutating/regen tools as destructive, post-rewrite semantic sanity pass) live at `~/dotdev/docs/agents/habits.md`. Read it before diving into work — in any repo, not just `~/dotdev`.
+
 # Code standards (on-demand)
 
 Language/stack coding standards are **not** auto-loaded into every session (they're waste in DnD, writing, and analysis sessions). When doing code work, read the relevant file(s) from `~/.claude/code-standards-reference/`:
