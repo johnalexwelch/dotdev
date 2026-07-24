@@ -41,6 +41,7 @@ When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
 
 - **Before pushing a fix** (review-fix in Step 2, CI-fix in Step 3, or a long-lived-PR sync in Step 7) **to an existing PR branch**, run `gh pr view <n> --json state,mergedAt,headRefOid,mergeStateStatus`. If `state` is `MERGED` or `CLOSED`, do not re-push — a same-SHA re-push fires no `synchronize` event, so CI and review never re-trigger. Land a fresh PR onto the base branch for the remaining changes instead.
 - **Before any merge or ready/auto-merge action** (Step 8), if Step 2's review round or Step 3's CI wait took real wall-clock time, re-fetch the base branch and re-check `mergeStateStatus`/`mergeable` via the same `gh pr view` call. Unrelated PRs may have landed on the base in the interim and made this PR `CONFLICTING`; resolve conflicts before proceeding.
+- **Transient GitHub GraphQL 5xx** ("Something went wrong while executing your query…") on `gh pr create`/`merge` is a server-side blip, not your bug — the branch push already succeeded. Retry 2–3× with a short backoff; if it still fails, stop hammering (no-rabbit-hole) and fall back to handing over the compare URL (`https://github.com/<owner>/<repo>/compare/main...<branch>?expand=1`) so the human can open it in one click. Never assume the operation failed without checking (`gh pr list --head <branch>`) — a create can succeed while the response errors.
 
 ## Flow
 

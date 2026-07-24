@@ -107,13 +107,17 @@ Completion criterion: user selected items (possibly none).
 
 Per approved item, Load and run `workflow-skill/SKILL.md` with the scoped change and harvested evidence. Process independently; rejected/deferred items are not dispatched.
 
-Completion criterion: every approved item dispatched; `workflow-skill` result captured.
+**Resolve each item's *actual* target file before dispatching, and bundle same-file edits into one dispatch.** The ledger's "owning skill" is the *nominal* owner, which is not always where the change lands — a skill often delegates a gate to another (observed 2026-07-24: a `workflow-build-one` CI-parity item actually landed in `workflow-finalize`, because build-one delegates its finalize gate there). Two dispatches editing the same `SKILL.md` on independent branches force an avoidable rebase. Follow the delegation/reference chain to the file that will actually change, group approved items by that file, and dispatch one `workflow-skill` run per file.
+
+Completion criterion: every approved item dispatched (grouped by actual target file); `workflow-skill` result captured.
 
 ### Step 6: Update ledger
 
-Write final statuses: landed → `implemented` (+ commit/ref if any); rejected → `rejected` (+ reason); approved-but-not-done → `accepted`; untouched open → stay `new`/`deferred`. Prefer ground-truth over rewriting old reflections.
+Write final statuses: dispatched-and-PR-open-but-unmerged → `accepted` (with PR ref); **only flip to `implemented` once the PR actually merges** (dispatch opens a PR, it does not land the change — a `workflow-skill` PASS means "PR opened," not "on `main`"); rejected → `rejected` (+ reason); untouched open → stay `new`/`deferred`. Prefer ground-truth over rewriting old reflections.
 
-Completion criterion: every row touched this run has final status + resolution.
+**Post-merge lifecycle (when the run's PRs get merged, same session or later):** this skill dispatches edits that land as PRs; closing the loop after merge is part of the job. On merge: (1) flip the affected rows `accepted → implemented` with the merge commit; (2) run the Codex mirror for any *skill* edits — `~/dotdev/dotfiles/.config/agents/skills/sync-codex-skills.sh --apply` from merged-`main` content, **not** pre-merge (mirroring unreviewed content is wrong); (3) clean up merged worktrees/branches (hand off to `cleanup-delivery`). If merging is out of scope this run, say so and leave the rows `accepted`. Do not claim `implemented` from a green-but-unmerged PR.
+
+Completion criterion: every row touched this run has final status + resolution; if PRs merged this run, lifecycle steps 1–3 done.
 
 ## Ledger schema — `~/dotdev/docs/executions/skill-backlog.md`
 
