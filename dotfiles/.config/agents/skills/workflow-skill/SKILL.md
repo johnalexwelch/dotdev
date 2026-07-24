@@ -67,6 +67,7 @@ Respect the Stow + Codex seam:
 
 - Edits target the **canonical source**: `~/dotdev/dotfiles/.config/agents/skills/<name>/SKILL.md`. Never edit the `~/.claude/skills/` runtime mirror. Resolve symlinks (`readlink -f`) before `git add`; do not `git add` through a symlink.
 - The git root is `~/dotdev` (dotfiles is a subdir). Commit the path as `dotfiles/.config/agents/skills/<name>/...` from the root, or `cd ~/dotdev/dotfiles` first.
+- **Cut a fresh worktree off `origin/main` and commit there — never commit in the primary checkout.** The primary checkout may be sitting on an unrelated in-flight branch; committing in place silently commingles your skill edit into that branch's PR (observed 2026-07-24: a keystone `CLAUDE.md` pointer landed on an unrelated arch PR because the checkout was on its branch). Always: `git fetch origin && git worktree add -b <chore/branch> <path> origin/main`, edit + commit + push + open the PR from that worktree, then remove it. Dogfood the git-env/identity check (`docs/agents/habits.md`) before the commit.
 - After the approved edit, mirror to Codex: run `~/dotdev/dotfiles/.config/agents/skills/sync-codex-skills.sh --apply`.
 - Verify landing for every runtime that should see the skill: Codex path above, and the Claude runtime link (`~/.claude/skills/<name>` resolves to the canonical source). If the Claude symlink tree is broken, report it — do not pretend the skill is activated.
 - If the skill needs MCP or interactive tools, set `codex-compatible: false` in its frontmatter.
