@@ -90,6 +90,7 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 - Implement against acceptance criteria
 - Honor relevant decision-log entries and accepted tradeoffs; do not re-open settled choices unless implementation evidence invalidates them
 - Use appropriate execution profile (normal by default, strict-tdd for bugs)
+- Record a TDD decision so AFK orchestrators (`run-backlog`, `workflow-autonomous-backlog`) find the execution-chain evidence they require: either run `tdd` (default for bugs and behavior changes) or emit `tdd_not_applicable_with_reason: <reason>` (e.g. pure docs/config). Do not silently skip — an absent decision makes the AFK monitor flag the issue `needs-human`.
 - Commit incrementally with issue references
 
 ### Step 3: Review (workflow-review)
