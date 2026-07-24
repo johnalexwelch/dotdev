@@ -10,7 +10,10 @@ description: >-
   Aware, Consistent, Concrete, Concise) plus metrics-reporting rules, and it also catches
   internal contradictions, writer-facing meta-commentary, and false precision. Use whenever
   the user asks to review, critique, edit, tighten, "make clearer", proofread, or give
-  feedback on any writing, or pastes a draft asking "how can I improve this?" Trigger even
+  feedback on any writing where the concern is HOW it is written (clarity, concision,
+  structure) — not whether the argument is correct or strategically sound. If the artifact is
+  SQL, a dbt model, a dashboard, a metric tree, or an executive-facing analysis, prefer the
+  artifact-specific skill — those include a domain-scoped clarity axis. Trigger even
   when they don't explicitly say "Extreme Clarity" or "5 C's".
 ---
 

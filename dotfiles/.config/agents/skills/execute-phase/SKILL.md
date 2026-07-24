@@ -57,7 +57,7 @@ Runtime note: subagent dispatch and project build/test tools are required for li
 ## Context
 
 Typical workflows: specialized phase-plan lane after `design-plan`, before `workflow-review` and `workflow-finalize`
-Pairs well with: design-plan, review, post-mortem, setup-worktree
+Pairs well with: design-plan, workflow-review, post-mortem, setup-worktree
 
 # /execute-phase — Dispatch Phases of a Design Plan
 

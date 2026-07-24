@@ -36,6 +36,7 @@ Pick by skill type — forcing the wrong method wastes runs and misleads:
 | Model-invoked with trigger doubt (fires too much / too little) | Trigger-accuracy eval | Correct-fire rate on should / should-not sets |
 | Two versions to compare | Blind A/B | Independent-judge win rate + why |
 | Subjective (writing, design, judgment) | Structured human review | Qualitative; **don't** fabricate metrics |
+| Multi-phase orchestrator (chains subagents; `workflow-*`, `execute-*`, `run-backlog`) | Integration/e2e via `skill-system-audit` | Transcript-audited step completion — **not** a single-run with/without delta (these skills don't fit the 5 single-run methods) |
 
 ## Pressure battery (discipline skills)
 

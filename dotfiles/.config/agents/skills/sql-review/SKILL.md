@@ -3,7 +3,7 @@ name: sql-review
 disable-model-invocation: true
 model: sonnet
 reasoning: high
-description: "Reviews a SQL query, view, or dbt model for correctness, performance, and clarity: join cardinality, window pitfalls, NULL handling, time-zone bugs, fanout, missing GROUP BY, unsafe DELETE/UPDATE, and warehouse-specific gotchas. Use before queries hit production."
+description: "Reviews a SQL query, view, or dbt model for clarity, correctness, and performance: join cardinality, window pitfalls, NULL handling, time-zone bugs, fanout, missing GROUP BY, unsafe DELETE/UPDATE, and warehouse-specific gotchas. Use before queries hit production. Also use when reviewing SQL changes inside a PR — distinct from workflow-review, which does not check join cardinality, fanout, or NULL handling."
 ---
 
 # SQL Review
