@@ -2,7 +2,7 @@
 name: receive-review
 model: sonnet
 reasoning: high
-description: "Process PR review feedback end-to-end: evaluate each comment for correctness (no blind agreement), then action it — fix code, reply, push back with reasoning, or defer to a follow-up — and post replies for every thread. Use when bot or human review comments land on a PR, during workflow-finalize's review gate, or 'address/respond to the review comments'."
+description: "Process PR review feedback end-to-end: evaluate each comment for correctness (no blind agreement), then action it — fix code, reply, push back with reasoning, or defer to a follow-up — and post replies for every thread. Use when bot or human review comments land on a PR, during workflow-finalize's review gate, immediately after opening or updating any PR (default next step, not just on the most recently touched one), or 'address/respond to the review comments'."
 codex-compatible: true
 ---
 
@@ -20,7 +20,7 @@ Human gates: surface the summary before pushing; disagreements with **human** re
 
 ## When to invoke
 
-Bot reviews land (Claude, Codex, Bugbot, Copilot); a human submits a review; the `workflow-finalize` / `watch-ci` comment gate; or "address/respond to the review comments on PR #X."
+Bot reviews land (Claude, Codex, Bugbot, Copilot); a human submits a review; the `workflow-finalize` / `watch-ci` comment gate; **immediately after opening or updating any PR** — the default next step even before comments have landed, so it isn't skipped when a session opens more than one PR (`workflow-finalize` Step 2 fans this out over every session-opened PR, not just the last one); or "address/respond to the review comments on PR #X."
 
 ## Process
 
