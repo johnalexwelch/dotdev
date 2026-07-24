@@ -101,7 +101,7 @@ The critic reviews against:
 
 Use bounded rounds:
 
-- Maximum `max_rounds: 2`; no override. If consensus is not reached after 2 rounds, halt as `NEEDS_HUMAN`.
+- Maximum `max_rounds: 3`; no override. If consensus is not reached after 3 rounds, halt as `NEEDS_HUMAN`.
 - Parent agent orchestrates each round; subagents do not free-chat indefinitely.
 - Each round passes only candidate summary, evidence references, question-batch recommendations, critic reasons, and changed recommendations since the prior round.
 - If the same rejection class appears twice, halt as `NEEDS_HUMAN`.
