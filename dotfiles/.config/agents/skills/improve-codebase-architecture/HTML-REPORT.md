@@ -51,6 +51,9 @@ Each candidate is one `<article>`:
 - **Solution** — one sentence. What changes.
 - **Vertical slice shape** — one or two sentences: the narrow end-to-end behavior this candidate would enable or improve. If it only changes one layer, say why it isn't yet ready to become implementation work.
 - **Wins** — bullets, ≤6 words each. e.g. "Tests hit one interface", "Pricing logic stops leaking", "Delete 4 shallow wrappers".
+- **Benefit / Effort strip** — a compact row of stat chips below the diagram: **Expected benefit** (one line, backed by the evidence signal, e.g. "12 call sites stop repeating validation"), **Effort** (`S`/`M`/`L` chip, emerald→amber→rose), and **Cost of inaction** (one line; append a `↑ decaying` or `→ flat` marker). Render as `flex gap-3` chips with `text-xs`, monospaced numbers. The effort chip and the recommendation badge together read as an at-a-glance ROI — keep them on one line.
+- **Evidence** — one muted `font-mono text-xs` line citing the signal behind the benefit: churn count, caller count, co-change pair, or test gap. If a candidate has none, it can't claim more than `Speculative`.
+- **Risk flags** (if applicable) — red/amber chips in the badge row: `trust seam` (touches validation/authz/sanitization/rate-limiting), `hot path` (perf-sensitive — needs before/after measurement), `unpinned behavior` (no characterization test possible yet). Absent when none apply; don't invent them.
 - **ADR callout** (if applicable) — one line in an amber-tinted box.
 
 No paragraphs of explanation. If the diagram needs a paragraph to be understood, redraw the diagram.
@@ -102,7 +105,9 @@ Before: a tree of function calls rendered as nested boxes. After: the same tree 
 
 ## Top recommendation section
 
-One larger card. Candidate name, one sentence on why, anchor link to its card. That's it.
+One larger card. Candidate name, one sentence on why (framed as effort × expected benefit — highest payoff for the cost, not most interesting), anchor link to its card.
+
+When there are ≥4 candidates, precede it with a small **effort × benefit matrix**: a 2×2 grid (low/high effort × low/high benefit) with each candidate as a chip in its quadrant, so "do first" (high benefit / low effort) is visually obvious. Hand-built divs, ~240px tall. Skip for ≤3 candidates — the strip chips already carry it.
 
 ## Tone
 
