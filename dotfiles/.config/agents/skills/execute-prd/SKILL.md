@@ -149,7 +149,7 @@ For each child (parallel within a wave, sequential across waves):
 4. **Execute** using the `workflow-build-one` chain:
 
    ```
-   preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+   preflight → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
    ```
 
 5. **Enforce the workflow-review gate** — the child may not proceed to `workflow-finalize`, PR creation, CI monitoring, reconcile, or clean handoff unless `workflow-review` emitted a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. Do not substitute green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, resolved PR comments, or prose claims that review happened.

@@ -31,7 +31,7 @@ Take a single `ready-for-agent` issue and drive it from implementation through r
 ## Flow
 
 ```
-per-issue workflow-base worktree → preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+per-issue workflow-base worktree → preflight → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
 ```
 
 ## Workflow Progress Reporting
@@ -84,7 +84,7 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 - Verify: clear acceptance criteria, no ambiguous requirements, no human-only decisions
 - If not AFK-safe: halt with explanation of what needs human input
 
-### Step 2: Execute (execute-phase)
+### Step 2: Execute (implement)
 
 - Use the branch/worktree created from the resolved workflow base or a valid stacked parent branch; do not create feature branches from local `main` or the primary checkout
 - Implement against acceptance criteria

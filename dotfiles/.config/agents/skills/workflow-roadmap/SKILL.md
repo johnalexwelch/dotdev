@@ -26,7 +26,7 @@ Human gates: roadmap approval before creating PRDs, issues, implementation plans
 ## Context
 
 Typical workflows: strategic planning before `workflow-feature`, `to-prd`, `design-plan`, `to-issues`, or `workflow-autonomous-backlog`
-Pairs well with: repo-audit, improve-codebase-architecture, decision-log, grill-with-docs, prototype, security-reviewer, to-prd, design-plan, to-issues
+Pairs well with: repo-audit, improve-codebase-architecture, decision-log, grill-with-docs, prototype, workflow-review (full profile, security lane), to-prd, design-plan, to-issues
 
 ## When To Use
 
@@ -108,7 +108,7 @@ Look for:
 
 ### 4. Security And Hardening
 
-Use `security-reviewer` or a dedicated security pass when risk is meaningful.
+Use `workflow-review` (full profile, security lane) or a dedicated security pass when risk is meaningful.
 
 Look for:
 

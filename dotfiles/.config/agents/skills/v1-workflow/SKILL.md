@@ -147,7 +147,7 @@ This ensures downstream PRD writers and implementers understand the "why" behind
 
 **Gate:** User must approve the roadmap before PRD creation. If the roadmap is incomplete or the vertical-slice path is unclear, halt and re-plan.
 
-**Evidence:** Approved roadmap artifact (e.g., `docs/roadmaps/YYYY-MM-DD-<product>-roadmap.md`) with user sign-off.
+**Evidence:** Approved roadmap artifact (`docs/roadmap.md`, or `docs/roadmaps/<product>.md` for a topic-specific roadmap — never a dated sibling) with user sign-off.
 
 ### Step 6: Write PRD(s)
 

@@ -22,10 +22,12 @@ Create or review executive-facing documents through a sequenced multi-expert wor
 ## Flow
 
 ```
-intake -> research-synthesizer -> [iris numeric check] -> domain experts
-          -> executive-memo-architect -> numeric claims audit
-          -> strategic-reviewer -> revision -> [humanizer-exec]
+intake -> [research-synthesizer role] -> [iris numeric check] -> domain experts
+          -> [executive-memo-architect role] -> numeric claims audit
+          -> [strategic-reviewer role] -> revision -> [humanizer-exec]
 ```
+
+`[... role]` = a role performed inline unless a same-named skill exists (see Steps 2, 5, 7); `iris` is an optional numeric-check tool. `humanizer-exec` is a real skill.
 
 ## Workflow Progress Reporting
 
@@ -149,4 +151,4 @@ Human gates: intake ambiguity; unresolved strategic or political decisions; fina
 ## Context
 
 Typical workflows: standalone executive writing, leadership strategy work, board/ELT memo prep, multi-source synthesis
-Pairs well with: humanizer-exec, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research/documentation skills, meeting-intelligence
+Pairs well with: humanizer-exec, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research/documentation skills, meeting-intelligence (not in this corpus)
