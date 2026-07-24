@@ -31,7 +31,7 @@ Take a single `ready-for-agent` issue and drive it from implementation through r
 ## Flow
 
 ```
-per-issue workflow-base worktree → preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+per-issue workflow-base worktree → preflight → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
 ```
 
 ## Workflow Progress Reporting
@@ -84,12 +84,13 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 - Verify: clear acceptance criteria, no ambiguous requirements, no human-only decisions
 - If not AFK-safe: halt with explanation of what needs human input
 
-### Step 2: Execute (execute-phase)
+### Step 2: Execute (implement)
 
 - Use the branch/worktree created from the resolved workflow base or a valid stacked parent branch; do not create feature branches from local `main` or the primary checkout
 - Implement against acceptance criteria
 - Honor relevant decision-log entries and accepted tradeoffs; do not re-open settled choices unless implementation evidence invalidates them
 - Use appropriate execution profile (normal by default, strict-tdd for bugs)
+- Record a TDD decision so AFK orchestrators (`run-backlog`, `workflow-autonomous-backlog`) find the execution-chain evidence they require: either run `tdd` (default for bugs and behavior changes) or emit `tdd_not_applicable_with_reason: <reason>` (e.g. pure docs/config). Do not silently skip — an absent decision makes the AFK monitor flag the issue `needs-human`.
 - Commit incrementally with issue references
 
 ### Step 3: Review (workflow-review)

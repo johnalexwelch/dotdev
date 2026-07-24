@@ -3,7 +3,7 @@ name: analysis-council
 disable-model-invocation: true
 model: opus
 reasoning: high
-description: "Convenes a 2-5 expert council to stress-test an analysis, claim, or judgment call. Graph-first: pulls prior decisions/ADRs from graphify-out when present. Use for \"challenge my thinking\", \"pressure-test this\", \"what am I missing\", or before any high-stakes analytical conclusion. Supports --fast and --verify."
+description: "Convenes a 2-5 expert council to stress-test an analysis, claim, or judgment call. Graph-first: pulls prior decisions/ADRs from graphify-out when present. Use for \"challenge my thinking\", \"pressure-test this\", \"what am I missing\", or before any high-stakes analytical conclusion. For structural review of a metric tree, use metric-tree-review instead. Supports --fast and --verify."
 ---
 
 # Analysis Council
@@ -30,7 +30,7 @@ Human gates: high-stakes or unresolved decision points are surfaced for human ju
 
 ## When to invoke
 
-"Challenge my thinking on X", "what am I missing", "pressure-test this", "is this analysis right", "second opinion", "what would a skeptic say". Routing tiebreakers: single-claim fast check → `--fast`; polish a memo → `strategic-analysis-review` (not a council); build an analysis → `analysis-design` then loop back.
+"Challenge my thinking on X", "what am I missing", "pressure-test this", "is this analysis right", "second opinion", "what would a skeptic say". Routing tiebreakers: single-claim fast check → `--fast`; polish a memo → `strategic-analysis-review` (not a council); build an analysis → `analysis-design` then loop back; vendor dependency/lock-in/build-vs-buy risk → `vendor-council`; structural review of a metric tree (decomposition/double-counting/math) → `metric-tree-review`.
 
 ## Modes
 

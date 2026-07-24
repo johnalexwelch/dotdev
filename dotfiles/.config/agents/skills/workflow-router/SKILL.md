@@ -166,11 +166,13 @@ If the user corrects the route, treat that correction as fresh routing input and
 | Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature |
 | Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-build-one |
 | Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
+| "execute phase N", "run phase", "land phase", phase execution after an approved design-plan | **phase execution** | execute-phase (only when a `design-plan` artifact exists and the user has approved it) |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
 | "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
 | Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` |
-| "Review this", "review my changes" | **review** | workflow-review |
+| "Review this", "review my changes" | **review** | workflow-review — **exception:** if the review scope is SQL/dbt models, dashboards, metric trees, or executive-facing analyses (even inside a PR), route to the artifact-specific skill (`sql-review`, `dashboard-review`, `metric-tree-review`, `strategic-analysis-review`); ask which is intended when both PR and artifact signals are present |
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step on a PR already past `workflow-review` (e.g. "just address the review comments on #42, don't finalize/merge yet"), dispatch `receive-review` directly per the owner-vs-sub-step rule below |
+| "review diff against spec", "does the branch match the PRD", "standards conformance", "spec drift", "review since <ref>" | **spec/standards conformance** | spec-review (two-axis: repo coding-standards + spec/PRD conformance of a HEAD-to-ref diff; distinct from `workflow-review`, which checks correctness only) |
 | "ship this", "finalize this PR", "merge this", "close this out", "land this", ready-to-merge / delivery-closure request | **ship / finalize** | workflow-finalize |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
 | "audit branches", "clean up worktrees", "prune stale worktrees", branch/worktree sprawl across many repos on the machine (not one delivery's residue) | **git worktree audit** | git-worktree-audit |
@@ -226,9 +228,9 @@ Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, 
 
 **Library/infra** (13) — shared scaffolding, reference protocols, and repo tooling; e.g. `/setup-worktree`: `council-scaffolding`, `describe-pr`, `docs-audit`, `git-guardrails`, `graph-first`, `herdr-launch`, `omc-reference`, `post-mortem`, `review-scaffolding`, `runbook-author`, `setup-skills`, `setup-worktree`, `watch-ci`
 
-**Knowledge/utility** (10) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `rowan`, `stage-v1-concept`, `wayfinder`, `zoom-out`
+**Knowledge/utility** (9) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `stage-v1-concept`, `wayfinder`, `zoom-out`
 
-**Retirement-leaning** (6, per skill-suite audit F-6 — self-declared superseded, not formally retired yet): `pr-responder` (restates `receive-review` Step 4), `pr-review` / `spec-review` / `review` (superseded by `workflow-review`), `slop-cleaner` (`humanizer` owns the route), `v1-idea-grill` (superseded by `grill-with-docs`). Do not route new requests here; if invoked by name, note the successor.
+**Retirement-leaning** (6, per skill-suite audit F-6 — self-declared superseded, not formally retired yet): `pr-responder` (restates `receive-review` Step 4), `pr-review` / `review` (superseded by `workflow-review`), `slop-cleaner` (`humanizer` owns the route), `v1-idea-grill` (superseded by `grill-with-docs`), `rowan` (binary tombstoned 2026-07-20; `brain-ops` owns the brain route). Do not route new requests here; if invoked by name, note the successor.
 
 ## Preflight
 
