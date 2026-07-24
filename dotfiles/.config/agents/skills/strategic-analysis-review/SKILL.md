@@ -3,7 +3,7 @@ name: strategic-analysis-review
 disable-model-invocation: true
 model: opus
 reasoning: high
-description: "Reviews executive-facing analyses for argument strength, Pyramid/SCQA structure, insight quality, and wording. Use for strategy memos, board/ELT updates, recommendations, or \"review this memo\", \"pressure-test this recommendation\", \"make this board update sharper\"."
+description: "Reviews executive-facing analyses for argument strength, Pyramid/SCQA structure, insight quality, and wording. Use when the analysis, memo, or recommendation is executive-facing (board, ELT, C-suite) OR when the core question is whether the argument is well-constructed — not merely whether the prose is clear (that's clarity-review). Use for executive memos, board/ELT updates, leadership-facing strategy documents, senior recommendations, or \"review this memo\", \"is this well-argued\", \"pressure-test this recommendation\", \"make this board update sharper\"."
 ---
 
 # Strategic Analysis Review
