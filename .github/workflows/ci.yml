@@ -40,7 +40,7 @@ jobs:
     name: Test suite
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run test suites
         # Suites need only bash/jq/grep/awk (preinstalled on ubuntu-latest);
         # the workflow-guard suite mocks gh via a stub on PATH.
