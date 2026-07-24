@@ -3,7 +3,7 @@ name: metric-council
 disable-model-invocation: true
 model: opus
 reasoning: high
-description: "Convenes a council to stress-test a metric design: does it answer the question, is it gameable, does the denominator stabilize, what's the perverse incentive. Graph-first from existing metric defs/trees in graphify-out. Use after metric-design, before add-metric."
+description: "Convenes a council to stress-test a metric design: does it answer the question, is it gameable, does the denominator stabilize, what's the perverse incentive. Graph-first from existing metric defs/trees in graphify-out. Use after metric-design, before add-metric, or for a KPI-level metric decision (replacement, retirement, or promotion). For structural review of a whole metric tree, use metric-tree-review instead."
 ---
 
 # Metric Council
@@ -14,7 +14,7 @@ Stress-test a metric design before it becomes load-bearing (a bad metric's cost 
 
 ## Contract
 
-Consumes: metric design, metric tree change, or existing metric behavior to review
+Consumes: a metric design, a single named metric's definition/behavior, or a proposed change to one metric (not the structural review of a whole metric tree — that's `metric-tree-review`)
 Produces: council synthesis with survivability verdict, critique, falsifiers, and per-expert reads
 Requires: independent expert contexts; graph context optional
 Side effects: may persist synthesis to `.council/metric/` when the run reaches the persistence step
@@ -22,7 +22,7 @@ Human gates: redesign, abandon, governance, or KPI/target promotion decisions re
 
 ## When to invoke
 
-After `metric-design` (before implementation), auditing an existing metric "not behaving as expected", before promoting to KPI/target/OKR. Routing: design → `metric-design`; implement → `add-metric` (after this); general → `analysis-council`.
+After `metric-design` (before implementation), auditing an existing metric "not behaving as expected", before promoting to KPI/target/OKR, or when changing, replacing, or retiring a north-star/KPI/OKR-level metric. Routing: design → `metric-design`; implement → `add-metric` (after this); structural review of a metric tree (decomposition/double-counting/math) → `metric-tree-review`; general → `analysis-council`.
 
 ## Roster
 

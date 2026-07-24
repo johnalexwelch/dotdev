@@ -22,7 +22,7 @@ Human gates: vendor commitment, contract, renewal, governance, or spend decision
 
 ## When to invoke
 
-Build-vs-buy, selection between 2–4 candidates, renewal (esp. cost/contract changes), risk audit (post-change/post-incident). Routing: broad analysis → `analysis-council`; pricing alone → `analysis-council --council economist,decision-scientist`; governance-only → `governance-reviewer` inline. High-stakes (>$100k or >2y) should also route to `strategic-analysis-review` before committing.
+Build-vs-buy, selection between 2–4 candidates, renewal (esp. cost/contract changes), risk audit (post-change/post-incident, or proactive dependency/lock-in/concentration risk on a vendor already in use). Routing: broad analysis → `analysis-council`; pricing alone → `analysis-council --council economist,decision-scientist`; governance-only → `governance-reviewer` inline; no specific vendor decision on the table (just exploring evaluation criteria) → `analysis-design` or answer directly, not a council. High-stakes (>$100k or >2y) should also route to `strategic-analysis-review` before committing.
 
 ## Roster
 
