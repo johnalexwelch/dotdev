@@ -1,6 +1,6 @@
 # Skills Guide: Overview
 
-The dotdev environment includes ~90 executable skills — Markdown playbooks with YAML frontmatter that define model, reasoning level, and step-by-step procedures.
+The dotdev environment includes ~93 executable skills — Markdown playbooks with YAML frontmatter that define model, reasoning level, and step-by-step procedures.
 
 This guide explains skill categories, how to discover them, how to write new ones, and which clusters are most important.
 
@@ -63,7 +63,7 @@ Create and manage isolated worktrees, phases, and workflow state.
 
 - **setup-worktree**: Create isolated git worktree for issue/phase
 - **cleanup-delivery**: Post-merge cleanup (branch, worktree, issue close)
-- **setup-skills**: Initialize "Agent skills" block in AGENTS.md/CLAUDE.md
+- **setup-skills**: Initialize "Agent skills" block in AGENTS.md/CLAUDE.md; optionally register repo for OpenWiki nightly doc generation
 - **git-guardrails**: Pre-hook guards for dangerous git commands
 - **resolving-merge-conflicts**: Structured git merge/rebase conflict resolution
 
@@ -151,7 +151,16 @@ Git, documentation, configuration, and runtime utilities.
 - **slop-cleaner**: Canonical cleaner for non-code writing
 - **write-a-skill**: Create or revise agent skills
 - **prompt-builder**: Generate optimized agent prompt for issue
-- **session-insight**: Analyze agent session for insights/decisions
+- **docs-audit**: Audit documentation drift across a repo (completeness, accuracy, freshness, coherence)
+
+### Skill Improvement & Maintenance (4 skills)
+
+Develop, evaluate, and improve the skills library and agent patterns.
+
+- **session-insight**: Analyze agent session for insights/decisions; harvest skill-improvement proposals
+- **skill-backlog**: Harvest and prioritize skill-improvement suggestions from session reflections
+- **workflow-skill**: Implement one skill change end-to-end (author/revise via write-a-skill, evaluate, land)
+- **skill-evaluator**: Produce evidence-backed verdict on whether a finished skill works (pressure battery, quantitative evals, trigger-accuracy, A/B)
 
 ### Domain-Specific (8 skills)
 
