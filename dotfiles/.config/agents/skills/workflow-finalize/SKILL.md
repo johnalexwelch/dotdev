@@ -246,5 +246,5 @@ Human gates: missing workflow-review independent review evidence; missing/failed
 
 ## Context
 
-Typical workflows: workflow-build-one (final step), workflow-debug (final step), workflow-autonomous-backlog (per-issue repo-policy-controlled PR handoff)
+Typical workflows: workflow-build-one (final step), workflow-debug (final step), execute-prd (per-child final step), workflow-autonomous-backlog (per-issue repo-policy-controlled PR handoff)
 Pairs well with: workflow-review (precondition), describe-pr, receive-review, watch-ci, reconcile-issues, cleanup-delivery, post-mortem, handoff (auto-invoked at halt or completion-with-follow-ups), run-backlog

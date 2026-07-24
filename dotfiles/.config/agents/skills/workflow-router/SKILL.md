@@ -166,6 +166,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 | Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature |
 | Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-build-one |
 | Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
+| "execute phase N", "run phase", "land phase", phase execution after an approved design-plan | **phase execution** | execute-phase (only when a `design-plan` artifact exists and the user has approved it) |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
 | "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
 | Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` |
