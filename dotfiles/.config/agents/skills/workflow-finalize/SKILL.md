@@ -35,12 +35,17 @@ When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
 - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer GitHub auto-merge over direct immediate merge.
 - Human-review-required issues (`needs-human-review`, `Human review: required`, or equivalent explicit human-review gate) override `auto-merge-eligible`: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until that human validation is recorded.
 - Missing policy defaults to `human-only`.
-- **Before asserting a blanket "a human must merge this" blocker, check `.github/CODEOWNERS` (and branch protection) against the changed paths.** A merge-authority claim not grounded in an actual CODEOWNERS entry or protection rule for the touched files is a guess, not a gate — an earlier blanket blocker was later reversed once CODEOWNERS showed no required reviewer for those paths. State the specific rule/owner that blocks, or don't claim the block. Absence of any CODEOWNERS/protection rule does not by itself authorize an auto-merge — `REPO_DELIVERY_POLICY` (default `human-only`) still governs.
+- **Before asserting a blanket "a human must merge this" blocker, check `.github/CODEOWNERS` (and branch protection) against the changed paths — read them directly, never infer merge authority from a CLAUDE.md summary sentence or prose recap.** A merge-authority claim not grounded in an actual CODEOWNERS entry or protection rule for the touched files is a guess, not a gate — an earlier blanket blocker was later reversed once CODEOWNERS showed no required reviewer for those paths. State the specific rule/owner that blocks, or don't claim the block. Absence of any CODEOWNERS/protection rule does not by itself authorize an auto-merge — `REPO_DELIVERY_POLICY` (default `human-only`) still governs.
+
+## PR State Ground-Truth (applies before any push or merge action in this workflow)
+
+- **Before pushing a fix** (review-fix in Step 2, CI-fix in Step 3, or a long-lived-PR sync in Step 7) **to an existing PR branch**, run `gh pr view <n> --json state,mergedAt,headRefOid,mergeStateStatus`. If `state` is `MERGED` or `CLOSED`, do not re-push — a same-SHA re-push fires no `synchronize` event, so CI and review never re-trigger. Land a fresh PR onto the base branch for the remaining changes instead.
+- **Before any merge or ready/auto-merge action** (Step 8), if Step 2's review round or Step 3's CI wait took real wall-clock time, re-fetch the base branch and re-check `mergeStateStatus`/`mergeable` via the same `gh pr view` call. Unrelated PRs may have landed on the base in the interim and made this PR `CONFLICTING`; resolve conflicts before proceeding.
 
 ## Flow
 
 ```
-[conditional post-mortem gate] → describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues → [docs-freshness hook] → verification gate → repo-policy final action
+[conditional post-mortem gate] → describe-pr → ensure draft PR → enumerate session PRs → receive-review (fan-out, per PR) → watch-ci → reconcile-issues → [docs-freshness hook] → verification gate (incl. PR-state recheck) → repo-policy final action
 ```
 
 ## Workflow Progress Reporting
@@ -87,21 +92,25 @@ WORKFLOW_STEPS:
 - If an existing PR is not draft, continue but do not mark it ready or enable auto-merge until Step 8.
 - Record PR number and URL before proceeding. Do not run `receive-review` until a PR exists.
 
-### Step 2: Resolve PR Reviewer Comments (receive-review)
+### Step 2: Resolve PR Reviewer Comments (receive-review) — fan out over every session-opened PR
 
+- **Enumerate session PRs first**: run `gh pr list --author @me --repo <owner/repo>` (scoped to this repo) to find every open PR this session created or updated — not only the one most recently touched. Run the remainder of this step, and Steps 3–6, for each PR found.
+- Ground-truth PR state before pushing any fix (see PR State Ground-Truth above).
 - Wait for expected reviewer bots when configured for the repo (Claude, Codex, Bugbot, or repo-specific bots)
 - Fetch all review-level and inline comments via GitHub
 - Invoke `receive-review` on every unresolved reviewer comment
 - Address accepted blockers, non-blockers, and nits; reply to declined or clarified comments with evidence
 - Push review-fix commits and re-check review threads
 - If any code changes were pushed after the incoming `WORKFLOW_REVIEW_GATE`, rerun `workflow-review` on the updated diff and require a new `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` before continuing
-- If any blocker, unresolved human disagreement, or unanswered reviewer question remains: **halt** with auto-handoff
+- If any blocker, unresolved human disagreement, or unanswered reviewer question remains on a given PR: **halt that PR's progression** with auto-handoff, then continue processing the remaining enumerated session PRs independently — one PR's block never gates another PR's merge.
+- **Reviewer-response is non-skippable, per PR**: each PR advances to its own Step 8 only once its own review threads are resolved or explicitly human-waived. Finalize does not report overall completion until every PR enumerated at Step 2 has reached that state (resolved-and-advanced, or blocked pending its own human validation).
 
 This gate applies to bot and human review comments. A green CI run does not override unresolved review feedback.
 
 ### Step 3: Watch CI (watch-ci)
 
 - Monitor GitHub Actions
+- Ground-truth PR state before pushing any auto-fix (see PR State Ground-Truth above)
 - Auto-fix up to 3 attempts on failure
 - If any CI auto-fix changes code after the latest `WORKFLOW_REVIEW_GATE`, rerun `workflow-review` on the updated diff and require a new `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE` before continuing
 - If exhausted: **auto-handoff** (exit_reason: halt, remaining: CI diagnosis needed, include CI logs and what was tried) then halt
@@ -155,12 +164,14 @@ Before declaring the PR ready for final action, run a verification gate:
 6. **Check for large diffs** — run `git fetch origin --prune` first (a stale `origin/<base>` inflates or hides the count), then `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
    - If the changes are logically atomic (single feature, single refactor), proceed but note the size in the PR description
    - If the changes span unrelated concerns, **halt**: identify the independent concerns, resolve `WORKFLOW_BASE_GATE`, create a separate branch for each from the resolved workflow base, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
+7. **Re-check PR state before the merge action** — see PR State Ground-Truth above: if Step 2's review round or Step 3's CI wait took real wall-clock time, re-fetch the base and re-verify `mergeStateStatus` immediately before Step 8. Do not carry forward a mergeability check from before the wait.
 
 ### Step 7: Long-lived PR maintenance (conditional)
 
 If the PR has been open >24 hours or has accumulated >5 review comments:
 
 - Triage all unresolved reviewer comments: categorize as blocker, non-blocker, nit, or stale (no longer applies after recent changes)
+- Ground-truth PR state before pushing the sync (see PR State Ground-Truth above)
 - Sync with base branch if conflicts exist: `git fetch origin && git rebase origin/<base>` (or merge if the repo policy prefers merge)
 - Fix any new CI issues introduced by the sync
 - Re-check all review threads after the sync push and reply to any that are now resolved
@@ -180,7 +191,8 @@ After all previous gates pass:
 
 When all steps pass:
 
-- Leave or advance the PR according to `REPO_DELIVERY_POLICY` and the human-review-required override
+- Apply Steps 2–8 to every PR enumerated at Step 2, not only the PR most recently touched — finalize is not complete while any session-opened PR still has unresolved review threads.
+- Leave or advance each PR according to `REPO_DELIVERY_POLICY` and the human-review-required override
 - Report final status to user with **evidence** (test output, CI link, verification command results, comment-resolution summary)
 - Include the required `WORKFLOW_FINALIZE_GATE` block in the final response and any handoff artifact
 - When invoked by `run-backlog`, `workflow-autonomous-backlog`, Codex, or any AFK worker, always write a per-issue handoff artifact even when no follow-up work remains. Include PR URL, all gate blocks, verification evidence, review-comment resolution, CI status, issue reconciliation, and residual risks.
@@ -207,7 +219,9 @@ WORKFLOW_FINALIZE_GATE:
   describe_pr: body_file=<docs/executions/.pr-bodies/...>; mode=plan_backed|phase_run_backed|issue_only; issues=<refs|none>; phase_evidence=matched|not_applicable|waived
   repo_delivery_policy: human-only|auto-merge-eligible
   pr_state: draft|existing_non_draft_not_modified|ready_auto_merge_enabled|pending_human_validation
+  pr_state_ground_truth: checked
   pr_number: <number>
+  session_pr_fanout: enumerated=<N>; all_resolved|not_applicable_single_pr
   review_comments: all_resolved|human_waived
   ci: green
   issue_reconciliation: complete
