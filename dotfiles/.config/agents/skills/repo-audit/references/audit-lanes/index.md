@@ -23,6 +23,7 @@ Use `shared-preamble.md` for every lane, then append the relevant lane file belo
 | 11 | user-surface | `11-user-surface.md` |
 | 12 | onboarding | `12-onboarding.md` |
 | 13 | ci-workflows | `13-ci-workflows.md` |
+| 14 | code-rot | `14-code-rot.md` |
 
 ## Prompt Assembly
 

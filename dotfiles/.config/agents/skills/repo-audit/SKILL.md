@@ -29,7 +29,7 @@ Confirm a git repo (else abort). Compute `<date>`. Resolve `<path>`; if `!= "."`
 
 ## Step 1 — Map (fan out)
 
-Send **one message with concurrent Agent (Explore) calls** — standard merged lanes by default, all thirteen lanes when `audit_depth=deep`, fewer if `focus` is set. Each agent is scoped to one lane + path, thoroughness `very thorough`, and writes to `docs/audits/.fact-packs-<date>[-<path-slug>]/<NN>-<slug>.md`. Assemble each prompt from `references/audit-lanes/index.md`: load `shared-preamble.md` for every agent plus the matching `<NN>-<slug>.md`.
+Send **one message with concurrent Agent (Explore) calls** — standard merged lanes by default, all fourteen lanes when `audit_depth=deep`, fewer if `focus` is set. Each agent is scoped to one lane + path, thoroughness `very thorough`, and writes to `docs/audits/.fact-packs-<date>[-<path-slug>]/<NN>-<slug>.md`. Assemble each prompt from `references/audit-lanes/index.md`: load `shared-preamble.md` for every agent plus the matching `<NN>-<slug>.md`.
 
 **Research guardrail (every discovery agent):** document what IS, not what SHOULD BE — current state and measurements, not judgments or gaps. Recommendations come only in synthesis. This keeps the map accurate and defers solutioning.
 
