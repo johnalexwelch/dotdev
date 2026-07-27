@@ -140,6 +140,7 @@ Non-skill / human-action items (not skill changes — flagged, not queued):
 | SB-046 (+SB-039, SB-044) + SB-049 | C20 / C23 | `workflow-finalize/SKILL.md` + `receive-review/SKILL.md` | **#99** | `e0a2c7e` | merged | Advisor caught a per-PR deadlock in the fan-out gate (one blocked PR would have gated all) — fixed pre-commit. **Codex mirror pending merge.** |
 
 **Cross-PR hygiene flags for the human merge:**
+
 1. **#98 and #99 both edit `workflow-finalize/SKILL.md`** (different sections: Step 6 verification gate vs Step 2/Completion PR-state+fan-out). Independent branches off `origin/main` → whichever merges second needs a rebase. No hard conflict expected.
 2. ~~**#96 commingling**~~ — **resolved 2026-07-24**: SB-028 extracted to standalone PR #100 (`7ea63a4`) off `origin/main`; merges independently. The identical copy still on #96 no-ops when #96 rebases (no force-push). Keystone reachable as soon as #100 merges.
 3. **Codex mirror** — `~/dotdev/dotfiles/.config/agents/skills/sync-codex-skills.sh --apply` must run from the primary checkout **after** #98 and #99 merge, to mirror the skill edits into `~/.codex/skills`. Deferred by design (running pre-merge would mirror unreviewed content).
@@ -150,4 +151,4 @@ Non-skill / human-action items (not skill changes — flagged, not queued):
 - **Lower-priority dispatchable (leave open):** SB-055 (C29 model-floor), SB-052 (C26 herdr docs), SB-051 (C25 worktree path-check), SB-024 (C8 hard-report), SB-030 (C11 grill shape), SB-056 (C9 habits consolidation — rides SB-028), SB-031/034/040/053.
 - **Deferred (no action):** SB-017, SB-058, SB-059, SB-060, SB-061.
 
-_**DONE 2026-07-24:** #97/#98/#99/#100 merged to `main` (admin-override); SB-023/028/039/044/045/046/047/049/050 → `implemented`; Codex mirror applied for #98/#99 skill edits; worktrees/branches cleaned. #96 (user's arch PR) still carries a redundant copy of the keystone that no-ops when it rebases on `main`._
+***DONE 2026-07-24:** #97/#98/#99/#100 merged to `main` (admin-override); SB-023/028/039/044/045/046/047/049/050 → `implemented`; Codex mirror applied for #98/#99 skill edits; worktrees/branches cleaned. #96 (user's arch PR) still carries a redundant copy of the keystone that no-ops when it rebases on `main`.*

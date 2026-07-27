@@ -40,7 +40,9 @@ Before grilling a ticket-backed decision (an issue number, or a handoff that say
 VERIFY the ticket is still open and undecided — a handoff is a proxy; the tracker is authoritative,
 and a concurrent agent may have resolved it since the handoff was written:
 
-    gh issue view <N> --repo <owner/slug> --json state,comments
+```bash
+gh issue view <N> --repo <owner/slug> --json state,comments
+```
 
 - If **CLOSED**, or an existing comment already carries a resolution/decision → **STOP re-deriving.**
   Switch to *reconcile-mirror* mode: read the locked resolution and mirror it into `docs/decision-log.md`

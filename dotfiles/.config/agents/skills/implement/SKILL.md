@@ -69,6 +69,7 @@ Do not leave uncommitted changes when handing off.
 ## 5. Self-review before declaring done
 
 Run `workflow-review` (or equivalent) against the branch before calling it done. Check:
+
 - Standards axis: does the code follow repo conventions?
 - Spec axis: does every acceptance criterion have a corresponding passing test?
 

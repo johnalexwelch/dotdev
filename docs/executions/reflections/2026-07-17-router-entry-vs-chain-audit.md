@@ -1,15 +1,19 @@
 # Session Reflection: Router Entry vs Mid-Chain Audit
+
 **Date**: 2026-07-17
 **Goal**: deeply classify every `workflow-router` classification-table target as ENTRY / CHAIN / DUAL / MICRO-PIPELINE, and flag dispatches that skip owning orchestrators.
 
 ## Method
+
 For each router `Routes to` target:
+
 1. Read that skill's When-to-invoke / Purpose / Flow / Contract.
 2. Find parent skills that **strongly invoke** it (`Load and run`, Skill-tool invoke, or `## Flow` step).
 3. Cross-check router Audit Loop Retirement Rule (`describe-pr` / `watch-ci` / `post-mortem` already banned as standalone defaults).
 4. Note `disable-model-invocation: true` (slash-only; finalize-owned).
 
 ## Naming contract used
+
 - **ENTRY**: router should dispatch here; this skill owns the run.
 - **CHAIN**: mid-pipeline step; prefer parent orchestrator (direct dispatch skips gates).
 - **DUAL**: legitimate standalone user ask *or* mid-chain; router OK only for the standalone signal; otherwise prefer parent.
@@ -138,16 +142,19 @@ workflow-router
 ---
 
 ## Lessons
+
 1. Router `Routes to` must name the **owning orchestrator**, not the first skill the user mentioned (`receive-review`, `describe-pr`, `watch-ci`).
 2. `disable-model-invocation: true` is the hard signal for chain-only finalize internals — `receive-review` lacks that flag but is still finalize-owned.
 3. DUAL skills need router copy that says "standalone signal only; if mid-feature/mid-delivery, stay on parent."
 4. The tldraw DAG previously drew red edges for every classification leaf, including DUAL/CHAIN helpers — that overstated router authority.
 
 ## Proposed Improvements
+
 - [ ] Edit `workflow-router` classification rows for `receive-review`, `prompt-builder`, add `workflow-finalize` ship row (priority: high)
 - [x] Update tldraw DAG: remove red dispatch to chain-prefer targets (`handoff`, `receive-review`); add `workflow-finalize` ship ENTRY; wire blue auto-handoff from parents; add skill-governance ENTRYs (priority: high)
 - [ ] Add durable rule to router or `_docs`: "If skill X is Step N of orchestrator Y, classification Routes-to is Y unless user explicitly asks for X alone" (priority: medium)
 - [ ] Continue rename of `workflow-effectiveness-audit` (sister reflection) (priority: medium)
 
 ## Decision Needed
+
 Approve the demotions (`receive-review` → finalize, `prompt-builder` → build-one/run-backlog) and the new `workflow-finalize` ship row before editing the router skill or redrawing the board.

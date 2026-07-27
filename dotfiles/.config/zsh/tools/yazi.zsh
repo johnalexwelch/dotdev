@@ -5,6 +5,7 @@ y() {
   tmp="$(mktemp -t yazi-cwd.XXXXXX)"
   yazi "$@" --cwd-file="$tmp"
   cwd="$(command cat -- "$tmp")"
+  # shellcheck disable=SC2164
   [ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
   rm -f -- "$tmp"
 }

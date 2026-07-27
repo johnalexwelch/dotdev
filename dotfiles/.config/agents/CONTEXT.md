@@ -9,7 +9,7 @@ ledgers that plan, execute, review, and finalize work in this repo. See
 **Router** (`workflow-router`): the sole routing authority for incoming work.
 Classifies a request, presents a Route Card, runs preflight, dispatches to the
 target workflow skill. See `docs/adr/0002-sole-routing-authority.md`.
-_Avoid_: "the dispatcher", "the classifier".
+*Avoid*: "the dispatcher", "the classifier".
 
 **Route Card**: the router's proposed classification + budget + gates for a
 request, shown for user confirmation before any non-trivial dispatch.

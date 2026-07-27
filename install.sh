@@ -13,7 +13,7 @@ run_cmd() {
 }
 
 # Base directory
-DOTFILES="$HOME/dotdev"
+export DOTFILES="$HOME/dotdev"
 
 # Homebrew + packages
 run_cmd bash "$DOTFILES/scripts/brew.sh"
@@ -22,7 +22,7 @@ run_cmd bash "$DOTFILES/scripts/brew.sh"
 run_cmd mkdir -p ~/dbtlabs ~/jarvis ~/projects
 
 # Config dir structure (mkdir only — no stow here)
-DOTFILES="$DOTFILES" run_cmd bash "$DOTFILES/scripts/config-init.sh"
+run_cmd bash "$DOTFILES/scripts/config-init.sh"
 
 # GitHub SSH + CLI extensions
 run_cmd bash "$DOTFILES/scripts/github.sh"

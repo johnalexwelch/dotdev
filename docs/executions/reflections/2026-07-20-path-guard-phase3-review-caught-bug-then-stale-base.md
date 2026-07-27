@@ -1,4 +1,5 @@
 # Session Reflection: workflow-review caught a real bug in path-guard Phase 3 — then a stale worktree base caused a mid-flight conflict
+
 **Date**: 2026-07-20
 **Goal**: Execute path-guard Phase 3 (evidence wiring), run the full `execute-phase` → `workflow-review` → `workflow-finalize` chain properly this time (direct follow-on to the prior session's workflow-finalize-skip correction), get a human merge decision.
 
