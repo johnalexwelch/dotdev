@@ -55,11 +55,12 @@ For vertical-slice reporting, also gather lineage metadata when available:
 - merged PR URL and merge date for issues closed by a PR (when discoverable)
 
 For each discovered issue, determine whether it requires a human reviewer.
+Consult `_docs/human-gate-taxonomy.md` to distinguish gate types: only type 4 (`reviewer-validation`) is PR-validation-gated.
 Treat an issue as human-review-required only when it has a `needs-human-review`
-label, its body declares `Human review: required`, or its body contains an
-equivalent explicit human-review gate. Do not treat `ready-for-human` or
+label, its body declares `Reviewer validation: required`, or its body contains an
+equivalent explicit PR-review gate. Do not treat `ready-for-human` or
 `Type: HITL` as human-review-required; those mean human implementation or
-human interaction, not PR validation. When an issue is human-review-required,
+human interaction (types 1–3 in the taxonomy), not code review. When an issue is human-review-required,
 extract the explicit `## Reviewer validation steps` section from the issue body.
 If that section is missing or vague, halt and report that the issue needs
 reviewer validation steps before the PR body can be generated.
