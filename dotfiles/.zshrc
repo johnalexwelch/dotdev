@@ -4,6 +4,7 @@ export ZSH_CONFIG="$XDG_CONFIG_HOME/zsh"
 # Recover automatically if the current directory was deleted (e.g., removed worktree).
 _recover_invalid_cwd() {
   if [[ ! -d "$PWD" ]]; then
+    # shellcheck disable=SC2164
     builtin cd -- "$HOME" 2>/dev/null || builtin cd -- /
   fi
 }
@@ -57,7 +58,8 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 #        idea -q <thought>     → quick, no AI
 idea() {
   local dir="$HOME/Documents/Home/Idea Bin"
-  local ts=$(date "+%Y-%m-%d")
+  local ts
+  ts=$(date "+%Y-%m-%d")
   local quick=0
 
   [[ "$1" == "-h" || "$1" == "--help" ]] && {
@@ -78,7 +80,8 @@ idea() {
 
   local safe="${title//[\/:\*\?\"<>\|]/}"
   safe="${safe:0:60}"
-  local file="$dir/$(date +%Y-%m-%d) ${safe}.md"
+  local file
+  file="$dir/$(date +%Y-%m-%d) ${safe}.md"
 
   if [[ $quick -eq 1 ]]; then
     printf '---\ntitle: %s\ncreated: %s\ncategory: other\ndomain: other\nenergy: 0\nstatus: captured\n---\n\n# %s\n\n> (no pitch — quick capture)\n\n## Next Steps\n\n- TBD\n' \
@@ -137,6 +140,7 @@ bindkey '^[OA' up-line-or-beginning-search    # up (app mode)
 bindkey '^[OB' down-line-or-beginning-search  # down (app mode)
 
 # fzf fuzzy search: Ctrl-T files, Alt-C cd (Ctrl-R handed to atuin below)
+# shellcheck disable=SC1090
 source <(fzf --zsh)
 # atuin: SQLite-backed history w/ metadata + cross-machine sync. Loaded AFTER fzf
 # so it owns Ctrl-R; --disable-up-arrow keeps Up as normal prefix history.

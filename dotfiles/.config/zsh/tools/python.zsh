@@ -6,6 +6,7 @@
 # See: ~/.config/starship.toml and the migration in this file.
 # If a previous session/worktree cwd was deleted, recover before mise init to avoid warnings.
 if [ ! -d "$PWD" ]; then
+  # shellcheck disable=SC2164
   builtin cd -- "$HOME" 2>/dev/null || builtin cd -- /
 fi
 if command -v mise 1>/dev/null 2>&1; then

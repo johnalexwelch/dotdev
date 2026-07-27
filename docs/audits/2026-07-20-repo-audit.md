@@ -1,4 +1,5 @@
 # Repo Audit — dotdev
+
 **Date:** 2026-07-20
 **Context:** Personal monorepo "dotdev" holding stow-managed dotfiles, agent/skill configuration for Claude Code & Codex, execution-artifact docs, and setup scripts; owner asked whether it's set up properly, what shouldn't be there, and what's overkill.
 **Scope:** whole repo (`/Users/alexwelch/dotdev`)
@@ -121,6 +122,7 @@ Impact: Supply-chain drift — unpinned agent extensions run with full context; 
 ## Biggest gaps and risks
 
 What breaks first, in order:
+
 1. **The public SSH key (FIND-09)** is the only item with live external-attacker exposure. If that key is still authorized anywhere, it's an active breach vector today — everything else is internal hygiene.
 2. **Committing the in-flight refactor without fixing hook paths (FIND-33 + FIND-34)** is the next thing to break: the moment the symlink deletions land, Lint hard-errors (127) and a fresh `install.sh` stops producing `~/.claude/skills`. These two must land in the same commit or not at all.
 3. **The trio of dead gates (FIND-30/31/32)** means the repo has *no* working automated verification: no green-able CI, no CI-run tests, no trustworthy doc regeneration. The risk is slow drift nobody catches — which is exactly how the tmux-test breakage survived 5+ weeks.
