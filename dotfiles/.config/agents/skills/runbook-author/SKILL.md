@@ -21,6 +21,25 @@ This skill produces runbooks shaped for the responder under pressure.
 - Updating a stale runbook
 - Proactively for known but unrunbooked failure modes
 
+## Before presenting steps: Direct-execution guard
+
+Before listing the diagnostic or recovery steps, **assess which steps you can safely perform in the responder's environment without human authorization**. Execute those steps now unless the user explicitly asked for "instructions only" or a draft for human review.
+
+Safe-to-execute steps include:
+
+- Read-only queries (dashboards, logs, API health checks, status pages)
+- Syntax/format validation
+- Local diagnostic commands that don't alter state
+
+Skip and require human authorization for:
+
+- Writes to infrastructure (config changes, deployments, rollbacks)
+- Account/permission changes
+- Credential rotation
+- Data mutations or deletions
+
+Record which steps you executed vs. which remain as instructions in the output.
+
 Routing:
 
 - During an active incident → `incident-triage` (not this skill)
@@ -83,6 +102,16 @@ Once the system is recovered:
 - Confirm with which queries / dashboards
 - File the incident retro
 - Update related runbooks if needed
+
+### 7.5. Operator-UI mode
+
+When a human performs console/UI setup (e.g., obtaining credentials, configuring OAuth, tunnel setup), maintain a **field-by-field checklist** with three distinct URL entries:
+
+- **Provider-visible URL**: The public/external address used by the external system (e.g., OAuth redirect URI in vendor dashboard)
+- **Container-visible URL**: The internal address used within the environment/container (e.g., `http://localhost:8080` for local, `http://service-name:port` for Kubernetes)
+- **Browser-tunnel URL**: The user's local browser access point when using port forwarding or tunnel (e.g., `http://localhost:3000` via `kubectl port-forward`)
+
+List each with its current status (obtained/pending/verified). This prevents the common failure mode where a setup step works in one context but fails in another because the URL was misconfigured for that context.
 
 ### 8. Output
 

@@ -89,8 +89,22 @@ Do not reuse another issue's worktree. Do not work from the primary checkout. Do
 - Use the branch/worktree created from the resolved workflow base or a valid stacked parent branch; do not create feature branches from local `main` or the primary checkout
 - Implement against acceptance criteria
 - Honor relevant decision-log entries and accepted tradeoffs; do not re-open settled choices unless implementation evidence invalidates them
+
+**For ops-backed or secret-runtime issues:**
+
+- Exhaust all safe local and remote progress before delegating to a human operator.
+- Before any value movement (config migration, secret rotation, permission change, state transfer), build an **AUTHORITY INVENTORY**:
+  - **Read/admin handles**: Which service accounts, API keys, or roles can read the source system?
+  - **Write handles**: Which accounts can write to the target system?
+  - **Source-system access**: How is source state accessed (API, CLI, SSH, webhook)?
+  - **Host/user per command**: Map each migration step to the host, user/account, and privileges it requires.
+- **Prove operator auth** before planning any migration step — confirm the operator has documented read + write authority for both source and target.
+- Record auth failure as a **blocker** rather than proceeding with assumptions:
+  - Halt with `BLOCKER: operator auth failed on <system>; <operator> does not have <required-role>; next: contact <team> for elevation`.
+  - Do not attempt the migration step without confirmed authorization.
+  - Add issue label `needs-ops-auth` and link the operator's response.
 - Use appropriate execution profile (normal by default, strict-tdd for bugs)
-- Record a TDD decision so AFK orchestrators (`run-backlog`, `workflow-autonomous-backlog`) find the execution-chain evidence they require: either run `tdd` (default for bugs and behavior changes) or emit `tdd_not_applicable_with_reason: <reason>` (e.g. pure docs/config). Do not silently skip — an absent decision makes the AFK monitor flag the issue `needs-human`.
+- Record a TDD decision so AFK orchestrators (`run-backlog`, `workflow-autonomous-backlog`) find the execution-chain evidence they require: either run `tdd` (default for bugs and behavior changes) or emit `tdd_not_applicable_with_reason: <reason>` (e.g. pure docs/config). Do not silently skip — an absent decision makes the AFK monitor flag the issue `needs-human`. For ops-backed issues, emit `tdd_not_applicable_with_reason: ops-backed value movement requires human operator authority; TDD not applicable`.
 - Commit incrementally with issue references
 
 ### Step 3: Review (workflow-review)
