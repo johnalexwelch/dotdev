@@ -84,9 +84,10 @@ Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd
 
 ## Process
 
-0. If `docs/executions/state.yaml` exists, read it first — use its `workflow`, `steps`, and `next` as the source of truth for "Where we are" and "Next steps". Fall back to conversation context only when the file is absent. Schema: `../_docs/state-cockpit.md`.
+0. If `docs/executions/state.yaml` exists, read it first — **but first, check whether the current branch is behind the verified workflow base** (the branch's merge-base against origin/main; this prevents stale state from a rebased or orphaned checkout). If behind, read the base copy instead: `git show $(git merge-base HEAD origin/main):docs/executions/state.yaml`. Use its `workflow`, `steps`, and `next` as the source of truth for "Where we are" and "Next steps". Fall back to conversation context only when the file is absent. Schema: `../_docs/state-cockpit.md`.
 1. Determine storage paths. Resolve the repo root with `git rev-parse --show-toplevel` and build the **absolute** repo-copy path from it. Set `repo-name` from the main repo's git dir (worktree-safe), NOT the toplevel: `agd=$(git rev-parse --absolute-git-dir); repo=$(basename "${agd%%/.git*}")`. Capture the literal value for the later mkdir/cp.
 2. Determine exit context (manual vs auto, exit reason, remaining items).
+2.5. **Live queue refresh** (only when the user explicitly asks "what's current?", "what's the latest?", or similar). Re-read open `ready-for-agent` issues from `gh issue list` and relevant PR merge states from `gh pr list --state open` for the active workflow. If the state in `docs/executions/state.yaml` conflicts with what you see live (e.g., an issue is closed, or a PR is merged), emit an explicit **conflict note** in the handoff ("Issue #X shown as open in state.yaml but closed in gh; PR #Y merged since state.yaml written") and use the live state as the source of truth for the handoff.
 3. If remaining items include actionable next-step issues, invoke `prompt-builder` for each to generate ready-to-use prompts. Treat the `ready-for-agent` label as a signal, not a strict gate — an issue tagged only `type:task` (or unlabeled) that is otherwise clearly actionable still qualifies; use judgment rather than skipping it on label technicality.
 4. Fill in the **Start here** directive (top of the document structure) with the real first next step and any open blocker.
 5. **Pre-flight check before you send the next command**: does it contain a literal newline separating two commands (not `&&`)? Does it pair `mkdir` with a `cp`/`install` that reads the directory it just created? If either is yes, split it — do not send it as written. This has been observed to bite even immediately after reading this exact warning; treat it as a checklist, not context to skim.
@@ -103,6 +104,10 @@ Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd
 Exit: [manual | halt: <reason> | completion with follow-ups | backlog run complete]
 Target: [claude | codex | either]
 Generated: [timestamp]
+
+## Standing permissions / corrected policies
+
+[ONLY if the current session includes workflow overrides or standing grants issued by the user. Explicit grants only, no inferred permissions. Scoped to named repos/issue-sets and the specific gate they waive. Examples: "AFK merge authority for #123 in [repo]" (waives reviewer-validation), "Skip [gate-name] for [condition]". Cannot waive secret-custody gates or a maintainer-decision gate; list only gates that CAN be waived. Omit this section if no overrides are in effect.]
 
 ## Start here (resuming agent)
 
@@ -227,3 +232,4 @@ This keeps multi-session work from ballooning handoff size.
 - When the handoff's cwd will differ from the work repo (e.g. the session runs inside another repo's worktree while the map/issues/code live elsewhere), the **Start here** directive MUST name the absolute work-repo root AND the required `gh --repo <owner/slug>` flag. Do not assume the resumer can infer the work repo from cwd — a bare `gh` call resolves against the cwd repo and silently targets the wrong project.
 - Always write the global mirror under `~/.chorus/handoffs/<repo-name>/` so the handoff survives worktree destruction. Derive `<repo-name>` from `git rev-parse --absolute-git-dir` (strip `/.git*`, then basename) — never from `--show-toplevel`, which is a transient slug under worktrees.
 - Always print the global mirror path as the last line of output (it is the durable reference).
+- **Handoff files and checkout dirtiness**: A repo-copy handoff file at `docs/executions/handoffs/<date>-<slug>.md` makes the current checkout dirty (untracked) unless committed, .gitignore'd, or removed. If the user asked for a "clean primary" checkout or emphasized not mixing this session's artifacts with unrelated in-flight work, ASK before writing the repo copy: "This handoff file will create an untracked file in the repo. Shall I commit it to the branch, write mirror-only, or add it to .gitignore?" Respect the user's choice. For most sessions, the default (write both) is fine; this gate is for precision in environments where checkout state is tightly managed.
