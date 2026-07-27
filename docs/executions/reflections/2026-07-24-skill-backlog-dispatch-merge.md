@@ -27,7 +27,7 @@
 |---|--------------------------|------------|-------------------|
 | 1 | "update the session-insight skill so that we fix that" → actually belonged in `habits.md` | User named a plausible-but-wrong skill; session-insight never dispatches subagents | (resolved by clarifying, not a skill defect) |
 
-_No hard corrections; the session ran on delegated decisions ("what do you recommend", "admin-override merge")._
+*No hard corrections; the session ran on delegated decisions ("what do you recommend", "admin-override merge").*
 
 ## Lessons
 

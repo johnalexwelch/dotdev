@@ -1,19 +1,23 @@
 # Session Reflection: MDR/district OBT build-out — scope drift, layering pushback, shipped-but-wrong comment
+
 **Date**: 2026-07-22
 **Goal**: Reconcile dim_districts/daily_district_summary parity, fix the resulting engagement-count bug, then build the MDR staging→conform→marts pipeline toward the district OBT rewrite.
 
 ## What Went Well
+
 - The 6-lane `taskflow` `workflow-review` (security/logic/test/style/architecture/docs) run before calling the MDR+engagement work "done" caught real defects a single pass would likely have missed: a factually wrong code comment about SCD2 behavior, a snapshot `unique_key` grain bug, and a regression test that didn't actually detect its target bug. Worth keeping as the default gate before closing out a data-pipeline change, not just an audit-on-failure step.
 - When blocked on MDR source access, kept building the parts that didn't need it (staging models, conform logic against known schemas) instead of stalling, then resumed the blocked parts once access landed.
 - Validated hypotheses against live Redshift repeatedly rather than trusting inference alone — e.g. confirmed `stg_dim_schools__type2__deleted_events` exists before finalizing the SCD2 point-in-time claim (see Corrections #3), and hand-verified row-window-overlap counts before committing to the final regression-test shape.
 
 ## What Went Wrong / Friction
+
 - Picked a comparison target for the reconciliation task by column-name similarity twice before landing on the structurally-correct one (`dim_districts` → `fct_district_daily_teacher_engagement` → `agg_district_daily`), each requiring a user correction. No lineage/ref-graph check was done up front to see which model in the DAG actually produces the numbers being compared.
 - Jumped to implementation on an ambiguous multi-phase ask; user had to say "I did not ask for implementation yet," and the written files had to be reverted.
 - Argued a naming-convention placement (staging vs. `int_`) with the user for two rounds before conceding staging should fully conform names — there's no written rule in the repo the agent could point to, so it improvised and got it backwards on the first pass.
 - Repeated dbt CLI friction: `dbt: command not found` locally, wrong `--state` path tried twice (`../../prod_artifacts` before finding the real `prod_artifacts/manifest.json`), and the working venv (`.venv-dbt`) had to be discovered rather than being obvious.
 
 ## Corrections
+
 | # | What the user corrected | Root cause | Owning skill/file |
 |---|---|---|---|
 | 1 | Comparison target was wrong (dim_districts, then the wrong fact table) before landing on `agg_district_daily` | No lineage trace before writing comparison SQL — picked models by column-name match, not by tracing which model actually feeds the reporting numbers | `reconcile-tables` (should mandate a `ref()`/lineage check before authoring comparison queries) |
@@ -22,16 +26,19 @@
 | 4 | Naming-cleanup layer placement (staging should conform names, not `int_`) needed two rounds of pushback | No written repo rule distinguishing "staging conforms names/types" from "`int_` owns business logic only" | `sql-standards` or a repo dbt-conventions doc — candidate addition |
 
 ## Lessons
+
 1. **Trace lineage before writing a reconciliation query.** When asked to compare "table A" against "table B," resolve which DAG node actually produces the comparable metric via `ref()`/manifest lineage before writing SQL — column-name similarity picked the wrong node twice in one session.
 2. **A regression test must be proven red pre-fix, not just green post-fix.** The first deleted-filter regression test (distinct school count) was insensitive to the bug it targeted; it only became a real regression test after being redesigned at the SCD2-row-window-overlap grain and manually checked against both old and new behavior.
 3. **Don't assert SCD2 tracking behavior from column semantics — check the event-stream inputs.** A wrong "not point-in-time tracked" claim was written into a shipped comment and only caught by a later independent review lane, not by re-derivation during authoring.
 
 ## Proposed Improvements
+
 - [ ] `reconcile-tables/SKILL.md` — add a step requiring lineage/`ref()` confirmation of the comparison target(s) before authoring the comparison query, given this misfired twice in one session (priority: med)
 - [ ] `sql-standards` (or a new dbt-conventions doc) — codify "staging fully conforms source names and types; `int_`/marts must not re-alias source-derived names" so this doesn't need re-litigating per model (priority: med)
 - [ ] `docs/agents/habits.md` — add a note: on ambiguous multi-phase requests, confirm plan-vs-build mode before writing files (priority: low; single occurrence this session, but the revert cost was real)
 
 ## Skill Extraction Candidates
+
 - **Proposed skill**: `legacy-model-parity-port` · **target**: new skill, or steps folded into existing `dbt`/`reconcile-tables` · **invocation**: model|user
   - **Trigger / leading word**: porting a legacy `reporting_*`/ad-hoc model into the layered staging→intermediate→mart dbt architecture with a parity requirement against the old table
   - **Inputs**: legacy SQL model(s), raw source table (schema via `svv_redshift_columns`/`information_schema` when not yet documented), target architecture pseudocode/design doc if one exists

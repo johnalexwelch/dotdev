@@ -1,4 +1,5 @@
 # Session Reflection: Skill compliance has no mechanical enforcement — workflow-finalize skipped, main has zero branch protection
+
 **Date**: 2026-07-19
 **Goal**: Resume path-guard Phase 2 (`docs/plans/2026-07-19-path-guard-seam-design.md`); user caught the agent skipping `/workflow-finalize` before a merge action and pushed until the real root cause surfaced.
 

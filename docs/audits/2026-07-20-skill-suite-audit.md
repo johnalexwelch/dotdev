@@ -39,6 +39,7 @@ Lint ground truth: `lint-skill-refs.sh` — 22 refs, 0 dangling. `lint-skill-sui
 **F-5 — Codex sync is manual, one-way, and stale.** `sync-codex-skills.sh` is not wired into `ai-setup.sh`; real drift confirmed in `brain-ops`, `session-insight`, `slack-update`, `workflow-router`, 17/18 persona files, and a genuine bug in Codex's `lint-skill-refs.sh` (checks the retired `dotfiles/.claude/skills` path). Claude side is drift-proof by construction (symlink chain verified).
 
 **F-6 — Confirmed dead/duplicate skills to retire or fold** (consolidation candidates; no usage telemetry exists, and the 2026-06-21 archive-pass reversal warns against pruning on structure alone — these are the ones whose *own text* declares them superseded):
+
 - `v1-idea-grill` — frontmatter says DEPRECATED, superseded by `grill-with-docs`
 - `review` — self-declared deprecated → `workflow-review`
 - `pr-review`, `spec-review` — single-shot reviewers superseded by `workflow-review` (architecture candidate 6)

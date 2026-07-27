@@ -89,8 +89,14 @@ assert_contains "cut happy path reports resolved base" "$cut_output" "resolved_b
 assert_contains "cut happy path emits WORKTREE_BASELINE_GATE" "$cut_output" \
     "WORKTREE_BASELINE_GATE: origin/main -> feature/happy @ $wt"
 assert_contains "cut happy path copies .env" "$cut_output" "Copied: .env"
-[ -f "$wt/.env" ] && { echo "  PASS: .env actually copied into worktree"; PASS=$((PASS + 1)); } \
-    || { echo "  FAIL: .env actually copied into worktree"; FAIL=$((FAIL + 1)); }
+[ -f "$wt/.env" ] && {
+    echo "  PASS: .env actually copied into worktree"
+    PASS=$((PASS + 1))
+} ||
+    {
+        echo "  FAIL: .env actually copied into worktree"
+        FAIL=$((FAIL + 1))
+    }
 
 set +e
 verify_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
@@ -155,8 +161,14 @@ collision_status=$?
 set -e
 assert_status "cut fails on existing branch name" 4 "$collision_status"
 assert_contains "branch collision message names the branch" "$collision_output" "feature/dup"
-[ ! -e "$wt2" ] && { echo "  PASS: no worktree created on branch collision"; PASS=$((PASS + 1)); } \
-    || { echo "  FAIL: no worktree created on branch collision"; FAIL=$((FAIL + 1)); }
+[ ! -e "$wt2" ] && {
+    echo "  PASS: no worktree created on branch collision"
+    PASS=$((PASS + 1))
+} ||
+    {
+        echo "  FAIL: no worktree created on branch collision"
+        FAIL=$((FAIL + 1))
+    }
 
 # --- Path already exists ---
 work=$(new_fixture path_exists)

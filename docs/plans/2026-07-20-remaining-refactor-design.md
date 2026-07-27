@@ -1,4 +1,5 @@
 # Design Plan — dotdev remaining refactor (post PR #80-84)
+
 **Date:** 2026-07-20
 **Audit:** `docs/audits/2026-07-20-skill-suite-audit.md`, `docs/audits/2026-07-20-repo-audit.md`, `docs/audits/2026-07-20-refactor-proposal.md` (brief-mode, drawing on prior audits rather than a fresh `/repo-audit`)
 **Mode:** draft
@@ -27,12 +28,14 @@ Four structural gaps remain open from the audits:
 ## §3 Goals and non-goals
 
 **Goals**
+
 - Router table routes every mutating/delivery request to its owning orchestrator, includes a ship/finalize row, and documents the catalog tier — measurable via a coverage re-check (target: 0 "no route exists" cases for delivery-shaped requests).
 - The primary checkout's dirty symlink state is resolved one way or the other (restored or intentionally materialized) and committed — measurable via `git status --porcelain` showing 0 pending changes on these 4 paths.
 - One working, tested `cut/verify/emit` script exists and has at least 2 real callers (`workflow-build-one` Step 0, `workflow-router`'s own Worktree Baseline Gate) — measurable via the script's test harness passing and both callers invoking it instead of inline `git worktree` commands.
 - One canonical decision-record location; a stated, applied retention rule for `docs/executions/reflections/`.
 
 **Non-goals**
+
 - Migrating all ~20 Worktree Baseline Gate callers to the new script — only the first 2 land here; the rest are explicitly deferred (§9).
 - Rebuilding the router's full classification table from scratch — this plan amends it, it does not replace the Route Confirmation Gate or Agent Budget Rule machinery, which are out of scope and working.
 - Multi-harness (`find-skills`/`herdr` universalization to Codex/opencode, FIND-27) — REQ-2 only resolves the *current dirty state*; a full multi-harness symlink strategy is a separate future decision, noted in §9.
@@ -50,8 +53,10 @@ Four structural gaps remain open from the audits:
 ## §5 Execution plan
 
 ### §5.0 Phase 0 — Preflight
+
 **Goal:** Baseline is clean and the plan's ground-truth claims are re-verified immediately before work starts.
 **Tasks:**
+
 1. [auto] `git -C ~/dotdev fetch origin --prune`; confirm `origin/main` is the latest merge of PR #84.
 2. [auto] Re-run `git status --porcelain` scoped to the 4 REQ-2 paths and the ADR paths; confirm they match §4's description (nothing has changed since drafting).
 3. [auto] Run `bash test/run-tests.sh` on current `origin/main` via a scratch worktree; record baseline pass count (expect 70/70 per PR #83's last report).
@@ -62,11 +67,14 @@ Four structural gaps remain open from the audits:
 **Deletes:** none.
 
 ### §5.1 Phase 1 — Pilot: Resolve the dirty symlink state (REQ-2 / FIND-33)
+
 **Goal:** Eliminate all in-repo symlinks per Alex's decision ("dotdev is my canonical source of configs — I don't want ANY symlinks"), landing one clean, committed end-state for the 4 paths, and proving the worktree+PR flow works end-to-end under the new ruleset before bigger phases depend on it.
 **Decisions (settled 2026-07-20, no longer open):**
+
 - `dotfiles/.claude/docs` and `dotfiles/.claude/skills`: **confirm deletion, do not restore.** Ground-truthed: `ai-setup.sh:23` already documents this exact retirement in a comment ("Not a Stow item since dotfiles/.claude/skills no longer exists (retired indirection)") and creates `~/.claude/skills` directly via `ln -sfn "$HOME/.config/agents/skills" "$HOME/.claude/skills"` (line 24), bypassing these two paths entirely. `install.sh` never stows either path. The working-tree deletions were correct and intentional; they just need committing.
 - `dotfiles/.config/agents/skills/find-skills` and `.../herdr`: **materialize as normal tracked directories**, matching every other skill in the corpus. No external `~/.agents/skills/...` symlink targets are created or required.
 **Tasks:**
+
 1. [auto] In a worktree off `origin/main`: commit the deletion of `dotfiles/.claude/docs` and `dotfiles/.claude/skills` (`git rm` the symlink entries — they are already deleted in the working tree, so this stages the deletion cleanly).
 2. [auto] `git rm` the `find-skills`/`herdr` symlink entries and `git add` the existing real `SKILL.md` files already sitting on disk in their place (content is already correct — PR #83 added their Contract sections to the machine-local copies; verify content matches before adding, do not silently regenerate).
 3. [auto] Grep the whole repo (skills, scripts, docs) for any remaining reference expecting `dotfiles/.claude/skills`, `dotfiles/.claude/docs`, or a `~/.agents/skills/...` target for find-skills/herdr, and fix or remove those references — the goal is zero remaining symlink expectations anywhere in the corpus.
@@ -79,9 +87,11 @@ Four structural gaps remain open from the audits:
 **Deletes:** none (symlink entries are either restored or converted to regular tracked files — content is preserved either way).
 
 ### §5.2 Phase 2 — Build and land the worktree `cut/verify/emit` script (REQ-3, part A)
+
 **Goal:** The accepted DL-0005 interface exists as a real, tested script — the first vertical slice of the worktree-baseline deepening, standalone and independently verifiable before any caller is migrated.
 
 **Exact spec, ground-truthed from `dotfiles/.config/agents/skills/_docs/decision-log.md` D-005 (corpus decision-log — distinct from the root `docs/decision-log.md`) — do not deviate:**
+
 - Script path: `dotfiles/.config/agents/skills/setup-worktree/scripts/worktree-baseline.sh` (not a generic name — this is the path D-005 names).
 - Three subcommands: `cut`, `verify`, `emit`.
 - Must cover, per D-005's exact scope line: base-branch resolution, `git fetch --prune`, stacked-parent ancestry check (for `STACKED_WORKTREE_GATE`), path/branch derivation, and env-file copy.
@@ -90,6 +100,7 @@ Four structural gaps remain open from the audits:
 - D-005 explicitly names `workflow-build-one` Step 0 as the sole first-slice caller for Phase 3; the other 19 callers (`setup-worktree`, `execute-phase`, `execute-prd` + template, `prompt-builder`, `run-backlog` + 2 policy refs, `to-issues`, `to-prd`, `triage` + brief template, `workflow-autonomous-backlog`, `workflow-debug`, `workflow-effectiveness-audit`, `workflow-executive-doc`, `workflow-feature`, `workflow-finalize`, `workflow-review`, and `workflow-router` itself) are confirmed out of scope for this plan (§9.1) — this plan's Phase 3 migrates `workflow-build-one` plus `workflow-router` (2 total, per this plan's own goal of the router adopting its own gate mechanics), leaving 18 for the deferred follow-up.
 
 **Tasks:**
+
 1. [auto] Implement `worktree-baseline.sh` per the exact spec above.
 2. [auto] Write `test/test-worktree-baseline.sh` covering: happy path, missing base ref, dirty existing worktree, already-existing branch name, stacked-parent ancestry check.
 3. [auto] Add the harness to `test/run-tests.sh`.
@@ -100,8 +111,10 @@ Four structural gaps remain open from the audits:
 **Deletes:** none.
 
 ### §5.3 Phase 3 — Migrate first 2 callers to the new script (REQ-3, part B)
+
 **Goal:** Prove the `cut/verify/emit` interface end-to-end with real callers, per DL-0005's own plan ("`workflow-build-one` Step 0 is the first vertical slice").
 **Tasks:**
+
 1. [auto] Migrate `workflow-build-one` Step 0 (the per-issue worktree creation) to call the new script instead of its inline `git worktree add` sequence; confirm output/gate evidence format is unchanged from the caller's perspective (skills downstream of `workflow-build-one` should not need changes).
 2. [auto] Migrate `workflow-router`'s own "Worktree Baseline Gate" section (`workflow-router/SKILL.md:257-270`) to reference the script instead of the inline `git fetch`/`git worktree add` snippet — this makes the router the second real caller and starts eating into the ~20-caller duplication this was meant to fix.
 3. [auto] Run `lint-skill-refs.sh`, `lint-skill-suite.sh`, `test/run-tests.sh`.
@@ -112,8 +125,10 @@ Four structural gaps remain open from the audits:
 **Deletes:** none (old inline snippets are removed from the 2 migrated skills, but this is a same-phase replacement, not a stale-code deletion — no separate delete-list entry needed since the replacement is verified in the same phase per the Delete List rule).
 
 ### §5.4 Phase 4 — Router table rewrite (REQ-1)
+
 **Goal:** `workflow-router`'s classification table routes to owning orchestrators (not mid-chain steps), includes a ship/finalize row, and documents the catalog tier — closing the "half the corpus has no route" gap from the skill-suite audit.
 **Tasks:**
+
 1. [auto] Add a "ship this" / "finalize this PR" / "merge this" classification row routing to `workflow-finalize` (currently absent — confirmed by grep).
 2. [auto] Audit existing direct-to-mid-chain-step routes (e.g., any row routing straight to `receive-review` or `prompt-builder` rather than their owning orchestrator `workflow-finalize`/`run-backlog`/`workflow-build-one`) and repoint them to the owner, per SB-021 in `docs/executions/skill-backlog.md`.
 3. [auto] Add a documented "catalog tier" section listing the 47 `disable-model-invocation: true` skills (from PR #83) by category (analytics, incident, library, knowledge/utility), each with its invoke-by-name form (e.g. `/sql-review`) — cross-reference the pointer already added to `dotfiles/.claude/CLAUDE.md` in PR #83/#84 rather than duplicating the full list in two places; link between them.
@@ -126,8 +141,10 @@ Four structural gaps remain open from the audits:
 **Deletes:** none.
 
 ### §5.5 Phase 5 — Meta-layer diet: decision records + retention (REQ-4)
+
 **Goal:** One canonical decision-record mechanism; a stated, applied retention rule for `docs/executions/reflections/`.
 **Tasks:**
+
 1. [auto] Fold `docs/adr/0002-sole-routing-authority.md`'s content into a new `docs/decision-log.md` entry (next `DL-NNNN` after the current tail), preserving its rationale; then `git rm docs/adr/0002-sole-routing-authority.md` and the now-empty `docs/adr/` dir.
 2. [auto] **Decision settled 2026-07-20:** delete `~/.claude/docs/adr/` (3 files, live-only, outside this repo) — Alex: "those can likely be cleaned up." Before deleting, quickly skim each of the 3 files for any rationale not already captured elsewhere (decision-log, ADR-0002, this plan); if any unique content surfaces, fold it into `docs/decision-log.md` first, then delete the directory. This is machine-local cleanup, not a repo commit.
 3. [auto] Write a short retention policy as a new section in `docs/decision-log.md` or `dotfiles/.config/agents/skills/_docs/CONVENTIONS.md` (pick the location matching existing convention for corpus-wide policy — check which file already hosts similar policy text before choosing): e.g., "reflections older than N days with no inbound reference from an active skill-backlog item get archived to `docs/executions/reflections/archive/` or deleted" — pick a concrete N (recommend 60 days, aligned with the skill-invocation telemetry's 30-day review cycle plus a buffer) rather than leaving it open-ended.

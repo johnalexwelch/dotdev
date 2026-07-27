@@ -11,6 +11,7 @@ The suite's content is largely sound; the failures are all in the **meta-layer**
 ## Decisions only you can make (blocking)
 
 **D1 — Routing authority model** (fixes F-1/F-2, the "Claude skips my workflows" root cause). Recommended: **hybrid** —
+
 - `workflow-router` keeps sole authority over *delivery* work (anything that mutates code / commits / PRs / AFK), enforced mechanically (D2), not by prose.
 - Non-delivery clusters (analytics, incident, docs, discovery, writing) get either router rows or an explicit documented "catalog tier: invoke directly, no routing" — no more silent orphans.
 - OMC keyword auto-fires: disable the keyword-detector hook (keep explicit `/oh-my-claudecode:*` invocation) — it mis-fired on this very session's opening prompt.

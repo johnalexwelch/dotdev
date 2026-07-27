@@ -65,8 +65,10 @@ Always write **two copies** and always print **absolute paths** (never relative)
 
 Derive the absolute repo copy path with `git rev-parse --show-toplevel` (never assume cwd). **Derive `<repo-name>` separately** — it must stay STABLE across worktrees, so do NOT use `--show-toplevel` for it: under a git worktree that returns a transient slug (e.g. `worktree-brave-field-ff10`), and the mirror would land in a dir destroyed with the worktree — defeating its purpose. Use the main repo's common git dir instead:
 
-    agd=$(git rev-parse --absolute-git-dir)   # always absolute (git >=2.13); worktree-safe
-    repo=$(basename "${agd%%/.git*}")          # stable repo name, e.g. dotdev
+```bash
+agd=$(git rev-parse --absolute-git-dir)   # always absolute (git >=2.13); worktree-safe
+repo=$(basename "${agd%%/.git*}")          # stable repo name, e.g. dotdev
+```
 
 Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd` into `mkdir`/`cp` (see the shell-variable warning below). Create the global dir with `mkdir -p /Users/<you>/.chorus/handoffs/<repo-name>` — the home directory fully expanded (read it from `echo ~` output first if unsure) — and copy the file there after writing. Never pass a `~`-prefixed path to `mkdir`/`cp`: some bash tools (observed: pi's) do not tilde-expand, so `mkdir -p ~/.chorus/...` creates a literal `~/` directory skeleton inside the cwd (fake home trees were found in the chorus repo root and several `.herdr` worktrees this way).
 

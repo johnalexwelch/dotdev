@@ -1,4 +1,5 @@
 # Session Reflection: Path guard seam — grill through Phase 1 execution
+
 **Date**: 2026-07-19
 **Goal**: Deepen the blocked_paths governance seam (CHORUS repo) — grill candidate 1 of the architecture review through decision-log, design-plan, and Phase 1 execution.
 

@@ -3,6 +3,7 @@
 if (( ! ${+functions[compdef]} )); then
   autoload -Uz compinit && compinit -C   # -C: trust cached .zcompdump (fast startup)
 fi
+# shellcheck disable=SC1090
 command -v herdr >/dev/null && source <(herdr completion zsh)
 
 # ponytail: launchd-supervised server instead of a bare foreground process,
