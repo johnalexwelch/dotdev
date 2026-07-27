@@ -23,8 +23,8 @@ Pairs well with: triage, to-issues, to-prd, diagnose
 
 Scaffold the per-repo configuration that the engineering skills assume:
 
-- **Issue tracker** — where issues live (GitHub by default; local markdown is also supported out of the box)
-- **Triage labels** — the strings used for the five canonical triage roles
+- **Issue tracker** — where issues live (GitHub by default; local markdown is also supported out of the box); default new projects to AFK-capable (per `_docs/human-gate-taxonomy.md`)
+- **Triage labels** — the strings used for the five canonical triage roles; map onto the human-gate taxonomy (types 1–4)
 - **Domain docs** — where `CONTEXT.md` and ADRs live, and the consumer rules for reading them
 
 This is a prompt-driven skill, not a deterministic script. Explore, present what you found, confirm with the user, then write.
@@ -67,14 +67,14 @@ If — and only if — the user picked **GitHub** or **GitLab**, ask one follow-
 
 **Section B — Triage label vocabulary.**
 
-> Explainer: When the `triage` skill processes an incoming issue, it moves it through a state machine — needs evaluation, waiting on reporter, ready for an AFK agent to pick up, ready for a human, or won't fix. To do that, it needs to apply labels (or the equivalent in your issue tracker) that match strings *you've actually configured*. If your repo already uses different label names (e.g. `bug:triage` instead of `needs-triage`), map them here so the skill applies the right ones instead of creating duplicates.
+> Explainer: When the `triage` skill processes an incoming issue, it moves it through a state machine — needs evaluation, waiting on reporter, ready for an AFK agent to pick up, ready for a human, or won't fix. To do that, it needs to apply labels (or the equivalent in your issue tracker) that match strings *you've actually configured*. If your repo already uses different label names (e.g. `bug:triage` instead of `needs-triage`), map them here so the skill applies the right ones instead of creating duplicates. Consult `_docs/human-gate-taxonomy.md` (in the skills corpus) to map your labels onto the gate-type taxonomy: `maintainer-decision`, `operator-runtime`, `secret-custody` (types 1–3, block AFK), or `reviewer-validation` (type 4, does NOT block AFK).
 
 The five canonical roles:
 
 - `needs-triage` — maintainer needs to evaluate
 - `needs-info` — waiting on reporter
-- `ready-for-agent` — fully specified, AFK-ready (an agent can pick it up with no human context)
-- `ready-for-human` — needs human implementation
+- `ready-for-agent` — fully specified, AFK-ready (an agent can pick it up with no human context; maps to taxonomy type 4 when reviewer-validation is required)
+- `ready-for-human` — needs human implementation (maps to taxonomy types 1–3)
 - `wontfix` — will not be actioned
 
 Default: each role's string equals its name. Ask the user if they want to override any. If their issue tracker has no existing labels, the defaults are fine.
