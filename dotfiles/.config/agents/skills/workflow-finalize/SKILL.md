@@ -34,6 +34,7 @@ When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
 - `human-only`: create/update a draft PR or preserve an existing non-draft PR, but do not mark ready, merge, or enable auto-merge.
 - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer GitHub auto-merge over direct immediate merge.
 - Human-review-required issues (`needs-human-review`, `Human review: required`, or equivalent explicit human-review gate) override `auto-merge-eligible`: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until that human validation is recorded.
+  - **Stale-label exception (C30, SB-065):** A stale `needs-human-review` label or body line is NOT a merge blocker when **all** of the following are true: (1) the PR is static/non-mutating (no code changes after the initial review round), (2) reviewers have approved, (3) CI checks pass, and (4) the user has standing merge authority (verified by reading `.github/CODEOWNERS` and branch protection rules directly, not by inference). When this exception applies, proceed with the merge. After merging, reconcile the stale label: remove or normalize it to reflect the actual review state. See `.config/agents/skills/_docs/human-gate-taxonomy.md` for classification criteria (dependency: PR #105, not-yet-merged).
 - Missing policy defaults to `human-only`.
 - **Before asserting a blanket "a human must merge this" blocker, check `.github/CODEOWNERS` (and branch protection) against the changed paths — read them directly, never infer merge authority from a CLAUDE.md summary sentence or prose recap.** A merge-authority claim not grounded in an actual CODEOWNERS entry or protection rule for the touched files is a guess, not a gate — an earlier blanket blocker was later reversed once CODEOWNERS showed no required reviewer for those paths. State the specific rule/owner that blocks, or don't claim the block. Absence of any CODEOWNERS/protection rule does not by itself authorize an auto-merge — `REPO_DELIVERY_POLICY` (default `human-only`) still governs.
 
@@ -166,6 +167,24 @@ Before declaring the PR ready for final action, run a verification gate:
    - If the changes are logically atomic (single feature, single refactor), proceed but note the size in the PR description
    - If the changes span unrelated concerns, **halt**: identify the independent concerns, resolve `WORKFLOW_BASE_GATE`, create a separate branch for each from the resolved workflow base, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
 7. **Re-check PR state before the merge action** — see PR State Ground-Truth above: if Step 2's review round or Step 3's CI wait took real wall-clock time, re-fetch the base and re-verify `mergeStateStatus` immediately before Step 8. Do not carry forward a mergeability check from before the wait.
+
+### Step 6.5: Clean-state exit contract gate
+
+Before advancing to Step 7, establish the completion state of the delivery branch and worktree infrastructure as a first-class invariant (C31, SB-071):
+
+**Report on three dimensions:**
+
+1. **Touched worktree (the one doing this work):** Is it clean (`git status --short` shows no modified source files or untracked deliverables)?
+   - Record: `clean` or `dirty_reason: <specific files or state>`
+2. **Primary checkout (original working directory):** Is it untouched since the start of this run, or does it have outstanding changes (dirty)?  
+   - If dirty: are those changes committed, handed off to a following workflow, or explicitly preserved as WIP?
+   - Record: `primary_untouched` or `primary_dirty_status: <committed|handed_off|wip_preserved>`
+3. **Remaining artifacts:** Beyond the worktree and primary checkout, are any intermediate files, logs, or state-files from this run committed (`HANDOFF.md`, `.pr-bodies/`), handed-off in a separate workflow, or explicitly preserved for human inspection?
+   - Record: `committed|handed_off|explicitly_preserved` for each artifact class found
+
+**Completion criterion:** For each dimension, record the actual state. Do not mask dirty worktrees or primary-checkout drift behind an implicit cleanup assumption — make the state visible in the final gate block so the next workflow, human reviewer, or future audit can see what was left behind and why. If the contract is not satisfied (dirty files, no plan for them), halt before Step 7 and require explicit action (commit, reset, hand-off, or waiver).
+
+Integration: This gate integrates with the existing `step-ledger.md` protocol (line 54). The run-cockpit close at Step 8 (line 207) will reference this gate's report when setting `status: done`.
 
 ### Step 7: Long-lived PR maintenance (conditional)
 
