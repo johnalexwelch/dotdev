@@ -40,9 +40,10 @@ Never delete first. Inventory, classify, present the cleanup plan, then act only
 ### 1. Gather State
 
 - Confirm git repo and current branch.
-- Fetch remote refs with `git fetch origin --prune`.
+- **Fetch and identify authoritative remotes**: Run `git fetch --prune` on all relevant remotes (e.g., `git fetch origin`, `git fetch personal`, or per `git remote -v`). Then identify which remote is the current authoritative source of truth for the primary branch — it may not be `origin` (e.g., in multi-account repos, `personal/main` may be ahead of `origin/main`). Report the authoritative remote/branch pair in the cleanup plan. This is essential because stale remote refs will classify items incorrectly.
 - List worktrees with `git worktree list --porcelain`.
 - List local branches with upstream/merge status.
+- **Report primary checkout sync**: Check whether the primary branch (typically `main` or `master`) is behind, ahead of, or in sync with the identified authoritative remote branch. If behind or ahead, or if the working directory has untracked files, flag this in the final report as "primary checkout dirty state." This context is critical for understanding the cleanup baseline.
 - For referenced PRs/issues, inspect current GitHub state with `gh`.
 - Read relevant handoff/finalization evidence when present.
 
@@ -52,7 +53,9 @@ Use these buckets:
 
 - `safe-remove-worktree`: worktree branch merged, pushed, **clean (empty `git -C <path> status --porcelain`)**, no active PR needs it, **and no live process is cwd'd into it**. A merged branch does NOT override the clean requirement — uncommitted changes in a merged worktree still route to `needs-user-approval`.
 - `safe-delete-local-branch`: branch merged to its intended base or remote no longer needs local copy. **Confirm merge via PR state (`gh pr view <n> --json state,mergedAt`), not git ancestry alone** — squash/rebase merges leave the branch looking unmerged to `git branch -d`. A branch whose PR is merged is safe to delete with `-D`; that is not "discarding unmerged work" and does not need the unmerged-work approval gate.
-- `needs-user-approval`: dirty worktree, unpushed commits, unmerged branch, remote branch deletion, ticket closure, or PR closure.
+- `handoff-only branch`: clean, pushed branch with no open PR, whose only purpose is to preserve a repo-local handoff or artifact (e.g., `codex/handoff-next-issue-*`). These require an explicit decision: **keep** (if the handoff is still in use), **open PR** (if it should enter review), or **delete** (if the handoff has been migrated to a global mirror or is superseded). Do not discard without deciding.
+- `dirty-handoff-or-docs-drift`: worktree with untracked or uncommitted changes, but the dirty content is *only* handoff artifacts, documentation updates, or reflection notes — not active implementation. Distinguish from `dirty-active-implementation`. Requires decision: **preserve** (if the handoff should be kept for next session), **commit** (if it should land with the branch), or **explicitly abandon** (with reason why the handoff is obsolete).
+- `needs-user-approval`: dirty active-implementation work, unpushed commits, unmerged branch, remote branch deletion, ticket closure, or PR closure.
 - `keep`: active PR, unresolved review/CI, open issue still in progress, or unclear ownership.
 - `follow-up-needed`: leftover work should become an issue before cleanup.
 
@@ -84,9 +87,26 @@ Before acting, show:
 ```markdown
 ## Cleanup Plan
 
+### Authoritative Remote
+- **Primary branch**: <branch> → **authoritative source**: <remote>/<branch> (ahead/behind/in-sync)
+
+### Primary Checkout State
+- **Sync**: behind/ahead/in-sync with <remote>/<branch>
+- **Dirty files**: <untracked/uncommitted files, if any>
+
 ### Safe Local Cleanup
 - remove worktree: <path> (<branch>) because <evidence>
 - delete local branch: <branch> because <evidence>
+
+### Handoff-Only Branches
+- keep: <branch> because <handoff reason>
+- delete: <branch> because <handoff superseded/migrated>
+- open PR: <branch> because <ready for review>
+
+### Handoff / Docs Drift
+- preserve: <worktree path> (<branch>) because <handoff/docs content>
+- commit: <worktree path> (<branch>) because <content belongs in tree>
+- abandon: <worktree path> (<branch>) because <reason>
 
 ### Needs Approval
 - <action> because <risk/evidence>
@@ -96,7 +116,15 @@ Before acting, show:
 
 ### Follow-Ups
 - <issue/comment to create or preserve>
-```
+
+---
+
+## Approval Required
+
+**Before execution, you must confirm**:
+> I approve the cleanup plan above: removing the listed worktrees/branches and closing the listed items. I will not touch: <remote branches>, <dirty worktrees>, <unresolved tickets>.
+
+State explicitly what will be left untouched; this prevents silent misunderstanding of scope.
 
 ### 5. Execute Approved Cleanup
 
