@@ -62,7 +62,7 @@ actual frontier. `state.yaml` is a PROXY that can lag or be stale (concurrent
 agents, prior sessions) — if the branch already contains commits for `next`
 or later steps, reconcile the ledger and dispatch to the true frontier, not
 what the file claims.
-- On **start fresh**: overwrite the file and proceed with normal classification.
+- On **start fresh**: if the user explicitly says "start fresh" for unrelated work, treat the active ledger as a conflict-check artifact only. Ask for confirmation only if a real **shared-resource conflict** exists (e.g., both runs target the same file, branch, or worktree; or both are AFK-dispatches to the same issue/PR). If no conflict: overwrite the file silently and proceed with normal classification. If conflict detected: report it, ask which run takes priority, and reconcile before proceeding.
 
 Skip the resume check when there is no project repo (ephemeral session) — the
 cockpit is an optimization, never a gate.
@@ -188,7 +188,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape` (beats mode) → humanizer) lives in Wren's kit |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
-| "generate prompt for", "prep for codex", "prep for AFK" — a standalone prompt-text request, not a request to run the batch/dispatch | **prompt generation** | prompt-builder (legitimate standalone entry point per its own contract's "manual Codex task" use case — do not repoint to `run-backlog`/`workflow-build-one` unless the user wants the full dispatch, in which case use the **AFK backlog** or **ready issue** rows below instead) |
+| "generate prompt for", "prep for codex", "prep for AFK" — a standalone prompt-text request, not a request to run the batch/dispatch; also "evaluate this prompt", "rewrite this work-order", "check this brief" — prompt or work-order evaluation/rewrite with **NO repo-artifact mutation** | **prompt generation or evaluation** | `direct` (if evaluation only, no rewrite needed) or `prompt-builder` (if rewrite is needed) — emit a full non-direct route card and dispatch only if the user asks to create/update project artifacts, issues, PRDs, roadmaps, or other repo-tracked deliverables; for prompt-only evaluation/revision, return the result as a conversational response or markdown block without a route card (legitimate standalone entry point per its own contract's "manual Codex task" use case) |
 
 ## Owner vs. sub-step routing rule (SB-021 / SB-022)
 
@@ -231,6 +231,21 @@ Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, 
 **Knowledge/utility** (9) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `stage-v1-concept`, `wayfinder`, `zoom-out`
 
 **Retirement-leaning** (6, per skill-suite audit F-6 — self-declared superseded, not formally retired yet): `pr-responder` (restates `receive-review` Step 4), `pr-review` / `review` (superseded by `workflow-review`), `slop-cleaner` (`humanizer` owns the route), `v1-idea-grill` (superseded by `grill-with-docs`), `rowan` (binary tombstoned 2026-07-20; `brain-ops` owns the brain route). Do not route new requests here; if invoked by name, note the successor.
+
+## Human-Gate Taxonomy Preflight
+
+When a workflow or execution describes a human gate or approval point, classify it using the gate taxonomy in `dotfiles/.config/agents/skills/_docs/human-gate-taxonomy.md` (from PR #105, not yet merged; cite relative path). The taxonomy distinguishes four gate types:
+
+| Gate Type | Blocks AFK? | How Satisfied |
+|-----------|-------------|---------------|
+| **maintainer-decision** | ✅ YES | User/maintainer approves the PR or issue before merge |
+| **operator-runtime** | ✅ YES | Operator confirms or executes a runtime action in the workflow |
+| **secret-custody** | ✅ YES | Human custody/audit before secret is deployed |
+| **reviewer-validation** | ❌ NO | Independent reviewers reach consensus via `workflow-review` + checks pass |
+
+Only the first three gate types block AFK execution by default. When a route card or execution mentions "needs human review," classify which type applies before emitting the gate. If only `reviewer-validation` applies, the route is AFK-eligible (subject to `workflow-review` and merge authority). If any of the first three apply, AFK is blocked until satisfied.
+
+**Dependency note:** The taxonomy file is not yet merged (PR #105). Reference it by relative path from the repo root: `dotfiles/.config/agents/skills/_docs/human-gate-taxonomy.md`.
 
 ## Preflight
 
