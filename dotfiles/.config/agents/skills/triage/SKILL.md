@@ -106,6 +106,21 @@ When PR triage is enabled, include external PRs in these same buckets and tag ea
 
 Show counts and a one-line summary per issue. Let the maintainer pick.
 
+## CVE Batch Triage Pattern
+
+When triaging nightly-scan CVE auto-filed issues as a group, follow this consolidation pattern to reduce noise and coordinate fixes:
+
+1. **Group by package.** Collect all CVE issues mentioning the same package (e.g., `express`, `jsonwebtoken`, `jwt`). Exact version varies; focus on the package name.
+
+2. **Cross-check against lockfiles/images.** For each package group, verify the project's actual dependency version (check `uv.lock`, `package.json`, `requirements.txt`, container image digest, etc.). Compare against the CVE's affected-version range.
+   - **Already fixed**: The project runs a patched version beyond the affected range → `wontfix (already-implemented)`. Close with a pointer to the lockfile and the current version.
+   - **Unexploitable**: The project's code path never reaches the vulnerable function (e.g., HS256 JWT validation can’t trigger an ECDSA timing CVE) → `wontfix (rejected-bug)` + the exposure reasoning in the closing comment.
+   - **Actionable**: The project runs an affected version and the code is reachable → keep for `ready-for-agent`.
+
+3. **Consolidate duplicates.** If multiple CVEs share one fix (e.g., two express CVEs both require a version bump to 4.18.2), label the first as `ready-for-agent` with a full agent brief, then close the duplicates (`wontfix already-implemented`) with a comment pointing to the lead issue. This avoids writing identical briefs for each duplicate.
+
+4. **Result**: From 28 scan issues, consolidate to ~5–10 distinct actionable leads + a batch of already-fixed/unexploitable closes — reducing agent context load and preventing duplicate work.
+
 ## Triage a specific issue or PR
 
 1. **Gather context.** Read the full issue or PR (body, comments, labels, reporter/author, dates; for a PR, also read the diff). Parse any prior triage notes so you don't re-ask resolved questions. Explore the codebase using the project's domain glossary, respecting ADRs in the area. Run two checks before recommending anything:
@@ -127,6 +142,8 @@ Show counts and a one-line summary per issue. Let the maintainer pick.
      - **rejected-bug** — not actually a bug, or a bug we're knowingly accepting: polite explanation, then close.
      - **rejected-enhancement** — write to `.out-of-scope/`, link to it from a comment, then close ([OUT-OF-SCOPE.md](OUT-OF-SCOPE.md)).
    - `needs-triage` — apply the role. Optional comment if there's partial progress.
+
+6. **Verify mutations applied.** After any label, state, or close mutation (via `gh issue edit`, `gh issue close`, etc.), **never suppress stderr or exit status** — always inspect the tool's exit code. Immediately re-read the authoritative state (`gh issue view <number>`) to confirm the label was added, the state changed, or the issue closed. A suppressed command exit + a shell `echo "success"` is a proxy, not proof: the mutation may have silently failed (e.g., auth flipped, repo unresolvable) while the script continued. This verification catches silent failures before they propagate.
 
 ## Quick state override
 
