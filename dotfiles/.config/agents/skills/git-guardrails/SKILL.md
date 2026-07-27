@@ -35,6 +35,25 @@ Sets up a `PreToolUse` hook that intercepts and blocks dangerous git commands be
 
 When blocked, Claude sees a message on stderr telling it that it does not have authority to run the command — the tool call itself never executes.
 
+## Agent conduct: multi-account GitHub (not hook-enforced)
+
+**Do NOT parallelize `gh auth switch`.** When multiple agents or concurrent operations may call `gh auth switch --user <owner>`, the calls race a shared keyring and corrupt auth state. Serialize `gh auth switch` calls, or avoid them entirely by using an explicit token pattern.
+
+When pushing to a repo owned by a different account and `git push` fails with a credential error:
+
+1. Do NOT retry with `gh auth switch --user <owner>` in a subshell or thread
+2. Instead, use the **explicit token pattern** (safe for concurrent use):
+
+```bash
+GH_TOKEN=$(gh auth token --user <owner>) \
+  git -c credential.helper='!f(){ echo "username=x"; echo "password=$GH_TOKEN"; };f' \
+  push <remote> <branch>
+```
+
+**Critical: never echo or print `$GH_TOKEN` for debugging** — it's a live credential. Verify with `git push --dry-run` first, or inspect the git command itself without printing the env var.
+
+This pattern is safe for concurrent pushes from multiple agents to different repos/accounts because each operation isolates its token in a local variable and credentials never touch the global `gh` keyring state.
+
 ## Agent conduct: stash & branch safety (not hook-enforced)
 
 The hook can't safely block `git stash pop` or `checkout` (both are routinely legitimate), so these are **behavioral rules the agent must follow** — they prevent the most common non-destructive-but-corrupting mistakes:
