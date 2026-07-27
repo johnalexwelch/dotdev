@@ -73,6 +73,7 @@ WORKFLOW_STEPS:
   - Intermittent/complex → **deep** mode
   - Live system issue → **production** mode
   - Was working before → **regression** mode
+- **User changed runtime state**: If the user reports they just added/fixed credentials, permissions, unseal state, service health, or configuration, run **ONE authoritative live check** before repeating the prior blocker analysis. Do not assume the prior diagnosis still applies after a mutation. Example: if a prior step failed on "auth token missing", and the user says "check now, I just added the runtime admin token", verify the new token is present and valid before re-running the blocked diagnostic.
 - Produce diagnosis artifact
 - Emit routing recommendation
 
