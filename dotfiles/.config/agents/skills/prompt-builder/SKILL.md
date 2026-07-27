@@ -36,8 +36,8 @@ Extract:
 - Title and description
 - Acceptance criteria (look for checkboxes, "AC:", "Acceptance Criteria", numbered lists under a criteria heading)
 - Labels (bug, feature, ready-for-agent, security, frontend, etc.)
-- Human-review requirement: `needs-human-review` label, `Human review: required`, or equivalent explicit human-review gate
-- Reviewer validation steps from `## Reviewer validation steps` when human review is required
+- Human-review gates: consult `_docs/human-gate-taxonomy.md` to distinguish types. Look for `needs-human-review` label, `Maintainer/operator gate: required`, `Reviewer validation: required`, or equivalent explicit gates
+- Reviewer validation steps from `## Reviewer validation steps` when reviewer validation is required
 - Referenced issues, PRs, or plan documents
 - Any file paths mentioned in the body
 
@@ -56,7 +56,7 @@ Based on issue labels and content:
 |--------|----------|
 | Label: `bug` | Use workflow-debug (diagnosis-first) with strict-tdd profile |
 | Label: `security` | Flag for human review gate; do not auto-merge |
-| Label: `needs-human-review` or `Human review: required` | Preserve reviewer validation steps; require workflow-finalize PR footer; do not mark complete without human validation evidence |
+| Label: `needs-human-review` or explicit gate | Check gate type (see `_docs/human-gate-taxonomy.md`): maintainer/operator (types 1–3) requires `ready-for-human`; reviewer-validation (type 4) allows AFK with `needs-human-review` + validation steps in `workflow-finalize` |
 | Label: `frontend` | Include user-journey-qa step |
 | Acceptance criteria are test-expressible | Use TDD approach |
 | Issue references a design plan phase | Use execute-phase with the plan |
@@ -89,6 +89,20 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 
 [List of file paths the agent should read before starting work]
 
+## AFK Execution Policy
+
+**Execution mode:** AFK or HITL
+
+**Human review gate:** (see `_docs/human-gate-taxonomy.md`)
+- `maintainer/operator gate: required` (types 1–3) — blocks AFK; requires user approval
+- `reviewer-validation: required` (type 4) — does NOT block AFK; satisfied by independent PR review + merge authority
+- `none` — no human gate
+
+**Acceptance gate:** How this issue can be considered complete
+- Agent implementation + validation (normal AFK)
+- Agent implementation + validation + independent reviewer approval (AFK with `needs-human-review` gate)
+- Agent cannot implement (HITL)
+
 ## Constraints
 
 [Any constraints extracted from labels, related issues, or project conventions]
@@ -96,7 +110,8 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
 - For dependent stacked work, may instead create a fresh per-issue worktree from the clean parent branch only when the parent PR has complete gates; include `STACKED_WORKTREE_GATE` and target the PR at the parent branch
 - Must run `workflow-review` with a risk-sized `review_profile` and include `WORKFLOW_REVIEW_GATE` with `independent_review: true` and `verdict: APPROVE`
 - Must run `workflow-finalize` and include a complete `WORKFLOW_FINALIZE_GATE`
-- If `Human review: required`, workflow-finalize/describe-pr must make the PR body end with `## Reviewer validation steps` copied or condensed from the issue, and the PR must remain draft or blocked for human validation according to repo policy
+- If `Reviewer validation: required`, workflow-finalize/describe-pr must make the PR body end with `## Reviewer validation steps` copied or condensed from the issue; the PR may be marked ready after independent review approval via `workflow-review`
+- If `Maintainer/operator gate: required`, the PR must remain draft or blocked for human validation according to repo policy
 - Must create or update only a draft PR unless an existing non-draft PR already exists
 - Must not mark the PR ready, approve it, merge it, enable auto-merge, force-push, rebase, or use destructive git
 - Must satisfy the Partial-Completion Contract before exit: complete with all changes committed and pushed; WIP-paused with a pushed `wip:` commit whose subject names exactly what remains; or rolled back with `git reset --hard <baseline>` and a clean worktree
@@ -130,7 +145,8 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
   `STACKED_WORKTREE_GATE: <workflow-base-ref> -> <parent-branch> -> <child-branch> @ <child-worktree-path>; parent_pr: #<n>; parent_gates: complete`
 - Require `workflow-review` with a real `WORKFLOW_REVIEW_GATE`, `review_profile`, `independent_review: true`, and `verdict: APPROVE`; green CI, GitHub reviews, Claude Code Review, Bugbot, or Codex review do not substitute for this gate.
 - Require `workflow-finalize` with a complete `WORKFLOW_FINALIZE_GATE`.
-- If the issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, include the issue's `## Reviewer validation steps` in the prompt and require the worker to preserve them through `describe-pr`/`workflow-finalize` so the PR body ends with the same section.
+- If the issue has a `reviewer-validation` gate (type 4 in `_docs/human-gate-taxonomy.md`), include the issue's `## Reviewer validation steps` in the prompt and require the worker to preserve them through `describe-pr`/`workflow-finalize` so the PR body ends with the same section. Mark ready after independent reviewer approval via `workflow-review`.
+- If the issue has a `maintainer/operator` gate (types 1–3), do not mark ready; await user approval.
 - Require draft PR handoff only; do not mark ready, approve, merge, enable auto-merge, force-push, rebase, or use destructive git.
 - Require the Partial-Completion Contract before exit. The worker must end in exactly one state:
   - Complete: all changes committed and pushed to the remote branch.
@@ -138,7 +154,7 @@ Example: `workflow-build-one` — this is a ready-for-agent issue with clear acc
   - Rolled back: `git reset --hard <baseline>` leaves the worktree clean.
 - Require final verification with `git status --short`. If any source file shows `M` or `??`, the prompt must instruct the worker to commit or reset, then re-check before exiting.
 - Do not ask clarifying questions inside the generated prompt. If ambiguity affects behavior, scope, security, data, UX, or acceptance criteria, halt prompt generation and mark the issue `needs-human` instead of dispatching Codex.
-- If human review is required but concrete reviewer validation steps are missing or vague, halt prompt generation and mark the issue `needs-human` instead of dispatching Codex.
+- If reviewer-validation is required but concrete reviewer validation steps are missing or vague, halt prompt generation and mark the issue `needs-human` instead of dispatching Codex.
 - Conservative assumptions are allowed only for non-behavioral implementation details; record them explicitly.
 - Include relevant decision-log entries when they explain why the issue asks for a particular approach. Do not make the worker rediscover accepted alternatives.
 - Specify the test command to run
