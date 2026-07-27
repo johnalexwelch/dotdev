@@ -33,14 +33,16 @@ Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEP
 WORKFLOW_STEPS:
 | Step | Required? | Status | Evidence / Skip Reason |
 |------|-----------|--------|------------------------|
-| Step 1: Discover Module Candidates | required | pending | - |
-| Step 2: Classify Candidates | required | pending | - |
-| Step 3: Module Grilling Gate | conditional | pending | Runs for module-prd-ready candidates |
+| Step 0: Check for Existing PRD/Issues | conditional | pending | Skip if no prior PRD/issue tree; jump to Step 5 if exists |
+| Step 1: Discover Module Candidates | conditional | pending | Skipped if existing PRD/issue tree found in Step 0 |
+| Step 2: Classify Candidates | conditional | pending | Skipped if existing PRD/issue tree found in Step 0 |
+| Step 3: Module Grilling Gate | conditional | pending | Runs for module-prd-ready candidates; skipped if existing PRD/issue tree found in Step 0 |
 | Step 3.1: Module Grill Consensus | conditional | pending | Runs after module grill |
 | Step 3.5: Optional Scoped Second Architecture Pass | conditional | pending | Runs when grill identifies internal friction |
-| Step 4: Create PRDs And Issues | conditional | pending | Runs for approved candidates |
-| Step 5: Prepare AFK Queue | conditional | pending | Runs when execution requested |
+| Step 4: Create PRDs And Issues | conditional | pending | Runs for approved candidates; skipped if existing PRD/issue tree found in Step 0 |
+| Step 5: Prepare AFK Queue | conditional | pending | Runs when execution requested; entry point for existing PRD/issue fast path |
 | Step 6: Execute Backlog | conditional | pending | Runs after AFK approval |
+| Step 6.2: Post-Merge Dependent Issue Loop | conditional | pending | After parent PR merges, verify parent closed, reconcile blocked labels, continue ready-for-agent children |
 | Step 6.5: Post Auto-Merge Meta + Cleanup | conditional | pending | Runs only for items finalized as ready_auto_merge_enabled |
 | Step 7: Handoff | required | pending | - |
 ```
@@ -51,6 +53,15 @@ Skill-specific rules (extend `../_docs/step-ledger.md`):
 - Required steps cannot be skipped. If discovery, classification, or handoff cannot run, mark blocked and halt.
 
 ## Flow
+
+### 0. Check for existing PRD/issues
+
+**Completion criterion**: Determined whether a prior PRD and issue dependency tree exist; if yes, proceed directly to Step 5.
+
+- Before running discovery, ask the user: does a parent PRD issue and its child implementation issue tree already exist for this work?
+- If **no**: proceed to Step 1 (module discovery).
+- If **yes**: verify the PRD issue is open, its child issues are linked in dependency order, and the issue tree is current. If verified, record the parent PRD issue link, skip Steps 1–4, and proceed directly to Step 5 (prepare AFK queue). Update the WORKFLOW_STEPS table to record the skip reason: `skipped: existing_prd_issue_tree_found`.
+- If verification fails (parent issue closed, children missing or out of order), halt as `needs-human` and report the mismatch.
 
 ### 1. Discover module candidates
 
@@ -243,6 +254,26 @@ Required gates per PR:
 - repo-policy-controlled PR handoff (`pr_state: draft`, `existing_non_draft_not_modified`, or `ready_auto_merge_enabled` in the finalization gate)
 
 Missing gate evidence marks the item `needs-human`; it is not a successful AFK item.
+
+### 6.2. Post-merge dependent issue loop
+
+**Completion criterion**: Dependent child issues are correctly advanced after their parent PR merges; the loop halts when it encounters a `ready-for-human` or still-blocked issue.
+
+After a parent issue PR merges (reported by `workflow-finalize` with `pr_state: ready_auto_merge_enabled` or confirmed merged in GitHub):
+
+1. **Verify parent issue closed**: Check the GitHub parent issue status. If the issue is still open, halt with `needs-human` — the automation cannot assume the issue closure intent.
+2. **Reconcile child issue labels**: For each child issue still labeled `blocked` (from the parent's blocker label):
+   - Verify the parent issue has closed and its PR merged.
+   - Check whether any sibling blockers remain unmerged.
+   - If all blockers are satisfied, remove the `blocked` label from the child issue.
+   - If other blockers remain, keep `blocked` and halt at this child.
+3. **Continue or halt**:
+   - For each child now labeled `ready-for-agent`: record it for continuation in the next AFK execution wave (or continue immediately if unattended backlog execution is enabled). Dispatch `workflow-build-one` for the child.
+   - For each child labeled `ready-for-human`: halt. Do not attempt to continue human-gated work; report it as needing explicit human advancement or approval.
+   - For any child still `blocked` after reconciliation: halt and report the remaining blocker.
+4. **Record in handoff**: For each child continued, record the parent-merge confirmation, label reconciliation, and the child's issue link. For halts, record the reason (human gate, unresolved blocker).
+
+The loop enforces a single-chain dependency model: each child continues only when its immediate parent merges and all its labeled blockers are resolved. Multi-parent dependencies (OR blockers) remain human-gated; use `blocked` label reconciliation to differentiate them in handoff reports.
 
 ### 6.5. Post auto-merge meta + cleanup (conditional)
 
