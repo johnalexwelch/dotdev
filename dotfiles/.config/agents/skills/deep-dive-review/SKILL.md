@@ -26,6 +26,7 @@ One run a day. A run may surface many findings. Each finding earns its own PR or
 The spine, applied to every lens: **evidence before change** (a profiler trace for perf, a characterization test for a refactor, a C3 signal for debt), **defer to the repo's own linters/tests** (spend tokens on judgment, not on rebuilding lint), **revert don't escalate** on a failed verify, **one PR per finding**. See `references/danger-zones.md` for the hard NEVER-DO list.
 
 Invocation: `/deep-dive-review [--mode approve|auto] [--budget N]`
+
 - `--mode approve` (default): scan, rank, and present; wait for human pick before any apply.
 - `--mode auto`: process the top findings unattended, respecting the delivery policy and every `NEEDS_HUMAN` halt.
 - `--budget N`: max findings to *process* this run (default 3). Scan/rank always cover the whole set.
