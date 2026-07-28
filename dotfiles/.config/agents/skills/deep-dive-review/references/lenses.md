@@ -48,7 +48,10 @@ Every debt finding carries **severity + effort estimate** (from `tech-debt-skill
 
 The weak link (PERFOPT-Bench, Optimas: LLMs without profiling context produce wrong "optimizations"). Rules:
 
-- **Evidence required.** No perf finding without a profiler trace or benchmark showing the cost. No speculative tuning.
+- **Evidence required, captured up front.** No perf finding without a profiler trace or benchmark showing the cost. **Go get the baseline during this scan, before ranking — never surface an unmeasured perf item as a recommendation.** A perf candidate is one of three things, never a vague "blocked, needs baseline":
+  1. **Measured now** → it carries real before-numbers and can be ranked as an actionable finding.
+  2. **Baseline capturable but not yet run** → run it in this step; don't defer it into the recommendation.
+  3. **Baseline genuinely not capturable here** (no harness, can't reproduce the hot path, needs prod data) → park it `needs_human` whose `unblock:` is the **exact command/steps to capture the baseline**, plus the pros/cons of doing the measurement. It is a request-for-measurement, not a recommendation.
 - Auto-detect the harness (pytest-benchmark, criterion-rs, JMH, benchmarkjs, `go test -bench`, catch2 — see github-action-benchmark for the cross-language set). Capture a **baseline** and track it in the ledger over time.
 - **Don't hard-fail on one noisy run** (shared-runner variance; Otava caveat). Compare against tracked history; a change must beat noise, not a single sample.
 - A finding where a **known-good state exists** (a regression) is not this skill's job — route it to `diagnose` (regression mode: git bisect the delta).
