@@ -54,5 +54,49 @@
     "host": "pi",
     "packageVersion": "0.2.4",
     "parentRunId": "eval-selection-consensus-ms54x4u9-a96b66"
+  },
+  {
+    "runId": "candidate-generator-cons-ms565bfs-dc0b42",
+    "flowName": "candidate-generator-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785274172200,
+    "updatedAt": 1785274790017,
+    "relPath": "candidate-generator-consensus/candidate-generator-cons-ms565bfs-dc0b42.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "candidate-generator-cons-ms56jxr4-781d27",
+    "flowName": "candidate-generator-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785274854304,
+    "updatedAt": 1785275756105,
+    "relPath": "candidate-generator-consensus/candidate-generator-cons-ms56jxr4-781d27.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "candidate-generator-cons-ms575816-1ea5eb",
+    "flowName": "candidate-generator-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785275847402,
+    "updatedAt": 1785276669096,
+    "relPath": "candidate-generator-consensus/candidate-generator-cons-ms575816-1ea5eb.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "candidate-generator-cons-ms57oonz-c42098",
+    "flowName": "candidate-generator-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785276755423,
+    "updatedAt": 1785277640212,
+    "relPath": "candidate-generator-consensus/candidate-generator-cons-ms57oonz-c42098.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
   }
 ]
