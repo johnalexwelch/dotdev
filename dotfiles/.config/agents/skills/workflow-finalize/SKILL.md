@@ -33,8 +33,9 @@ When invoked by `run-backlog`, respect `REPO_DELIVERY_POLICY`:
 
 - `human-only`: create/update a draft PR or preserve an existing non-draft PR, but do not mark ready, merge, or enable auto-merge.
 - `auto-merge-eligible`: after all required gates pass, mark the PR ready and enable GitHub auto-merge. Prefer GitHub auto-merge over direct immediate merge.
-- Human-review-required issues (`needs-human-review`, `Human review: required`, or equivalent explicit human-review gate) override `auto-merge-eligible`: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until that human validation is recorded.
-  - **Stale-label exception (C30, SB-065):** A stale `needs-human-review` label or body line is NOT a merge blocker when **all** of the following are true: (1) the PR is static/non-mutating (no code changes after the initial review round), (2) reviewers have approved, (3) CI checks pass, and (4) the user has standing merge authority (verified by reading `.github/CODEOWNERS` and branch protection rules directly, not by inference). When this exception applies, proceed with the merge. After merging, reconcile the stale label: remove or normalize it to reflect the actual review state. See `.config/agents/skills/_docs/human-gate-taxonomy.md` for classification criteria (dependency: PR #105, not-yet-merged).
+- Human-review-required issues (`needs-human-review`, `Maintainer/operator gate: required`, or another explicit maintainer/operator gate) override `auto-merge-eligible`: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until that human validation is recorded.
+  - `Reviewer validation: required`, reviewer validation steps, or objective PR-body checks are not human-review blockers by themselves. Treat them as verification work satisfied by `workflow-review`, required commands, CI, and any repo merge policy.
+  - **Stale-label exception (C30, SB-065):** A stale `needs-human-review` label or body line is NOT a merge blocker when the issue/PR evidence shows only reviewer-validation work and no maintainer/operator gate. After merging, reconcile the stale label: remove or normalize it to reflect the actual review state. See `.config/agents/skills/_docs/human-gate-taxonomy.md` for classification criteria.
 - Missing policy defaults to `human-only`.
 - **Before asserting a blanket "a human must merge this" blocker, check `.github/CODEOWNERS` (and branch protection) against the changed paths — read them directly, never infer merge authority from a CLAUDE.md summary sentence or prose recap.** A merge-authority claim not grounded in an actual CODEOWNERS entry or protection rule for the touched files is a guess, not a gate — an earlier blanket blocker was later reversed once CODEOWNERS showed no required reviewer for those paths. State the specific rule/owner that blocks, or don't claim the block. Absence of any CODEOWNERS/protection rule does not by itself authorize an auto-merge — `REPO_DELIVERY_POLICY` (default `human-only`) still governs.
 
@@ -73,13 +74,16 @@ WORKFLOW_STEPS:
 - `describe-pr` must write a body file under `docs/executions/.pr-bodies/` before any draft PR is created or updated.
 - Pass the resolved `branch`, `base`, discovered `pr_number` if one exists, and `apply=false` when no PR exists yet. If a PR already exists, either pass `apply=true` or apply the returned body file in Step 1.5.
 - The generated body must include issue awareness and a disposition table for all referenced issues when issues are discovered.
-- If any referenced issue requires a human reviewer (`needs-human-review`
-  label, `Human review: required`, or equivalent explicit human-review gate),
+- If any referenced issue requires maintainer/operator review
+  (`needs-human-review` label tied to a maintainer/operator gate,
+  `Maintainer/operator gate: required`, or equivalent explicit gate),
   the generated body must end with `## Reviewer validation steps`. The section
   must be the final section in the PR body and contain concrete ordered steps
   copied or condensed from the issue's explicit reviewer validation steps. Do
-  not treat `ready-for-human` or `Type: HITL` as human-review-required; those
-  mean human implementation or human interaction, not PR validation.
+  not treat `ready-for-human`, `Type: HITL`, or `Reviewer validation:
+  required` as human-review-required; those mean human implementation,
+  human interaction, or independent review, not necessarily PR-blocking
+  maintainer/operator validation.
 - Record describe-pr evidence for the final gate: body file path, mode (`plan_backed`, `phase_run_backed`, or `issue_only`), issue refs discovered, phase evidence status, and deviation/new-finding counts when applicable.
 - If `describe-pr` halts because required phase evidence is missing for plan-backed or multi-phase work, halt finalization. Do not create a draft PR with a replacement body unless the user explicitly waives phase evidence.
 - For routine single-issue work with no design plan or phase-run files, `describe-pr` must run in issue-only mode using git log/diff plus issue discovery; absence of a design plan is not a reason to skip `describe-pr`.
@@ -156,13 +160,15 @@ Before declaring the PR ready for final action, run a verification gate:
 3. **Confirm review comment resolution** — fetch review threads/comments one final time. If any actionable reviewer comment has no fix, reply, or explicit human waiver, halt before handoff.
 4. **Confirm review freshness** — verify the latest `WORKFLOW_REVIEW_GATE` was produced after the final code-changing commit. If finalization pushed review-fix or CI-fix commits after the last review gate, halt and rerun `workflow-review`.
 5. **Confirm human-review PR-body footer when required** — when any referenced
-   issue requires a human reviewer (`needs-human-review`, `Human review:
-   required`, or equivalent explicit human-review gate), inspect the PR body
+   issue requires maintainer/operator review (`needs-human-review` tied to a
+   maintainer/operator gate, `Maintainer/operator gate: required`, or
+   equivalent explicit gate), inspect the PR body
    file and confirm its final section is `## Reviewer validation steps` with
    ordered validation actions copied or condensed from the issue's explicit
    reviewer validation steps. If missing or not last, route back to Step 1
    (`describe-pr`) before creating/updating or handing off the PR. Do not use
-   `ready-for-human` or generic `Type: HITL` as this trigger.
+   `ready-for-human`, generic `Type: HITL`, or `Reviewer validation: required`
+   as this trigger.
 6. **Check for large diffs** — run `git fetch origin --prune` first (a stale `origin/<base>` inflates or hides the count), then `git diff --stat origin/<base>..HEAD | tail -1` and parse the file count. If **>15 files changed** or **>500 lines changed**, flag for potential PR splitting:
    - If the changes are logically atomic (single feature, single refactor), proceed but note the size in the PR description
    - If the changes span unrelated concerns, **halt**: identify the independent concerns, resolve `WORKFLOW_BASE_GATE`, create a separate branch for each from the resolved workflow base, cherry-pick or re-implement the relevant commits onto each branch, and open separate PRs before merging any of them
@@ -201,7 +207,7 @@ If the PR has been open >24 hours or has accumulated >5 review comments:
 
 After all previous gates pass:
 
-- Human-review-required issue: leave the PR draft or otherwise blocked for human validation. Do not mark ready, merge, or enable auto-merge until the human validation is recorded, regardless of `REPO_DELIVERY_POLICY`.
+- Human-review-required issue: leave the PR draft or otherwise blocked for maintainer/operator validation. Do not mark ready, merge, or enable auto-merge until that validation is recorded, regardless of `REPO_DELIVERY_POLICY`. Reviewer-validation-only issues are not in this category once `workflow-review`, required verification, and repo policy pass.
 - `human-only` or missing policy: leave the PR in draft mode unless the user explicitly asks to mark it ready for review. Do not merge or enable auto-merge.
 - `auto-merge-eligible`: mark the PR ready and enable GitHub auto-merge. Use the repo's configured merge method. If auto-merge cannot be enabled because branch protection, permissions, required checks, or merge queue configuration block it, halt with auto-handoff instead of direct-merging.
 - Direct immediate merge is allowed only when the repo requires it and the user explicitly requested direct merge for this run.
