@@ -16,6 +16,8 @@ ISSUE_DEPENDENCY_AUDIT:
     blocked_by:
     blocks:
     type: AFK|HITL
+    maintainer_operator_gate: required|not_required
+    reviewer_validation: required|not_required
     human_review: required|not_required
     state_label:
     review_gate_labels:
@@ -33,9 +35,14 @@ ISSUE_DEPENDENCY_AUDIT:
 - A parent issue with dependent child implementation issues routes to
   `execute-prd`, not `run-backlog`.
 - Only independent, unblocked `ready-for-agent` issues route to `run-backlog`.
-- Human-validation-only issues can stay AFK when they include
-  `Human review: required`, concrete reviewer validation steps, and
-  `needs-human-review`.
+- Reviewer-validation-only issues stay AFK when they include concrete reviewer
+  validation steps. They must not receive `needs-human-review`; set
+  `human_review: not_required`, `reviewer_validation: required`, and
+  `review_gate_labels: []`.
+- Use `human_review: required` and `needs-human-review` only for
+  maintainer/operator gates: explicit product/architecture/security decisions,
+  operator-held runtime access, secret custody, public exposure, destructive
+  cleanup, or other non-delegable approval.
 - HITL, high-risk, excluded, blocked, unclear, unverifiable, or ungrilled module
   slices route to `ready-for-human`, `blocked`, or `needs-human`.
 - If the audit is inconclusive, do not publish or queue the issues as AFK-ready.
