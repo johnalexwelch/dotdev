@@ -3,6 +3,7 @@
 <!-- First harvest: 2026-07-17. Impl pass: 2026-07-17 (C1–C5 + process tighten). -->
 <!-- 2026-07-24 harvest: +12 reflections (07-17-skill-call-dag → 07-24-pr-delivery). Ground-truth probe closed 12 prior-open rows as implemented (a later session did the work). 8 prior rows remain open. New clusters C19–C29. -->
 <!-- 2026-07-24 dispatch: Top-5 (+SB-023 rider) approved & dispatched to workflow-skill → PRs #97/#98/#99 + keystone #100 — ALL MERGED to main 2026-07-24 (admin-override past pre-existing red lint floor); Codex mirror applied. See "Dispatched this run" section. -->
+<!-- 2026-07-28 harvest: +12 reflections (07-24-skill-backlog-dispatch → 07-27-pergamon-*). Ground-truth closed 6 proposals as already-landed (workflow-skill:70, describe-pr:57-61, to-prd:25, handoff:66, habits.md cp/mv+proactive-gh, skill-backlog Step5/6 lifecycle). New failure-mode clusters C30–C40. Best-practice research (Anthropic/Google/MS) informs C39. User approved dispatch of C31/C32/C34/C36/C38; C30 + C39 held for grill-with-docs first. -->
 
 ## Clusters (MECE)
 
@@ -39,8 +40,46 @@
 | **C27** | **handoff multi-line-command / sequential-dependency callouts** | **1** | **1** | **low — cheap handoff/SKILL.md callout** |
 | **C28** | **improve-codebase-architecture: missing-tests vs judgment-call human gate** | **1** | **1** | **high leverage — caused a slice-9 human-gate reversal this session** |
 | **C29** | **workflow-review model-floor active verification (not self-report)** | **1** | **1** | **high per author — specialist lanes ran below opus floor** |
+| **C30** | **Human-gate taxonomy — reviewer-validation ≠ maintainer/operator/secret-custody gate** | **3** | **6 (1 net-new skill)** | **HIGHEST — GRILL #1 (2026-07-28). describe-pr piece already landed. Touches workflow-router/finalize/to-issues/handoff/prompt-builder + missing `process-needs-human-review`** |
+| **C31** | **Clean-state exit contract + cleanup report split** | **4** | **7** | **high — cleanup-delivery already has Final Report §119 + re-verify §105; these are refinements + workflow-finalize clean-or-carried gate** |
+| **C32** | **Stale local state.yaml/branch vs verified remote base (kin C15/C16/C20)** | **3** | **3** | **high — owner handoff; read base via `git show <base>:…`, live-queue refresh** |
+| **C33** | **gh multi-account proactive assert + no-parallel-switch** | **4** | **1 residual** | **mostly LANDED (habits.md proactive bullet); residual = git-guardrails no-parallel-`gh auth switch`. triage/iris = repo-local out-of-pipeline** |
+| **C34** | **Direct-execution bias (do-don't-instruct / delegate-only-when-stuck / re-check after user changes state / restate on pivot)** | **2** | **4** | **med-high — runbook-author + workflow-build-one + workflow-debug + habits.md** |
+| **C35** | **Route/artifact heaviness for non-mutating asks** | **2** | **2** | **med — workflow-router: prompt-fix→direct; fresh-start conflict-check** |
+| **C36** | **Verify tracker mutations / never suppress mutating cmd stderr** | **1** | **3** | **high leverage — silently no-op'd an entire batch; triage + habits.md** |
+| **C37** | **PRD/prompt decomposition gates (vertical-slice + phase-boundary)** | **1–2** | **2** | **to-prd vertical-slice ALREADY LANDED (:25); residual = prompt-builder phase-boundary checklist + AFK split (AFK folds into C30)** |
+| **C38** | **autonomous-backlog: existing-PRD fast path + post-merge dependent-issue loop** | **1** | **2** | **high per-author — workflow-autonomous-backlog** |
+| **C39** | **Project-local OpenBao/Pergamon operator skills (4 extraction candidates)** | **4** | **4** | **GRILL #2 (2026-07-28) — consolidate into 1? dotfiles-global vs Pergamon-repo? Best-practice: consolidate narrow project skills as core+tag/repo-local** |
+| **C40** | **runbook-author operator-UI field-by-field mode** | **2** | **1** | **med — group with C34 runbook-author edits** |
+| **C41** | **grill-with-docs delegate mode (auto-accept → domain-specialist consensus loop; "defer" mid-grill escape)** | **1** | **1** | **HIGH — user-requested north-star feature; realizes 2a (AFK-unless-necessary) for grilling itself. D1–D5 locked 2026-07-28** |
+
+## Dispatched this run (2026-07-28 — 10 cohesive PRs, grouped by actual target file)
+
+All rows below are `accepted` pending merge (Step 6: flip to `implemented` only on merge). **Merge #105 FIRST** — G2/G3/G5 cite the taxonomy doc it creates (1-cycle dead link otherwise). Verified all 10 genuinely OPEN via `gh pr list` (G10 initially failed to open its PR — recovered as #106).
+
+| PR | group | files | clusters | SB rows | notes |
+|----|-------|-------|----------|---------|-------|
+| **#105** | G1 (KEYSTONE) | `_docs/human-gate-taxonomy.md` (new) + to-issues, describe-pr, prompt-builder, setup-skills | C30 | 066/067/069 + doc | **merge first**; AFK-default governing principle |
+| #106 | G10 | grill-with-docs (+references/delegate-mode.md) | C41 | 096 | grill delegate mode D1–D5; PR recovered after agent misreport |
+| #104 | G6 | runbook-author, workflow-build-one, workflow-debug, habits.md | C34/C40/C36 | 080/081/082/083/085/089 | single repo (~/dotdev root) so habits.md rode the same PR |
+| #107 | G5 | handoff | C30/C32 | 068/076/077/078 | cites taxonomy doc (#105) |
+| #108 | G4 | cleanup-delivery | C31 | 072/073/074/075 | |
+| #109 | G3 | workflow-finalize | C30/C31 | 065/071 | cites taxonomy doc (#105) |
+| #110 | G2 | workflow-router | C30/C35 | 064/087 | cites taxonomy doc (#105) |
+| #111 | G9 | git-guardrails | C33 | 079 | multi-account push slice; complements landed habits.md rotation |
+| #112 | G7 | triage | C36 | 084/086 | |
+| #113 | G8 | workflow-autonomous-backlog | C38 | 088 | |
+
+**Caveats for the human merge:**
+
+1. **Merge #105 before #107/#109/#110** (taxonomy-doc dependency). No hard conflicts — disjoint files.
+2. **Pre-merge Codex mirror**: G2 (#110) and G9 (#111) agents ran the Codex mirror pre-merge (mirrored unreviewed content). Harmless — re-run `~/dotdev/dotfiles/.config/agents/skills/sync-codex-skills.sh --apply` from merged `main` after all merge to correct. Do NOT trust the pre-merge mirror.
+3. **Codex mirror still pending** for all skill edits until merge; habits.md/describe-pr are docs (no mirror). Run the mirror once post-merge, then flip rows to `implemented` + close this section.
+4. C39 (OpenBao/Pergamon skills) = **out-of-pipeline** (SB-095): build in the Pergamon repo, not dotfiles-global. Deferred to a Pergamon session.
 
 ## Ledger
+
+<!-- 2026-07-28 dispatch: rows SB-064/065/066/067/068/069/071/072/073/074/075/076/077/078/079/080/081/082/083/084/085/086/087/088/089/096 are all `accepted` (PRs #104–#113 open, unmerged). Ground-truth probe next harvest against merged state. -->
 
 | id | first_seen | occ | sources | owning skill/file | summary | priority | status | action | cluster | resolution |
 |----|-----------|-----|---------|-------------------|---------|----------|--------|--------|---------|------------|
@@ -105,6 +144,41 @@
 | SB-059 | 2026-07-24 | 1 | 2026-07-19-nora-meal-plan-recipe-json | nora-recipe-authoring (skill-extraction) | Hand-author Nora recipe JSON when live CLI unavailable | low | deferred | defer | C-ext | Author-deferred; likely project-local doc, not global skill |
 | SB-060 | 2026-07-24 | 1 | 2026-07-21-pergamon-phase1-bootstrap-gotchas | macos-remote-bootstrap-gotchas (skill-extraction) | macOS SSH-bootstrap gotchas checklist | low | deferred | defer | C-ext | Author-deferred until a 2nd macOS-bootstrap project appears |
 | SB-061 | 2026-07-24 | 1 | 2026-07-19-skill-compliance-no-mechanical-enforcement | taskflow (gate phases) | Migrate load-bearing skill gates into mechanical `taskflow` `gate` phases | med | deferred | needs-evidence | C22 | Structural, not a drop-in; flagged not-drop-in by author — defer/needs-evidence |
+| SB-062 | 2026-07-28 | 1 | 2026-07-24-skill-backlog-dispatch-merge | workflow-skill | Landing must cut worktree off `origin/main`, never commit in primary checkout | high | implemented | — | CZ | **Ground-truth 2026-07-28: workflow-skill:70 already mandates this** |
+| SB-063 | 2026-07-28 | 1 | 2026-07-24-skill-backlog-dispatch-merge | skill-backlog | Step 6 post-merge lifecycle + Step 5 actual-target-file resolution | med | implemented | — | CZ | **Ground-truth 2026-07-28: both already in current SKILL.md** |
+| SB-064 | 2026-07-28 | 3 | 2026-07-26-pergamon-afk-human-gates | workflow-router | Human-gate taxonomy preflight: classify maintainer-decision/operator-runtime/secret-custody/reviewer-validation; only first 3 block AFK | high | new | grill | C30 | GRILL #1 |
+| SB-065 | 2026-07-28 | 1 | 2026-07-26-pergamon-afk-human-gates | workflow-finalize | Stale `needs-human-review` label not itself a merge blocker for static PR w/ approvals+standing authority; reconcile label post-merge | high | new | grill | C30 | GRILL #1 |
+| SB-066 | 2026-07-28 | 1 | 2026-07-26-pergamon-afk-human-gates | process-needs-human-review (MISSING) | Narrow def to product/maintainer/operator gate; reviewer validation handled by workflow-review | high | new | grill | C30 | **Skill does not exist — net-new vs fold decision in grill** |
+| SB-067 | 2026-07-28 | 1 | 2026-07-26-pergamon-afk-human-gates | to-issues | Split `Human review` into maintainer/operator gate vs reviewer validation | med | new | grill | C30 | GRILL #1 |
+| SB-068 | 2026-07-28 | 1 | 2026-07-26-pergamon-afk-human-gates | handoff | Standing-permissions/corrected-policies section (preserve AFK merge authority, narrowed gates) | med | new | grill | C30 | GRILL #1 |
+| SB-069 | 2026-07-28 | 2 | 2026-07-27-pergamon-phase7-setup-handoff, 2026-07-26-pergamon-afk-human-gates | prompt-builder | Split AFK output into execution_mode / human_review_gate / acceptance_gate | high | new | grill | C30 | GRILL #1 |
+| SB-070 | 2026-07-28 | 1 | 2026-07-27-pergamon-phase6-backlog-cleanup | describe-pr | Human-review detection: `ready-for-human`/`Type: HITL` ≠ review-required | med | implemented | — | CZ | **Ground-truth 2026-07-28: describe-pr:57-61 already correct** |
+| SB-071 | 2026-07-28 | 1 | 2026-07-27-cleanup-delivery-merged-worktrees | workflow-finalize | Clean-state exit contract gate: report worktree clean / primary untouched / artifacts committed-handed-preserved | high | new | implement | C31 | dispatch |
+| SB-072 | 2026-07-28 | 1 | 2026-07-27-cleanup-delivery-merged-worktrees | cleanup-delivery | Fetch all relevant remotes + identify authoritative source remote/branch before cleanup (not just `origin --prune`) | high | new | implement | C31 | Evidence: `personal/main` authoritative while local `main` behind |
+| SB-073 | 2026-07-28 | 1 | 2026-07-27-cleanup-delivery-merged-worktrees | cleanup-delivery | Handoff-only-branch bucket (clean pushed, no PR, handoff payload → explicit keep/PR/delete) | med | new | implement | C31 | dispatch |
+| SB-074 | 2026-07-28 | 2 | 2026-07-27-cleanup-delivery-merged-worktrees, 2026-07-27-pergamon-phase6-backlog-cleanup | cleanup-delivery | Primary-checkout sync/dirty as standard report line + dirty-handoff/docs-drift class distinct from active-impl dirty | med | new | implement | C31 | dispatch |
+| SB-075 | 2026-07-28 | 1 | 2026-07-27-pergamon-cleanup-router-split | cleanup-delivery | Cleanup plan ends w/ exact approval phrase + one-line "will not touch" list | med | new | implement | C31 | dispatch |
+| SB-076 | 2026-07-28 | 2 | 2026-07-27-pergamon-phase6-backlog-cleanup, 2026-07-27-pergamon-openbao-handles | handoff | Before reading `state.yaml`, if branch behind verified base read base copy via `git show <base>:docs/executions/state.yaml` | med | new | implement | C32 | dispatch |
+| SB-077 | 2026-07-28 | 1 | 2026-07-27-pergamon-phase7-setup-handoff | handoff | Live-queue-refresh: re-read open ready-for-agent issues + PR merge states, override stale state.yaml w/ explicit conflict note | med | new | implement | C32 | dispatch |
+| SB-078 | 2026-07-28 | 1 | 2026-07-27-pergamon-sso-delivery | handoff | Repo-copy handoff dirties checkout unless committed/ignored/removed; if "clean primary" asked, ask commit vs mirror-only | high | new | implement | C32 | dispatch (handoff group) |
+| SB-079 | 2026-07-28 | 2 | 2026-07-27-cleanup-delivery-merged-worktrees, 2026-07-27-pergamon-phase7-setup-handoff | git-guardrails | Don't parallelize `gh auth switch`; `GH_TOKEN=… git -c credential.helper=… push` pattern for multi-account (no token print) | low | new | implement | C33 | habits.md proactive already landed |
+| SB-080 | 2026-07-28 | 1 | 2026-07-27-pergamon-openbao-secret-key | runbook-author | Direct-execution guard: list steps agent can safely do now + execute unless instructions-only requested | high | new | implement | C34 | dispatch (runbook-author group) |
+| SB-081 | 2026-07-28 | 2 | 2026-07-27-pergamon-openbao-secret-key, 2026-07-27-pergamon-openbao-handles | workflow-build-one | Delegate only after exhausting safe local/remote progress; HITL secret triage require authority inventory + prove operator auth before planning value movement | med | new | implement | C34 | dispatch |
+| SB-082 | 2026-07-28 | 1 | 2026-07-27-pergamon-openbao-secret-key | workflow-debug | User-changed-runtime-state rule: one authoritative live check before repeating prior blocker analysis | high | new | implement | C34 | dispatch |
+| SB-083 | 2026-07-28 | 1 | 2026-07-27-pergamon-openbao-secret-key | docs/agents/habits.md | After a user pivot, discard queued closeout + restate active objective in one line before acting | med | new | implement | C34 | dispatch (habits.md group) |
+| SB-084 | 2026-07-28 | 1 | 2026-07-27-triage-cve-batch-gh-auth-flip | triage | Verify every applied tracker mutation against authoritative state; never suppress mutating cmd stderr/exit | high | new | implement | C36 | dispatch |
+| SB-085 | 2026-07-28 | 1 | 2026-07-27-triage-cve-batch-gh-auth-flip | docs/agents/habits.md | Never suppress a mutating command's stderr/exit; re-read state after mutation to confirm it applied | high | new | implement | C36 | fold w/ SB-083 into one habits.md edit |
+| SB-086 | 2026-07-28 | 1 | 2026-07-27-triage-cve-batch-gh-auth-flip | triage | Nightly-scan CVE batch pattern (group by package, cross-check lockfile/image, split fixed/unexploitable/actionable, consolidate dupes) | med | new | implement | C36 | dispatch (triage group) |
+| SB-087 | 2026-07-28 | 2 | 2026-07-27-pergamon-phase-prompt-routing, 2026-07-27-pergamon-cleanup-router-split | workflow-router | Non-mutating prompt/work-order fix → direct/prompt-builder route (not full route card); Step0 active-ledger + explicit "start fresh" unrelated → conflict-check only | med | new | implement | C35 | dispatch |
+| SB-088 | 2026-07-28 | 1 | 2026-07-27-pergamon-phase6-backlog-cleanup | workflow-autonomous-backlog | Existing-PRD/issues fast path (skip discovery/grill/to-prd → prepare AFK queue) + post-merge dependent-issue loop | high | new | implement | C38 | dispatch |
+| SB-089 | 2026-07-28 | 2 | 2026-07-27-pergamon-sso-delivery, 2026-07-27-pergamon-openbao-secret-key | runbook-author | Operator-UI field-by-field mode: provider-visible/container-visible/browser-tunnel URLs as separate entries | med | new | implement | C40 | fold w/ SB-080 into one runbook-author edit |
+| SB-090 | 2026-07-28 | 1 | 2026-07-27-pergamon-phase7-setup-handoff | to-prd | Vertical-slice PRD gate | high | implemented | — | CZ | **Ground-truth 2026-07-28: to-prd:25 already requires vertical-slice decomposition** |
+| SB-091 | 2026-07-28 | 1 | 2026-07-27-pergamon-phase7-setup-handoff | prompt-builder | Phase-boundary checklist for repo work-order prompts (roadmap, decision log, prior-phase review, numbering, adjacent boundaries) | med | new | defer | C37 | singleton; revisit w/ C30 prompt-builder edit |
+| SB-092 | 2026-07-28 | 1 | 2026-07-27-pergamon-phase7-setup-handoff | setup-skills | After single-context layout, require root CONTEXT.md or draft for approval | med | new | defer | C-misc | singleton |
+| SB-093 | 2026-07-28 | 1 | 2026-07-27-pergamon-sso-delivery | workflow-finalize | Close `state.yaml` before draft PR when no further source work expected | med | new | defer | C-misc | low; rerun review if later source change |
+| SB-094 | 2026-07-28 | 1 | 2026-07-27-pergamon-sso-delivery | workflow-review | Synthesis checklist "convert accepted review findings into validation checks when feasible" before rerunning lanes | med | new | defer | C-misc | singleton |
+| SB-095 | 2026-07-28 | 4 | 2026-07-27-openbao-ui-auth-diagnosis, 2026-07-27-pergamon-openbao-handles, 2026-07-27-pergamon-openbao-secret-key, 2026-07-27-pergamon-sso-delivery | new skill(s) OR Pergamon repo | Project-local OpenBao/Pergamon operator skills | high | deferred | out-of-pipeline | C39 | **GRILLED 2026-07-28: consolidate 3 Pergamon skills → 1 `pergamon-openbao-operator` IN PERGAMON REPO (not dotfiles-global); generic slices fold into runbook-author (C40) + workflow-build-one (C34); defer/promote-if-needed. Out-of-pipeline note.** |
+| SB-096 | 2026-07-28 | 1 | user-request (2026-07-28 grill session) | grill-with-docs | Delegate mode: auto-accept recommendations → domain-specialist subagent review (D1: security→security-reviewer, arch→analyst, risk→risk-reviewer, product→critic, tie→plan-arbiter) → consensus loop (D2: specialist can override; cap 3 rounds; no-consensus→escalate that decision to human) → per-domain-batch review (D3) → "defer"=all-remaining / "defer this"=current (D4) → provenance tags human/auto+specialist-consensus/escalated-human (D5). Requires HITL-vs-delegate mode select at grill start. | high | new | implement | C41 | GRILL-resolved; dispatch this run |
 
 ## Out-of-pipeline (note only — workflow-skill cannot land these)
 

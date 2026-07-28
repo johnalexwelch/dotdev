@@ -152,3 +152,5 @@ dotfiles/.config/agents/skills/.skill-observations/
 dotfiles/.pi/agent/*
 !dotfiles/.pi/agent/settings.json
 !dotfiles/.pi/agent/mcp.json
+# pi taskflow run history is runtime state, not config
+dotfiles/.pi/taskflows/runs/
