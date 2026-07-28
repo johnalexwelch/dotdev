@@ -120,6 +120,22 @@ Structure (for the persisted file and inline summary):
   - **Open questions**: <anything too fuzzy to encode yet>
 ```
 
+### 2b. Commit the reflection (keep the repo clean)
+
+Reflections are **tracked artifacts** — commit the file immediately after writing
+it so they don't accumulate as untracked drift. (A batch of 18 uncommitted
+reflections was found piled up this way on 2026-07-28; the write-without-commit
+gap was the root cause.) Commit **only** the reflection file — never a repo-wide
+`git add`, which would sweep unrelated in-flight work into the commit:
+
+```sh
+cd ~/dotdev && git add docs/executions/reflections/<date>-<slug>.md \
+  && git commit -m "docs(reflections): <slug>"
+```
+
+Committing the reflection does **not** apply its proposed changes — those still
+wait for approval in step 5. Only the reflection document lands.
+
 ### 3. Route improvements to the NARROWEST owner
 
 - Change the single skill that owns the failure, not every workflow that touched it
