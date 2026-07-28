@@ -20,12 +20,14 @@ The global bar **Impeccable mark** dims and shows a pulsing amber dot when no ag
 8. On `exit`: run the cleanup at the bottom.
 
 Harness policy:
+
 - **Claude Code**: run the poll as a **background task** (no short timeout). The harness notifies you when it completes, so the main conversation stays free while you generate and publish in it. Do not block the shell.
 - **Cursor**: run **one-shot** poll in a **background terminal** with notify on `"type":"(steer|generate|accept|discard|exit)"`. After each event the poll exits; handle it, `--reply`, then start `live-poll.mjs` again. Do **not** use `--stream` on Cursor: incremental stdout notify is slower in practice than exit-based notify (~5s vs sub-second in testing).
 - **Codex**: run the default one-shot poll in a **yielded foreground exec session**. Do not suffix it with `&`, use `--stream`, or leave Live without an active foreground poll. Handle every event in the main task; after each handler/reply, restart the foreground poll.
 - **Other harnesses**: one-shot foreground unless you know stdout reliably returns to this session when a shell exits.
 
 Generation delivery policy:
+
 - **Default (Cursor and other harnesses):** keep the established atomic single-edit delivery. Do not switch a harness to progressive until its poll loop is known not to block on the extra publish calls. This avoids trading model latency for extra tool-call latency on harnesses with different streaming behavior.
 
 Chat is overhead. No recap, no tutorial output, no pasting PRODUCT / DESIGN bodies. Spend tokens on tools and edits; on failure, one or two short sentences.
@@ -544,6 +546,7 @@ After source edits finish, reply exactly once with `node .claude/skills/impeccab
 ## Exit
 
 The user can stop live mode by:
+
 - Saying "stop live mode" / "exit live" in chat
 - Closing the browser tab (SSE drops, poll returns `exit` after 8s)
 - The browser's exit button
@@ -559,6 +562,7 @@ node .claude/skills/impeccable/scripts/live-server.mjs stop
 Stops the HTTP server and runs `live-inject.mjs --remove` to strip `localhost:…/live.js` from the HTML entry. To stop the server but keep the inject tag (for a quick restart), use `stop --keep-inject`. `.impeccable/live/config.json` persists as project config for future sessions.
 
 Then:
+
 - Remove any leftover variant wrappers (search for `impeccable-variants-start` markers).
 - Remove any leftover carbonize blocks (search for `impeccable-carbonize-start` markers).
 
@@ -694,6 +698,7 @@ const __impeccableLiveDev =
 - **Nuxt + nuxt-security**: edit `nuxt.config.*`, appending to `security.headers.contentSecurityPolicy['script-src']` and `['connect-src']`.
 
 Reference outputs:
+
 - `tests/framework-fixtures/nextjs-turborepo/expected-after-patch.ts` (Next.js)
 - `tests/framework-fixtures/sveltekit-csp/expected-after-patch.js` (SvelteKit)
 
@@ -710,16 +715,19 @@ const __impeccableLiveDev =
 ```
 
 Then in the CSP value string:
+
 - `script-src 'self' 'unsafe-inline'` → `` `script-src 'self' 'unsafe-inline'${__impeccableLiveDev}` ``
 - `connect-src 'self'` → `` `connect-src 'self'${__impeccableLiveDev}` ``
 
 (Leading space on the dev string so it concatenates cleanly into the existing value. Convert the literal CSP directives into template strings as part of the edit if they aren't already.)
 
 Per-framework specifics:
+
 - **Next.js inline `headers()`**: edit `next.config.*`, splicing the variable into the CSP value.
 - **Nuxt `routeRules`**: edit `nuxt.config.*`, splicing into the CSP in `routeRules['/**'].headers['Content-Security-Policy']`.
 
 Reference outputs:
+
 - `tests/framework-fixtures/nextjs-inline-csp/expected-after-patch.js` (Next.js)
 - `tests/framework-fixtures/nuxt-csp/expected-after-patch.ts` (Nuxt)
 
