@@ -71,6 +71,7 @@ All rows below are `accepted` pending merge (Step 6: flip to `implemented` only 
 | #113 | G8 | workflow-autonomous-backlog | C38 | 088 | |
 
 **Caveats for the human merge:**
+
 1. **Merge #105 before #107/#109/#110** (taxonomy-doc dependency). No hard conflicts — disjoint files.
 2. **Pre-merge Codex mirror**: G2 (#110) and G9 (#111) agents ran the Codex mirror pre-merge (mirrored unreviewed content). Harmless — re-run `~/dotdev/dotfiles/.config/agents/skills/sync-codex-skills.sh --apply` from merged `main` after all merge to correct. Do NOT trust the pre-merge mirror.
 3. **Codex mirror still pending** for all skill edits until merge; habits.md/describe-pr are docs (no mirror). Run the mirror once post-merge, then flip rows to `implemented` + close this section.

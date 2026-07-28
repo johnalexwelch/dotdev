@@ -6,18 +6,18 @@ set -euo pipefail
 
 file="${1:?usage: check.sh <idea-file.md>}"
 [[ -f "$file" ]] || {
-	echo "✗ not found: $file" >&2
-	exit 1
+    echo "✗ not found: $file" >&2
+    exit 1
 }
 
 required=(title created category domain energy status)
 missing=()
 for key in "${required[@]}"; do
-	grep -qE "^${key}:" "$file" || missing+=("$key")
+    grep -qE "^${key}:" "$file" || missing+=("$key")
 done
 
 if ((${#missing[@]})); then
-	echo "✗ $file missing frontmatter: ${missing[*]}" >&2
-	exit 1
+    echo "✗ $file missing frontmatter: ${missing[*]}" >&2
+    exit 1
 fi
 echo "✓ $file has all required frontmatter keys"

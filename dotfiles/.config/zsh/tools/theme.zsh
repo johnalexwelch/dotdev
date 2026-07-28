@@ -16,6 +16,10 @@
 # themes these tools ship — they wouldn't hit herdr's built-in theme names,
 # hence this thin wrapper.)
 
+# zsh-only idioms shellcheck's bash parser can't read: ${(ko)arr} param-flags
+# (SC2296) and zsh assoc-array `( key val )` literals (SC2190). ponytail: file
+# is zsh, not bash — revisit if shellcheck ever gains a zsh mode.
+# shellcheck disable=SC2296,SC2190
 typeset -gA _THEME_PROFILES
 # profile      "ghostty theme|nvim colorscheme|herdr theme"
 _THEME_PROFILES=(

@@ -1,14 +1,17 @@
 # Session Reflection: Pergamon Phase 7 Setup And Handoff
+
 **Date**: 2026-07-27
 **Goal**: Reflect on the Pergamon Phase 7 planning, issue #57/#58 routing, setup-skills repair, and handoff workflow.
 
 ## What Went Well
+
 - Live state eventually won over proxies: Forgejo/OpenBao/Auth were checked on the real `pergamon` host, GitHub issue/PR states were re-read before routing, and merged PR state changed the #58 handoff from stacked-base to `personal/main`.
 - The user correction on #57 improved the routing model: technical validation was separated from human acceptance, letting #58 become truly `ready-for-agent`.
 - Independent verification caught quality risks before final claims on both #57 and setup-skills repair.
 - The final handoff was improved by rechecking PR #61/#62/#63 merge state instead of copying the older stale handoff.
 
 ## What Went Wrong / Friction
+
 - The initial Phase 7 decomposition drifted toward repeated planning layers until the user corrected: "are these vertical slices?", "why are we doing so many planning sessions?", and "each prd should be a vertical slie".
 - HITL was treated too broadly at first. The user had to ask "what is hitl for these?", "can any of that actually be afk?", and later corrected #57 with "this seems like something you can confirm and validate".
 - `setup-skills` had been considered configured because `AGENTS.md` and `docs/agents/*` existed, but the repo lacked the promised root `CONTEXT.md`.
@@ -40,4 +43,3 @@
 - [ ] `dotfiles/.config/agents/skills/setup-skills/SKILL.md` — After discovering a single-context layout, require either root `CONTEXT.md` exists or generate a draft for approval; include a validation recommendation for `AGENTS.md`, `CONTEXT.md`, and `docs/agents/*`. Evidence: repo had setup files but no `CONTEXT.md`. (priority: high)
 - [ ] `dotfiles/.config/agents/skills/handoff/SKILL.md` — Add a "live queue refresh" step when the user asks for current work: re-read open ready-for-agent issues and relevant PR merge states, and override stale local `state.yaml` only with an explicit conflict note. Evidence: prior #58 handoff still assumed stacked branches after PR #61/#62/#63 merged. (priority: med)
 - [ ] `dotfiles/.config/agents/skills/git-guardrails/SKILL.md` — Add a multi-account GitHub note: do not parallelize `gh auth switch`; when the repo owner matters and remotes fail, use an explicit `GH_TOKEN=... git -c credential.helper=...` push pattern without printing token values. Evidence: keyring collision and repository-not-found push failures. (priority: med)
-
