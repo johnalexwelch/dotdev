@@ -8,7 +8,7 @@ description: Daily AFK codebase-improvement run that scans four lenses — deepe
 ## Contract
 
 Consumes: codebase, git history, CONTEXT.md/ADRs when present, the per-repo ledger, `references/repo-delivery-policy.md`
-Produces: a ranked findings report, one PR per shipped finding, an updated convergence ledger, a session-insight log
+Produces: a ranked findings report (HTML), one PR per shipped finding, an updated convergence ledger, a session-insight log
 Requires: git, gh, a project test runner (auto-detected), pi-lens (for debt scan), subagent dispatch
 Side effects: writes/updates `~/.deep-dive/<repo-slug>.md`; creates branches/PRs; may update CONTEXT.md/ADRs during grill (delegated to the grilled skills)
 Human gates: `--mode approve` (default) waits before apply; protected repos are always human-only regardless of flag; any lens finding tagged `NEEDS_HUMAN` halts that finding
@@ -17,7 +17,7 @@ Human gates: `--mode approve` (default) waits before apply; protected repos are 
 
 Typical workflows: scheduled once-daily AFK sweep to continuously tweak a codebase
 Pairs well with: improve-codebase-architecture, ponytail (audit/debt), diagnose, workflow-autonomous-backlog
-Reuses (does not reinvent): improve-codebase-architecture (deepen lens + grill), ponytail audit/debt (cut lens), pi-lens `lens_diagnostics mode=full` (debt tooling), diagnose (real perf regressions), the whole delivery pipeline below
+Reuses (does not reinvent): improve-codebase-architecture (deepen lens + grill + HTML scaffold), ponytail audit/debt (cut lens), pi-lens `lens_diagnostics mode=full` (debt tooling), diagnose (real perf regressions), the whole delivery pipeline below
 
 # Deep Dive Review
 
@@ -52,7 +52,9 @@ Then filter against the ledger (Step 0): drop anything already `done`, `rejected
 
 If nothing clears the bar: write the ledger, print **"Lean already. Ship."**, and stop.
 
-In `--mode approve`, present the ranked survivors and ask which to process. In `--mode auto`, take the top `--budget N`.
+Then render the ranked survivors as a **self-contained HTML dashboard** — reuse `improve-codebase-architecture`'s `HTML-REPORT.md` scaffold (Tailwind + Mermaid CDN, before/after cards, effort×benefit matrix), widened to the four lenses. Card-type deltas + the outcome row are in `references/html-report.md`. Write to `<tmpdir>/deep-dive-<repo-slug>-<ts>.html`, auto-open it, print the absolute path. This file is the run's living report: written now, **stamped with outcomes in Step 5**.
+
+In `--mode approve`, present the dashboard and ask which findings to process. In `--mode auto`, take the top `--budget N`.
 
 ## Step 3 — Grill + specialist consensus (per selected finding)
 
@@ -85,4 +87,4 @@ Delivery mode: `--mode approve` stops at draft PR and waits; `--mode auto` lets 
 
 ## Step 5 — Update ledger + stop
 
-Write every processed finding to `~/.deep-dive/<repo-slug>.md` with its verdict (`done` / `rejected` / `deferred` / `needs_human`), evidence, and PR link. Schema in `references/pipeline.md`. The ledger is the loop's only long-term memory — a fresh run tomorrow reads it and skips settled ground. One run, done.
+**Stamp the HTML** from Step 2: patch each card with its outcome row (`consensus`, `verdict`, `pr`) and re-open the file so the daily report shows what shipped, what parked, and what was rejected — the "once all reviews are done" view. Then write every processed finding to `~/.deep-dive/<repo-slug>.md` with its verdict (`done` / `rejected` / `deferred` / `needs_human`), evidence, and PR link. Schema in `references/pipeline.md`. The ledger is the loop's only long-term memory — a fresh run tomorrow reads it and skips settled ground. One run, done.
