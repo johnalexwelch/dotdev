@@ -14,13 +14,11 @@ Panel (read-only subagents — must NOT edit files, write artifacts, create ADRs
 | performance | hot-path regression, unmeasured perf claim |
 
 Each reviewer returns one verdict:
-
 - `APPROVE` — recommendation is evidence-backed, no gate tripped for this role.
 - `REJECT` — a specific evidence gap or contradiction to revise (must name it).
 - `NEEDS_HUMAN` — touches product behavior, public interface, data model, auth/payment, infra, rollout risk, ADR direction, or unresolved domain language.
 
 **Loop to consensus:**
-
 - Parent agent orchestrates rounds; reviewers do not free-chat. Each round passes only: finding summary, evidence refs, accepted answers, prior reviewer reasons, and what changed since last round.
 - `max_rounds: 3`, no override. Consensus = every reviewer `APPROVE`.
 - Same rejection class twice → halt `NEEDS_HUMAN`.
@@ -63,7 +61,6 @@ The loop's only long-term memory. One block per finding, appended each run. A ne
 ```
 
 Rules:
-
 - `done` — shipped, PR linked. Never re-raised.
 - `rejected` — deletion test failed / false positive / no signal. Never re-raised (this is the "looks bad but is fine" record).
 - `deferred` — real but not now; carries a `revisit` date/trigger. Skipped until due, then re-ranked.
