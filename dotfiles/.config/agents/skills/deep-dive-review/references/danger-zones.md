@@ -10,7 +10,7 @@ Bounded-autonomy guardrails (Ouro Loop pattern). These are absolute. An AFK loop
 - **Never regress a hot path** for a refactor. Before/after captured; after within before's budget.
 - **Never run on a dirty tree.** Abort preflight if uncommitted changes exist — the loop never entangles its work with human WIP.
 - **Never escalate on failure — revert.** A failed verify/gate reverts the change and marks the ledger. No blind retries, no "try a different approach" spirals.
-- **Never auto-merge a protected repo.** `human-only` in `repo-delivery-policy.md` overrides `--mode auto`, always.
+- **Never auto-merge a protected repo.** `human-only` in `run-backlog/references/repo-delivery-policy.md` overrides `--mode auto`, always.
 - **Never skip `/workflow-review` or `/workflow-finalize`.** Both are required gates for every finding.
 - **Never build `/session-insight` suggestions in the same run.** Log only; they are future candidates.
 - **Never re-raise a `done` or `rejected` ledger entry.** That is oscillation — the failure mode the ledger exists to prevent.
