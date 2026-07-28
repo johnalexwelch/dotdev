@@ -1,0 +1,58 @@
+[
+  {
+    "runId": "iris-eval-adopt-review-ms52fodn-7b8b95",
+    "flowName": "iris-eval-adopt-review",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785267937067,
+    "updatedAt": 1785268817142,
+    "relPath": "iris-eval-adopt-review/iris-eval-adopt-review-ms52fodn-7b8b95.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "eval-selection-consensus-ms5458nq-b284d9",
+    "flowName": "eval-selection-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785270809366,
+    "updatedAt": 1785271420223,
+    "relPath": "eval-selection-consensus/eval-selection-consensus-ms5458nq-b284d9.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "eval-selection-consensus-ms54jmhi-9d1b58",
+    "flowName": "eval-selection-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785271480470,
+    "updatedAt": 1785272053836,
+    "relPath": "eval-selection-consensus/eval-selection-consensus-ms54jmhi-9d1b58.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "eval-selection-consensus-ms54x4u9-a96b66",
+    "flowName": "eval-selection-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "failed",
+    "createdAt": 1785272110785,
+    "updatedAt": 1785272886265,
+    "relPath": "eval-selection-consensus/eval-selection-consensus-ms54x4u9-a96b66.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "eval-selection-consensus-ms55e7k6-50d9f8",
+    "flowName": "eval-selection-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785272907462,
+    "updatedAt": 1785273689222,
+    "relPath": "eval-selection-consensus/eval-selection-consensus-ms55e7k6-50d9f8.json",
+    "host": "pi",
+    "packageVersion": "0.2.4",
+    "parentRunId": "eval-selection-consensus-ms54x4u9-a96b66"
+  }
+]
