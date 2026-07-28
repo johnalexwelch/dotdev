@@ -7,7 +7,7 @@ description: Daily AFK codebase-improvement run that scans four lenses — deepe
 
 ## Contract
 
-Consumes: codebase, git history, CONTEXT.md/ADRs when present, the per-repo ledger, `references/repo-delivery-policy.md`
+Consumes: codebase, git history, CONTEXT.md/ADRs when present, the per-repo ledger, `run-backlog/references/repo-delivery-policy.md`
 Produces: a ranked findings report (HTML), one PR per shipped finding, an updated convergence ledger, a session-insight log
 Requires: git, gh, a project test runner (auto-detected), pi-lens (for debt scan), subagent dispatch
 Side effects: writes/updates `~/.deep-dive/<repo-slug>.md`; creates branches/PRs; may update CONTEXT.md/ADRs during grill (delegated to the grilled skills)
@@ -33,7 +33,7 @@ Invocation: `/deep-dive-review [--mode approve|auto] [--budget N]`
 
 ## Step 0 — Preflight
 
-Confirm a git repo (else abort) and a clean working tree (else abort — a daily loop never mixes its work with uncommitted human changes). Compute `<repo-slug>` from the repo name. Auto-detect the toolchain from repo files (test runner, benchmark harness, package manager) the way `diagnose`/`run-backlog` do — never assume pytest/React. Read `references/repo-delivery-policy.md`; if this repo is `human-only`, force `--mode approve` and say so in one line. Load the ledger at `~/.deep-dive/<repo-slug>.md` (create empty if absent).
+Confirm a git repo (else abort) and a clean working tree (else abort — a daily loop never mixes its work with uncommitted human changes). Compute `<repo-slug>` from the repo name. Auto-detect the toolchain from repo files (test runner, benchmark harness, package manager) the way `diagnose`/`run-backlog` do — never assume pytest/React. Read `run-backlog/references/repo-delivery-policy.md`; if this repo is `human-only`, force `--mode approve` and say so in one line. Load the ledger at `~/.deep-dive/<repo-slug>.md` (create empty if absent).
 
 ## Step 1 — Scan (read-only, parallel)
 
