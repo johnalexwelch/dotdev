@@ -9,7 +9,7 @@ description: Triage issues, and — when enabled — external PRs, through a sta
 
 Consumes: issue/PR list or specific issue/PR from project issue tracker, codebase context
 Produces: labeled and classified issues, triage notes, agent briefs
-Requires: gh (or configured issue tracker CLI)
+Requires: gh
 Side effects: applies labels, posts comments, may close issues or PRs (wontfix)
 Human gates: classification presented for approval before applying; state transitions confirmed before acting
 

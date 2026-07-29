@@ -26,7 +26,7 @@ Edge cases, the issue-discovery source list, worked examples, and tuning notes l
 
 Consumes: branch diff, git log, issue/PR metadata, optional plan, phase-run, post-mortem, and graph context
 Produces: PR body file under `docs/executions/.pr-bodies/` and `describe_pr` evidence line
-Requires: git; `gh` when applying to or discovering an existing PR
+Requires: git, gh
 Side effects: writes PR body file; may update PR body only when `apply=true`
 Human gates: missing required phase evidence, missing reviewer validation steps, or ambiguous issue disposition halts for human input
 

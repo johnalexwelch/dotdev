@@ -221,7 +221,7 @@ Work queue artifact is written to `docs/executions/backlog-runs/[date].md` for a
 
 Consumes: GitHub Issues (ready-for-agent labeled), repo access
 Produces: PRs (one per issue), backlog run summary, updated issue labels
-Requires: gh, omc, git, subagent-dispatch, project-test-runner
+Requires: gh, omc, git
 Side effects: creates branches/PRs, modifies issue labels, writes run summary file
 Human gates: work queue approval unless explicitly AFK-approved in the current invocation; high-risk outage categories require explicit issue-level approval; failed dispatches flagged; PRs lacking workflow-review independent review evidence flagged `needs-human`; release/merge remains human-only only for repositories listed as `human-only` in `references/repo-delivery-policy.md`
 
