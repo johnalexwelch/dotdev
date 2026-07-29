@@ -54,6 +54,15 @@ GH_TOKEN=$(gh auth token --user <owner>) \
 
 This pattern is safe for concurrent pushes from multiple agents to different repos/accounts because each operation isolates its token in a local variable and credentials never touch the global `gh` keyring state.
 
+**`gh` CLI ops on another account (`pr create`, `pr merge`, `api`)** — the git token pattern above only covers `git push`; `gh` subcommands authenticate via the *active* account. `gh pr create` on a repo you don't own with the wrong active account fails `must be a collaborator (createPullRequest)`. Do NOT fix this with `gh auth switch` (keyring race). Instead pass the owner's token inline — same isolation, no global state change:
+
+```bash
+GH_TOKEN=$(gh auth token --user <owner>) gh -R <owner>/<repo> pr create --base main --head <branch> ...
+GH_TOKEN=$(gh auth token --user <owner>) gh -R <owner>/<repo> pr merge <n> --merge --admin --delete-branch
+```
+
+`--admin` lets the repo owner override a required-PR ruleset (e.g. `GH013: Changes must be made through a pull request`) when landing their own work. Only `gh auth switch` (then restore the prior active account) as a serialized single-session fallback if a subcommand ignores `GH_TOKEN`.
+
 ## Agent conduct: stash & branch safety (not hook-enforced)
 
 The hook can't safely block `git stash pop` or `checkout` (both are routinely legitimate), so these are **behavioral rules the agent must follow** — they prevent the most common non-destructive-but-corrupting mistakes:

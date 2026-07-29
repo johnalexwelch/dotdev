@@ -30,8 +30,8 @@
 5. **In this env, batch shell = script file**: the hypa wrapper breaks inline loops/heredocs; write `/tmp/x.sh` and run `bash /tmp/x.sh`.
 
 ## Proposed Improvements
-- [ ] `cleanup-delivery/SKILL.md` — in the concurrency/liveness safety check, add an explicit **liveness triage**: a proc is only "active" if `ppid≠1` **and** recent `etime`/nonzero CPU **and** holds open *write* handles under the path; otherwise treat as orphaned/idle and safe to reap. (priority: high — caused 2 corrections)
-- [ ] `cleanup-delivery/SKILL.md` — add an **orphaned agent-daemon sweep** step: `pgrep -f 'ast-grep lsp|mcp'` filtered to `ppid=1` are leaked pi-lens/MCP daemons safe to kill. Recurred this session (ast-grep) and earlier (playwright/context7). (priority: med)
-- [ ] `git-guardrails` (multi-account section, PR #111) — before `gh pr create`/`gh pr merge` on a personal-account repo, `gh auth switch --user <owner>` then restore the prior active account. (priority: high — PR #143 blocked until switch)
-- [ ] `docs/agents/habits.md` — env note: pi's hypa shell wrapper mangles inline compound bash (`;`, `for`, heredocs); write a script file and run `bash /tmp/x.sh`. Also: macOS ships bash 3.2 — no `declare -A`; use portable `name|path` line loops. (priority: high — cost 3 tool calls)
+- [x] `cleanup-delivery/SKILL.md` — **DONE**: added **liveness triage** to the safety check (proc is "active" only if `ppid≠1` + recent etime/CPU + open *write* handles; else reap).
+- [x] `cleanup-delivery/SKILL.md` — **DONE**: added **orphaned agent-daemon sweep** step (`pgrep -f 'ast-grep lsp|mcp|playwright|context7'` at `ppid=1`).
+- [x] `git-guardrails/SKILL.md` — **DONE**: extended multi-account section with the `GH_TOKEN=$(gh auth token --user <owner>) gh pr create/merge` pattern + `--admin` ruleset override; corrected the plan's `gh auth switch` (skill discourages it as a keyring race — token pinning preferred). habits.md already carries the reflex bullet.
+- [x] `docs/agents/habits.md` — **DONE**: added hypa-compound-command + macOS bash 3.2 (`declare -A`) note.
 - [ ] **New finding (issue candidate)** — observational-memory auto-commits to PR-protected `main`, so reflections can never reach origin and pile up locally. Options: OM targets a dedicated branch, or a periodic "land reflections via PR" job. (priority: med-high)

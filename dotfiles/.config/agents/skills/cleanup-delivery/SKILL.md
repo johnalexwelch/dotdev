@@ -165,8 +165,22 @@ Before deleting a worktree or branch, verify:
 - branch is not the current branch and not checked out in another worktree
 - worktree has no uncommitted changes (`git -C <path> status --porcelain` is empty) — a merged/pushed branch does NOT waive this; uncommitted work in a merged worktree is still unsaved work
 - no live process is anchored to the worktree (a running command, monitor, or agent session whose cwd is under `<path>`) — removing a worktree out from under an active process silently drops its uncommitted edits and breaks that process
+  - **Liveness triage (presence ≠ liveness):** a process cwd'd in the path is only *active* when ALL hold — parent is not launchd (`ppid≠1`, i.e. not orphaned/reparented), it has recent `etime` / nonzero `%cpu`, AND it holds open *write* handles under the path (`lsof -a -p <pid> -d ^cwd | grep <path> | grep REG`). A days-idle process, an orphan (`ppid=1`), or a read-only indexer holding zero write handles is stale/leaked — safe to reap, not a concurrency blocker. Do not classify a worktree as "in use" on cwd match alone.
 - **this session's cwd is not under `<path>`** — if it is, `cd` to the primary checkout before remove (see Step 5 self-cwd guard)
 - ticket state matches PR disposition
+
+### Orphaned agent-daemon sweep
+
+Closed agent/IDE sessions routinely leak language-server and MCP daemons that reparent to launchd. Sweep them as part of cleanup:
+
+```sh
+# leaked pi-lens LSP + MCP daemons: cwd'd nowhere useful, parent = launchd (ppid 1)
+for pid in $(pgrep -f 'ast-grep lsp|mcp|playwright|context7'); do
+  [ "$(ps -p $pid -o ppid= | tr -d ' ')" = 1 ] && kill "$pid"   # orphan → safe to reap
+done
+```
+
+Observed leaks: `ast-grep lsp` (pi-lens baselines, ran for days), `playwright`/`context7` npx MCP children. An orphan (`ppid=1`) holding no active parent is always safe to kill; a daemon with a live agent parent is not — check `ppid` first.
 
 Before classifying anything else as unused/removable (a dependency, tool, config, file), verify against the **running system** — installed runtime deps, live startup diagnostics/warnings, a `which`/runtime probe — not just a source grep. A repo/skills/config search is a proxy that misses host-loaded plugins, extensions, and npm modules; the authoritative signal is what the running program actually loads and warns about.
 
