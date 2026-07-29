@@ -135,10 +135,6 @@
       }
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "sh ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud-cache.sh ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud.mjs"
-  },
   "enabledPlugins": {
     "agent-sdk-dev@claude-plugins-official": true,
     "claude-code-setup@claude-plugins-official": false,
@@ -152,7 +148,6 @@
     "figma@claude-plugins-official": false,
     "frontend-design@claude-plugins-official": true,
     "git-cleanup@trailofbits": true,
-    "oh-my-claudecode@omc": true,
     "playwright@claude-plugins-official": true,
     "plugin-dev@claude-plugins-official": true,
     "pyright-lsp@claude-plugins-official": true,
@@ -168,12 +163,6 @@
     "zeroize-audit@trailofbits": false
   },
   "extraKnownMarketplaces": {
-    "omc": {
-      "source": {
-        "source": "git",
-        "url": "https://github.com/Yeachan-Heo/oh-my-claudecode.git"
-      }
-    },
     "trailofbits": {
       "source": {
         "source": "github",

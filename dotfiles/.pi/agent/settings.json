@@ -35,14 +35,14 @@
     "npm:@gotgenes/pi-github-tools",
     "npm:@diegopetrucci/pi-context-cap",
     "npm:@diegopetrucci/pi-context-inspector",
-    "npm:@diegopetrucci/pi-dirty-repo-guard",
     "npm:@diegopetrucci/pi-permission-gate",
     "npm:@diegopetrucci/pi-triage-comments",
     "npm:@diegopetrucci/pi-notify",
     "npm:pi-observability",
     "npm:pi-tool-display",
     "npm:@hypabolic/pi-hypa",
-    "npm:@xynogen/pix-optimizer"
+    "npm:@xynogen/pix-optimizer",
+    "npm:@ayulab/pi-rewind"
   ],
   "theme": "dark",
   "skills": [
@@ -84,7 +84,7 @@
     "vision": "anthropic/claude-sonnet-4-6",
     "reasoner": "anthropic/claude-opus-4-5"
   },
-  "defaultThinkingLevel": "high",
+  "defaultThinkingLevel": "medium",
   "quietStartup": true,
   "hideThinkingBlock": true,
   "followUpMode": "one-at-a-time",

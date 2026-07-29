@@ -151,6 +151,9 @@ dotfiles/.config/agents/skills/.skill-observations/
 # Everything under the stowed .pi/agent tree is ignored except the allowlist below.
 dotfiles/.pi/agent/*
 !dotfiles/.pi/agent/settings.json
-!dotfiles/.pi/agent/mcp.json
+# mcp.json holds live tokens + is rewritten per-machine; track only a sanitized example.
+!dotfiles/.pi/agent/mcp.json.example
 # pi taskflow run history is runtime state, not config
 dotfiles/.pi/taskflows/runs/
+# stray repo-root .pi/ (taskflow runtime data when pi runs from ~/dotdev) — anchored so it never hits dotfiles/.pi
+/.pi/
