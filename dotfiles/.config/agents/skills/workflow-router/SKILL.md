@@ -307,14 +307,35 @@ setup-worktree/scripts/worktree-baseline.sh cut --branch <workflow-branch> --pat
 
 Read-only workflows (`workflow-review`, `skill-system-audit`, repo audits, document workflows) do not create the worktree themselves, but if they are reviewing or finalizing code changes they must verify the change branch/worktree was cut from the resolved workflow base — `setup-worktree/scripts/worktree-baseline.sh verify --path <worktree-path>` confirms this.
 
-## Audit Routing Rule
+## Default Product Flow (Canonical Vertical-Slice Workflow)
 
-`repo-audit` is an evidence-gathering input to the current workflow, not a separate default delivery loop.
+The authoritative workflow for all product work follows this sequence:
 
-- For product or feature gaps found by audit: route to `workflow-roadmap`, then `grill-with-docs → decision-log → to-prd → to-issues → triage`.
-- For already-clear vertical implementation slices: route to `to-issues` or `triage`.
-- For repo-wide refactors, migrations, or multi-phase remediation that cannot be represented cleanly as issue slices yet: route to `design-plan`, then optionally `execute-phase`.
-- Do not route audits directly to `execute-phase`; a human-approved roadmap, PRD/issues, or design plan must exist first.
+```
+workflow-feature → grill-with-docs → decision-log → to-prd →
+to-issues → triage →
+[execution: workflow-build-one | execute-prd | run-backlog] →
+workflow-review → workflow-finalize → cleanup-delivery
+```
+
+**Key characteristics of this flow:**
+
+- **Vertical slices** with complete readiness criteria (per `triage`'s readiness checklist): clear acceptance criteria, dependency status, verification commands, rollback expectation, AFK/HITL classification, outage-risk classification, workflow-base worktree policy, review/finalize policy, human review requirement, and module grill evidence (when applicable).
+- **AFK-eligible** issues have `ready-for-agent` only after triage confirms all readiness criteria.
+- **No horizontal issue creation** at any stage — all issues are independent vertical slices with observable outcomes.
+- **Matched wording** to #43/#47: emphasis on vertical-slice concepts, AFK safety gates, outage risk, rollback expectations, verification, and decision-log references.
+
+## Specialized Audit / Refactor Lane (NOT the default product flow)
+
+`repo-audit` and `design-plan` + `execute-phase` form a **specialized lane** separate from the default vertical-slice product workflow:
+
+- **Repo evidence audit** → `repo-audit` (input to current workflow, not a default loop itself)
+- **Route audit findings** based on type:
+  - Product/feature gaps → feed into `workflow-roadmap`, then proceed through the default flow above
+  - Already-clear vertical implementation slices → route to `to-issues` or `triage` directly
+  - Repo-wide refactors, migrations, or multi-phase remediation → `design-plan` (not default product flow), then optionally `execute-phase`, then `workflow-review` and `workflow-finalize`
+- **Do not route audits directly to `execute-phase`** — a human-approved roadmap, PRD/issues, or design plan must exist first
+- **Key constraint:** PRD/spec parent issues must not be labeled `ready-for-agent` (per `triage` skill) — only child implementation issues produced by `to-issues` and meeting all readiness criteria may receive `ready-for-agent`
 
 ## Roadmap Gate Rule
 
