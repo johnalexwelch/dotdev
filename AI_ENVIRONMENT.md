@@ -475,12 +475,15 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 - `pi-permission-gate` — confirmation prompts for destructive operations
 - `pi-codex-goal` — tracks a concrete objective through multi-turn sessions
 
-**Output efficiency**
+**Output efficiency** — three-stage compression stack (composable, NOT redundant)
 
-- `pi-hypa` — compresses shell, read, grep, find, and ls output before it reaches context
+- `pix-optimizer` — stage 1, pre-exec (`before_agent_start`): prompt guidance telling the model to pipe dense JSON through `jq | toon`; also hosts the caveman/ponytail personas + RTK. Does no automated compression itself — guidance only.
+- `pi-hypa` — stage 2, at-exec (`tool_call` on bash): rewrites the bash command to route through `hypa -c`, deterministically compressing shell/read/grep/find/ls output locally (no LLM, no network; 186M native binary)
+- `pi-extension-headroom` — stage 3, pre-LLM (`context`): LLM-compresses large `toolResult` messages (≥2000 chars) via a local proxy on `127.0.0.1:8788`, and only once context usage ≥20k tokens
 - `pi-cache-optimizer` — prompt cache optimization
 - `pi-better-messages-cache` — message-level caching
-- `pix-optimizer` — token optimization pass
+
+> **Do not prune these as "redundant compressors."** Verified 2026-07-29 by reading each extension's hooks: they act at three distinct pipeline stages (prompt guidance → deterministic shell-output compression → LLM context compression), operate on different bytes, and cascade rather than double-compress. Removing one is a real capability loss, not de-duplication. The only genuine cost is `pi-hypa`: a per-bash-call spawn tax (`hypa rewrite` + `hypa -c`, 5s timeout each) and a habit of mangling compound shell commands — it splits on `;` and breaks `{ }` blocks / heredocs, so multi-statement bash may need a script-file workaround. That is a correctness/friction tradeoff to weigh on hypa's own merits, not a redundancy argument. None of the three is a meaningful startup-time cost.
 
 **Real-world integration**
 
