@@ -24,7 +24,7 @@ Drive a parent PRD issue tree from analysis through delivery. Unlike `run-backlo
 
 Consumes: parent PRD issue number (or URL), optional child issue list, optional scope boundaries, optional branch prefix
 Produces: PRs (one per child issue), child execution briefs, reconciliation updates, parent handoff artifact
-Requires: gh, git, subagent-dispatch, project-test-runner
+Requires: gh, git
 Side effects: creates worktrees, branches, PRs; modifies issue labels/comments; writes handoff artifacts
 Human gates: blocked children halt (with auto-handoff); not-AFK-safe children halt (with auto-handoff); missing workflow-review independent review evidence halts; review iteration exhaustion halts (with auto-handoff)
 

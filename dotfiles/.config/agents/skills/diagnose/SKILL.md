@@ -9,7 +9,7 @@ description: Disciplined diagnosis loop for hard bugs and performance regression
 
 Consumes: bug report (user description or issue body), codebase access, CONTEXT.md, ADRs
 Produces: structured diagnosis artifact (markdown), routing recommendation
-Requires: git, project-test-runner-or-reproduction-harness
+Requires: git
 Side effects: may create temporary debug instrumentation (tagged, cleaned in Phase 6)
 Human gates: missing reproduction loop; production instrumentation or risky probes require approval; human domain input may re-rank Phase 3 hypotheses but does not block AFK progress
 

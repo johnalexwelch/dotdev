@@ -192,7 +192,7 @@ The final response and any handoff artifact must state which exit state was chos
 
 Consumes: GitHub issue (ready-for-agent, with acceptance criteria), codebase
 Produces: PR ready for human review/merge or auto-merge according to repo delivery policy, updated issue state
-Requires: gh, git, subagent-dispatch, project-test-runner
+Requires: gh, git
 Side effects: creates branch, commits, PR; may modify issue labels
 Human gates: unclear issue halts (with auto-handoff); NEEDS HUMAN review halts (with auto-handoff); user-journey QA failure/unavailability halts unless waived (with auto-handoff); CI exhaustion halts (with auto-handoff); review iteration limit halts (with auto-handoff)
 

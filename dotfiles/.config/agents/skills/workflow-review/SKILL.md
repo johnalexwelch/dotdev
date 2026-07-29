@@ -103,6 +103,6 @@ Only report findings the author would agree need fixing. No style nits unless th
 
 Consumes: diff/changeset, file contents, CONTEXT.md, ADRs
 Produces: review synthesis (markdown) with independent-review evidence and verdict
-Requires: git, independent-review context
+Requires: git
 Side effects: none
 Human gates: `NEEDS HUMAN` halts until a human responds. If subagents are unavailable, use only a host-provided fresh independent reviewer context; otherwise halt `NEEDS HUMAN`.
