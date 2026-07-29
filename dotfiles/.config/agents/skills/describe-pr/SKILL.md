@@ -38,11 +38,15 @@ Every successful run emits one line for `workflow-finalize`:
 describe_pr: body_file=<path>; mode=plan_backed|phase_run_backed|issue_only; issues=<refs|none>; phase_evidence=matched|not_applicable|waived; graphify=queried|not_available_with_reason|not_applicable; applied_to_pr=true|false
 ```
 
-If absent/incomplete or pointing at a body not produced this run, parents treat describe-pr as not run.
+If absent/incomplete, pointing at a body not produced this run, missing required fields (`body_file`, `mode`, `applied_to_pr`), or containing incomplete evidence (e.g. missing graphify status without a reason, or missing `applied_to_pr`), parents treat describe-pr as not run.
 
 ## Step 0 — Preflight
 
-Confirm a git repo. Resolve `branch` (default current). Resolve `plan_path` (newest `docs/plans/*.md`, else `issue_only` mode unless the work is plan/phase/`execute-phase`-based). Classify mode: `plan_backed`, `phase_run_backed`, `issue_only`, or `required_phase_evidence_missing` (halt unless waived). Resolve `pr_number` via `gh pr view` if available; if none, set `apply=false` and produce text only. `mkdir -p docs/executions/.pr-bodies/`. Compute the diff range. If `graphify-out/graph.json` exists, run one focused `graphify query` for PR context and record `graphify: queried`; else record `not_available_with_reason` — never rebuild.
+Confirm a git repo. Resolve `branch` (default current). Resolve `plan_path` (newest `docs/plans/*.md`, else `issue_only` mode unless the work is plan/phase/`execute-phase`-based). Classify mode: `plan_backed`, `phase_run_backed`, `issue_only`, or `required_phase_evidence_missing` (halt unless waived).
+
+**Issue-only mode is unambiguous:** No design plan is required for routine single-issue PRs, but git log/diff inspection and issue discovery are **mandatory**. Do not treat a missing plan as a reason to skip issue discovery or shallow inspection. For single-issue branches with no plan: run git log/diff, discover and analyze all referenced issues, produce the disposition table, and record mode as `issue_only`.
+
+Resolve `pr_number` via `gh pr view` if available; if none, set `apply=false` and produce text only. `mkdir -p docs/executions/.pr-bodies/`. Compute the diff range. If `graphify-out/graph.json` exists, run one focused `graphify query` for PR context and record `graphify: queried`; else record `not_available_with_reason` — never rebuild.
 
 ## Step 1 — Gather inputs
 

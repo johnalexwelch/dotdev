@@ -154,7 +154,7 @@ For each child (parallel within a wave, sequential across waves):
 
 5. **Enforce the workflow-review gate** — the child may not proceed to `workflow-finalize`, PR creation, CI monitoring, reconcile, or clean handoff unless `workflow-review` emitted a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. Do not substitute green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, resolved PR comments, or prose claims that review happened.
 6. **Keep scope tight** — only files relevant to this child
-7. **Let workflow-finalize own PR/CI/reviewer-comment closure** — do not duplicate or skip around its `describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues` flow. The child is not complete until `workflow-finalize` emits a complete `WORKFLOW_FINALIZE_GATE` block.
+7. **Let workflow-finalize own PR/CI/reviewer-comment closure** — do not duplicate or skip around its `describe-pr → ensure draft PR → receive-review → watch-ci → reconcile-issues` flow. The child is not complete until `workflow-finalize` emits a complete `WORKFLOW_FINALIZE_GATE` block with valid `describe-pr` evidence (body_file, mode, issues, phase_evidence, graphify, applied_to_pr). Hand-written, copied, or ad-hoc PR bodies do not satisfy this gate.
 8. **Enforce the Partial-Completion Contract** before the child exits. The child executor must be in exactly one state:
    - Complete: all changes committed and pushed to the remote branch.
    - WIP-paused: current progress committed with a `wip:` prefix in the subject line, naming exactly what remains, then pushed.

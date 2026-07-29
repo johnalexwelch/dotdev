@@ -134,7 +134,8 @@ When triggered, this is a blocking gate. Proceed to `workflow-finalize` only whe
 ### Step 5: Finalize (workflow-finalize)
 
 - **Use the Skill tool to invoke `workflow-finalize`**. Do not replace it with direct `gh pr create` or any other PR creation commands — `workflow-finalize` owns PR creation, description, CI monitoring, and issue reconciliation.
-- `workflow-finalize` owns `describe-pr`, so the worker must preserve the generated PR body file path and `describe_pr` evidence in `WORKFLOW_FINALIZE_GATE`.
+- **PR handoff is incomplete unless `workflow-finalize` includes a complete `WORKFLOW_FINALIZE_GATE` block with valid `describe-pr` evidence.** Valid evidence requires: `body_file` pointing to a file produced by `describe-pr` in this run, `mode` (plan_backed/phase_run_backed/issue_only), `issues` refs, `phase_evidence` status, `graphify` status with a reason if not queried, and `applied_to_pr` true/false. Hand-written, copied, or ad-hoc PR bodies do not satisfy this gate.
+- `workflow-finalize` owns `describe-pr`, so the worker must preserve the generated PR body file path and complete `describe_pr` evidence in `WORKFLOW_FINALIZE_GATE`.
 - Open or update a PR according to the caller's `REPO_DELIVERY_POLICY` when supplied:
   - `human-only` or no policy supplied: create/update a draft PR and leave final merge/mark-ready decisions to the user.
   - `auto-merge-eligible`: after all required gates pass, allow `workflow-finalize` to mark the PR ready and enable GitHub auto-merge.
@@ -142,7 +143,7 @@ When triggered, this is a blocking gate. Proceed to `workflow-finalize` only whe
 - Monitor CI
 - Reconcile issues
 - Do **not** approve, directly merge, force-push, rebase, or perform destructive git. Auto-merge may be enabled only by `workflow-finalize` when `REPO_DELIVERY_POLICY.mode: auto-merge-eligible`.
-- Require the `WORKFLOW_FINALIZE_GATE` block before completion. If missing, auto-handoff with blocker: `workflow-finalize did not run to completion`.
+- Require the complete `WORKFLOW_FINALIZE_GATE` block with valid `describe-pr` evidence before completion. If missing or incomplete, auto-handoff with blocker: `workflow-finalize did not run to completion or lacks valid describe-pr evidence`.
 
 ## Iteration limits
 
