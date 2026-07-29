@@ -8,7 +8,7 @@ Load this reference only when demonstrating expected behavior, checking edge cas
 User: /watch-ci pr_number=142
 Claude: [preflight: gh auth ok, branch fix/phase-1-mobile-scroll, PR #142 valid]
         [poll: all checks pass, no failures]
-        [security-review (OMC security-reviewer): clean]
+        [security-review (security-reviewer): clean]
         [no auto-fix commits -> skip /review on auto-fix]
         [monitor reviewer agents, no actionable comments remain]
         [post comment, Verdict: Draft ready for user review]
@@ -36,7 +36,7 @@ Claude: [attempt 1: poll, lint failure detected (eslint, 4 rules)]
         [outcome: attempt 2 file written]
 
         [attempt 3: poll, all checks pass]
-        [security-review (OMC security-reviewer) on PR diff: clean]
+        [security-review (security-reviewer) on PR diff: clean]
         [/review on auto-fix diff (2 commits): clean]
         [monitor reviewer agents, address nits and observations]
         [post comment, Verdict: Draft ready for user review]

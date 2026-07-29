@@ -47,7 +47,7 @@ sha1: <signature hash from Step 3>
 
 ## Review monitoring
 <Only present in final-attempt outcome file with green CI>
-- security-review (OMC security-reviewer): <clean | N findings>
+- security-review (security-reviewer): <clean | N findings>
 - no_review evidence/waiver: <N/A | artifact/user waiver and rationale>
 - /review on auto-fix or feedback-fix diff: <clean | N issues | N/A no-auto-fixes>
 - reviewer feedback incorporated: <blockers N, non-blockers N, observations N, comments N, questions N, nits N>

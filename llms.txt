@@ -9,7 +9,7 @@ Repo: https://github.com/johnalexwelch/dotdev
 - [README.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/README.md): Repo structure, Stow layout, quick start.
 - [AI_ENVIRONMENT.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/AI_ENVIRONMENT.md): How the toolchain fits together — pi + Claude Code, the guardian hook pipeline (PreToolUse/PostToolUse), the skills library.
 - [SETUP_WRITEUP.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/SETUP_WRITEUP.md): Full narrative setup history and rationale.
-- [dotfiles/.claude/CLAUDE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/CLAUDE.md): OMC (oh-my-claudecode) orchestration config — agent routing, model tiers, skill triggers.
+- [dotfiles/.claude/CLAUDE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/CLAUDE.md): repo-root agent guidance — cross-runtime habits, code standards, delivery routing, working conventions.
 - [dotfiles/.claude/SKILLS-MAP.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/SKILLS-MAP.md): Cheat sheet — "when you want to do X, invoke Y" across the ~95-skill library.
 
 ## Installation

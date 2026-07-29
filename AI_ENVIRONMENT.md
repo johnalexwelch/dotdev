@@ -191,7 +191,7 @@ flowchart TD
     B --> C[fetch ready-for-agent issues]
     C --> D{dispatch mode}
 
-    D -->|AFK default| E[omc team 1:codex\none context per issue\nnatural isolation]
+    D -->|AFK default| E[taskflow map → codex exec\n-s workspace-write\nsandboxed per issue]
     D -->|interactive| F[workflow-build-one\nsequential]
 
     E --> GATE
@@ -526,7 +526,6 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 | `typescript-lsp` | TypeScript language server — inline errors, go-to-def, rename refactor |
 | `pyright-lsp` | Python language server via Pyright |
 | `playwright` | Browser test generation and execution |
-| `oh-my-claudecode` | HUD status line, session telemetry, team dispatch (AFK batch) |
 | `remember` | Persistent session memory across sessions |
 | `superpowers` | Extended tool capabilities |
 | `code-simplifier` | Surfaces complexity hotspots |
@@ -542,7 +541,7 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 
 ## The Status Bar
 
-Bottom of every session: **omc HUD** (oh-my-claudecode). Shows token usage, model, and session state. Cache-backed — only re-reads state when something changes.
+Bottom of every session: **pi's built-in status line** — token usage, model, context window, and session state.
 
 ---
 

@@ -46,7 +46,6 @@ Active skills:
 - `metric-tree-review`
 - `mock-data-generator`
 - `okr-generator`
-- `omc-reference`
 - `post-mortem`
 - `pr-responder`
 - `pr-review`

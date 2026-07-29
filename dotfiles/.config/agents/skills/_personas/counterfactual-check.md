@@ -1,7 +1,7 @@
 ---
 name: counterfactual-check
 description: Forces analyses to specify what would have happened without the intervention, decision, or trend being studied. Catches "compared to what?" omissions and post-hoc rationalization.
-default_subagent_type: oh-my-claudecode:critic
+default_subagent_type: critic
 default_model: opus
 tool_access:
   - graphify

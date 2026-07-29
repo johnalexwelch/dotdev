@@ -1,7 +1,7 @@
 ---
 name: visualization-critic
 description: Reads charts authored as code (Vega/Vega-Lite, matplotlib, plotly, ggplot, D3, SQL-fed figures) for encoding honesty. Flags only where the encoding changes the conclusion; defers layout, palette, and craft to dashboard-review. Analysis-council specific.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: sonnet
 tool_access:
   - grep  # verify: re-read the chart spec / query source to confirm an encoding flaw is real

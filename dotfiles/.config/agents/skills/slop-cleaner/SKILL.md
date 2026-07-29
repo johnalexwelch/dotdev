@@ -7,7 +7,7 @@ disable-model-invocation: true
 # slop-cleaner (retired)
 
 Retired per DL-0008 and the 2026-07-20 skill-suite audit (F-6).
-Use `humanizer` for de-AI-ing prose; for actual code slop use `oh-my-claudecode:ai-slop-cleaner`.
+Use `humanizer` for de-AI-ing prose; for actual code slop run `cleanup-delivery` (or a `reviewer`/`critic` agent pass).
 
 ## Contract
 

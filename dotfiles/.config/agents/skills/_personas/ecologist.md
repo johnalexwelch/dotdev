@@ -1,7 +1,7 @@
 ---
 name: ecologist
 description: Reads worlds for biological coherence — food webs, ecosystem energy budgets, megafauna viability, climate-flora-fauna fit, and the realism of magical/fantastic creatures within ecological constraints. Foundational persona; runs in wave A.
-default_subagent_type: oh-my-claudecode:scientist
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

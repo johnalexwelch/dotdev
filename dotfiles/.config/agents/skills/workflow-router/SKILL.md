@@ -226,7 +226,7 @@ Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, 
 
 **Incident** (2) — e.g. `/incident-triage`: `incident-retro`, `incident-triage`
 
-**Library/infra** (13) — shared scaffolding, reference protocols, and repo tooling; e.g. `/setup-worktree`: `council-scaffolding`, `describe-pr`, `docs-audit`, `git-guardrails`, `graph-first`, `herdr-launch`, `omc-reference`, `post-mortem`, `review-scaffolding`, `runbook-author`, `setup-skills`, `setup-worktree`, `watch-ci`
+**Library/infra** (12) — shared scaffolding, reference protocols, and repo tooling; e.g. `/setup-worktree`: `council-scaffolding`, `describe-pr`, `docs-audit`, `git-guardrails`, `graph-first`, `herdr-launch`, `post-mortem`, `review-scaffolding`, `runbook-author`, `setup-skills`, `setup-worktree`, `watch-ci`
 
 **Knowledge/utility** (9) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `stage-v1-concept`, `wayfinder`, `zoom-out`
 
@@ -367,7 +367,7 @@ halt, report the missing requirement, and do not proceed.
 | Missing tool | Impact | Behavior |
 |--------------|--------|----------|
 | `gh` | Can't interact with GitHub | Local-only analysis is allowed only for non-shipping workflows that do not require `gh`; delivery workflows halt |
-| OMC | Can't dispatch to Codex team | Halt unless the selected workflow/mode explicitly allows Claude fallback and the user approves it |
+| `codex` / `taskflow` | Can't dispatch sandboxed Codex workers | Halt unless the selected workflow/mode explicitly allows Claude fallback and the user approves it |
 | CORA | Can't validate contracts | Skip CORA validation only; do not skip the target workflow's own gates |
 | `playwright-mcp` | Can't run UJ QA | For frontend/user-facing changes, halt for human waiver or setup; do not silently skip |
 | Project test runner | Can't verify | Halt and request setup info |

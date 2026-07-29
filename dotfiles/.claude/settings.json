@@ -2,8 +2,7 @@
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "LANGFUSE_HOST": "http://192.168.4.43:3050",
-    "TRACE_TO_LANGFUSE": "true",
-    "OMC_SKIP_HOOKS": "keyword-detector"
+    "TRACE_TO_LANGFUSE": "true"
   },
   "permissions": {
     "allow": [

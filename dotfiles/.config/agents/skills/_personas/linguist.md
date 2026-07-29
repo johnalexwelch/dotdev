@@ -1,7 +1,7 @@
 ---
 name: linguist
 description: Designs and evaluates languages — phonology, morphology, syntax, loanwords, dialect, register, taboo. Catches naming inconsistencies, ad-hoc phonetic mish-mash, and missed cultural cues in the language. Has web_fetch for real-language research when building conlangs.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

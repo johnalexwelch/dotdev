@@ -1,7 +1,7 @@
 ---
 name: political-scientist
 description: Reads polities as systems of power — who decides, who consents, who is excluded, how succession works, what institutions constrain the ruler, how factions form and bargain. Wave-C persona; depends on cartographer, economist, historian.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

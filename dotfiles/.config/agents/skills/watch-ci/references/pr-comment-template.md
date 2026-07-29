@@ -47,7 +47,7 @@ Post this when CI is green, reviewer-agent feedback has been incorporated, and t
 If empty: "No auto-fixes needed - CI passed first try.">
 
 ## Security review findings
-<Verbatim from the OMC security-reviewer agent report. If clean: "No security issues found.">
+<Verbatim from the security-reviewer agent report. If clean: "No security issues found.">
 
 ## /review on auto-fix diff
 <Only present if auto_fix_commits is non-empty. Verbatim from /review subagent. If no auto-fixes: omit this section.>

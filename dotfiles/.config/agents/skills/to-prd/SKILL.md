@@ -64,7 +64,7 @@ Check with the user that these modules match their expectations. Check with the 
 
 2b. Independent slice coverage review (required after module confirmation, before writing PRD):
 
-After the user confirms the module breakdown, spawn an independent critic agent (`oh-my-claudecode:critic`) to verify the proposed modules decompose into clean vertical slices before you commit the full PRD to writing.
+After the user confirms the module breakdown, spawn an independent critic agent (`critic`) to verify the proposed modules decompose into clean vertical slices before you commit the full PRD to writing.
 
 Brief the critic with:
 

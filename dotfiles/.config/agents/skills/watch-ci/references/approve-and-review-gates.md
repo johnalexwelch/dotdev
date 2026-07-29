@@ -17,7 +17,7 @@ Otherwise dispatch:
 
 ### Always: Security Review
 
-Dispatch the OMC `security-reviewer` agent:
+Dispatch the `security-reviewer` agent:
 
 ```text
 You are running a security review. Read the full diff of PR #<pr_number> via `gh pr diff <pr> | head -5000` and any specific files cited. Your remit: identify security-relevant issues introduced by this PR - auth bypasses, injection vectors, secret leaks, missing input validation, broken access control, dependency CVEs, insecure defaults. Use the review checklist from `workflow-review/references/reviewer-briefs/security-auditor.md`, scoped to issues introduced by this PR. Return a structured report: list of findings (one per issue, severity tagged), or "clean" if nothing meets the bar.

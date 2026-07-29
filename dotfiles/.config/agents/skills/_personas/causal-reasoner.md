@@ -1,7 +1,7 @@
 ---
 name: causal-reasoner
 description: Interrogates causal claims using DAGs, backdoor paths, instrumental variables, mediators, and the language of counterfactuals. Activates when an analysis says X "caused" or "drove" Y.
-default_subagent_type: oh-my-claudecode:scientist
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

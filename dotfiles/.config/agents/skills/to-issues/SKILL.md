@@ -73,7 +73,7 @@ Prefer AFK over HITL only when acceptance criteria, verification, dependencies, 
 
 ### 3b. Independent slice review (required before presenting to user)
 
-Before presenting the breakdown to the user, spawn an independent critic agent (`oh-my-claudecode:critic`) to evaluate the proposed slices. Do this silently — do not show the draft to the user until the review is complete and MAJOR concerns are resolved.
+Before presenting the breakdown to the user, spawn an independent critic agent (`critic`) to evaluate the proposed slices. Do this silently — do not show the draft to the user until the review is complete and MAJOR concerns are resolved.
 
 Brief the critic with:
 

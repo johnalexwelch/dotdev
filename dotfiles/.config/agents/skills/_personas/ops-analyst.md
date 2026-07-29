@@ -1,7 +1,7 @@
 ---
 name: ops-analyst
 description: Reads analyses for operational reality — process load, on-call burden, SLA implications, throughput constraints, cost to operate, and whether the recommendation will actually survive contact with the team that has to run it.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: sonnet
 tool_access: []
 context_dependencies:

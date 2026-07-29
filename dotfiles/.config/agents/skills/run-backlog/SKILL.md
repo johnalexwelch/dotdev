@@ -2,14 +2,14 @@
 name: run-backlog
 model: sonnet
 reasoning: medium
-description: AFK backlog orchestrator — batch-process ready-for-agent issues via Codex (default) or Claude, with repo-policy-controlled draft vs auto-merge delivery
+description: AFK backlog orchestrator — batch-process ready-for-agent issues via sandboxed Codex workers (default) or Claude, with repo-policy-controlled draft vs auto-merge delivery
 ---
 
 # Run Backlog
 
 ## Purpose
 
-Autonomously process a queue of `ready-for-agent` issues without human supervision. Defaults to dispatching via Codex (through OMC team bridge) for natural isolation — each issue gets its own context and produces its own PR. Final PR handling is controlled by `references/repo-delivery-policy.md`: protected repos remain human-only, while other repos may mark ready and enable GitHub auto-merge after all gates pass.
+Autonomously process a queue of `ready-for-agent` issues without human supervision. Defaults to dispatching via `taskflow` map fan-out — one branch per issue — where each branch runs `codex exec` inside an OS sandbox (Seatbelt on macOS), so every issue gets its own context, its own worktree, a kernel-enforced capability floor, and produces its own PR. Final PR handling is controlled by `references/repo-delivery-policy.md`: protected repos remain human-only, while other repos may mark ready and enable GitHub auto-merge after all gates pass.
 
 ## When to invoke
 
@@ -22,7 +22,7 @@ Autonomously process a queue of `ready-for-agent` issues without human supervisi
 
 | Mode | Dispatch | When to use |
 |------|----------|-------------|
-| **Codex** (default) | `omc team 1:codex` per issue | AFK runs, batch processing, issues needing isolation |
+| **Codex** (default) | `taskflow` map → `codex exec -s workspace-write` per issue | AFK runs, batch processing, issues needing sandboxed isolation |
 | **Claude** | Sequential workflow-build-one invocations | Interactive sessions, when user wants to observe |
 
 ## Flow
@@ -135,7 +135,11 @@ For each issue in queue order:
    - The prompt must include the Partial-Completion Contract from `workflow-build-one`: before exit the worker must be Complete (all changes committed and pushed), WIP-paused (pushed `wip:` commit naming exactly what remains), or Rolled back (`git reset --hard <baseline>` with a clean worktree).
    - The prompt must require final `git status --short`; if any source file shows `M` or `??`, the worker must commit or reset and re-check before exiting.
 4. Dispatch:
-   - **Codex mode**: require `omc`; if unavailable, halt for user approval before switching modes. Do not silently downgrade AFK isolation to direct Claude execution.
+   - **Codex mode** (default AFK): dispatch the approved queue as a `taskflow` `map` phase — one branch per issue, capped at the Safety concurrency limit. Each branch runs the generated prompt through `codex exec` in the issue's worktree under an OS sandbox:
+     `codex exec -C <issue-worktree-path> -s workspace-write --skip-git-repo-check -o <handoff-path> "<generated-prompt>"`
+     - `-s workspace-write` confines writes to the worktree (+ temp) via Seatbelt; network is off by default. `taskflow` supplies per-branch tracking, resumability, and context isolation; `codex exec` supplies the kernel-enforced capability floor.
+     - Require `codex` and `taskflow`; if either is unavailable, halt for user approval before switching modes. Do not silently downgrade AFK isolation to unsandboxed execution.
+     <!-- ponytail: workspace-write blocks network + confines writes to the -C dir. Known ceilings: (1) git-worktree commits may need `--add-dir <main-repo>/.git/worktrees/<name>` since metadata lives in the parent repo; (2) issues needing egress (dep install) need per-branch `-c sandbox_workspace_write.network_access=true` — never `danger-full-access`. Harden the profile from first-run breakage; escalate to Dagger container-use on the Pergamon autonomous tier. -->
    - **Claude mode**:
       - bug/regression issue -> invoke `workflow-debug` with the generated prompt as context
       - non-bug issue -> invoke `workflow-build-one` with the generated prompt as context
@@ -221,17 +225,17 @@ Work queue artifact is written to `docs/executions/backlog-runs/[date].md` for a
 
 Consumes: GitHub Issues (ready-for-agent labeled), repo access
 Produces: PRs (one per issue), backlog run summary, updated issue labels
-Requires: gh, omc, git, subagent-dispatch, project-test-runner
+Requires: gh, codex, taskflow, git, subagent-dispatch, project-test-runner
 Side effects: creates branches/PRs, modifies issue labels, writes run summary file
 Human gates: work queue approval unless explicitly AFK-approved in the current invocation; high-risk outage categories require explicit issue-level approval; failed dispatches flagged; PRs lacking workflow-review independent review evidence flagged `needs-human`; release/merge remains human-only only for repositories listed as `human-only` in `references/repo-delivery-policy.md`
 
-Runtime note: requirements are conservative because the default mode is Codex and Claude fallback delegates to `workflow-build-one`. If the user explicitly selects Claude mode and `omc` is the only missing dependency, halt and ask whether to proceed in Claude mode; do not silently downgrade.
+Runtime note: requirements are conservative because the default mode dispatches sandboxed Codex workers via `taskflow`, and the Claude fallback delegates to `workflow-build-one`. If the user explicitly selects Claude mode and `codex`/`taskflow` are the only missing dependencies, halt and ask whether to proceed in Claude mode; do not silently downgrade.
 
 ## Mode-Specific Preflight Gates
 
 Before Phase 1:
 
-- If mode is Codex/default: require `gh` and `omc`. If `omc` is unavailable, halt unless the user explicitly approves switching to Claude mode.
+- If mode is Codex/default: require `gh`, `codex`, and `taskflow`. If `codex` or `taskflow` is unavailable, halt unless the user explicitly approves switching to Claude mode.
 - If mode is Claude: require `gh`, `git`, `subagent-dispatch`, and `project-test-runner` because execution delegates to `workflow-build-one`.
 - Do not dispatch any issue until the selected mode's requirements pass.
 

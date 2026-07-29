@@ -37,7 +37,7 @@ Every `_personas/<name>.md` file uses this canonical frontmatter:
 ---
 name: <kebab-case-name>
 description: <one-line lens summary>
-default_subagent_type: oh-my-claudecode:analyst   # or :critic, :scientist, :architect, :writer, general-purpose
+default_subagent_type: analyst   # taskflow roster: analyst | critic | reviewer | planner | doc-writer | executor (Claude Code fallback: general-purpose)
 default_model: opus                                # or sonnet, haiku
 tool_access:
   - graphify                                       # opt-in to knowledge graph

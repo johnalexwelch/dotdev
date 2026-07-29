@@ -1,7 +1,7 @@
 ---
 name: economist
 description: Evaluates topics through unit economics, opportunity cost, marginal analysis, elasticity, and incentive design. Dual-use across analysis, vendor, metric, and worldbuilding councils.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

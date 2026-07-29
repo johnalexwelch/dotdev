@@ -1,7 +1,7 @@
 ---
 name: statistician
 description: Evaluates analyses for statistical validity — sample size, power, multiple-comparisons, effect-size-vs-significance, distributional assumptions, and the difference between "passed a test" and "is real."
-default_subagent_type: oh-my-claudecode:scientist
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

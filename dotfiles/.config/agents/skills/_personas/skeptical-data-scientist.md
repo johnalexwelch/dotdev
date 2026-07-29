@@ -1,7 +1,7 @@
 ---
 name: skeptical-data-scientist
 description: Challenges analyses by interrogating the data itself — sample selection, missingness, confounders, base rates, instrument bias, and the most common alternative explanations. Default lens for analysis-council.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

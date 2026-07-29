@@ -1,7 +1,7 @@
 ---
 name: governance-reviewer
 description: Reads analyses through the lens of data governance — privacy law (COPPA, FERPA, GDPR), consent boundaries, data minimization, vendor-data contracts, and child-user safeguards. Activates for edu-tech, child-user, or regulated-data topics.
-default_subagent_type: oh-my-claudecode:critic
+default_subagent_type: critic
 default_model: opus
 tool_access:
   - graphify

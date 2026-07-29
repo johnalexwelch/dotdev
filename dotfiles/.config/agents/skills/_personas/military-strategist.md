@@ -1,7 +1,7 @@
 ---
 name: military-strategist
 description: Reads conflicts through force structure, terrain advantage, logistics, intelligence asymmetry, doctrine, and the cost of victory. Dual-use: worldbuilding councils (wave D — depends on cartographer, economist, historian, political-scientist) and D&D encounter design.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

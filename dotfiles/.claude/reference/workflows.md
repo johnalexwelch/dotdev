@@ -108,16 +108,13 @@ Three distinct subagent contexts, no overlap:
 
 The main session orchestrates; it does not write production code, review its own work, or self-author retros.
 
-## OMC Integration
+## Runtime Integration
 
-OMC (oh-my-claudecode) is the **runtime** — it provides agent dispatch, model routing, team pipelines, and execution infrastructure.
+The **runtime** (pi + `taskflow`) provides agent dispatch, model routing, and parallel/DAG execution. Skills are the **curriculum** — they define *what* to do, while the runtime provides *how* to execute it.
 
-Skills are the **curriculum** — they define *what* to do, while OMC provides *how* to execute it.
-
-- `team-exec` (OMC pipeline stage) executes `workflow-build-one`.
-- `team-verify` (OMC pipeline stage) executes `workflow-review`.
-- OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass `workflow-router`'s classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, and `WORKFLOW_FINALIZE_GATE`. The gates are non-negotiable regardless of dispatch path.
-- When OMC and a skill overlap: OMC provides the mechanics, the skill provides the domain logic. Example: `code-reviewer` is the OMC subagent type, dispatched BY `workflow-review` the skill.
+- Delegation goes through `taskflow` (parallel / map / chain / gate phases): `workflow-build-one` runs as an executor task, `workflow-review` as parallel reviewer lanes (`security-reviewer`, `code-reviewer`, `test-engineer`).
+- Any dispatch path that skips `workflow-router` classification (power-user shortcuts, direct invocations) must still satisfy `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, and `WORKFLOW_FINALIZE_GATE`. The gates are non-negotiable regardless of dispatch path.
+- When runtime and skill overlap: the runtime provides the mechanics, the skill provides the domain logic. Example: `security-reviewer` is the taskflow agent, dispatched BY `workflow-review` the skill.
 
 ## Loop Progress Board (mandatory visual confirmation)
 

@@ -1,7 +1,7 @@
 ---
 name: decision-scientist
 description: Evaluates analyses by the decision they're meant to inform. Separates decision quality from outcome quality, weighs option value and reversibility, and flags when an analysis is solving the wrong problem. Required lens for analysis-council.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access: []
 context_dependencies:

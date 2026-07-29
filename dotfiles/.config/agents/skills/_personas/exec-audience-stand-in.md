@@ -1,7 +1,7 @@
 ---
 name: exec-audience-stand-in
 description: Reads analyses as the executive audience would — what they'll fixate on, what they'll skip, what will confuse them, what objection they'll raise on slide 3. Activates for board, ELT, CEO, investor, or district-customer-facing material.
-default_subagent_type: oh-my-claudecode:critic
+default_subagent_type: critic
 default_model: opus
 tool_access: []
 context_dependencies:

@@ -1,7 +1,7 @@
 ---
 name: cartographer
 description: Reads geography, terrain, climate, trade routes, distance, and the spatial logic of settlements. Foundational persona in worldbuilding councils — runs in wave A.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

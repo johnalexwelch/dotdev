@@ -61,14 +61,14 @@ Orchestrator dispatches wave A in parallel, awaits all responses, then passes wa
 
 ## Subagent dispatch
 
-The orchestrator (running in the main session) calls the `Agent` tool once per persona per round. For round 1 parallel mode, all Agent calls go in a single tool-use message.
+The orchestrator (running in the main session) dispatches one subagent per persona per round. Under pi, use `taskflow` (`tasks:` for a parallel round, `agent:` set to the persona's `default_subagent_type`); under Claude Code, call the `Agent` tool with `subagent_type`. For round 1 parallel mode, all branches dispatch in a single round.
 
 Example (round 1 parallel, 3 personas):
 
 ```
-Agent(subagent_type="oh-my-claudecode:analyst", model="opus", prompt="<persona:skeptical-data-scientist inlined> + <topic>")
-Agent(subagent_type="oh-my-claudecode:scientist", model="opus", prompt="<persona:statistician inlined> + <topic>")
-Agent(subagent_type="oh-my-claudecode:critic", model="opus", prompt="<persona:counterfactual-check inlined> + <topic>")
+Agent(subagent_type="analyst", model="opus", prompt="<persona:skeptical-data-scientist inlined> + <topic>")
+Agent(subagent_type="analyst", model="opus", prompt="<persona:statistician inlined> + <topic>")
+Agent(subagent_type="critic", model="opus", prompt="<persona:counterfactual-check inlined> + <topic>")
 ```
 
 All three run concurrently. The orchestrator does not write any analytical content during dispatch — only the synthesis step at the end.

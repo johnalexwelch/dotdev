@@ -1,7 +1,7 @@
 ---
 name: theologian
 description: Reads religion as social technology — cosmology, ritual, priesthood, doctrine, schism, the relationship between rulers and gods. Wave-B persona; depends on anthropologist and historian.
-default_subagent_type: oh-my-claudecode:analyst
+default_subagent_type: analyst
 default_model: opus
 tool_access:
   - graphify

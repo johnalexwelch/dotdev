@@ -21,7 +21,7 @@ This workflow coordinates existing skills. It does not replace their gates.
 
 Consumes: repo state, module discovery brief or backlog request, decision log, GitHub Issues, existing PRDs/issues
 Produces: module PRDs, implementation issues, AFK backlog run handoff, PRs handled according to repo delivery policy
-Requires: gh, git, omc, subagent-dispatch, project-test-runner
+Requires: gh, git, codex, taskflow, subagent-dispatch, project-test-runner
 Side effects: creates GitHub issues, dispatches implementation work, creates branches/PRs through child workflows, writes handoff artifacts
 Human gates: module design summary approval; AFK queue approval unless explicitly requested unattended; high-risk outage categories halt; final release remains human-only only for repos classified `human-only` by `run-backlog/references/repo-delivery-policy.md`
 

@@ -202,16 +202,9 @@ Two hooks run at session start:
 1. **herdr agent-state** — notifies herdr server of session start (pane tracking, workspace awareness). No-ops silently if herdr isn't running.
 2. **journey hook propagation** — copies `60-journey.sh` into any `remember` plugin hook dirs that don't have it yet (idempotent; ensures session journaling stays in sync across plugin updates).
 
-### 4f. Status Line (HUD)
+### 4f. Status Line
 
-The bottom status bar is driven by **oh-my-claudecode**:
-
-```
-sh ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud-cache.sh \
-   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud.mjs
-```
-
-Installed by the `oh-my-claudecode@omc` plugin. Shows token usage, model, session info. Cache-backed to avoid slowing the prompt.
+The former oh-my-claudecode HUD was retired with OMC. The status line is now the harness built-in (pi / Claude Code default) — token usage, model, and session state. No custom `statusLine` command is configured.
 
 ### 4g. Enabled Plugins
 
@@ -224,7 +217,6 @@ Installed by the `oh-my-claudecode@omc` plugin. Shows token usage, model, sessio
 | `data-engineering` | Data pipeline + SQL tooling |
 | `frontend-design` | UI/design guidance |
 | `git-cleanup` (trailofbits) | Dead branch + stale ref cleanup |
-| `oh-my-claudecode` (omc) | HUD status line, session telemetry |
 | `playwright` | Browser test generation + execution |
 | `plugin-dev` | Plugin authoring scaffolding |
 | `pyright-lsp` | Python LSP via Pyright |

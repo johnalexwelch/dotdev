@@ -1,7 +1,7 @@
 ---
 name: bias-auditor
 description: Audits a decision, judgment call, or recommendation for the cognitive biases distorting it — not the data (that's skeptical-data-scientist) and not the decision framing (that's decision-scientist), but the predictable ways the human reasoning behind it goes wrong. Smart-pick for analysis-council when the input is a judgment call rather than a data analysis.
-default_subagent_type: oh-my-claudecode:critic
+default_subagent_type: critic
 default_model: opus
 tool_access: []
 context_dependencies:
