@@ -1,0 +1,46 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "/Users/alexwelch/.local/bin/github-mcp-pi",
+      "lifecycle": "keep-alive"
+    },
+    "linear": {
+      "type": "http",
+      "url": "https://mcp.linear.app/mcp",
+      "lifecycle": "keep-alive"
+    },
+    "iris": {
+      "url": "https://iris-staging.us-east-1-dataeng.internal.classdojo-ops.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${IRIS_STAGING_TOKEN}"
+      },
+      "lifecycle": "lazy"
+    },
+    "iris-staging": {
+      "command": "/Users/alexwelch/.local/bin/iris-mcp-bridge",
+      "env": {
+        "IRIS_MCP_GATEWAY_URL": "https://iris-staging.us-east-1-dataeng.internal.classdojo-ops.com/mcp",
+        "IRIS_API_KEY": "${IRIS_API_KEY}",
+        "IRIS_MCP_USER_LABEL": "alex.welch@classdojo.com"
+      },
+      "lifecycle": "lazy"
+    },
+    "iris-prod": {
+      "command": "/Users/alexwelch/.local/bin/iris-mcp-bridge",
+      "env": {
+        "IRIS_MCP_GATEWAY_URL": "https://iris.us-east-1-dataeng.internal.classdojo-ops.com/mcp",
+        "IRIS_API_KEY": "${IRIS_API_KEY}",
+        "IRIS_MCP_USER_LABEL": "alex.welch@classdojo.com"
+      },
+      "lifecycle": "lazy"
+    },
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.78"
+      ],
+      "lifecycle": "lazy"
+    }
+  }
+}
