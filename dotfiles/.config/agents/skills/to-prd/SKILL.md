@@ -96,7 +96,7 @@ Scan every entry in the proposed Implementation Decisions against the three ADR 
 
 For any decision that satisfies all three: either write the ADR now (using the format in `docs/adr/`) or surface it to the user with the three criteria scored so they can decide. Do not embed it only in the PRD and move on — Implementation Decisions sections get lost when the PRD is done. Decisions that do not satisfy all three criteria stay in the PRD as-is.
 
-3. Write the PRD using the template below, then publish it to the project issue tracker as a PRD/spec/reference issue. Do not apply `ready-for-agent` to the PRD itself. Only child implementation issues produced by `to-issues` may receive `ready-for-agent`, and only after triage confirms AFK safety.
+3. Write the PRD using the template below, then publish it to the project issue tracker as a PRD/spec/reference issue. Do not apply `ready-for-agent` to the PRD itself: PRD/spec parent issues are not implementation issues and must not be labeled `ready-for-agent` (per `triage` skill). Only child implementation issues produced by `to-issues` may receive `ready-for-agent`, and only after triage confirms all readiness criteria are met.
 
 <prd-template>
 
