@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Weekly prune of pi-rewind (@ayulab/pi-checkpoint) storage untouched >30 days.
+     Storage: ~/.pi/agent/ayu/checkpoints/sessions/<session>/ (bare repos of diffs).
+     Active/recent sessions keep fresh mtimes, so only long-dormant sessions drop.
+     launchd survives restarts and fires missed runs on wake.
+
+     Installed automatically by ~/dotdev/install.sh (cp to ~/Library/LaunchAgents + bootstrap).
+     Manual install:   cp ~/.config/pi/com.alexwelch.pi-checkpoint-prune.plist ~/Library/LaunchAgents/
+                       launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.alexwelch.pi-checkpoint-prune.plist
+     Uninstall:        launchctl bootout gui/$(id -u)/com.alexwelch.pi-checkpoint-prune
+                       rm ~/Library/LaunchAgents/com.alexwelch.pi-checkpoint-prune.plist
+     Run now (test):   launchctl start com.alexwelch.pi-checkpoint-prune
+     Change retention: edit the +30 below. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.alexwelch.pi-checkpoint-prune</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-c</string>
+    <string>d="$HOME/.pi/agent/ayu/checkpoints/sessions"; [ -d "$d" ] &amp;&amp; /usr/bin/find "$d" -mindepth 1 -maxdepth 1 -type d -mtime +30 -exec /bin/rm -rf {} + ; exit 0</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Weekday</key><integer>0</integer><key>Hour</key><integer>3</integer><key>Minute</key><integer>0</integer></dict>
+  <key>RunAtLoad</key><false/>
+  <key>StandardOutPath</key><string>/tmp/pi-checkpoint-prune.log</string>
+  <key>StandardErrorPath</key><string>/tmp/pi-checkpoint-prune.log</string>
+</dict>
+</plist>

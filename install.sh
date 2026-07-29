@@ -56,6 +56,7 @@ run_cmd mkdir -p "$HOME/.config/agents"
 run_cmd mkdir -p "$HOME/.config"
 run_cmd mkdir -p "$HOME/.pi/agent"
 run_cmd mkdir -p "$HOME/.config/herdr"
+run_cmd mkdir -p "$HOME/.config/pi"
 
 if [ "$DRY_RUN" = "1" ]; then
     stow -d "$DOTFILES" -nv -R -t "$HOME" dotfiles
@@ -70,6 +71,14 @@ fi
 
 # AI tooling (guardian, headroom, gbrain, pi settings)
 run_cmd bash "$DOTFILES/scripts/ai-setup.sh"
+
+# Scheduled LaunchAgents — pi-rewind checkpoint-storage prune (weekly, >30d dormant)
+run_cmd mkdir -p "$HOME/Library/LaunchAgents"
+run_cmd cp -f "$HOME/.config/pi/com.alexwelch.pi-checkpoint-prune.plist" "$HOME/Library/LaunchAgents/"
+if [ "$DRY_RUN" != "1" ]; then
+    launchctl bootout "gui/$(id -u)/com.alexwelch.pi-checkpoint-prune" 2>/dev/null || true
+    launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.alexwelch.pi-checkpoint-prune.plist" 2>/dev/null || true
+fi
 
 # Herdr integrations and plugins
 run_cmd bash "$DOTFILES/scripts/herdr-setup.sh"
