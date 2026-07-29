@@ -38,6 +38,10 @@ WORKFLOW_STEPS:
 | <step name> | required|conditional|optional | pending|completed|skipped|blocked|failed|not_applicable | <evidence, reason, or -> |
 ```
 
+### Step 0.5: Graphify knowledge graph gate (conditional, before grill)
+
+Before interviewing the user about the feature, check for an existing knowledge graph. If `graphify-out/graph.json` exists, run one focused `graphify query` for feature scope context (what codebase areas does this likely touch, existing patterns or constraints?) and incorporate it into the interview context. Record `graphify: queried` in your session output. If no graph exists, record `graphify: not_available_with_reason: <reason>` (e.g. `not_yet_generated`). Do not rebuild the graph — that is explicit `/graphify` work. Having graph context available informs sharper grill questions.
+
 ### Step 1: Grill
 
 Load and run `grill-with-docs/SKILL.md` to:

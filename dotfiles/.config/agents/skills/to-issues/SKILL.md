@@ -48,6 +48,10 @@ If missing, stale, or not aligned to the current scope, halt and return to `work
 
 Work from whatever is already in the conversation context. If the user passes an issue reference (issue number, URL, or path) as an argument, fetch it from the issue tracker and read its full body and comments. Read `docs/decision-log.md` or the repo's established equivalent when present so issue slices preserve why decisions were made.
 
+### 1.5. Graphify knowledge graph gate (conditional, before codebase exploration)
+
+Before exploring the codebase, check for an existing knowledge graph. If `graphify-out/graph.json` exists, run one focused `graphify query` for slice-scope context (module boundaries, dependency structure relevant to the PR/plan scope) and incorporate it into your codebase understanding. Record `graphify: queried` in your response. If no graph exists, record `graphify: not_available_with_reason: <reason>` (e.g. `not_yet_generated`). Do not rebuild the graph — that is explicit `/graphify` work.
+
 ### 2. Explore the codebase (optional)
 
 If you have not already explored the codebase, do so to understand the current state of the code. Issue titles and descriptions should use the project's domain glossary vocabulary, and respect ADRs in the area you're touching.
