@@ -20,7 +20,7 @@ For AFK or workflow-driven usage, the planning gate is satisfied only when the i
 ## Context
 
 Typical workflows: feature development, bug fixing (test-first)
-Pairs well with: diagnose, implement, execute-phase, improve-codebase-architecture, codebase-design
+Pairs well with: diagnose, implement, improve-codebase-architecture, codebase-design
 
 # Test-Driven Development
 

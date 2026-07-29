@@ -199,4 +199,4 @@ Runtime note: project build/test tools are required for verification and are dis
 ## Context
 
 Typical workflows: standalone (primary build workflow), run-backlog (dispatched per-issue)
-Pairs well with: workflow-router (routes here), workflow-review, workflow-finalize, execute-phase, prompt-builder (provides pre-gathered execution context)
+Pairs well with: workflow-router (routes here), workflow-review, workflow-finalize, prompt-builder (provides pre-gathered execution context)
