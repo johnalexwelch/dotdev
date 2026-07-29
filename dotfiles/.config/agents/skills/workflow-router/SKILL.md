@@ -234,7 +234,7 @@ Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, 
 
 ## Human-Gate Taxonomy Preflight
 
-When a workflow or execution describes a human gate or approval point, classify it using the gate taxonomy in `dotfiles/.config/agents/skills/_docs/human-gate-taxonomy.md` (from PR #105, not yet merged; cite relative path). The taxonomy distinguishes four gate types:
+When a workflow or execution describes a human gate or approval point, classify it using the gate taxonomy in `dotfiles/.config/agents/skills/_docs/human-gate-taxonomy.md` (cite the relative path). The taxonomy distinguishes four gate types:
 
 | Gate Type | Blocks AFK? | How Satisfied |
 |-----------|-------------|---------------|
@@ -245,7 +245,7 @@ When a workflow or execution describes a human gate or approval point, classify 
 
 Only the first three gate types block AFK execution by default. When a route card or execution mentions "needs human review," classify which type applies before emitting the gate. If only `reviewer-validation` applies, the route is AFK-eligible (subject to `workflow-review` and merge authority). If any of the first three apply, AFK is blocked until satisfied.
 
-**Dependency note:** The taxonomy file is not yet merged (PR #105). Reference it by relative path from the repo root: `dotfiles/.config/agents/skills/_docs/human-gate-taxonomy.md`.
+**Path:** Reference the taxonomy by relative path from the repo root: `dotfiles/.config/agents/skills/_docs/human-gate-taxonomy.md`.
 
 ## Preflight
 
