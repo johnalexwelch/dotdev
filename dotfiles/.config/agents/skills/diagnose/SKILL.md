@@ -18,7 +18,7 @@ Runtime note: the project test runner or equivalent reproduction harness is requ
 ## Context
 
 Typical workflows: workflow-debug
-Pairs well with: tdd, implement, execute-phase, improve-codebase-architecture
+Pairs well with: tdd, implement, improve-codebase-architecture
 
 ## Diagnosis Modes
 
