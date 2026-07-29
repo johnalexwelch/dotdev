@@ -84,7 +84,7 @@
     "vision": "anthropic/claude-sonnet-4-6",
     "reasoner": "anthropic/claude-opus-4-5"
   },
-  "defaultThinkingLevel": "max",
+  "defaultThinkingLevel": "medium",
   "quietStartup": true,
   "hideThinkingBlock": true,
   "followUpMode": "one-at-a-time",
