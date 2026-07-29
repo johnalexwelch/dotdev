@@ -27,10 +27,12 @@ Design is locked for both halves: measure = DL-0022 (eval), explore = DL-0023 (c
 - **Slice 3:** cluster failures → generate ≤K3 candidates → train/holdout guard → pairwise-vs-baseline whole-suite scoring (permutation p + BH FDR) → regression gate → top-5 + confounder cards. Depends M1 + P0b + P0c.
 - **Slice 4:** loop-health (sentinel L2a:attribution candidate, generator≠judge model pins, embedding-model pick + 0.9 calibration).
 
-### M3 — Loop driver + morning report + routing (⚠ still UNDESIGNED)
+### M3 — Loop driver + morning report + routing (✅ DESIGNED & LOCKED, DL-0024)
 
-- **Slice 5:** morning ranked report format → human approval → route to issue/PR/reflection. *Design not yet grilled — the last fog item on #118.* Design work is startable now (no baseline dependency).
-- **Slice 6:** auto mode.
+Full spec: `docs/design/iris-loop-driver-report-routing-v1.md`. State on a `loop-state` branch; CLI approval gate (DEFAULT=REJECT); routing to `classdojo/iris` (PRs for Types 1-3, issues for Types 4-5 + fixture-gap); auto-reconcile with squash-safe + `loop-landed`-label landing detection; baseline-refresh loop.
+
+- **Slice 5:** `loop run` → stub issue → CLI approve/reject/edit → route → reconcile → baseline refresh. Build startable now (design complete; needs OD-1..OD-4 answered for live routing).
+- **Slice 6:** auto mode — deferred until a multi-run track record + trusted sentinel/health signal.
 
 ## Deferred / parked (revisit for wayfinding or grilling)
 

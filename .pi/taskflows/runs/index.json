@@ -98,5 +98,60 @@
     "relPath": "candidate-generator-consensus/candidate-generator-cons-ms57oonz-c42098.json",
     "host": "pi",
     "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "m3-loopdriver-consensus-ms5fyxjf-989248",
+    "flowName": "m3-loopdriver-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785290670411,
+    "updatedAt": 1785291483860,
+    "relPath": "m3-loopdriver-consensus/m3-loopdriver-consensus-ms5fyxjf-989248.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "m3-loopdriver-consensus-ms5ghplq-d80882",
+    "flowName": "m3-loopdriver-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785291546591,
+    "updatedAt": 1785292313798,
+    "relPath": "m3-loopdriver-consensus/m3-loopdriver-consensus-ms5ghplq-d80882.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "m3-loopdriver-consensus-ms5h065l-8fe5be",
+    "flowName": "m3-loopdriver-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785292407849,
+    "updatedAt": 1785293273590,
+    "relPath": "m3-loopdriver-consensus/m3-loopdriver-consensus-ms5h065l-8fe5be.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "m3-loopdriver-consensus-ms5hk8t5-19ead5",
+    "flowName": "m3-loopdriver-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785293344409,
+    "updatedAt": 1785294283726,
+    "relPath": "m3-loopdriver-consensus/m3-loopdriver-consensus-ms5hk8t5-19ead5.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
+  },
+  {
+    "runId": "m3-loopdriver-consensus-ms5i6nhq-112298",
+    "flowName": "m3-loopdriver-consensus",
+    "cwd": "/Users/alexwelch/.herdr/worktrees/dotdev/ai-improvement-loop",
+    "status": "completed",
+    "createdAt": 1785294389870,
+    "updatedAt": 1785295068413,
+    "relPath": "m3-loopdriver-consensus/m3-loopdriver-consensus-ms5i6nhq-112298.json",
+    "host": "pi",
+    "packageVersion": "0.2.4"
   }
 ]
