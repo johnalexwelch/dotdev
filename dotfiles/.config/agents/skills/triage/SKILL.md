@@ -123,7 +123,11 @@ When triaging nightly-scan CVE auto-filed issues as a group, follow this consoli
 
 ## Triage a specific issue or PR
 
-1. **Gather context.** Read the full issue or PR (body, comments, labels, reporter/author, dates; for a PR, also read the diff). Parse any prior triage notes so you don't re-ask resolved questions. Explore the codebase using the project's domain glossary, respecting ADRs in the area. Run two checks before recommending anything:
+1. **Gather context.** Read the full issue or PR (body, comments, labels, reporter/author, dates; for a PR, also read the diff). Parse any prior triage notes so you don't re-ask resolved questions.
+
+   **Graphify knowledge graph gate (conditional, before codebase exploration):** Before exploring the codebase, check for an existing knowledge graph. If `graphify-out/graph.json` exists, run one focused `graphify query` for triage scope context (where does this issue/PR touch the codebase, what dependencies or architecture constraints apply?) and incorporate it into your context. Record `graphify: queried` in your response. If no graph exists, record `graphify: not_available_with_reason: <reason>` (e.g. `not_yet_generated`). Do not rebuild the graph — that is explicit `/graphify` work.
+
+   Explore the codebase using the project's domain glossary, respecting ADRs in the area. Run two checks before recommending anything:
    - **Redundancy check.** For a bug or feature request (issue or PR), search the codebase for an existing implementation of the requested behavior — by domain concept, not just the request's wording. Report where you looked. If the behavior already exists, this is an **already-implemented** case: skip reproduction/grilling and go straight to `wontfix` (already-implemented) in step 5.
    - **Prior-rejection check.** Read `.out-of-scope/*.md` and surface any prior rejection that resembles this issue or PR.
 

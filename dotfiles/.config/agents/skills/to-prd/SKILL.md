@@ -38,6 +38,10 @@ Required evidence:
 
 If missing, stale, or out of scope, halt and route back to `workflow-roadmap` before continuing.
 
+0.5. Graphify knowledge graph gate (conditional, before codebase exploration):
+
+Before exploring the repo, check for an existing knowledge graph. If `graphify-out/graph.json` exists, run one focused `graphify query` for PRD scope context (what modules/domains does this PRD touch, what are the current dependencies?) and include the result in your codebase understanding. Record `graphify: queried` in your response. If no graph exists, record `graphify: not_available_with_reason: <reason>` (e.g. `not_yet_generated`). Do not rebuild the graph — that is explicit `/graphify` work. If you are uncertain whether the graph covers the scope, include it anyway and note any gaps in your exploration output.
+
 1. Explore the repo to understand the current state of the codebase, if you haven't already. Use the project's domain glossary vocabulary throughout the PRD, and respect any decision log entries and ADRs in the area you're touching.
 
 Before synthesizing the PRD, read `docs/decision-log.md` or the repo's established equivalent if it exists. Treat logged decisions as settled context unless the user explicitly reopens them. If the PRD relies on grill output that has not been logged, reconstruct decision-log entries for the accepted answers before continuing.
