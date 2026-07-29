@@ -154,3 +154,5 @@ dotfiles/.pi/agent/*
 !dotfiles/.pi/agent/mcp.json
 # pi taskflow run history is runtime state, not config
 dotfiles/.pi/taskflows/runs/
+# stray repo-root .pi/ (taskflow runtime data when pi runs from ~/dotdev) — anchored so it never hits dotfiles/.pi
+/.pi/
