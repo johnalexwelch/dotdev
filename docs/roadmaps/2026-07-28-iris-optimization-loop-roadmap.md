@@ -6,7 +6,7 @@ Design is locked for both halves: measure = DL-0022 (eval), explore = DL-0023 (c
 
 ## Critical-path blocker (read first)
 
-**Correction (2026-07-28):** IRIS #945 is *not* our blocker. #945 is IRIS's own production-baseline program (their `eval/baseline.json`, 121 pairs, for the internal Iris-vs-peer-bot contest), gated on the Iris owner's timeline. But DL-0021 made our loop own its harness (Inspect AI), so we do **not** consume IRIS's baseline. **Our baseline = one clean run of our own M1 harness**, gated on things within our control: (1) M1 built, (2) warehouse creds + LLM keys, (3) pinned IRIS commit + judge model, (4) P0a facts-audit done. The scoring milestones therefore depend on **M1 + access + P0a**, not on the external #945 timeline.
+**Correction (2026-07-28):** IRIS #945 is *not* our blocker. #945 is IRIS's own production-baseline program (their `eval/baseline.json`, 121 pairs, for the internal Iris-vs-peer-bot contest), gated on the Iris owner's timeline. But DL-0021 made our loop own a thin driver in dotdev (cherry-picking iris-eval's proven pieces — no Inspect), so we do **not** consume IRIS's baseline. **Our baseline = one clean run of our own M1 harness**, gated on things within our control: (1) M1 built, (2) warehouse creds + LLM keys, (3) pinned IRIS commit + judge model, (4) P0a facts-audit done. The scoring milestones therefore depend on **M1 + access + P0a**, not on the external #945 timeline.
 
 ## Milestones (vertical slices)
 
@@ -17,7 +17,7 @@ Design is locked for both halves: measure = DL-0022 (eval), explore = DL-0023 (c
 - **P0c — baseline capture (our loop's, not IRIS #945).** Depends on **M1 + warehouse/LLM access + pinned IRIS commit + pinned judge + P0a** — all within our control. Run our M1 harness once against the pinned commit; capture per-case pass map + P10 floor + permutation null into our loop state. (Two runs, Δ≤2pp, before treating it as authoritative — per the IRIS baseline-DRAFT reproducibility bar.)
 - **P0d — judge calibration** (N≥30 pairwise, AC1+κ+CI ≥0.7). Blocked on P0a + P0c. Until it passes, L2b stays advisory (DL-0022).
 
-### M1 — Measure half (eval harness on Inspect AI, DL-0021/0022)
+### M1 — Measure half (thin owned eval driver in dotdev + cherry-picked iris-eval; NO Inspect — DL-0021/0022)
 
 - **Slice 1:** one fixture end-to-end → L1 (execution correctness) + L2a (temp=0 anti-hallucination gate) → score card. Depends P0a.
 - **Slice 2:** L2b advisory scoring wired (surfaced, non-gating until P0d).

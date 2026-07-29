@@ -851,6 +851,7 @@ This file is the canonical decision record for workflow-feature flows in this re
 ### DL-0024 addendum — OD-1..OD-4 resolved from `classdojo/iris` ground truth (2026-07-28)
 
 Dug the four M3 open decisions out of the live iris repo instead of leaving them as runtime blockers:
+
 - **OD-1 (prompt paths):** all PR-routable. `system_prefix`/`findings_prose` → constants in `backend/src/iris/analyst/prompts.py`; `sql_generation` → `mcp-servers/iris/skills/iris-query/SKILL.md`.
 - **OD-2 (habit store) — AMENDS DL-0024:** habits/notes are **DB-backed** (`AgentNote` model, `NoteScope` user/table/domain/global == DL-0023 {scope,scope_key}, `NoteApprovalStatus` pending/approved, `memory/notes.py::append`). **Type 2 no longer routes as a PR** — it appends a `pending` note; landing = human approves it in IRIS's existing note-approval workflow. Simpler than the original PR path and reuses IRIS machinery. Spec §E/§F amended.
 - **OD-3 (branch protection):** `.github/CODEOWNERS` → `/mcp-servers/iris/skills/` owned by @zach-dojo, so `sql_generation` PRs need his review before merge (loop-approve ≠ merge authority for skills). Branch-protection API not readable by the loop token.
