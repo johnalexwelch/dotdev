@@ -847,3 +847,13 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Alternatives considered (rejected during review)**: GitHub issue as the approval surface (rejected — read-only report + CLI is the real gate); state in a GitHub issue (rejected — committed JSON is the single source of truth); routing deferred to a later run phase (rejected — approve/expire race → route inside `loop approve`); `--state closed` alone as issue-landing signal (rejected — conflates implemented with won't-fix/duplicate → false refresh; require `loop-landed` label); direct habit-store write for Type 2 (rejected — PR-only so reconcile can always detect landing); fixture-gap issues into dotdev (rejected — fixtures live in `classdojo/iris`).
 **Tradeoffs accepted**: single-operator v1 (no distributed lock); batch-granular regression attribution (≤5, not per-candidate); Type-4 retrieval edits remain EVAL-INVISIBLE (human-judgment route); baseline capture needs live warehouse+LLM access.
 **Open (human input, non-blocking)**: OD-1 iris prompt paths; OD-2 habit-store path; OD-3 iris branch-protection/CODEOWNER effect on loop PRs; OD-4 local vs CI runner.
+
+### DL-0024 addendum — OD-1..OD-4 resolved from `classdojo/iris` ground truth (2026-07-28)
+
+Dug the four M3 open decisions out of the live iris repo instead of leaving them as runtime blockers:
+- **OD-1 (prompt paths):** all PR-routable. `system_prefix`/`findings_prose` → constants in `backend/src/iris/analyst/prompts.py`; `sql_generation` → `mcp-servers/iris/skills/iris-query/SKILL.md`.
+- **OD-2 (habit store) — AMENDS DL-0024:** habits/notes are **DB-backed** (`AgentNote` model, `NoteScope` user/table/domain/global == DL-0023 {scope,scope_key}, `NoteApprovalStatus` pending/approved, `memory/notes.py::append`). **Type 2 no longer routes as a PR** — it appends a `pending` note; landing = human approves it in IRIS's existing note-approval workflow. Simpler than the original PR path and reuses IRIS machinery. Spec §E/§F amended.
+- **OD-3 (branch protection):** `.github/CODEOWNERS` → `/mcp-servers/iris/skills/` owned by @zach-dojo, so `sql_generation` PRs need his review before merge (loop-approve ≠ merge authority for skills). Branch-protection API not readable by the loop token.
+- **OD-4 (runner):** **local for v1** — secrets stay on the operator machine; the approval gate is interactive; CI deferred to auto-mode.
+
+Net: M3 has no remaining runtime-blocking ODs; the only external dependency is @zach-dojo review on skill-file PRs.

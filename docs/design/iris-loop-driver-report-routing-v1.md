@@ -80,12 +80,23 @@ v1 is fully human-gated; no auto-approval path exists until the loop has a multi
 - **ROUTE-UNRESOLVED-OD2** → populate `iris-habit-targets.yaml` then `loop approve` (pre-approval error, no stuck state).
 - **Stuck `status=routing`, no URL** → re-run `loop approve` to retry routing, or `loop reject`.
 
-## Open decisions (human input; non-blocking for design, blocking for their route type at runtime)
+## Open decisions — RESOLVED 2026-07-28 (ground-truth from `classdojo/iris` @ staging)
 
-- **OD-1** iris prompt file paths → populate `iris-prompt-targets.yaml`.
-- **OD-2** habit/reflection store path → `iris-habit-targets.yaml` before Type 2 routing.
-- **OD-3** iris branch-protection effect on `loop/` PRs (CODEOWNER review?) → §J.
-- **OD-4** local vs CI runner.
+- **OD-1 — iris prompt paths (RESOLVED, PR-routable):** `iris-prompt-targets.yaml` =
+  - `system_prefix` → `backend/src/iris/analyst/prompts.py::AGENT_SYSTEM_PROMPT_PREFIX` (global, cached, HIGH blast — all lanes)
+  - `findings_prose` → `backend/src/iris/analyst/prompts.py::GENERAL_ANSWER_SYSTEM_PROMPT` + `INTERNAL_CONTEXT_ANSWER_SYSTEM_PROMPT`
+  - `sql_generation` → `mcp-servers/iris/skills/iris-query/SKILL.md` (canonical skills root per `prompts.py::_CANONICAL_PRINCIPAL_DS_SKILLS_RELPATH`; the `backend/src` copy loads *from* here). ⚠ CODEOWNER-gated (OD-3).
+- **OD-2 — habit/reflection store (RESOLVED — DESIGN AMENDMENT):** habits/notes are **DB-backed, not files.** IRIS has an `AgentNote` model (`backend/src/iris/db/models.py`) with `NoteScope` = user/table/domain/global (**exactly DL-0023's {scope, scope_key}**), `NoteApprovalStatus` = pending/approved, and `memory/notes.py::append(...)`. **Type 2 therefore does NOT route as a PR:** it calls `notes.append(scope, scope_key, content, approval_status=pending)`; "landing" = a human approving the note in IRIS's existing pending→approved workflow. Replaces the `iris-habit-targets.yaml`/PR path in §D/§E/§F; strictly simpler (reuses IRIS's scope + approval machinery). See §E/§F-amended.
+- **OD-3 — branch protection / CODEOWNERS (RESOLVED):** `.github/CODEOWNERS` pins `/mcp-servers/iris/skills/` → **@zach-dojo**. `sql_generation` (Type-1 skill) PRs need @zach-dojo review before merge — `loop approve` is NOT sufficient to land; a second (Zach) gate exists for skill edits (confirms BN-3). `prompts.py` has no observed CODEOWNER rule. Branch-protection API 404'd to the loop token (no admin read) — treat as "CI must pass + CODEOWNER review for skills."
+- **OD-4 — runner (RESOLVED: local for v1):** operator's **local machine.** Warehouse + LLM secrets stay local, approval gate is interactive CLI — CI adds secret-management with no benefit. CI deferred to auto-mode.
+
+### §E-amended — Type 2 routing (supersedes the §E Type 2 line)
+
+**Type 2** → `notes.append(scope, scope_key, content, approval_status=pending)` against the IRIS note store (NOT a PR). Two-phase: write `status=routing` → `append` → record the returned note UUID in state before advancing. Crash-resume probe = query the note store for an existing pending note with the same content hash + scope before re-appending. The yaml lookup and `ROUTE-UNRESOLVED-OD2` no longer apply to Type 2; the §D pre-approval check becomes "note-store reachable."
+
+### §F-amended — Type 2 landing (supersedes issue-landing for Type 2)
+
+**Type 2 landing** = the recorded note UUID transitions pending→approved in the IRIS store. `loop reconcile` queries the note store by stored UUID; approved → mark landed `{note_uuid, approved_at}` + increment (dedup on UUID). Still-pending → staleness alert like other unlanded approvals. No merge-commit / `loop-landed`-label path for Type 2.
 
 ## Build-notes (implementation guidance, non-blocking)
 
