@@ -6,7 +6,7 @@ Design is locked for both halves: measure = DL-0022 (eval), explore = DL-0023 (c
 
 ## Critical-path blocker (read first)
 
-**IRIS #945 keeps `eval/baseline.json:baseline_pass_rate = null`.** Every scoring milestone (M1/M2) depends on a non-null baseline. Until #945 lands + a baseline is captured, only unblocked prep (P0a, P0b) and design work (M3) are startable. **The loop cannot produce AFK-safe scoring issues yet.**
+**Correction (2026-07-28):** IRIS #945 is *not* our blocker. #945 is IRIS's own production-baseline program (their `eval/baseline.json`, 121 pairs, for the internal Iris-vs-peer-bot contest), gated on the Iris owner's timeline. But DL-0021 made our loop own its harness (Inspect AI), so we do **not** consume IRIS's baseline. **Our baseline = one clean run of our own M1 harness**, gated on things within our control: (1) M1 built, (2) warehouse creds + LLM keys, (3) pinned IRIS commit + judge model, (4) P0a facts-audit done. The scoring milestones therefore depend on **M1 + access + P0a**, not on the external #945 timeline.
 
 ## Milestones (vertical slices)
 
@@ -14,7 +14,7 @@ Design is locked for both halves: measure = DL-0022 (eval), explore = DL-0023 (c
 
 - **P0a — `expected_answer_facts` audit** across the 25 golden_sql pairs. *Unblocked — startable now.* Verifies each pair has gradable grounded facts; feeds L2a's required-fact gate. (Removes the "default omission failures to fixture-gap" stopgap in DL-0023 §H.)
 - **P0b — query-pattern-tag taxonomy** enumeration. *Unblocked — startable now.* Required before the generator's first run (DL-0023 §B) or clustering drifts run-over-run.
-- **P0c — baseline capture.** ⛔ **BLOCKED on IRIS #945** + the new 5-dim judge. Re-run suite, set `baseline_pass_rate`, capture P10 floor + permutation null.
+- **P0c — baseline capture (our loop's, not IRIS #945).** Depends on **M1 + warehouse/LLM access + pinned IRIS commit + pinned judge + P0a** — all within our control. Run our M1 harness once against the pinned commit; capture per-case pass map + P10 floor + permutation null into our loop state. (Two runs, Δ≤2pp, before treating it as authoritative — per the IRIS baseline-DRAFT reproducibility bar.)
 - **P0d — judge calibration** (N≥30 pairwise, AC1+κ+CI ≥0.7). Blocked on P0a + P0c. Until it passes, L2b stays advisory (DL-0022).
 
 ### M1 — Measure half (eval harness on Inspect AI, DL-0021/0022)
@@ -39,6 +39,6 @@ Design is locked for both halves: measure = DL-0022 (eval), explore = DL-0023 (c
 - L3 calibration → fold L3 into `net` once κ≥0.7 (DL-0022).
 - Fixture-gap queue owner beyond v1; run-frequency decision (daily vs manual) — affects quarantine window.
 
-## Startable now (no #945 dependency)
+## Startable now
 
-P0a (facts audit) · P0b (taxonomy) · M3 design (report/routing grill). Everything else waits on the baseline.
+P0a (facts audit) · P0b (taxonomy) · M1 build (our harness) · M3 design (report/routing grill). None of these wait on IRIS #945. P0c baseline follows once M1 + access + P0a land; M2 (generator build) follows P0c.
