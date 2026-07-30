@@ -1,7 +1,7 @@
 ---
 name: dbt-project-evaluator
 model: sonnet
-description: 'Runs the dbt-labs dbt_project_evaluator package against a dbt project and turns its test output into a categorized, actionable findings report: staging/marts layering violations, direct joins to source, rejoined upstream concepts, fanout, undocumented or untested models, naming convention breaks, unused sources. Use when checking a dbt project structure or conventions, auditing dbt project health or best-practice adherence, or the user asks to run, install, or interpret dbt_project_evaluator.'
+description: 'Runs the dbt-labs dbt_project_evaluator package against a dbt project and turns its test output into a categorized, actionable findings report — by default scoped to the models touched by the current change plus their upstream/downstream lineage, with full-project audit on request. Covers staging/marts layering violations, direct joins to source, rejoined upstream concepts, fanout, undocumented or untested models, naming convention breaks, unused sources. Use when checking a dbt project structure or conventions, evaluating changed dbt models against best practices, auditing dbt project health, or the user asks to run, install, or interpret dbt_project_evaluator.'
 ---
 
 # dbt Project Evaluator
@@ -41,7 +41,19 @@ Read `packages.yml` (or `dependencies.yml`) next to `dbt_project.yml`. Look for 
 
 Completion criterion: package confirmed installed (with version), or a routed change is in flight and the user knows why the audit is paused.
 
-### 3. Run the evaluator
+### 3. Build the scope set (default: touched models + up/downstream)
+
+The default run is **scoped**: findings are reported only for the models the current change touches, plus everything upstream and downstream of them. Run project-wide only when the user explicitly asks for a full audit.
+
+1. Determine touched models. Prefer dbt state selection when a comparison manifest exists (CI artifact or a `--state` path): `dbt ls --select state:modified --output name`. Otherwise derive from git: `git diff --name-only <base>...HEAD -- models/` mapped to model names.
+2. Expand to lineage: `dbt ls --select "+<model>+ ..." --output name` (one `+name+` per touched model). The output is the **scope set**.
+3. If the diff touches no model files, say so and stop — an empty scope set means there is nothing to evaluate; don't fall back to a full-project run silently.
+
+Completion criterion: a concrete list of model names (the scope set) written down, or an explicit "nothing touched" stop.
+
+### 4. Run the evaluator (full graph — scoping happens at reporting)
+
+The package computes its rules from the whole manifest graph; rules like fanout and rejoining are only correct with full-graph context, and the package has no native `--select` scoping (its own CI recipe runs the full package after building `state:modified+`). So always run it whole — it's metadata-only and cheap — and apply the scope set when filtering findings, never by selecting a subset of the package's models.
 
 Once the package is present and `dbt deps` has been run:
 
@@ -53,18 +65,19 @@ Fall back to `dbt test --select package:dbt_project_evaluator` if the project's 
 
 Completion criterion: the command has run to completion (pass or fail) and you have its full output, not a truncated tail — dbt's summary line undercounts when output is piped through a pager.
 
-### 4. Map failures to rule categories
+### 5. Filter findings to the scope set and map to rule categories
 
-Every failing test name maps to one rule category — see `references/rule-categories.md` for the full table (test name pattern → category → what it means → typical fix). Group findings under those categories; do not invent categories the package doesn't define.
+For each failing test, get the offending rows: query the materialized `fct_*` table the test wraps (or use `dbt show --select <fct_model>`), inspect its columns, and keep only rows where any model-name-bearing column (`resource_name`, `child`, `parent`, `model`, … — varies per fct table, so check the actual columns rather than assuming) intersects the scope set. A test whose failures all fall outside the scope set is reported as out-of-scope noise in one summary line, not as findings.
 
-For each failing test, capture: the model(s) named in the failure, the category, and the row/record count if the test output includes one (fanout and duplicate-source tests usually do).
+Map each surviving failure to its rule category — see `references/rule-categories.md` for the full table (test name pattern → category → what it means → typical fix). Group findings under those categories; do not invent categories the package doesn't define. Capture per finding: the model(s) named, the category, and the row/record count where available.
 
-Completion criterion: every failing test in the run is assigned to a category and has at least one named model attached — no failure left as a bare test name.
+Completion criterion: every failing test is either (a) mapped to a category with at least one in-scope model attached, or (b) explicitly counted as out-of-scope — no failure left as a bare test name.
 
-### 5. Report
+### 6. Report
 
 ```markdown
 ## dbt Project Evaluator: <project>
+Scope: <N touched models + M lineage models | full project>
 
 ### Summary
 | Category | Passed | Failed |
@@ -77,6 +90,9 @@ Completion criterion: every failing test in the run is assigned to a category an
 - <model/source name> — <what the test found, with the count if available>
   - Fix: <concrete remediation — e.g. "move the join in stg_x to int_x", "add a primary key test to fct_y">
 
+### Out of scope
+- <N failures on models outside the scope set — one line per test name with its count>
+
 ### Not evaluated
 - <any package models that errored/were skipped, and why>
 ```
@@ -85,11 +101,11 @@ Completion criterion: every category with at least one failure appears with a co
 
 ## Reference
 
-See `references/rule-categories.md` for the dbt_project_evaluator test-name-to-category mapping and remediation patterns per category — load it at step 4, not before.
+See `references/rule-categories.md` for the dbt_project_evaluator test-name-to-category mapping and remediation patterns per category — load it at step 5, not before.
 
 ## Contract
 
-Consumes: a dbt project path (or cwd), optionally a target/profile name
+Consumes: a dbt project path (or cwd); optionally a target/profile name, a git base ref or `--state` manifest path for scoping, or an explicit full-project request
 Produces: categorized findings report (markdown) with per-finding remediation
 Requires: `dbt` CLI on PATH, dbt profile configured for a non-prod target
 Side effects: may propose a `packages.yml` addition (routed through normal delivery, not committed directly); runs `dbt deps` / `dbt build` or `dbt test` against the chosen target
