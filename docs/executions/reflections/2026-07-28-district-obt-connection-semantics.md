@@ -4,6 +4,7 @@
 **Goal**: Review PR #9399 (district daily engagement facts) and fix all findings.
 
 ## What Went Well
+
 - Independent 3-lane `workflow-review` (logic / tests / style) caught a real
   metric-semantics bug (F1) that green CI **and** my own earlier validation had
   passed. The value of independent review over self-review was demonstrated concretely.
@@ -15,6 +16,7 @@
   2026-07-20) instead of asserting the delta qualitatively.
 
 ## What Went Wrong / Friction
+
 - **Proxy-vs-ground-truth miss (the core lesson).** An earlier commit in this
   session "fixed" M2 by changing `<` to `<=` and validated it by observing that
   aggregate totals were identical under both operators. That validation was
@@ -31,16 +33,18 @@
   fell back to Redshift-via-`REDSHIFT_URL` (which worked).
 
 ## Corrections
+
 | # | What was corrected | Root cause | Owning skill/file |
 |---|--------------------|------------|-------------------|
 | 1 | Earlier M2 "fix" used wrong connection semantics; independent review overturned it | Validated against a superficially-similar model + a boundary that doesn't differ, not the canonical sibling OBT convention | `trusted-metric-testing` (astronomer repo) |
 | 2 | Repeated `gh` wrong-account | Global gh auth defaults to another user in this env | `docs/agents/habits.md` |
 
 ## Lessons
+
 1. **Match the canonical sibling, not the nearest-looking model.** When
    validating a new OBT/metric model, the authoritative precedent is the
    same-grain/same-domain model it mirrors (here: `school_obt__*_active_metrics__packed`
-   + `generate_active_board_reporting_tables`), which carry the intended
+   - `generate_active_board_reporting_tables`), which carry the intended
    convention (end-of-day snapshot, documented in the header). A model that
    merely *also* touches the same source tables is a proxy.
 2. **Equal aggregates under two operators ≠ semantic equivalence.** `<` vs `<=`
@@ -52,6 +56,7 @@
    `workflow-review`'s separate lanes caught what my own eyes + CI missed.
 
 ## Proposed Improvements
+
 - [ ] `.agents/skills/trusted-metric-testing/SKILL.md` (astronomer repo) — add a
   "canonical precedent" step: before validating a new metric/OBT model, locate
   the same-grain sibling model and confirm the new model matches its
