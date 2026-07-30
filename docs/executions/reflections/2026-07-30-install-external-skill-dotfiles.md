@@ -64,6 +64,23 @@
 - [ ] Missed step: after landing a skill, run
   `~/dotdev/dotfiles/.config/agents/skills/sync-codex-skills.sh --apply` to mirror
   into `~/.codex/skills` (not done this session for i-have-adhd). (priority: med)
+- [ ] `cleanup-delivery` SKILL.md — the self-cwd guard (Step 5) only covers a
+  shell `cd` *inside* the destructive command; it does NOT cover pi's own
+  **session cwd pointer**. Removing the worktree this session was cwd'd in left
+  every subsequent `bash`/`hypa_shell` unable to spawn ("Working directory does
+  not exist"), even though each command started with `cd ~/dotdev`. Recovery:
+  recreate the dir via a non-shell tool (`write` a placeholder file) so bash can
+  `cd` out. Proposed guard: before removing a worktree, if pi's session cwd is
+  under `<path>`, refuse and require the session to relaunch from the primary
+  checkout first (a per-command `cd` is insufficient). (priority: high)
+
+### Post-session addendum (2026-07-30, during cleanup-delivery)
+
+Hit the above self-cwd defect live: `git worktree remove` succeeded, then all
+shell tools broke because pi's session cwd was the removed worktree. Confirmed
+the `cd`-in-command mitigation is not enough — the harness stats the session
+cwd before spawning. This is the concrete evidence backing the high-priority
+`cleanup-delivery` change above.
 
 ## Skill Extraction Candidates
 
