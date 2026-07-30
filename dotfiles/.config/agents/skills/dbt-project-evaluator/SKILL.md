@@ -1,14 +1,14 @@
 ---
 name: dbt-project-evaluator
 model: sonnet
-description: 'Runs the dbt-labs dbt_project_evaluator package against a dbt project and turns its test output into a categorized, actionable findings report — by default scoped to the models touched by the current change plus their upstream/downstream lineage, with full-project audit on request. Covers staging/marts layering violations, direct joins to source, rejoined upstream concepts, fanout, undocumented or untested models, naming convention breaks, unused sources. Use when checking a dbt project structure or conventions, evaluating changed dbt models against best practices, auditing dbt project health, or the user asks to run, install, or interpret dbt_project_evaluator.'
+description: 'Checks a dbt project against the dbt-labs dbt_project_evaluator rules and produces a categorized, actionable findings report — by default evaluated locally from manifest.json (fast, no warehouse) and scoped to the models touched by the current change plus their upstream/downstream lineage; full-project or warehouse package runs on explicit request. Covers staging/marts layering violations, direct joins to source, rejoined upstream concepts, fanout, undocumented or untested models, naming convention breaks, unused sources. Use when checking a dbt project structure or conventions, evaluating changed dbt models against best practices, auditing dbt project health, or the user asks to run, install, or interpret dbt_project_evaluator.'
 ---
 
 # dbt Project Evaluator
 
 ## Purpose
 
-`dbt_project_evaluator` (dbt-labs) already encodes these structural rules as dbt tests — this skill runs it and turns raw pass/fail rows into a report someone can act on. Never hand-derive these rules from first principles; the package is the single source of truth for what counts as a violation.
+`dbt_project_evaluator` (dbt-labs) defines the structural rules — this skill evaluates them and turns raw violations into a report someone can act on. The package's rule definitions are the single source of truth for what counts as a violation; `scripts/evaluate_manifest.py` mirrors them locally (from `manifest.json`, no warehouse) because materializing the package's recursive DAG models in the warehouse hangs for hours on large projects. Never invent rules beyond what the package defines.
 
 ## When to invoke
 
@@ -32,46 +32,38 @@ Search upward from cwd, then the repo root, for `dbt_project.yml`. If none is fo
 
 Completion criterion: one confirmed path to a `dbt_project.yml`.
 
-### 2. Confirm the package is installed
+### 2. Determine touched models
 
-Read `packages.yml` (or `dependencies.yml`) next to `dbt_project.yml`. Look for `dbt-labs/dbt_project_evaluator` (or the `package: dbt_labs/dbt_project_evaluator` form).
+The default run is **scoped**: findings are reported only for the models the current change (PR/branch diff) touches, plus everything upstream and downstream of them. Run project-wide (`--full`) only when the user explicitly asks for a full audit.
 
-- **Present**: note the pinned version, proceed.
-- **Absent**: this needs a file change (`packages.yml`) — treat it as a real code change, not a side effect of running an audit. Follow the repo's normal delivery routing (branch/worktree + PR) to add the pinned entry rather than editing `packages.yml` in place on the current branch. Tell the user a `dbt deps` run will be needed once it lands, and stop this step there — do not silently commit or run `dbt deps` against an unreviewed dependency addition.
+Derive touched models from git: `git diff --name-only <base>...HEAD -- models/` (or the project's model paths from `dbt_project.yml`), mapped to model names by filename. Prefer `dbt ls --select state:modified --output name` when a comparison manifest already exists. If the diff touches no model files, say so and stop — don't fall back to a full-project run silently.
 
-Completion criterion: package confirmed installed (with version), or a routed change is in flight and the user knows why the audit is paused.
+Completion criterion: a concrete list of touched model names, or an explicit "nothing touched" stop.
 
-### 3. Build the scope set (default: touched models + up/downstream)
+### 3. Evaluate from the manifest (default fast path — no warehouse)
 
-The default run is **scoped**: findings are reported only for the models the current change touches, plus everything upstream and downstream of them. Run project-wide only when the user explicitly asks for a full audit.
-
-1. Determine touched models. Prefer dbt state selection when a comparison manifest exists (CI artifact or a `--state` path): `dbt ls --select state:modified --output name`. Otherwise derive from git: `git diff --name-only <base>...HEAD -- models/` mapped to model names.
-2. Expand to lineage: `dbt ls --select "+<model>+ ..." --output name` (one `+name+` per touched model). The output is the **scope set**.
-3. If the diff touches no model files, say so and stop — an empty scope set means there is nothing to evaluate; don't fall back to a full-project run silently.
-
-Completion criterion: a concrete list of model names (the scope set) written down, or an explicit "nothing touched" stop.
-
-### 4. Run the evaluator (full graph — scoping happens at reporting)
-
-The package computes its rules from the whole manifest graph; rules like fanout and rejoining are only correct with full-graph context, and the package has no native `--select` scoping (its own CI recipe runs the full package after building `state:modified+`). So always run it whole — it's metadata-only and cheap — and apply the scope set when filtering findings, never by selecting a subset of the package's models.
-
-Once the package is present and `dbt deps` has been run:
+The structural rules only need graph metadata, and all of it is in `manifest.json`. Running the actual package materializes recursive DAG models in the warehouse and can hang for hours on large projects — so the default path never touches the warehouse:
 
 ```bash
-dbt build --select package:dbt_project_evaluator
+dbt parse   # writes target/manifest.json locally, seconds even on large projects
+python3 scripts/evaluate_manifest.py target/manifest.json --changed <touched models...>
 ```
 
-Fall back to `dbt test --select package:dbt_project_evaluator` if the project's `dbt build` isn't set up to materialize the package's seeds. Target a dev/CI profile — never point this at a production target without the user explicitly confirming that target by name first.
+The script computes every rule over the **full graph** (fanout/rejoining need global context), walks lineage from the touched models itself (no `dbt ls` needed), then filters findings to the scope set. Out-of-scope failures come back as counts only. Its `not_covered` list names the package rules it doesn't implement — carry that list into the report verbatim, and check the project's `dbt_project.yml` vars for package overrides (custom prefixes, thresholds) that would change what counts as a violation.
 
-Completion criterion: the command has run to completion (pass or fail) and you have its full output, not a truncated tail — dbt's summary line undercounts when output is piped through a pager.
+Completion criterion: script ran cleanly and produced JSON with `findings`, `out_of_scope_counts`, and `scope_size`; any `changed_not_found` entries investigated (renamed/deleted models are expected there, typos are not).
 
-### 5. Filter findings to the scope set and map to rule categories
+### 4. Full package run (only on explicit request)
 
-For each failing test, get the offending rows: query the materialized `fct_*` table the test wraps (or use `dbt show --select <fct_model>`), inspect its columns, and keep only rows where any model-name-bearing column (`resource_name`, `child`, `parent`, `model`, … — varies per fct table, so check the actual columns rather than assuming) intersects the scope set. A test whose failures all fall outside the scope set is reported as out-of-scope noise in one summary line, not as findings.
+When the user asks for the package's own warehouse-materialized run (e.g. to match CI exactly): confirm `dbt-labs/dbt_project_evaluator` is in `packages.yml` — if absent, route the addition through normal delivery (branch + PR), never edit in place, and pause there. Then `dbt build --select package:dbt_project_evaluator` against a dev/CI target — never prod without the user naming it — after warning that this can run very long on large projects. Filter failing-test rows to the scope set by querying the `fct_*` tables (check each table's actual model-name-bearing columns; they vary).
 
-Map each surviving failure to its rule category — see `references/rule-categories.md` for the full table (test name pattern → category → what it means → typical fix). Group findings under those categories; do not invent categories the package doesn't define. Capture per finding: the model(s) named, the category, and the row/record count where available.
+Completion criterion: run completed with full output captured, or the packages.yml change is in flight and the user knows why it's paused.
 
-Completion criterion: every failing test is either (a) mapped to a category with at least one in-scope model attached, or (b) explicitly counted as out-of-scope — no failure left as a bare test name.
+### 5. Map findings to rule categories
+
+Map each in-scope finding to its rule category — see `references/rule-categories.md` for the full table (test/rule name → category → what it means → typical fix). Group under those categories; do not invent categories the package doesn't define.
+
+Completion criterion: every finding is mapped to a category with at least one in-scope model attached; out-of-scope counts and `not_covered` rules are carried forward, none dropped.
 
 ### 6. Report
 
@@ -91,10 +83,10 @@ Scope: <N touched models + M lineage models | full project>
   - Fix: <concrete remediation — e.g. "move the join in stg_x to int_x", "add a primary key test to fct_y">
 
 ### Out of scope
-- <N failures on models outside the scope set — one line per test name with its count>
+- <N failures on models outside the scope set — one line per rule with its count>
 
 ### Not evaluated
-- <any package models that errored/were skipped, and why>
+- <rules from the script's not_covered list, or package models that errored/were skipped>
 ```
 
 Completion criterion: every category with at least one failure appears with a concrete fix per finding; categories with zero failures appear only in the summary table, not repeated in Findings.
@@ -105,11 +97,11 @@ See `references/rule-categories.md` for the dbt_project_evaluator test-name-to-c
 
 ## Contract
 
-Consumes: a dbt project path (or cwd); optionally a target/profile name, a git base ref or `--state` manifest path for scoping, or an explicit full-project request
+Consumes: a dbt project path (or cwd); optionally a git base ref for scoping, an explicit full-project request, or an explicit warehouse package-run request (with target/profile)
 Produces: categorized findings report (markdown) with per-finding remediation
-Requires: `dbt` CLI on PATH, dbt profile configured for a non-prod target
-Side effects: may propose a `packages.yml` addition (routed through normal delivery, not committed directly); runs `dbt deps` / `dbt build` or `dbt test` against the chosen target
-Human gates: confirming the dbt project when ambiguous; confirming the target if it isn't obviously non-prod; reviewing the `packages.yml` PR if the package wasn't already installed
+Requires: `dbt` CLI on PATH (only `dbt parse` for the default path); warehouse target only for the explicit package run
+Side effects: default path writes `target/manifest.json` locally, nothing else; explicit package run may propose a `packages.yml` addition (routed through normal delivery, not committed directly) and runs `dbt build` against the chosen target
+Human gates: confirming the dbt project when ambiguous; the warehouse package run itself (explicit request + non-prod target confirmed); reviewing the `packages.yml` PR if the package wasn't already installed
 
 ## Context
 
