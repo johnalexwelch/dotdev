@@ -1,4 +1,5 @@
 # Session Reflection: Pergamon Handoff Cleanup Follow-up
+
 **Date**: 2026-07-28
 **Goal**: Reflect on the post-merge handoff and cleanup tail after issue #60 closed.
 
