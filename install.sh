@@ -64,6 +64,18 @@ else
     stow -d "$DOTFILES" -v -R -t "$HOME" dotfiles
 fi
 
+# Claude Desktop MCP config: op inject template -> real file (gitignored), then symlink.
+# stow won't manage the real file (gitignored, absent on fresh clone), so wire it explicitly.
+CLAUDE_TPL="$DOTFILES/dotfiles/Library/Application Support/Claude/claude_desktop_config.json.tpl"
+CLAUDE_REAL="${CLAUDE_TPL%.tpl}"
+CLAUDE_LINK="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
+if command -v op >/dev/null 2>&1 && [ -f "$CLAUDE_TPL" ]; then
+    run_cmd op inject -f -i "$CLAUDE_TPL" -o "$CLAUDE_REAL"
+    run_cmd chmod 600 "$CLAUDE_REAL"
+    run_cmd mkdir -p "$(dirname "$CLAUDE_LINK")"
+    run_cmd ln -sf "$CLAUDE_REAL" "$CLAUDE_LINK"
+fi
+
 # Yazi plugins declared in dotfiles/.config/yazi/package.toml (reproducible install)
 if command -v ya >/dev/null 2>&1; then
     run_cmd ya pkg install
