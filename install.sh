@@ -5,11 +5,11 @@ DRY_RUN=${DRY_RUN:-0}
 
 # Function to execute or simulate commands
 run_cmd() {
-    if [ "$DRY_RUN" = "1" ]; then
-        echo "Would execute: $*"
-        return 0
-    fi
-    "$@"
+	if [ "$DRY_RUN" = "1" ]; then
+		echo "Would execute: $*"
+		return 0
+	fi
+	"$@"
 }
 
 # Base directory
@@ -59,26 +59,14 @@ run_cmd mkdir -p "$HOME/.config/herdr"
 run_cmd mkdir -p "$HOME/.config/pi"
 
 if [ "$DRY_RUN" = "1" ]; then
-    stow -d "$DOTFILES" -nv -R -t "$HOME" dotfiles
+	stow -d "$DOTFILES" -nv -R -t "$HOME" dotfiles
 else
-    stow -d "$DOTFILES" -v -R -t "$HOME" dotfiles
-fi
-
-# Claude Desktop MCP config: op inject template -> real file (gitignored), then symlink.
-# stow won't manage the real file (gitignored, absent on fresh clone), so wire it explicitly.
-CLAUDE_TPL="$DOTFILES/dotfiles/Library/Application Support/Claude/claude_desktop_config.json.tpl"
-CLAUDE_REAL="${CLAUDE_TPL%.tpl}"
-CLAUDE_LINK="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
-if command -v op >/dev/null 2>&1 && [ -f "$CLAUDE_TPL" ]; then
-    run_cmd op inject -f -i "$CLAUDE_TPL" -o "$CLAUDE_REAL"
-    run_cmd chmod 600 "$CLAUDE_REAL"
-    run_cmd mkdir -p "$(dirname "$CLAUDE_LINK")"
-    run_cmd ln -sf "$CLAUDE_REAL" "$CLAUDE_LINK"
+	stow -d "$DOTFILES" -v -R -t "$HOME" dotfiles
 fi
 
 # Yazi plugins declared in dotfiles/.config/yazi/package.toml (reproducible install)
 if command -v ya >/dev/null 2>&1; then
-    run_cmd ya pkg install
+	run_cmd ya pkg install
 fi
 
 # AI tooling (guardian, headroom, gbrain, pi settings)
@@ -88,8 +76,8 @@ run_cmd bash "$DOTFILES/scripts/ai-setup.sh"
 run_cmd mkdir -p "$HOME/Library/LaunchAgents"
 run_cmd cp -f "$HOME/.config/pi/com.alexwelch.pi-checkpoint-prune.plist" "$HOME/Library/LaunchAgents/"
 if [ "$DRY_RUN" != "1" ]; then
-    launchctl bootout "gui/$(id -u)/com.alexwelch.pi-checkpoint-prune" 2>/dev/null || true
-    launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.alexwelch.pi-checkpoint-prune.plist" 2>/dev/null || true
+	launchctl bootout "gui/$(id -u)/com.alexwelch.pi-checkpoint-prune" 2>/dev/null || true
+	launchctl bootstrap "gui/$(id -u)" "$HOME/Library/LaunchAgents/com.alexwelch.pi-checkpoint-prune.plist" 2>/dev/null || true
 fi
 
 # Herdr integrations and plugins

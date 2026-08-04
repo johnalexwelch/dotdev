@@ -144,13 +144,6 @@ dotfiles/.config/agents/skills/.skill-observations/
 # Claude local settings (per-project permissions)
 /.claude/
 
-# Claude state/config — symlinked into repo, NEVER commit (secrets/private state)
-# .claude.json: oauth email/UUIDs, machineID, project history (uses ${ENV} for MCP creds)
-# claude_desktop_config.json: op-injected real file with live IRIS/GitHub secrets
-#   -> commit the .tpl instead (op:// refs, safe)
-dotfiles/.claude.json
-dotfiles/Library/Application Support/Claude/claude_desktop_config.json
-
 # OMC runtime state at repo root (sessions, project-memory, state)
 /.omc/
 
