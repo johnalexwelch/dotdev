@@ -8,7 +8,7 @@
 
 ---
 
-# Part 1 — How Work Gets Done
+## Part 1 — How Work Gets Done
 
 ## The Interface: pi + Claude Code
 
@@ -426,7 +426,7 @@ Each worktree records `WORKFLOW_BASE_GATE` + `WORKTREE_BASELINE_GATE` evidence b
 
 ---
 
-# Part 2 — What's Installed & Where
+## Part 2 — What's Installed & Where
 
 ## Repo Layout
 
