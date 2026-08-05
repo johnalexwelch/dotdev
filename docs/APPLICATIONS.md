@@ -1,8 +1,8 @@
-# 🔧 Application Configurations
+# Application Configurations
 
-## 🖥️ Development Tools
+## Development Tools
 
-### 🤖 Cursor
+### Cursor
 
 - Theme: Dracula Pro
 - Font: JetBrains Mono
@@ -15,7 +15,7 @@
   - Error Lens
   - Git Lens
 
-### 📟 Warp
+### Warp
 
 - Theme: Custom Dark
 - Features:
@@ -27,7 +27,7 @@
   - `Cmd + R`: History search
   - `Cmd + T`: New tab
 
-### 🐳 OrbStack
+### OrbStack
 
 - Resources:
   - CPU: 6 cores
@@ -38,9 +38,9 @@
   - Network: Custom bridge
   - Volume mounts: Optimized
 
-## 🔧 Productivity Tools
+## Productivity Tools
 
-### 🔍 Raycast
+### Raycast
 
 - Launch: `Cmd + Space`
 - Features:
@@ -52,7 +52,7 @@
   - Git workflow
   - Terminal commands
 
-### 🌐 Arc Browser
+### Arc Browser
 
 - Workspaces:
   - Development
@@ -67,7 +67,7 @@
   - Split view default
   - Spaces organized by project
 
-### 🎮 Stream Deck
+### Stream Deck
 
 - Profiles:
   - Development
@@ -82,9 +82,9 @@
   - Spotify
   - Home automation
 
-## 🔒 Security Tools
+## Security Tools
 
-### 🔑 1Password
+### 1Password
 
 - SSH Key Management
 - Developer Tools:
@@ -96,7 +96,7 @@
   - 2FA automation
   - Secure notes
 
-### 🛡️ Little Snitch
+### Little Snitch
 
 - Rules:
   - Development tools
@@ -107,9 +107,9 @@
   - Automatic profile switching
   - Network monitoring
 
-## 📊 Monitoring Tools
+## Monitoring Tools
 
-### 📈 Stats
+### Stats
 
 - Menubar Display:
   - CPU usage
@@ -121,7 +121,7 @@
   - Low disk space
   - Network spikes
 
-### 🔋 AlDente
+### AlDente
 
 - Battery Management:
   - Charge limit: 80%
@@ -132,9 +132,9 @@
   - Top-up scheduling
   - Status indicators
 
-## 🎵 Media Tools
+## Media Tools
 
-### 🎧 Background Music
+### Background Music
 
 - Audio Routing:
   - Per-app volume
@@ -145,7 +145,7 @@
   - Input switching
   - Quick mute
 
-### 🎬 Shottr
+### Shottr
 
 - Screenshot Settings:
   - Format: PNG
@@ -156,9 +156,9 @@
   - Scrolling capture
   - Annotations
 
-## ⚙️ System Utilities
+## System Utilities
 
-### 🔄 Syncthing
+### Syncthing
 
 - Sync Folders:
   - Documents
@@ -169,7 +169,7 @@
   - Version control
   - Conflict resolution
 
-### 📁 Mountain Duck
+### Mountain Duck
 
 - Mounts:
   - S3 buckets
@@ -180,9 +180,9 @@
   - Encryption
   - Bandwidth limiting
 
-## 🎨 Design Tools
+## Design Tools
 
-### 🎯 Figma
+### Figma
 
 - Plugins:
   - Auto Layout
@@ -193,9 +193,9 @@
   - Font syncing
   - Plugin auto-updates
 
-## 💬 Communication
+## Communication
 
-### 🗨️ Slack
+### Slack
 
 - Workspaces:
   - Development team
@@ -206,7 +206,7 @@
   - Custom themes
   - Keyboard shortcuts
 
-## 🔄 Regular Maintenance
+## Regular Maintenance
 
 - Weekly:
   - Update applications

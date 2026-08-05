@@ -1,20 +1,20 @@
-# 🛠️ Installation Guide
+# Installation Guide
 
 This guide walks you through setting up your development environment using these dotfiles.
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before you begin, ensure you have:
 
 | Tool | Purpose | Installation |
 |------|---------|--------------|
-| 🍎 Xcode CLI | Development tools | `xcode-select --install` |
-| 🔑 SSH Key | GitHub access | [📝 Guide](https://docs.github.com/authentication/connecting-to-github-with-ssh) |
-| 🎯 Git | Version control | Included in Xcode CLI |
+| Xcode CLI | Development tools | `xcode-select --install` |
+| SSH Key | GitHub access | [Guide](https://docs.github.com/authentication/connecting-to-github-with-ssh) |
+| Git | Version control | Included in Xcode CLI |
 
-## 📥 Installation Steps
+## Installation Steps
 
-### 1️⃣ Clone Repository
+### 1. Clone Repository
 
 ```bash
 # Clone the repository
@@ -22,7 +22,7 @@ git clone https://github.com/johnalexwelch/dotdev.git ~/dotdev
 cd ~/dotdev
 ```
 
-### 2️⃣ Run Installation
+### 2. Run Installation
 
 ```bash
 # Make scripts executable
@@ -32,37 +32,37 @@ chmod +x scripts/*.sh
 ./install.sh
 ```
 
-## 🔧 What Gets Installed
+## What Gets Installed
 
-### 📦 Package Managers
+### Package Managers
 
 | Tool | Purpose | Documentation |
 |------|---------|---------------|
-| 🍺 Homebrew | macOS package manager | [📚 Docs](https://docs.brew.sh) |
-| 📦 npm | Node.js package manager | [📘 Docs](https://docs.npmjs.com) |
-| 🐍 pip | Python package manager | [📗 Guide](https://pip.pypa.io) |
+| Homebrew | macOS package manager | [Docs](https://docs.brew.sh) |
+| npm | Node.js package manager | [Docs](https://docs.npmjs.com) |
+| pip | Python package manager | [Guide](https://pip.pypa.io) |
 
-### 🛠️ Development Tools
+### Development Tools
 
 | Category | Tools |
 |----------|-------|
-| 📝 Editors | Cursor, VSCode |
-| 📟 Terminal | Warp, iTerm2 |
-| 🐳 Containers | Docker, OrbStack |
-| ☁️ Cloud | AWS CLI, gcloud |
-| 🔨 Build Tools | gcc, make |
+| Editors | Cursor, VSCode |
+| Terminal | Warp, iTerm2 |
+| Containers | Docker, OrbStack |
+| Cloud | AWS CLI, gcloud |
+| Build Tools | gcc, make |
 
-### 🔒 Security Tools
+### Security Tools
 
 | Tool | Purpose | Documentation |
 |------|---------|---------------|
-| 🔍 detect-secrets | Secret scanning | [📚 Docs](https://github.com/Yelp/detect-secrets) |
-| 🕵️ gitleaks | Git security scanner | [📘 Guide](https://github.com/zricethezav/gitleaks) |
-| 🔐 git-secrets | AWS credential scanner | [📗 Docs](https://github.com/awslabs/git-secrets) |
+| detect-secrets | Secret scanning | [Docs](https://github.com/Yelp/detect-secrets) |
+| gitleaks | Git security scanner | [Guide](https://github.com/zricethezav/gitleaks) |
+| git-secrets | AWS credential scanner | [Docs](https://github.com/awslabs/git-secrets) |
 
-## ✅ Post-Installation
+## Post-Installation
 
-### 🔍 Verify Installation
+### Verify Installation
 
 ```bash
 # Run tests
@@ -72,7 +72,7 @@ chmod +x scripts/*.sh
 ./scripts/security-init.sh
 ```
 
-### 🔧 Configure Git
+### Configure Git
 
 ```bash
 # Set your Git credentials
@@ -80,17 +80,17 @@ git config --global user.name "Your Name"
 git config --global user.email "your.email@example.com"
 ```
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
 | Issue | Solution |
 |-------|----------|
-| 🔒 Permission denied | `chmod +x scripts/*.sh` |
-| 📦 Homebrew fails | Run `xcode-select --install` |
-| 🔗 Symlink conflicts | Remove existing config files |
+| Permission denied | `chmod +x scripts/*.sh` |
+| Homebrew fails | Run `xcode-select --install` |
+| Symlink conflicts | Remove existing config files |
 
-## 🔄 Updates
+## Updates
 
 ### Regular Maintenance
 
