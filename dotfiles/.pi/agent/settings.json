@@ -1,6 +1,11 @@
 {
-  "lastChangelogVersion": "0.82.1",
+  "lastChangelogVersion": "0.83.0",
   "defaultProvider": "anthropic",
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 120000,
+    "keepRecentTokens": 40000
+  },
   "defaultModel": "claude-opus-4-8",
   "providers": {
     "anthropic": {

@@ -1,8 +1,14 @@
 # AI Working Environment
 
-> How the toolchain fits together and how work actually gets done.
+> How the toolchain fits together, how work actually gets done, and what's
+> installed where. Two parts: **Part 1** is behavioral (the workflow machinery);
+> **Part 2** is reference (exact configs, paths, packages). Predates OpenWiki and
+> is being folded into `openwiki/` — treat `openwiki/` as source of truth where
+> they disagree.
 
 ---
+
+## Part 1 — How Work Gets Done
 
 ## The Interface: pi + Claude Code
 
@@ -60,6 +66,8 @@ TypeScript program compiled to `dist/cli.js`. Calls claude-haiku-4-5 to evaluate
 
 **Auto-recompile**: PostToolUse detects changes to `guardian/*.ts`, runs `npx tsc`, reports `"Guardian compile FAILED — dist/ is stale"` loudly on error.
 
+Exact location / clone / runtime facts are in Part 2 → *Claude Code config*.
+
 ### Workflow Guard
 
 Pure-Bash hook (no LLM). Enforces workflow protocol:
@@ -72,7 +80,7 @@ Pure-Bash hook (no LLM). Enforces workflow protocol:
 
 ## The Skills Library
 
-~90 skills in `~/.config/agents/skills/` (agent-neutral shared source; also reachable via `~/.claude/skills/`). A skill is a Markdown file with YAML frontmatter — model, reasoning level, contract (inputs/outputs/side effects), and a step-by-step playbook. Skills are executable protocols, not prompts.
+98 skills in `~/.config/agents/skills/` (agent-neutral shared source; also reachable via `~/.claude/skills/`, symlinked by `ai-setup.sh`). A skill is a Markdown file with YAML frontmatter — model, reasoning level, contract (inputs/outputs/side effects), and a step-by-step playbook. Skills are executable protocols, not prompts. (Skill inventory by category is in Part 2.)
 
 Every multi-step skill opens with a **step ledger** and maintains it throughout:
 
@@ -133,7 +141,7 @@ flowchart TD
     D -->|no| F
     E --> F
 
-    F[/workflow-roadmap\n⚡ HUMAN APPROVAL GATE\nmilestone plan + scope/]
+    F[/workflow-roadmap\nHUMAN APPROVAL GATE\nmilestone plan + scope/]
     F -->|approved| G
     F -->|rejected| STOP([stop / revise])
 
@@ -418,44 +426,258 @@ Each worktree records `WORKFLOW_BASE_GATE` + `WORKTREE_BASELINE_GATE` evidence b
 
 ---
 
-## Herdr: Workspace Layout
+## Part 2 — What's Installed & Where
 
-**herdr** is a terminal multiplexer + session manager. The `hdev` command creates a structured workspace:
+## Repo Layout
 
-```bash
-hdev ~/projects/myapp          # full layout
-hdev ~/projects/myapp --monitor  # gh-dash only
-hdev ~/projects/myapp --minimal  # pi only
+Everything lives in `~/dotdev`. One repo, two concerns:
+
+```
+~/dotdev/
+  Brewfile                  # all Homebrew formulae + casks (source of truth)
+  install.sh                # idempotent bootstrap — safe to re-run
+  dotfiles/                 # stowed with GNU Stow → $HOME
+    .zshrc
+    .gitconfig
+    .gitignore_global
+    .claude/                # Claude-SPECIFIC config (no skills/ here — retired)
+      hooks/                # workflow-guard.sh, herdr-agent-state.sh, etc.
+      settings.json         # shared Claude config (hooks, plugins, permissions)
+      settings.local.template.json  # machine-local template (gbrain MCP)
+    .pi/                    # pi-specific config (reads shared skills via ~/.claude/skills)
+    .config/
+      agents/               # AGENT-AGNOSTIC shared source (name-neutral)
+        skills/             # 98 skills — single source of truth for all agents
+                            #   ~/.claude/skills → here, symlinked by ai-setup.sh (not stow)
+        docs/               # shared agent reference
+      ...                   # zsh, starship, lazygit, cursor, arc, raycast, herdr, etc.
+  scripts/
+    ai-setup.sh             # guardian clone, pi packages, gbrain clone
+    brew.sh                 # Homebrew bootstrap
+    github.sh               # SSH key + gh auth
+    herdr-setup.sh          # herdr integrations + plugins
+    config-init.sh          # pre-creates dirs to prevent stow tree-folding
+    macos/                  # per-surface macOS defaults
+    hdev.sh, hlog.sh        # herdr workspace launchers
+    arc.sh                  # Arc bookmark backup/restore
+    security-init.sh        # git-secrets install
 ```
 
-```mermaid
-flowchart TD
-    subgraph WS [herdr workspace — full layout]
-        subgraph WORK [work tab]
-            PI[pi\nleft pane\nopus + extended thinking]
-            LG[lazygit\nright-top]
-            YZ[yazi\nright-bottom\nfile browser]
-        end
-        subgraph GH [gh tab]
-            DASH[gh-dash\nissues · PRs · CI]
-        end
-    end
-
-    START([hdev project-dir]) --> WS
-    WS --> SESSION[herdr registers session\nvia SessionStart hook\ndaemon tracks pane → agent mapping]
-```
-
-Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr daemon on start. The daemon knows what's running in which pane — workspace-aware tooling.
+**GNU Stow** manages all symlinks: `stow -d ~/dotdev -R -t $HOME dotfiles`. Every file under `dotfiles/` lands at the same relative path under `$HOME`.
 
 ---
 
-## Pi Packages
+## Fresh Install
 
-26 packages. Grouped by what they enable:
+```bash
+git clone git@github-personal:johnalexwelch/dotdev.git ~/dotdev
+cd ~/dotdev && bash install.sh
+# DRY_RUN=1 bash install.sh   → preview every command without executing
+```
+
+`install.sh` runs in order:
+
+1. **`brew.sh`** — installs Homebrew if missing; runs `brew bundle --file=Brewfile`
+2. **`config-init.sh`** — pre-creates `~/.config/{ghostty,lazygit,mcp,nvim,raycast,gh-dash,zsh,...}` so Stow can't tree-fold them
+3. **`github.sh`** — generates `~/.ssh/id_ed25519`, adds to agent + keychain, authenticates with `gh`
+4. **`gh-extensions.sh`** — installs `gh` CLI extensions
+5. **Application symlinks** — `~/.config/arc → ~/Library/Application Support/Arc` etc. (Arc, Cursor, StreamDeck)
+6. **macOS defaults** — `defaults.sh`, `finder.sh`, `dock.sh`, `spotlight.sh`, `terminal.sh`, `screen.sh`, `input_devices.sh`, `permissions.sh`
+7. **`stow`** — materializes all `dotfiles/` symlinks into `$HOME`
+8. **`ai-setup.sh`** — guardian clone + compile, gbrain clone, pi packages, `~/.claude/skills` symlink, pi checkpoint-prune LaunchAgent
+9. **`herdr-setup.sh`** — herdr integrations + plugins
+
+One manual step post-install: `~/.claude/settings.local.json` is created from template — contains the gbrain MCP path.
+
+---
+
+## Shell — ZSH
+
+Minimal, modular, **no oh-my-zsh**. Modules load in order: configs → tools → theme.
+
+### `.zshrc` (thin loader)
+
+```zsh
+XDG_CONFIG_HOME="$HOME/.config"
+ZSH_CONFIG="$XDG_CONFIG_HOME/zsh"
+
+# Load configs/  tools/  themes/ in order
+for conf in "$ZSH_CONFIG/configs"/*.zsh; do source "$conf"; done
+for conf in "$ZSH_CONFIG/tools"/*.zsh;   do source "$conf"; done
+source "$ZSH_CONFIG/themes/starship.zsh"
+eval "$(zoxide init zsh)"
+```
+
+Then: pin Node 22 LTS, load `GITHUB_MCP_PAT` from launchctl, Cargo PATH, bun, safe-chain, and the `idea`/`ideas` functions.
+
+### Configs (`~/.config/zsh/`)
+
+| File | What it does |
+|---|---|
+| `configs/aliases.zsh` | Modern CLI rewrites (`eza`, `bat`, `rg`, `fd`, `htop`, `dust`, `duf`) + nav shortcuts + git/docker/data aliases + `hdev`/`hlog`/project shortcuts |
+| `configs/env.zsh` | XDG dirs, `~/bin`, `.local/bin`, Homebrew, Cursor PATH; sources credential files (`~/.anthropic`, `~/.openai`, `~/.slack`, etc.); CORA vars; GitHub MCP token alias |
+| `configs/history.zsh` | 50k HISTSIZE/SAVEHIST; dedup + reduce-blanks opts; **atuin** init (cross-session SQLite, Ctrl-R) with native up-arrow fallback |
+| `configs/plugins.zsh` | zsh-autosuggestions + zsh-syntax-highlighting config vars (installed via Brewfile, sourced separately) |
+| `configs/aws.zsh` | SSO helpers: `awsl` (login + set profile), `awsp` (switch profile), `aws-profiles`, `aws-sso-token`, `aws-sso-accounts` |
+| `tools/git.zsh` | 40+ git aliases (`gs`, `glog`, `gpf`, etc.) + fzf-powered `ga-fzf`, `gco-fzf`, `gh-fzf`; `gnb` (branch + push -u), `gclean` (prune merged) |
+| `tools/python.zsh` | pyenv init, virtualenv helpers |
+
+### Key Aliases
+
+```zsh
+ls   → eza --color --git --icons
+cat  → bat
+grep → rg
+find → fd
+j    → z (zoxide)          # frecency-based directory jump
+code → cursor
+vim  → nvim
+top  → htop
+du   → dust
+df   → duf
+```
+
+**Prompt**: Starship (`~/.config/starship/starship.toml`), `eval "$(starship init zsh)"`.
+
+---
+
+## Git
+
+`~/.gitconfig` (stowed):
+
+- **Editor**: `code --wait` (opens Cursor)
+- **Pager**: `delta` with side-by-side diffs, line numbers, navigation (`n`/`N`)
+- **Default branch**: `main`
+- **push**: `autoSetupRemote = true`, `default = current`
+- **pull**: `rebase = true` · **fetch**: `prune = true` · **rebase**: `autoStash = true`
+- **Global gitignore** (`~/.gitignore_global`): macOS system files, `.DS_Store`, VSCode/JetBrains dirs, Python/JS/TS artifacts, `.env*`, AWS credentials, Terraform state, `.omc/`, `.serena/`, `**/.claude/settings.local.json`
+
+### Conventional Commits
+
+`dotfiles/.config/git/commit-normalize.sh` — normalizes commit messages to Conventional Commits format. Two delivery paths:
+
+1. **Pre-commit hook** — via `.pre-commit-config.yaml` (`stages: [commit-msg]`) when `pre-commit install` is run in a repo
+2. **Manual** — `~/.config/git/commit-msg` searches for the script (same dir → XDG git dir → dotfiles path) when copied to a repo's `.git/hooks/`
+
+---
+
+## Claude Code config
+
+### `settings.json` (stowed → `~/.claude/settings.json`)
+
+**Model**: `opus` (claude-opus-4-5). Extended thinking always on (`alwaysThinkingEnabled`, `effortLevel: high`). Advisor model: `opus`.
+
+**Permissions (allow all by default)**:
+
+```
+Bash(*), Read, Write, Edit, Glob, Grep, LS, WebFetch, WebSearch,
+Agent, Monitor, SendMessage, Skill(*), LSP,
+TeamCreate/Delete, RemoteTrigger, CronCreate/Delete/List,
+EnterPlanMode/ExitPlanMode, EnterWorktree/ExitWorktree,
+AskUserQuestion, NotebookEdit/Read, Task*
+```
+
+**Hard denies**: `sudo *`, `git push --force *`, `git push -f *`, `rm -rf / *`, `rm -rf ~*`. `defaultMode: auto`.
+
+**Env vars injected into every session**:
+
+- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` — enables multi-agent team features
+- `LANGFUSE_HOST=http://192.168.4.43:3050` + `TRACE_TO_LANGFUSE=true` — traces to home-network Langfuse
+
+**TUI**: fullscreen. Notifications: Ghostty. Teammate mode: tmux.
+
+### Guardian (exact)
+
+**Location**: `~/.claude/guardian/` — cloned from `github-personal:johnalexwelch/guardian`; TypeScript compiled to `dist/cli.js` by tsc. **Runtime**: `run.sh` is a thin wrapper — `exec node ~/.claude/guardian/dist/cli.js` (no tsx/JIT). **Deps**: `@anthropic-ai/sdk`, `zod`, `typescript`. Falls back to `ask` mode if `ANTHROPIC_API_KEY` is unset. (Behavior described in Part 1.)
+
+### Workflow Guard (`~/.claude/hooks/workflow-guard.sh`, pure Bash)
+
+- **PreToolUse**: blocks `gh issue create/edit` from being labeled `ready-for-agent` if the body looks like a PRD ("PRD", "spec", "User Stories", etc.). PRD-parents stay labeled as such; child implementation issues get the label.
+- **PostToolUse**: `gh issue create/edit + ready-for-agent` → checklist reminder (acceptance criteria, rollback, AFK/HITL, gates); `gh pr create/ready` → warns not to claim CI success from exit code alone + checks WORKFLOW gates; `gh pr merge/close` → runs `git status` + `git worktree list`, tells agent to load `cleanup-delivery`.
+
+### PostToolUse on every `Edit`/`Write`
+
+1. **Linter/formatter** — `ruff check --fix` + `ruff format` for `.py`; `npx eslint --fix` for `.ts/.tsx`
+2. **Secret scanner** — greps for `sk-*`, `AKIA*`, private key headers, `password=` literals; prints `WARNING`
+3. **File size guard** — warns above 300 lines
+4. **Guardian recompile** — if the file is `~/.claude/guardian/*.ts`, runs `npx tsc` (30s timeout)
+
+### SessionStart hooks
+
+1. **herdr agent-state** — notifies herdr server of session start (pane tracking). No-ops if herdr isn't running.
+2. **journey hook propagation** — copies `60-journey.sh` into any `remember` plugin hook dirs missing it (idempotent).
+
+### Status line (HUD)
+
+Bottom status bar driven by **oh-my-claudecode**:
+
+```
+sh ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud-cache.sh \
+   ${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hud/omc-hud.mjs
+```
+
+Shows token usage, model, session info. Cache-backed — only re-reads state on change.
+
+### Enabled plugins
+
+| Plugin | Purpose |
+|---|---|
+| `agent-sdk-dev` | Agent SDK development helpers |
+| `claude-md-management` | `CLAUDE.md` / context file management |
+| `code-simplifier` | Complexity + simplification suggestions |
+| `context7` | Up-to-date library docs via Context7 |
+| `data-engineering` | Data pipeline + SQL tooling |
+| `frontend-design` | UI/design guidance |
+| `git-cleanup` (trailofbits) | Dead branch + stale ref cleanup |
+| `oh-my-claudecode` (omc) | HUD status line, session telemetry, team dispatch |
+| `playwright` | Browser test generation + execution |
+| `plugin-dev` | Plugin authoring scaffolding |
+| `pyright-lsp` | Python LSP via Pyright |
+| `remember` | Persistent session memory |
+| `skill-creator` | New skill scaffolding |
+| `slack` | Slack integration |
+| `superpowers` | Extended tool capabilities |
+| `typescript-lsp` | TypeScript LSP + diagnostics |
+
+Disabled but installed: `code-review`, `commit-commands`, `feature-dev`, `figma`, `ralph-loop`, `security-guidance`, `serena`, `zeroize-audit`.
+
+### `settings.local.json` + gbrain
+
+Machine-local, not stowed. Generated from `settings.local.template.json` on first `ai-setup.sh` run. Contains only the **gbrain** MCP server — a local knowledge-graph / second-brain server cloned to `~/gbrain-repo`, run via bun:
+
+```json
+{
+  "mcpServers": {
+    "gbrain": {
+      "command": "/Users/alexwelch/.bun/bin/bun",
+      "args": ["/Users/alexwelch/gbrain-repo/src/mcp/server.ts"]
+    }
+  }
+}
+```
+
+### Skills inventory (by category)
+
+`~/.config/agents/skills/` — **98 skills**. Examples:
+
+- **Product / strategy**: `analysis-council`, `analysis-design`, `okr-generator`, `v1-idea-grill`, `v1-system-design`, `strategic-analysis-review`, `experiment-design`, `metric-council`, `metric-design`
+- **Engineering**: `tdd`, `implement`, `diagnose`, `workflow-debug`, `workflow-feature`, `workflow-finalize`, `workflow-review`, `run-backlog`, `pr-responder`, `pr-review`, `repo-audit`, `slop-cleaner`, `sql-review`, `lineage-audit`
+- **Docs / content**: `decision-log`, `decision-memo`, `handoff`, `humanizer`, `clarity-review`, `runbook-author`, `post-mortem`, `incident-retro`, `slack-update`
+- **Data**: `data-quality-audit`, `data-readiness-check`, `mock-data-generator`
+- **Agent / CHORUS ops**: `brain-ops`, `to-issues`, `to-prd`, `triage`, `herdr-launch`, `execute-prd`, `execute-phase`, `setup-worktree`
+- **UI / design**: `dashboard-design`, `dashboard-review`, `prototype`, `stage-v1-concept`
+
+---
+
+## Pi Agent config
+
+Stowed from `dotfiles/.pi/agent/settings.json` → `~/.pi/agent/settings.json`. **Default provider**: anthropic. **Default model**: claude-sonnet-5.
+
+### Packages (26)
 
 **Codebase navigation**
 
-- `pi-codemapper` — indexes the codebase (symbols, call graphs, dependencies); `map`, `search`, `outline`, `expand`, `path` operations
+- `pi-codemapper` — indexes the codebase (symbols, call graphs, dependencies); `map`, `search`, `outline`, `expand`, `path`
 - `pi-lens` — LSP diagnostics, ast-grep structural search, tree-sitter rules; runs against the live language server
 
 **Subagent orchestration**
@@ -483,7 +705,7 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 - `pi-cache-optimizer` — prompt cache optimization
 - `pi-better-messages-cache` — message-level caching
 
-> **Do not prune these as "redundant compressors."** Verified 2026-07-29 by reading each extension's hooks: they act at three distinct pipeline stages (prompt guidance → deterministic shell-output compression → LLM context compression), operate on different bytes, and cascade rather than double-compress. Removing one is a real capability loss, not de-duplication. The only genuine cost is `pi-hypa`: a per-bash-call spawn tax (`hypa rewrite` + `hypa -c`, 5s timeout each) and a habit of mangling compound shell commands — it splits on `;` and breaks `{ }` blocks / heredocs, so multi-statement bash may need a script-file workaround. That is a correctness/friction tradeoff to weigh on hypa's own merits, not a redundancy argument. None of the three is a meaningful startup-time cost.
+> **Do not prune these as "redundant compressors."** Verified 2026-07-29 by reading each extension's hooks: they act at three distinct pipeline stages (prompt guidance → deterministic shell-output compression → LLM context compression), operate on different bytes, and cascade rather than double-compress. Removing one is a real capability loss, not de-duplication. The only genuine cost is `pi-hypa`: a per-bash-call spawn tax (`hypa rewrite` + `hypa -c`, 5s timeout each) and a habit of mangling compound shell commands — it splits on `;` and breaks `{ }` blocks / heredocs, so multi-statement bash may need a script-file workaround. That is a correctness/friction tradeoff to weigh on hypa's own merits, not a redundancy argument.
 
 **Real-world integration**
 
@@ -492,13 +714,27 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 - `pi-mcp-adapter` — MCP protocol bridge
 - `@gotgenes/pi-github-tools` — GitHub MCP tools
 - `pi-pr-ally` — PR review and response assistance
+- `@diegopetrucci/pi-triage-comments` — comment triage
 
-**Utility**
+**Utility / display**
 
+- `pi-tool-display` — richer tool result rendering
+- `pi-observability` — session observability
 - `@narumitw/pi-caffeinate` — prevents macOS sleep during long AFK runs
 - `@diegopetrucci/pi-notify` — macOS notifications when the agent needs input or completes
 
-**Model roles**:
+### modelRoles
+
+```json
+{
+  "fast":     "anthropic/claude-haiku-4-5",
+  "strong":   "anthropic/claude-sonnet-4-6",
+  "thinker":  "anthropic/claude-sonnet-4-6",
+  "arbiter":  "anthropic/claude-opus-4-5",
+  "vision":   "anthropic/claude-sonnet-4-6",
+  "reasoner": "anthropic/claude-opus-4-5"
+}
+```
 
 | Role | Model | Used for |
 |---|---|---|
@@ -506,49 +742,55 @@ Every AI session (pi, Claude Code, Codex, opencode) registers with the herdr dae
 | strong / thinker / vision | claude-sonnet-4-6 | Normal exploration, implementation, most subagent work |
 | arbiter / reasoner | claude-opus-4-5 | Review, architecture decisions, high-stakes judgment |
 
-**Fork effort → model**:
+### Fork effort → model
 
 | Effort | Model | Thinking |
 |---|---|---|
-| `fast` | haiku-4-5 | off |
-| `balanced` (default) | sonnet-4-6 | low |
-| `deep` | opus-4-5 | medium |
+| `fast` | claude-haiku-4-5 | off |
+| `balanced` (default) | claude-sonnet-4-6 | low |
+| `deep` | claude-opus-4-5 | medium |
+
+Observational memory compression runs on haiku-4-5 (cheap, high-frequency).
 
 ---
 
-## Claude Code Plugins
+## Herdr: Workspace Layout + Sessions
 
-25 plugins. Active ones:
+**herdr** is a terminal multiplexer + agent session manager. The `hdev` command creates a structured workspace:
 
-| Plugin | What it adds |
+```bash
+hdev ~/projects/myapp            # full layout
+hdev ~/projects/myapp --monitor  # gh-dash only
+hdev ~/projects/myapp --minimal  # pi only
+```
+
+```mermaid
+flowchart TD
+    subgraph WS [herdr workspace — full layout]
+        subgraph WORK [work tab]
+            PI[pi\nleft pane\nopus + extended thinking]
+            LG[lazygit\nright-top]
+            YZ[yazi\nright-bottom\nfile browser]
+        end
+        subgraph GH [gh tab]
+            DASH[gh-dash\nissues · PRs · CI]
+        end
+    end
+
+    START([hdev project-dir]) --> WS
+    WS --> SESSION[herdr registers session\nvia SessionStart hook\ndaemon tracks pane → agent mapping]
+```
+
+Integrations + plugins installed by `herdr-setup.sh`:
+
+| Integration | What it does |
 |---|---|
-| `context7` | Fetches up-to-date library docs mid-session |
-| `typescript-lsp` | TypeScript language server — inline errors, go-to-def, rename refactor |
-| `pyright-lsp` | Python language server via Pyright |
-| `playwright` | Browser test generation and execution |
-| `oh-my-claudecode` | HUD status line, session telemetry, team dispatch (AFK batch) |
-| `remember` | Persistent session memory across sessions |
-| `superpowers` | Extended tool capabilities |
-| `code-simplifier` | Surfaces complexity hotspots |
-| `data-engineering` | Data pipeline and SQL tooling |
-| `frontend-design` | UI/design guidance |
-| `git-cleanup` | Dead branches and stale ref cleanup |
-| `skill-creator` | Scaffolds new skills |
-| `agent-sdk-dev` | Agent SDK development helpers |
-| `claude-md-management` | CLAUDE.md context file management |
-| `slack` | Slack integration |
+| `pi` / `claude` / `codex` / `opencode` | Registers each agent's sessions in herdr's pane registry |
 
----
+- `persiyanov/herdr-fresh-worktree` — creates clean worktrees pre-attached to herdr panes
+- `cloudmanic/herdr-plus` — extended herdr utilities
 
-## The Status Bar
-
-Bottom of every session: **omc HUD** (oh-my-claudecode). Shows token usage, model, and session state. Cache-backed — only re-reads state when something changes.
-
----
-
-## MCP Server: gbrain
-
-Local MCP server (`~/gbrain-repo`) providing a knowledge graph interface. Runs via bun. Registered in `settings.local.json` (machine-local, not stowed). Gives any session structured query access to a personal knowledge graph.
+Launchers: `hdev <path>` (workspace), `hlog <path>` (log-focused); `chorus`, `cora`, `mira` are project shortcuts. The `herdr-agent-state.sh` SessionStart hook reports session-open events to the daemon over a UNIX socket; no-ops silently if the daemon isn't running.
 
 ---
 
@@ -559,55 +801,81 @@ idea "build a metrics alerting layer"   # AI-enriched capture
 idea -q "quick note"                    # skip enrichment
 ```
 
-Calls claude-haiku-4-5 to classify (tool/app/research/business/experiment/...), write a one-sentence pitch, generate tags, and suggest 3 concrete next steps. Result lands as structured frontmatter Markdown in `~/Documents/Home/Idea Bin/`. Fast enough to capture before the thought is gone.
-
-`ideas review` and `ideas promote` move ideas through the downstream pipeline.
+Calls claude-haiku-4-5 to classify (tool/app/research/business/experiment/...), write a one-sentence pitch, generate tags, and suggest 3 concrete next steps. Result lands as structured frontmatter Markdown in `~/Documents/Home/Idea Bin/`. `ideas review` and `ideas promote` move ideas through the downstream pipeline.
 
 ---
 
 ## Observability
 
-**Langfuse** at `192.168.4.43:3050` (home network) receives traces from every Claude session. Token usage, tool calls, session duration, and model spend visible in a dashboard on the home network.
-
-**pi-observational-memory** produces per-session compressed observations that persist across context resets — a navigable log of what was learned, decided, and done.
+**Langfuse** at `192.168.4.43:3050` (home network) receives traces from every Claude session — token usage, tool calls, session duration, model spend. **pi-observational-memory** produces per-session compressed observations that persist across context resets — a navigable log of what was learned, decided, and done.
 
 ---
 
-## Shell + Git
+## Homebrew
 
-**ZSH** — minimal, modular, no oh-my-zsh. Modules load in order: configs → tools → theme.
+~230 formulae installed (`Brewfile` is source of truth). Highlights:
 
-**Key tools**:
+- **CLI modernization**: `eza`, `bat`, `ripgrep`, `fd`, `fzf`, `delta`, `zoxide`, `atuin`, `dust`, `duf`, `htop`, `jq`, `yq`
+- **Shell**: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `starship`, `tmux`, `tree`
+- **Dev**: `git`, `gh`, `gitmoji`, `pre-commit`, `uv`, `bun`, `node@22`, `python`, `rust`, `go`, `nvim`, `lazygit`, `lazysql`
+- **AI / agents**: `claude-cmd`, `herdr`
+- **Cloud / infra**: `awscli`, `kubectl`, `k9s`, `terraform`, `ansible`, `docker`
+- **Data**: `dbt`, `astro` (Astronomer CLI)
+- **Security**: `git-secrets`, `gnupg`, `age`
+- **Misc**: `ffmpeg`, `imagemagick`, `pandoc`, `watch`, `wget`, `curl`
 
-| Tool | Replaces | Purpose |
-|---|---|---|
-| `eza` | `ls` | Icons, color, git status |
-| `bat` | `cat` | Syntax highlight, line numbers |
-| `rg` (ripgrep) | `grep` | Fast search |
-| `fd` | `find` | Simpler syntax |
-| `fzf` | — | Fuzzy picker for git, branches, history |
-| `zoxide` (`j`) | `cd` | Frecency-based directory jump |
-| `atuin` | shell history | Cross-session SQLite, Ctrl-R fuzzy |
-| `starship` | PS1 | Git-aware prompt |
-| `delta` | git diff pager | Side-by-side, line numbers |
-| `lazygit` | git CLI | Terminal git UI |
-
-**Git config**:
-
-- `pull.rebase = true`, `fetch.prune = true`, `rebase.autoStash = true`, `push.autoSetupRemote = true`
-- Global gitignore: macOS artifacts, Python/JS/TS build output, `.env*`, AWS credentials, Terraform state, `.omc/`, `.serena/`, `**/.claude/settings.local.json`
-- Conventional commits via pre-commit hook (`commit-normalize.sh`) in any repo with `pre-commit install`
+Casks: Cursor, Arc, Ghostty, Raycast, Obsidian, Elgato Stream Deck, and others.
 
 ---
 
-## Fresh Machine Bootstrap
+## Credentials
 
-```bash
-git clone git@github-personal:johnalexwelch/dotdev.git ~/dotdev
-cd ~/dotdev && bash install.sh
-# DRY_RUN=1 bash install.sh   → preview without executing
+Flat files in `$HOME` (not stowed, not committed):
+
+```
+~/.anthropic  ~/.openai  ~/.slack  ~/.readwise  ~/.todoist  ~/.asana
+~/.google  ~/.spotify  ~/.discord  ~/.redshift  ~/.metabase  ~/.trino
+~/.chief-of-staff-env
 ```
 
-Sequence: Homebrew → config dirs (prevents stow tree-folding) → GitHub SSH → macOS defaults → GNU Stow symlinks → guardian clone + compile → gbrain clone → pi packages → herdr integrations.
+`env.zsh` sources each if it exists (`[[ -f "$HOME/$cred" ]] && source ...`); missing files are silently skipped. Adding a service = drop a file, add its name to `env.zsh`'s loop. `GITHUB_MCP_PAT` lives in the macOS launchctl environment (`launchctl setenv`), read back with `launchctl getenv`. Nothing in the dotfiles repo ever touches a secret.
 
-One manual step post-install: `~/.claude/settings.local.json` is created from template — contains the gbrain MCP path. All credentials are flat files in `$HOME` sourced by `env.zsh`; drop a file and it gets picked up on next shell start.
+---
+
+## macOS Defaults
+
+Set by `scripts/macos/`:
+
+| Script | What it configures |
+|---|---|
+| `defaults.sh` | General UI preferences (animations, scroll bars, etc.) |
+| `finder.sh` | Show hidden files, path bar, status bar, default folder |
+| `dock.sh` | Dock size, auto-hide, hot corners |
+| `spotlight.sh` | Disables Spotlight indexing of `~/Code` and drives |
+| `terminal.sh` | Sets Ghostty as default terminal |
+| `screen.sh` | Screenshot save location → `~/Desktop/Screenshots` |
+| `input_devices.sh` | Tap-to-click, natural scroll, fast key repeat |
+| `permissions.sh` | Removes quarantine attributes from selected apps |
+
+---
+
+## CHORUS
+
+`~/projects/legacy/chorus` — the connective tissue for the personal AI agent fleet.
+
+**Agents**: Mira (COO/broker), Iris, Cora (infra), Cleo, Nora, Aria, Wren, Rowan.
+
+**What CHORUS owns**: trust domains, wire contract (`protocol/`), guardian policy (`policy/`), permission layer (`guardian/`), health watchdog (`watchdog/`), runtime init (`scripts/init-runtime.sh`), agent registry (`registry.yaml`).
+
+**Trust domains**: Work-confidential, Personal-confidential, Shared-safe, Public. Mira brokers cross-domain actions; agents operate autonomously within their tier, escalate to Mira for Tier-2 (routine-internal) or human for Tier-3+ (destructive / cross-domain).
+
+---
+
+## Notable Patterns
+
+- **No oh-my-zsh** — removed; configs manually load only what's needed.
+- **Stow tree-folding prevention** — `config-init.sh` pre-creates every target dir before stow runs. Without it, stow symlinks the whole directory rather than individual files, breaking apps that write into those dirs.
+- **Guardian + pi in the same pipeline** — every Bash call goes through guardian (TypeScript LLM check, ~200ms hot) *then* pi executes. Guardian runs from precompiled `dist/cli.js`; `tsx` removed to eliminate the esbuild transitive vulnerability.
+- **DRY_RUN everywhere** — every script checks `DRY_RUN=${DRY_RUN:-0}` and routes through a `run_cmd()` wrapper, so the full install sequence is auditable without touching the filesystem.
+- **Credential sourcing** — flat files in `$HOME`, sourced lazily; nothing in the repo touches a secret.
+- **settings.local.json** — the only machine-specific Claude config; generated once from template, never committed; contains only the gbrain MCP path.

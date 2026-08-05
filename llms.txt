@@ -1,16 +1,15 @@
 # dotdev
 
-> Personal dotfiles + AI coding-agent environment for macOS (pi/Claude Code/Codex), managed with GNU Stow. Guardian-gated hook pipeline, ~95 shared agent skills, hunk/openwiki/delta review tooling.
+> Personal dotfiles + AI coding-agent environment for macOS (pi/Claude Code/Codex), managed with GNU Stow. Guardian-gated hook pipeline, ~98 shared agent skills, hunk/openwiki/delta review tooling.
 
 Repo: https://github.com/johnalexwelch/dotdev
 
 ## Core entry points
 
 - [README.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/README.md): Repo structure, Stow layout, quick start.
-- [AI_ENVIRONMENT.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/AI_ENVIRONMENT.md): How the toolchain fits together — pi + Claude Code, the guardian hook pipeline (PreToolUse/PostToolUse), the skills library.
-- [SETUP_WRITEUP.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/SETUP_WRITEUP.md): Full narrative setup history and rationale.
+- [AI_ENVIRONMENT.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/AI_ENVIRONMENT.md): The full environment in two parts — Part 1: how work gets done (pi + Claude Code, the guardian hook pipeline, workflow routing, review/delivery); Part 2: what's installed & where (repo layout, install sequence, shell, git, Claude/pi config, packages, credentials, macOS, herdr, CHORUS).
 - [dotfiles/.claude/CLAUDE.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/CLAUDE.md): OMC (oh-my-claudecode) orchestration config — agent routing, model tiers, skill triggers.
-- [dotfiles/.claude/SKILLS-MAP.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/SKILLS-MAP.md): Cheat sheet — "when you want to do X, invoke Y" across the ~95-skill library.
+- [dotfiles/.claude/SKILLS-MAP.md](https://raw.githubusercontent.com/johnalexwelch/dotdev/main/dotfiles/.claude/SKILLS-MAP.md): Cheat sheet — "when you want to do X, invoke Y" across the ~98-skill library.
 
 ## Installation
 

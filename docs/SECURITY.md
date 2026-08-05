@@ -1,18 +1,18 @@
-# 🔒 Security Configuration
+# Security Configuration
 
 This guide details the security tools and configurations included in these dotfiles.
 
-## 🛡️ Security Tools
+## Security Tools
 
-### 🔍 Secret Detection
+### Secret Detection
 
 | Tool | Purpose | Configuration |
 |------|---------|--------------|
-| 🕵️ Gitleaks | Git secret scanner | `.gitleaks.toml` |
-| 🔎 detect-secrets | Secrets baseline | `.secrets.baseline` |
-| 🔐 git-secrets | AWS credential scanner | `.git-secrets` |
+| Gitleaks | Git secret scanner | `.gitleaks.toml` |
+| detect-secrets | Secrets baseline | `.secrets.baseline` |
+| git-secrets | AWS credential scanner | `.git-secrets` |
 
-### 🔒 Git Security
+### Git Security
 
 ```bash
 # Initialize git security tools
@@ -23,9 +23,9 @@ gitleaks detect --source . --verbose
 detect-secrets scan
 ```
 
-## 🚨 Pre-commit Hooks
+## Pre-commit Hooks
 
-### 📝 Configuration
+### Configuration
 
 ```yaml
 # Security hooks in .pre-commit-config.yaml
@@ -41,7 +41,7 @@ detect-secrets scan
       args: ["--baseline", ".secrets.baseline"]
 ```
 
-### 🔄 Regular Updates
+### Regular Updates
 
 ```bash
 # Update security tools
@@ -51,9 +51,9 @@ brew upgrade gitleaks detect-secrets git-secrets
 pre-commit autoupdate
 ```
 
-## 🔐 SSH Configuration
+## SSH Configuration
 
-### 🔑 Key Management
+### Key Management
 
 ```bash
 # Generate new SSH key
@@ -64,7 +64,7 @@ eval "$(ssh-agent -s)"
 ssh-add ~/.ssh/id_ed25519
 ```
 
-### 📝 SSH Config
+### SSH Config
 
 ```bash
 # SSH configuration
@@ -74,9 +74,9 @@ Host *
     IdentityFile ~/.ssh/id_ed25519
 ```
 
-## 🔒 GPG Configuration
+## GPG Configuration
 
-### 🔑 Key Setup
+### Key Setup
 
 ```bash
 # Generate GPG key
@@ -86,7 +86,7 @@ gpg --full-generate-key
 gpg --list-secret-keys --keyid-format LONG
 ```
 
-### 🔏 Git Signing
+### Git Signing
 
 ```bash
 # Configure Git to use GPG
@@ -94,9 +94,9 @@ git config --global commit.gpgsign true
 git config --global user.signingkey YOUR_KEY_ID
 ```
 
-## 🛡️ macOS Security
+## macOS Security
 
-### 🔒 System Settings
+### System Settings
 
 ```bash
 # Enable FileVault
@@ -106,7 +106,7 @@ sudo fdesetup enable
 sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
 ```
 
-### 🔐 Application Security
+### Application Security
 
 ```bash
 # Gatekeeper settings
@@ -114,34 +114,34 @@ sudo spctl --master-enable
 sudo spctl --enable
 ```
 
-## 🔍 Security Auditing
+## Security Auditing
 
-### 📊 Regular Checks
+### Regular Checks
 
 | Check | Command | Frequency |
 |-------|---------|-----------|
-| 🔎 Secret scan | `pre-commit run gitleaks --all-files` | Pre-commit |
-| 🔒 Secrets baseline | `pre-commit run detect-secrets --all-files` | Pre-commit |
-| 🔐 Key rotation | Revoke and recreate affected keys with the provider | As needed |
+| Secret scan | `pre-commit run gitleaks --all-files` | Pre-commit |
+| Secrets baseline | `pre-commit run detect-secrets --all-files` | Pre-commit |
+| Key rotation | Revoke and recreate affected keys with the provider | As needed |
 
-### 📝 Logging
+### Logging
 
 ```bash
 # Enable security logging
 sudo log config --mode "private" --subsystem "com.apple.security" --level "debug"
 ```
 
-## ⚠️ Incident Response
+## Incident Response
 
-### 🚨 If Secrets Are Exposed
+### If Secrets Are Exposed
 
-1. 🔒 Revoke compromised credentials
-2. 🔄 Rotate affected keys
-3. 📝 Update security baseline
-4. 🔍 Audit access logs
+1. Revoke compromised credentials
+2. Rotate affected keys
+3. Update security baseline
+4. Audit access logs
 
-## 📚 Resources
+## Resources
 
-- [🔒 Security Best Practices](https://docs.github.com/en/code-security)
-- [🔑 SSH Key Guide](https://docs.github.com/authentication/connecting-to-github-with-ssh)
-- [🔐 GPG Signing Guide](https://docs.github.com/authentication/managing-commit-signature-verification)
+- [Security Best Practices](https://docs.github.com/en/code-security)
+- [SSH Key Guide](https://docs.github.com/authentication/connecting-to-github-with-ssh)
+- [GPG Signing Guide](https://docs.github.com/authentication/managing-commit-signature-verification)

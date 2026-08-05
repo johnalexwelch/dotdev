@@ -1,19 +1,19 @@
-# 🧪 Testing Guide
+# Testing Guide
 
 This document outlines the testing procedures and tools used to ensure the reliability of these dotfiles.
 
-## 🔍 Test Suite Overview
+## Test Suite Overview
 
-### 📋 Test Categories
+### Test Categories
 
 | Category | Purpose | Location |
 |----------|---------|----------|
-| 🧾 Commit hooks | Commit message normalization | `test/test-commit-normalize.sh` |
-| 🧱 tmux workflow | Terminal workspace behavior | `test/test-tmux-dev.sh` |
+| Commit hooks | Commit message normalization | `test/test-commit-normalize.sh` |
+| tmux workflow | Terminal workspace behavior | `test/test-tmux-dev.sh` |
 
-## 🚀 Running Tests
+## Running Tests
 
-### 📝 Basic Test Run
+### Basic Test Run
 
 ```bash
 # Run all tests
@@ -24,11 +24,11 @@ This document outlines the testing procedures and tools used to ensure the relia
 ./test/test-tmux-dev.sh
 ```
 
-### 🔄 Continuous Integration
+### Continuous Integration
 
 ```yaml
 # GitHub Actions workflow
-name: 🧪 Test Dotfiles
+name: Test Dotfiles
 on: [push, pull_request]
 
 jobs:
@@ -36,13 +36,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: 🧪 Run tests
+      - name: Run tests
         run: ./test/run-tests.sh
 ```
 
-## 🐛 Debugging Tests
+## Debugging Tests
 
-### 🔍 Debug Mode
+### Debug Mode
 
 ```bash
 # Enable debug output
@@ -53,17 +53,17 @@ export DEBUG=1
 DEBUG=1 ./test/test-tmux-dev.sh
 ```
 
-### 📝 Adding New Tests
+### Adding New Tests
 
 1. Create `test/test-*.sh`
 2. Add test to appropriate category
 3. Update test documentation
 4. Run `pre-commit run --all-files`
 
-## 🚨 Common Issues
+## Common Issues
 
 | Issue | Solution | Prevention |
 |-------|----------|------------|
-| 🐌 Slow tests | Optimize checks | Regular profiling |
-| ❌ Failed security | Update baseline | Regular updates |
-| 🔧 Config mismatch | Sync settings | Version control |
+| Slow tests | Optimize checks | Regular profiling |
+| Failed security | Update baseline | Regular updates |
+| Config mismatch | Sync settings | Version control |

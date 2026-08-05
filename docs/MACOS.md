@@ -1,8 +1,8 @@
-# 🍎 macOS Configuration
+# macOS Configuration
 
-## ⚙️ System Preferences
+## System Preferences
 
-### 🎯 Dock
+### Dock
 
 - Position: Bottom
 - Size: 36 pixels
@@ -12,7 +12,7 @@
 - Show indicators for open apps: Yes
 - Show recent applications: No
 
-### 🔍 Finder
+### Finder
 
 - Default view: List
 - Show all filename extensions
@@ -22,7 +22,7 @@
 - Show path bar and status bar
 - New window opens: Home directory
 
-### 🔒 Security
+### Security
 
 - FileVault: Enabled
 - Firewall: Enabled with stealth mode
@@ -30,7 +30,7 @@
 - Gatekeeper: App Store and identified developers
 - Privacy permissions: Managed per application
 
-### ⌨️ Input
+### Input
 
 - Key repeat rate: Fast (level 2)
 - Delay until repeat: Short (level 15)
@@ -40,9 +40,9 @@
 - Smart quotes: Disabled
 - Auto-correct: Disabled
 
-## 🔍 Spotlight
+## Spotlight
 
-### 🎯 Search Configuration
+### Search Configuration
 
 - Excluded locations:
   - `/node_modules`
@@ -60,9 +60,9 @@
   - Developer
   - System Settings
 
-## 📸 Screenshots
+## Screenshots
 
-### 📝 Settings
+### Settings
 
 - Save location: `~/Pictures/Screenshots`
 - File format: PNG
@@ -71,23 +71,23 @@
 - Show thumbnail: Yes
 - Default name format: `Screenshot {date} at {time}`
 
-### ⌨️ Shortcuts
+### Shortcuts
 
 - Full screen: `Shift + Cmd + 3`
 - Selected portion: `Shift + Cmd + 4`
 - Window capture: `Shift + Cmd + 4 + Space`
 - Copy to clipboard: Add `Control` to any above
 
-## 🖥️ Terminal
+## Terminal
 
-### 🔧 Integration
+### Integration
 
 - Default shell: zsh
 - SSH key management: 1Password
 - Git credentials: Git Credential Manager
 - Environment setup: `.zshrc` and `.zshenv`
 
-### 🎨 Theme
+### Theme
 
 - Font: JetBrains Mono
 - Theme: Dracula

@@ -1,38 +1,38 @@
-# 🐚 Shell Configuration
+# Shell Configuration
 
 This guide details the shell configurations and customizations included in these dotfiles.
 
-## 📦 Components
+## Components
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| 🐚 ZSH | Main shell | `.zshrc` |
-| ⭐ Starship | Custom prompt | `.config/starship/starship.toml` |
-| 🔧 Aliases | Command shortcuts | `.config/zsh/configs/aliases.zsh` |
-| 🌍 Environment | Variables & paths | `.config/zsh/configs/env.zsh` |
-| 🎨 Theme | Shell styling | `.config/zsh/themes/starship.zsh` |
+| ZSH | Main shell | `.zshrc` |
+| Starship | Custom prompt | `.config/starship/starship.toml` |
+| Aliases | Command shortcuts | `.config/zsh/configs/aliases.zsh` |
+| Environment | Variables & paths | `.config/zsh/configs/env.zsh` |
+| Theme | Shell styling | `.config/zsh/themes/starship.zsh` |
 
-## 🛠️ Features
+## Features
 
-### 🔍 Smart Search
+### Smart Search
 
 | Tool | Purpose | Shortcut |
 |------|---------|----------|
-| 🔎 fzf | Fuzzy finder | `Ctrl+R` |
-| 📂 z | Directory jumper | `z <pattern>` |
-| 🔍 ripgrep | Fast search | `rg <pattern>` |
+| fzf | Fuzzy finder | `Ctrl+R` |
+| z | Directory jumper | `z <pattern>` |
+| ripgrep | Fast search | `rg <pattern>` |
 
-### 📝 Command Line Tools
+### Command Line Tools
 
 | Tool | Replaces | Purpose |
 |------|----------|---------|
-| 📊 eza | ls | Modern file listing |
-| 🐱 bat | cat | Syntax highlighting |
-| 📈 htop | top | Process management |
-| 🌳 tree | ls -R | Directory trees |
-| 💾 duf | df | Disk usage |
+| eza | ls | Modern file listing |
+| bat | cat | Syntax highlighting |
+| htop | top | Process management |
+| tree | ls -R | Directory trees |
+| duf | df | Disk usage |
 
-### ⚡ Productivity Shortcuts
+### Productivity Shortcuts
 
 ```bash
 # Directory Navigation
@@ -54,32 +54,32 @@ alias gc='git commit'
 alias gp='git push'
 ```
 
-## 🎨 Theme & Styling
+## Theme & Styling
 
-### 🎯 Starship Prompt
+### Starship Prompt
 
 ```toml
 # Starship configuration
 [character]
-success_symbol = "[➜](bold green)"
-error_symbol = "[✗](bold red)"
+success_symbol = "[](bold green)"
+error_symbol = "[](bold red)"
 
 [git_branch]
-symbol = "🌱 "
+symbol = ""
 ```
 
-### 🎨 Color Scheme
+### Color Scheme
 
 | Element | Color | Usage |
 |---------|-------|--------|
-| 📝 Prompt | Green | Active prompt |
-| ⚠️ Warnings | Yellow | Alerts |
-| ❌ Errors | Red | Error messages |
-| 🔗 Links | Blue | File links |
+| Prompt | Green | Active prompt |
+| Warnings | Yellow | Alerts |
+| Errors | Red | Error messages |
+| Links | Blue | File links |
 
-## ⚙️ Configuration
+## Configuration
 
-### 🔧 Environment Setup
+### Environment Setup
 
 ```bash
 # Path configuration
@@ -92,7 +92,7 @@ export VISUAL='code'
 export PAGER='less'
 ```
 
-### 🏃 Performance Optimization
+### Performance Optimization
 
 ```bash
 # Cache optimization
@@ -104,9 +104,9 @@ HISTSIZE=10000
 SAVEHIST=10000
 ```
 
-## 🔄 Updates & Maintenance
+## Updates & Maintenance
 
-### 🔄 Regular Updates
+### Regular Updates
 
 ```bash
 # Update shell packages and tools
@@ -116,18 +116,18 @@ SAVEHIST=10000
 rm -f ~/.zcompdump; compinit
 ```
 
-### 🔍 Troubleshooting
+### Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
-| 🐌 Slow startup | Run `zprof` to profile |
-| 🔄 Completion issues | Rebuild cache |
-| 🎨 Theme broken | Check Starship install |
+| Slow startup | Run `zprof` to profile |
+| Completion issues | Rebuild cache |
+| Theme broken | Check Starship install |
 
-## 📚 Resources
+## Resources
 
-- [🐚 ZSH Documentation](https://zsh.sourceforge.io/Doc/)
-- [⭐ Starship Manual](https://starship.rs/guide/)
+- [ZSH Documentation](https://zsh.sourceforge.io/Doc/)
+- [Starship Manual](https://starship.rs/guide/)
 
 ### Environment
 
