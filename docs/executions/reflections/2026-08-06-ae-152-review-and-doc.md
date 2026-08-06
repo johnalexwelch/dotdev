@@ -18,17 +18,18 @@
 |---|---|---|---|
 | 1 | Don't quote profiling stats in docs (they drift) | skill allowed hardcoded profile numbers | `document-dbt-model` (fixed this session) |
 | 2 | `metadata_super.account_type`-style descriptions aren't useful | skill didn't forbid path-echo descriptions strongly enough | `document-dbt-model` |
-| 3 | Column-name changes would break 150+ children; keep names + order | no reflex to preserve schema contract on `on_schema_change='fail'` migrations | (gap — see below) |
+| 3 | Column-name changes would break 150+ children; keep names (order doesn't matter) | no reflex to preserve the downstream NAME contract | (gap — see below) |
+| 4 | Column ORDER does not need preserving | I wrongly claimed `on_schema_change='fail'` made order a contract; dbt compares names as a set, order-insensitive | this reflection |
 
 ## Lessons
-1. **`on_schema_change='fail'` makes column ORDER a contract, not just names.** A migration that keeps all names/types but reorders the SELECT silently breaks the first incremental run. This cost a corrective commit (`cb39cda03`) after the user flagged it.
+1. **`on_schema_change='fail'` compares column NAMES as a set, not order.** Reordering the SELECT is safe; only added/removed columns trip `fail`. Commit `cb39cda03` (restoring prod order) was therefore unnecessary — harmless but not required. Preserve names/types for the 150+ downstream children; order is free to change.
 2. **For timestamp remaps, read the source schema before writing the description.** The "microsecond copy" error came from reasoning about intent instead of checking that legacy `created_at` was midnight-truncated and `createdatprecise` held the real time.
 3. **A blocked mechanism can be the right answer.** CODEOWNERS "leave ungated + record decision" beat forcing an edit the repo policy rejects.
 
 ## Proposed Improvements
 - [ ] `document-dbt-model/SKILL.md` — add an explicit check: descriptions must not echo the source path/lineage (`metadata_super.X`); require a semantic meaning grounded in profiled values. (priority: med) — evidence: correction #2.
 - [ ] `document-dbt-model/SKILL.md` — for timestamp/derived columns, require reading the source schema/sample before describing semantics, not inferring from the name. (priority: med) — evidence: the "microsecond copy" error.
-- [ ] Migration-review checklist (owning skill: `workflow-review` or a dbt-specific lane) — when a model has `on_schema_change='fail'` and is incremental, assert the new SELECT preserves prod column order, and check every downstream model that reuses a redefined `unique_key`. (priority: high) — evidence: correction #3 + the `processed_trial_or_direct_sub` blocker.
+- [ ] Migration-review checklist (owning skill: `workflow-review` or a dbt-specific lane) — when an incremental model redefines a `unique_key`, check every downstream model that reuses that key. (Column *order* is NOT a concern: `on_schema_change` is name-set based.) (priority: high) — evidence: the `processed_trial_or_direct_sub` orphaned-key blocker.
 
 ## Skill Extraction Candidates
 _None._ The doc pipeline and review lanes are existing skills; the migration gotchas are enhancements to `document-dbt-model` / review, not a new repeatable skill. Column-order + downstream-key checks are two checklist items, not a workflow worth its own skill.
