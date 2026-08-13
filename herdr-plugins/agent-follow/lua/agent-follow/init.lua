@@ -46,6 +46,12 @@ local function apply(action)
     pcall(vim.api.nvim_win_set_cursor, 0, { action.line, 0 })
     vim.cmd("normal! zz")
   elseif action.action == "move_cursor" then
+    -- The agent just rewrote the file this buffer is showing. Without an
+    -- explicit reload the cursor lands on the right line number of stale
+    -- content; `autoread` alone does not help, since it only fires when Vim
+    -- happens to perform an action. `policy.decide` has already ruled out a
+    -- modified buffer, so there is nothing to lose.
+    vim.cmd("checktime")
     pcall(vim.api.nvim_win_set_cursor, 0, { action.line, 0 })
   end
 end
