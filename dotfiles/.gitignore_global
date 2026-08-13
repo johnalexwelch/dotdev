@@ -160,3 +160,9 @@ docker-compose.override.yml
 # Agent/tool local state
 .omc/
 .serena/
+.pi/agent/ayu/
+.pi/agent/sessions/
+.pi/agent/auth.json
+.pi/agent/mcp-cache.json
+.pi/agent/models-store.json
+.pi/agent/observability/

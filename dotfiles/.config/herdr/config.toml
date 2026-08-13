@@ -1,6 +1,6 @@
 onboarding = false
 [ui.toast]
-delivery = "terminal"   # native desktop notifications via Ghostty (agent finished / needs input)
+delivery = "system"
 
 [ui]
 show_agent_labels_on_pane_borders = true
@@ -13,7 +13,7 @@ pane_history = false
 # Run in a temp pane in the focused pane's cwd; closes on exit.
 switch_ascii_input_source_in_prefix = true
 [[keys.command]]
-key = "prefix+alt+h"      # steals hunk.diff plugin: interactive diff review
+key = "prefix+alt+h"                      # steals hunk.diff plugin: interactive diff review
 type = "pane"
 command = "hunk diff"
 description = "hunk: review working tree"
@@ -25,7 +25,7 @@ command = "lazygit"
 description = "lazygit"
 
 [[keys.command]]
-key = "prefix+alt+z"      # steals den-tanui/herdr-zoxide: fzf a dir -> new workspace
+key = "prefix+alt+z"                            # steals den-tanui/herdr-zoxide: fzf a dir -> new workspace
 type = "pane"
 command = "~/.config/herdr/zoxide-workspace.sh"
 description = "zoxide: open dir as workspace"
@@ -48,5 +48,24 @@ description = "picker-plus: fuzzy jump anywhere"
 enabled = false
 
 [theme]
-name = "kanagawa"
+name = "tokyo-night"  # dark base
 auto_switch = false
+
+[theme.custom]
+# Zed Ayu Mirage - testing sidebar
+panel_bg = "#43464F"
+surface0 = "#43464F"
+surface1 = "#43464F"
+surface_dim = "#43464F"
+overlay0 = "#7b7d7f"
+overlay1 = "#9a9a98"
+text = "#cccac2"
+subtext0 = "#9a9a98"
+accent = "#fecf72"
+green = "#d5fe80"
+yellow = "#fecf72"
+red = "#f18779"
+blue = "#72cffd"
+teal = "#95e6cb"
+peach = "#ffae57"
+mauve = "#dfbfff"

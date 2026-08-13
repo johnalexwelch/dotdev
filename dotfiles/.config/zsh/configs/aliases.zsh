@@ -51,13 +51,12 @@ alias ports='netstat -tulanp'
 alias pib='pi -e npm:pi-agent-browser-native'
 
 # Editor aliases
-alias code="cursor"  # Make 'code' command open Cursor
-alias cur="cursor"   # Shorter alias for Cursor
+alias code="zed"  # Make 'code' command open Zed
+alias z="zed"     # Shorter alias for Zed
 
 # Projects — herdr workspaces
 alias hdev='bash ~/dotdev/scripts/hdev.sh'
 alias hlog='bash ~/dotdev/scripts/hlog.sh'
-alias chorus='hdev ~/projects/chorus'
 alias coraws='hdev ~/projects/chorus/cora'  # CORA repo workspace; bare `cora` = the CLI binary
 alias miraws='hdev ~/projects/agents/mira'  # Mira agent workspace; bare `mira` = the Hermes profile wrapper
 
