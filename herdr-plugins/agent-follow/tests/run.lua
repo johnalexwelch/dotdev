@@ -45,7 +45,7 @@ end)
 
 test("does not steal the cursor while you are typing", function()
   eq(
-    { action = "skip", reason = "insert_mode" },
+    { action = "skip", reason = "not_normal_mode" },
     policy.decide(event(), editor({ mode = "i" }))
   )
 end)

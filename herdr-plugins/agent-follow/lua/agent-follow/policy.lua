@@ -21,12 +21,15 @@ local M = {}
 ---@field line integer|nil
 ---@field reason string|nil
 
+--- Anything other than normal mode is treated as "the human is busy" — that
+--- deliberately includes terminal mode, which is the common case in herdr,
+--- where the pane you are reading the agent in is itself a terminal buffer.
 ---@param event AgentFollowEvent
 ---@param state AgentFollowEditorState
 ---@return AgentFollowAction
 function M.decide(event, state)
   if state.mode ~= "n" then
-    return { action = "skip", reason = "insert_mode" }
+    return { action = "skip", reason = "not_normal_mode" }
   end
   if state.modified then
     return { action = "skip", reason = "buffer_modified" }

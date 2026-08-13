@@ -21,15 +21,20 @@ async function spawn(cmd: string[]): Promise<void> {
  * running in the same herdr workspace.
  */
 export default function (pi: {
-  on: (event: string, handler: (event: ToolResultLike) => void) => void;
+  on: (
+    event: string,
+    handler: (event: ToolResultLike, ctx: { cwd: string }) => void,
+  ) => void;
 }): void {
   const workspaceId = process.env["HERDR_WORKSPACE_ID"];
   if (process.env["HERDR_ENV"] !== "1" || !workspaceId) {
     return;
   }
 
-  pi.on("tool_result", (event) => {
-    const followEvent = toFollowEvent(event);
+  pi.on("tool_result", (event, ctx) => {
+    // `event.input` holds the model's raw arguments, so the path is resolved
+    // against the agent's cwd here rather than against Neovim's.
+    const followEvent = toFollowEvent(event, ctx.cwd);
     if (followEvent === null) {
       return;
     }

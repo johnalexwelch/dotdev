@@ -1,4 +1,4 @@
-.PHONY: test test-lua test-ts typecheck
+.PHONY: test test-lua test-ts typecheck lint
 
 test: test-lua test-ts
 
@@ -10,3 +10,6 @@ test-ts:
 
 typecheck:
 	bun run typecheck
+
+lint:
+	stylua --check lua tests

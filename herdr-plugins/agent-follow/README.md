@@ -58,6 +58,12 @@ pi tool_result ──► toFollowEvent ──► {path, line} ──► nvim --r
 `toFollowEvent` and `policy.decide` are pure and hold all the judgement; the
 socket write and the buffer manipulation are thin adapters around them.
 
+`tool_result.input` carries the model's **raw** tool arguments — pi's edit tool
+resolves the path into a local that never reaches the event — so the path can
+be relative or `~`-prefixed. `toFollowEvent` resolves it against the agent's
+`ctx.cwd`, which is what stops Neovim from resolving it against its own cwd
+and opening the wrong file.
+
 Emitters find Neovim through `~/.herdr/nvim-servers/$HERDR_WORKSPACE_ID`, which
 Neovim writes on startup and removes on exit. **One Neovim per workspace** — if
 two register in the same workspace, the last to start wins.
@@ -67,6 +73,7 @@ two register in the same workspace, the last to start wins.
 ```sh
 make test        # lua + ts
 make typecheck
+make lint        # stylua
 ```
 
 ## Not built yet
