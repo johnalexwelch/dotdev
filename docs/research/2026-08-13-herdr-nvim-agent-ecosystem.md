@@ -17,7 +17,7 @@ The most consequential single finding is a **defect in `agent-follow` itself**, 
 
 ### Finding 1: Nothing in the ecosystem does push-follow
 
-Seven herdr/Neovim plugins were examined [1][2][6][7][12][13][14]. Every one is pull- or poll-based:
+Seven herdr/Neovim plugins were examined [1], [2], [6], [7], [12], [13], [14]. Every one is pull- or poll-based:
 
 - `herdr-nvim` [1] "mines edits from the agent's session log and adds uncommitted git changes," falling back to "scrapes recent pane output" for untracked agents. The user must press `prefix+o`. It subscribes to no herdr events.
 - `herdr-reviewr` [4] polls the worktree, 2 s by default, and refresh is manual (`r` or toggle). Its README concedes that "a turn that starts and finishes inside one poll is missed."
@@ -83,20 +83,20 @@ Deliberately *not* recommended: adding a `last-turn` diff scope to `agent-follow
 
 ## Sources
 
-[1] https://github.com/ChmaraX/herdr-nvim — herdr-nvim, README fetched 2026-08-13, High
-[2] https://github.com/yigitkonur/awesome-herdr — awesome-herdr ecosystem index, High
-[3] https://github.com/coder/claudecode.nvim — claudecode.nvim, High
-[4] https://github.com/persiyanov/herdr-reviewr — herdr-reviewr, High
-[5] https://github.com/folke/sidekick.nvim — sidekick.nvim, High
-[6] https://github.com/makyinmars/herdr-context.nvim — herdr-context.nvim (installed locally), High
-[7] https://github.com/ctbaum/herdr-agents.nvim — herdr-agents.nvim, Medium
-[8] https://zed.dev/acp/editor/neovim — Zed, Neovim ACP client, High
-[9] https://codecompanion.olimorris.dev/agent-client-protocol — CodeCompanion ACP support, High
-[10] https://github.com/carlos-algms/agentic.nvim — agentic.nvim, High
-[11] https://neovim.discourse.group/t/a-lua-based-auto-refresh-buffers-when-they-change-on-disk-function/2482 and https://github.com/ccntrq/autoreload.nvim — Neovim external-change reload patterns, Medium
-[12] https://github.com/UN-9BOT/sidekick_herdr — herdr backend for sidekick.nvim, Medium
-[13] https://github.com/smarzban/herdr-file-viewer — read-only diff/file TUI in a herdr split, Medium
-[14] https://github.com/edmundmiller/herdr-plugin-hunk — Hunk diff viewer launcher, Medium
+[1] <https://github.com/ChmaraX/herdr-nvim> — herdr-nvim, README fetched 2026-08-13, High
+[2] <https://github.com/yigitkonur/awesome-herdr> — awesome-herdr ecosystem index, High
+[3] <https://github.com/coder/claudecode.nvim> — claudecode.nvim, High
+[4] <https://github.com/persiyanov/herdr-reviewr> — herdr-reviewr, High
+[5] <https://github.com/folke/sidekick.nvim> — sidekick.nvim, High
+[6] <https://github.com/makyinmars/herdr-context.nvim> — herdr-context.nvim (installed locally), High
+[7] <https://github.com/ctbaum/herdr-agents.nvim> — herdr-agents.nvim, Medium
+[8] <https://zed.dev/acp/editor/neovim> — Zed, Neovim ACP client, High
+[9] <https://codecompanion.olimorris.dev/agent-client-protocol> — CodeCompanion ACP support, High
+[10] <https://github.com/carlos-algms/agentic.nvim> — agentic.nvim, High
+[11] <https://neovim.discourse.group/t/a-lua-based-auto-refresh-buffers-when-they-change-on-disk-function/2482> and <https://github.com/ccntrq/autoreload.nvim> — Neovim external-change reload patterns, Medium
+[12] <https://github.com/UN-9BOT/sidekick_herdr> — herdr backend for sidekick.nvim, Medium
+[13] <https://github.com/smarzban/herdr-file-viewer> — read-only diff/file TUI in a herdr split, Medium
+[14] <https://github.com/edmundmiller/herdr-plugin-hunk> — Hunk diff viewer launcher, Medium
 
 ## Research Log
 
