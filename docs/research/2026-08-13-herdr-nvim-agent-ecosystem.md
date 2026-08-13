@@ -105,5 +105,28 @@ Deliberately *not* recommended: adding a `last-turn` diff scope to `agent-follow
 - Fetched `claudecode.nvim`, `herdr-reviewr`, `sidekick.nvim`, `agentic.nvim` READMEs directly (raw.githubusercontent) to avoid summary drift.
 - Two web searches for ACP/Neovim status and for Neovim external-file-reload practice.
 - Reproduced the reload defect locally with headless Neovim before recording it, rather than inferring it from reading `init.lua`.
-- Discarded: `herdr-file-viewer`, `herdr-plugin-hunk`, `herdr-worktree-lifecycle`, `herdr-event-hook`, `herdr-flist` — real but orthogonal (read-only viewers, worktree lifecycle hooks, cwd-synced sidebars). Noted in sources for completeness, not analysed.
+- Discarded: `herdr-file-viewer`, `herdr-worktree-lifecycle`, `herdr-event-hook`, `herdr-flist` — real but orthogonal (read-only viewers, worktree lifecycle hooks, cwd-synced sidebars). Noted in sources for completeness, not analysed.
+- **Wrongly discarded on the first pass:** `hunk` itself, dismissed as "a Hunk diff viewer launcher" on the strength of one line in the ecosystem index. Re-examined after being asked about it directly, and it turned out to be the most relevant tool in the survey — see the addendum. The lesson generalises: a one-line index description is not enough to discard a candidate on.
 - Not retrieved: commit metrics and licenses, which raw READMEs do not carry. Flagged as an open question rather than guessed.
+
+## Addendum (same day): hunk is the most relevant tool here
+
+Verified against the locally installed `hunk` **0.17.3** rather than from docs, and the `herdr-hunk` herdr plugin is already installed and enabled.
+
+`hunk` bills itself as a "review-first terminal diff viewer for agentic coders" [15]. Three properties, each checked by hand against a live session on a throwaway repo:
+
+1. **Watch mode is push, not pull.** "Direct-file and Git-backed reviews normally use filesystem observation to refresh promptly, with periodic polling retained as a fallback" [15]. Confirmed: an external write moved `a.txt` from `+2 -2` to `+3 -3` with no manual refresh. This is the only push-based refresh found anywhere in the survey, which materially weakens Finding 1's claim that nothing does push.
+2. **It can be driven to a file and line from the outside.** `hunk session navigate (<session-id> | --repo <path>) --file <path> (--hunk <n> | --old-line <n> | --new-line <n>)` [16]. Confirmed moving focus `b.txt hunk 1` → `a.txt hunk 1`. This is precisely `agent-follow`'s action, on a purpose-built review surface.
+3. **The review loop closes back to the agent.** `hunk session comment list --type user` exposes human-authored inline notes to an agent, alongside `comment add`, `navigate --next-comment`, and `session review --include-patch` [16]. Human comments in the TUI become agent-readable input — the part neither `agent-follow` nor `gitsigns` has.
+
+Two constraints found only by trying it:
+
+- `navigate` **rejects absolute paths** (`hunk: No diff file matches /private/tmp/hunktest/b.txt.`) and requires one relative to the repo root — the exact opposite of what Neovim needs.
+- Sessions are addressed by `--repo <path>`, so there is **no registry to maintain**. This is strictly simpler than `agent-follow`'s `~/.herdr/nvim-servers/$HERDR_WORKSPACE_ID` file and sidesteps its one-nvim-per-workspace limit.
+
+`hunk` is read-only: no accept/reject or staging [15]. That stays with `gitsigns` or `agentic.nvim`.
+
+**Revised recommendation.** `hunk --watch` in a herdr pane is the review surface to adopt, and unlike `agentic.nvim` it does not want to host the agent, so it composes with the existing herdr pane model instead of replacing it. `agent-follow` keeps a narrower but real job: moving the surfaces to the change. It now drives both Neovim (for editing) and `hunk` (for review) off the same tested normalizer — which is also the first time its transport seam has two adapters, and therefore the first time that seam is earned rather than hypothetical.
+
+[15] <https://github.com/modem-dev/hunk> and <https://hunk.dev> — hunk, verified against local 0.17.3, High
+[16] <https://github.com/modem-dev/hunk/blob/main/skills/hunk-review/SKILL.md> and local `hunk session --help` — agent-facing session CLI, High

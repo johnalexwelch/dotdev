@@ -12,9 +12,16 @@ When pi finishes an `edit` or `write`, Neovim opens that file and puts the
 cursor on the first changed line — unless you are mid-keystroke, in which case
 it stays out of your way.
 
-Review is deliberately **not** part of this plugin: the agent writes to the
-working tree, so `gitsigns.nvim` already gives you per-hunk
-`stage_hunk`/`reset_hunk`/`preview_hunk` against the index.
+If a [`hunk`](https://hunk.dev) review session is open on the same repo, it is
+moved too, so the review viewer and the editor both land on the change as it
+happens. Both targets are optional and independent — whichever is running gets
+moved, and neither can block or fail the agent's turn.
+
+Review itself is deliberately **not** implemented here. `hunk diff --watch` is
+the better review surface (multi-file, built for agent-authored changesets,
+refreshes on filesystem events, and carries inline comments an agent can read
+back with `hunk session comment list --type user`). For accept/reject,
+`gitsigns.nvim` gives you per-hunk `stage_hunk`/`reset_hunk` against the index.
 
 ## Requirements
 
@@ -60,16 +67,26 @@ pi -e ~/dotdev/herdr-plugins/agent-follow/src/index.ts
 ## How it fits together
 
 ```
-pi tool_result ──► toFollowEvent ──► {path, line} ──► nvim --remote-expr
-   (edit/write)      (src/normalize.ts)                        │
-                                                               ▼
-                                              policy.decide(event, editor_state)
-                                                               │
-                                          jump │ move_cursor │ skip
+                                          ┌─► nvim --remote-expr
+                                          │        │
+pi tool_result ──► toFollowEvent ──► {path,│line}  ▼
+   (edit/write)      (src/normalize.ts)    │  policy.decide(event, editor_state)
+                                          │        │
+                                          │   jump │ move_cursor │ skip
+                                          │
+                                          └─► hunk session navigate
+                                                   (src/targets/hunk.ts)
 ```
 
-`toFollowEvent` and `policy.decide` are pure and hold all the judgement; the
-socket write and the buffer manipulation are thin adapters around them.
+`toFollowEvent`, `policy.decide` and `hunkCommand` are pure and hold all the
+judgement; the socket write, the buffer manipulation and the subprocess are thin
+adapters around them.
+
+The two targets want opposite path shapes, which is why resolution lives behind
+the seam rather than in either adapter: Neovim needs an **absolute** path (or it
+resolves against its own cwd), while `hunk session navigate` rejects absolute
+paths outright — `No diff file matches` — and needs one **relative to the repo
+root**.
 
 `tool_result.input` carries the model's **raw** tool arguments — pi's edit tool
 resolves the path into a local that never reaches the event — so the path can
@@ -80,6 +97,10 @@ and opening the wrong file.
 Emitters find Neovim through `~/.herdr/nvim-servers/$HERDR_WORKSPACE_ID`, which
 Neovim writes on startup and removes on exit. **One Neovim per workspace** — if
 two register in the same workspace, the last to start wins.
+
+`hunk` needs no registry: it addresses live sessions by repo path, so the git
+worktree root (cached per cwd) is the whole address. When no session is open the
+command simply fails and is swallowed.
 
 ## Test
 
