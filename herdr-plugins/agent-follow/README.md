@@ -38,10 +38,23 @@ Neovim side (lazy.nvim):
 }
 ```
 
-pi side:
+pi side — symlink the `src` directory into pi's extensions directory, which pi
+auto-discovers by loading `<dir>/index.ts`:
 
 ```sh
-pi install -e ~/dotdev/herdr-plugins/agent-follow/src/index.ts
+ln -s ~/dotdev/herdr-plugins/agent-follow/src ~/.pi/agent/extensions/agent-follow
+```
+
+Not `pi install`: that route is for `npm:` / `git:` package sources and records
+them under `packages` in `settings.json`. Extensions dropped into
+`~/.pi/agent/extensions/` are picked up without touching settings — the same way
+`scrub-secrets` (also a directory with an `index.ts` and sibling modules) is
+loaded.
+
+To try it without installing anything:
+
+```sh
+pi -e ~/dotdev/herdr-plugins/agent-follow/src/index.ts
 ```
 
 ## How it fits together
