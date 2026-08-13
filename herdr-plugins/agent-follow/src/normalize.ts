@@ -26,17 +26,20 @@ export interface FollowEvent {
  * agent's cwd, or `~`-prefixed, and resolving it here is what keeps Neovim
  * from resolving it against its own cwd instead.
  *
- * Not replicated from pi's `resolveToCwd`: `@`-prefix stripping and unicode
- * space normalization, neither of which appears in edit/write paths.
+ * Not replicated from pi's `resolveToCwd`: unicode space normalization, which
+ * exists for macOS screenshot filenames on read paths.
  */
 function resolvePath(rawPath: string, cwd: string, home: string): string {
-  if (rawPath === "~") {
+  // `@` is pi's file-mention syntax; it strips a single leading `@` before
+  // expanding `~`, so this must too or `@~/x` misses home.
+  const path = rawPath.startsWith("@") ? rawPath.slice(1) : rawPath;
+  if (path === "~") {
     return home;
   }
-  if (rawPath.startsWith("~/")) {
-    return join(home, rawPath.slice(2));
+  if (path.startsWith("~/")) {
+    return join(home, path.slice(2));
   }
-  return resolve(cwd, rawPath);
+  return resolve(cwd, path);
 }
 
 export interface ToolResultLike {

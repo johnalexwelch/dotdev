@@ -74,4 +74,22 @@ describe("toFollowEvent", () => {
       line: 1,
     });
   });
+
+  // pi strips a leading `@` (its file-mention syntax) on every path that goes
+  // through resolveToCwd, edit included. An echoed `@src/x` mention must land
+  // on the file pi actually edited, not on a nonexistent `@src/x`.
+  test("a @-prefixed mention resolves to the file pi actually edited", () => {
+    expect(toFollowEvent(fixture("edit_with_at_prefixed_path"), CWD)).toEqual({
+      path: "/w/src/at.ts",
+      line: 2,
+    });
+  });
+
+  // `@` is stripped before `~` is expanded, matching normalizePath's order.
+  test("a @~ path expands against home once the @ is stripped", () => {
+    expect(toFollowEvent(fixture("edit_with_at_prefixed_tilde_path"), CWD, "/home/me")).toEqual({
+      path: "/home/me/notes/at.md",
+      line: 3,
+    });
+  });
 });
