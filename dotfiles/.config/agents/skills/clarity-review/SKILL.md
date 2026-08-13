@@ -3,18 +3,16 @@ name: clarity-review
 model: sonnet
 reasoning: high
 description: >-
-  Review a document, email, Slack post, memo, metrics update, spec, or set of instructions
-  for communication clarity, and produce a structured report of recommended changes — each
-  quoting the offending text, naming the principle it breaks, explaining why it matters, and
-  giving a concrete rewrite. Built on ClassDojo's "Extreme Clarity" 5 C's (Clear, Context
-  Aware, Consistent, Concrete, Concise) plus metrics-reporting rules, and it also catches
-  internal contradictions, writer-facing meta-commentary, and false precision. Use whenever
-  the user asks to review, critique, edit, tighten, "make clearer", proofread, or give
-  feedback on any writing where the concern is HOW it is written (clarity, concision,
-  structure) — not whether the argument is correct or strategically sound. If the artifact is
-  SQL, a dbt model, a dashboard, a metric tree, or an executive-facing analysis, prefer the
-  artifact-specific skill — those include a domain-scoped clarity axis. Trigger even
-  when they don't explicitly say "Extreme Clarity" or "5 C's".
+  Review a document, email, Slack post, memo, metrics update, spec, or instructions
+  for communication clarity; produce a structured report — quoting the offending text,
+  naming the principle it breaks, explaining why, and giving a concrete rewrite. Built
+  on ClassDojo's "Extreme Clarity" 5 C's (Clear, Context Aware, Consistent, Concrete,
+  Concise) plus metrics rules; also catches internal contradictions, writer-facing
+  meta-commentary, and false precision. Use when the user asks to review, critique,
+  edit, tighten, "make clearer", proofread, or give feedback on writing where the
+  concern is HOW it's written (clarity, concision, structure) — not whether the argument
+  is correct. If the artifact is SQL, dbt, a dashboard, or metric tree, prefer the
+  artifact-specific skill. Trigger even without explicit "Extreme Clarity" or "5 C's".
 ---
 
 # Clarity Review

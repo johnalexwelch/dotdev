@@ -251,14 +251,48 @@ off the product/context summary, pending decision entries, pending context
 entries, name/slug if known, and restart prompt to `stage-v1-concept` or the
 project-staging workflow.
 
-Output should follow the below:
-Question
-Your Recommendation
-Why this is important
-Alternatives Considered and the trade offs between them and the recommendation
-A visual delineator to separate the questions for ease of reading.
+## Context-Rich Question Template
 
-An answer with 'a' or 'y' represent the user acceptance of the recommendation. In Delegate mode, the auto-acceptance is implicit, and the specialist review supplies the feedback.
+Every question must be self-contained so humans can answer in any order and specialists can evaluate without needing the full frontier. Use this format:
+
+```markdown
+───────────────────────────────────────────────────────────────
+### Q<N>: <Short title>
+
+**Question:** <The actual question>
+
+**Recommendation:** <Your proposed answer>
+
+**Why it matters:** <1-2 sentences: what decision this unblocks, what breaks if wrong>
+
+**Current assumption:** <The default if user skips — what you'll proceed with>
+
+**Blocks:** <List of downstream questions this unlocks, or "None">
+
+**Alternatives considered:**
+- <Alternative 1> — <tradeoff vs recommendation>
+- <Alternative 2> — <tradeoff vs recommendation>
+
+**Your answer** (or 'a'/'y' to accept, 'skip' to defer):
+───────────────────────────────────────────────────────────────
+```
+
+### Why this structure
+
+| Field | Purpose |
+|-------|--------|
+| **Why it matters** | Human sees impact → can say "out of scope" or prioritize |
+| **Current assumption** | Human can confirm with "a" without re-reading recommendation |
+| **Blocks** | Human sees dependency chain → knows which answers to nail first |
+| **Alternatives** | Human doesn't research from scratch; refines your draft |
+
+### Batch behavior
+
+- In **HITL mode**: present 5 questions per batch; human answers any subset; unanswered questions carry forward with their `Current assumption` marked `[assumed]`
+- In **Delegate mode**: auto-accept all `Current assumption` values; specialist reviews the full batch with context visible
+- In **Lightweight mode**: one question at a time, same template (simplified: skip `Blocks` if linear)
+
+An answer with 'a' or 'y' accepts the recommendation. 'skip' defers the question (uses `Current assumption` and marks it `[assumed]` in the decision log). In Delegate mode, the auto-acceptance is implicit, and the specialist review supplies the feedback.
 
 </what-to-do>
 
