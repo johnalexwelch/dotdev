@@ -3,6 +3,10 @@
     "github": {
       "command": "/Users/alexwelch/.local/bin/github-mcp-pi",
       "lifecycle": "keep-alive"
+    },
+    "linear": {
+      "url": "https://mcp.linear.app/mcp",
+      "auth": "oauth"
     }
   }
 }

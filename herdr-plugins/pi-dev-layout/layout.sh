@@ -15,7 +15,7 @@ log() { printf '%s\n' "$*"; } # -> herdr plugin log list --plugin pi-dev-layout
 
 # Tunables (ponytail: hard-coded defaults, override via env if ever needed)
 RIGHT_CMD="${PI_LAYOUT_RIGHT_CMD:-nvim}"      # top-right
-BOTTOM_CMD="${PI_LAYOUT_BOTTOM_CMD:-yazi}"    # bottom-right
+BOTTOM_CMD="${PI_LAYOUT_BOTTOM_CMD:-zsh}"     # bottom-right (was yazi)
 RIGHT_RATIO="${PI_LAYOUT_RIGHT_RATIO:-0.62}"  # split point for agent|right column
 BOTTOM_RATIO="${PI_LAYOUT_BOTTOM_RATIO:-0.5}" # split point for nvim|yazi
 
@@ -90,4 +90,26 @@ bottom="$(split "$right" down "$BOTTOM_RATIO")"
 [ -n "$bottom" ] && "$herdr" pane run "$bottom" "$BOTTOM_CMD" >/dev/null 2>&1
 
 # All splits used --no-focus, so focus stayed on the agent pane. Nothing to restore.
+
+# Pre-populate herdr-hunk autodiff signature so existing uncommitted changes
+# don't trigger an auto-open on workspace creation. Only new agent-created
+# changes will trigger hunk after this.
+if [ -n "$cwd" ] && [ -d "$cwd" ]; then
+    root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || true
+    if [ -n "$root" ]; then
+        sig="$({
+            git -C "$root" status --porcelain 2>/dev/null
+            git -C "$root" diff HEAD 2>/dev/null || git -C "$root" diff 2>/dev/null
+            git -C "$root" ls-files --others --exclude-standard 2>/dev/null | while IFS= read -r f; do
+                shasum "$root/$f" 2>/dev/null
+            done
+        } | shasum | awk '{print $1}')"
+        hunk_state="$HOME/.cache/herdr-hunk"
+        mkdir -p "$hunk_state" 2>/dev/null || true
+        key="$hunk_state/$(printf '%s' "$root" | shasum | awk '{print $1}').sig"
+        printf '%s' "$sig" >"$key" 2>/dev/null || true
+        log "hunk sig pre-populated for $root"
+    fi
+fi
+
 log "done ws=$ws right=$right bottom=${bottom:-none}"

@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "autoStart": true,
+  "minContextTokens": 10000,
+  "minMessageChars": 1000
+}
