@@ -37,3 +37,9 @@ export LC_ALL=en_US.UTF-8
 export CORA_AUTO_UNINSTALL_DISABLED_CASKS=true
 export CORA_PR_MONITOR_NOTIFY_MACOS=true
 export CORA_AUTO_PR_REVIEW_FIXES=true
+
+# CHORUS fleet CLI
+export CHORUS_REGISTRY="$HOME/projects/chorus/registry.yaml"
+
+# Rowan brain (Obsidian knowledge system)
+export BRAIN_VAULT="$HOME/Documents/Home"

@@ -47,7 +47,8 @@
     "npm:pi-tool-display",
     "npm:@hypabolic/pi-hypa",
     "npm:@xynogen/pix-optimizer",
-    "npm:@ayulab/pi-rewind"
+    "npm:@ayulab/pi-rewind",
+    "npm:pi-herdr-subagents"
   ],
   "theme": "ayu-mirage",
   "skills": [

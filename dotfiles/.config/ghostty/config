@@ -1,5 +1,5 @@
 # Appearance
-theme = Ayu Mirage
+theme = zed-ayu-mirage
 
 # Depth — soften the flat dark wall (subtle translucency + blur)
 background-opacity = 0.96
@@ -15,8 +15,8 @@ adjust-cell-height = 20%
 font-feature = calt
 
 # Window
-window-padding-x = 8
-window-padding-y = 8
+window-padding-x = 0
+window-padding-y = 0
 macos-titlebar-style = tabs
 window-save-state = always
 

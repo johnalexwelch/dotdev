@@ -52,7 +52,7 @@ alias pib='pi -e npm:pi-agent-browser-native'
 
 # Editor aliases
 alias code="zed"  # Make 'code' command open Zed
-alias z="zed"     # Shorter alias for Zed
+# ponytail: removed z="zed" - conflicts with zoxide's z function
 
 # Projects — herdr workspaces
 alias hdev='bash ~/dotdev/scripts/hdev.sh'

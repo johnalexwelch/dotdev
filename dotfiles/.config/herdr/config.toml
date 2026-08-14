@@ -6,6 +6,22 @@ delivery = "system"
 show_agent_labels_on_pane_borders = true
 
 agent_panel_sort = "spaces"
+
+[ui.sidebar.agents]
+rows = [
+  [
+    "state_icon",
+    "workspace",
+    "tab",
+  ],
+  [
+    "agent",
+  ],
+  [
+    { token = "$task", fg = "#72cffd", dim = true },
+  ],
+]
+
 [experimental]
 pane_history = false
 
@@ -44,19 +60,43 @@ type = "plugin_action"
 command = "herdr-picker-plus.open"
 description = "picker-plus: fuzzy jump anywhere"
 
+[[keys.command]]
+key = "prefix+alt+w"
+type = "pane"
+command = "~/.config/herdr/worktree-picker.sh"
+description = "worktree: open existing"
+
+[[keys.command]]
+key = "prefix+alt+W"
+type = "pane"
+command = "~/.config/herdr/worktree-remove.sh"
+description = "worktree: remove checkout"
+
+[[keys.command]]
+key = "prefix+alt+i"
+type = "pane"
+command = "~/.config/herdr/agent-picker.sh"
+description = "agent: select integration"
+
+[[keys.command]]
+key = "prefix+alt+n"
+type = "pane"
+command = "~/.config/herdr/project-workspace.sh"
+description = "workspace: new from project"
+
 [ui.sound]
 enabled = false
 
 [theme]
-name = "tokyo-night"  # dark base
+name = "tokyo-night" # solid backgrounds, then override colors
 auto_switch = false
 
 [theme.custom]
-# Zed Ayu Mirage - testing sidebar
-panel_bg = "#43464F"
-surface0 = "#43464F"
-surface1 = "#43464F"
-surface_dim = "#43464F"
+# Zed Ayu Mirage - adjusted for visible focus
+panel_bg = "#1f2129"    # darker base
+surface0 = "#363943"    # focus rows - now visible against darker base
+surface1 = "#454850"    # hover/secondary
+surface_dim = "#1f2129" # matches panel_bg
 overlay0 = "#7b7d7f"
 overlay1 = "#9a9a98"
 text = "#cccac2"

@@ -1,20 +1,37 @@
 return {
-  -- Kanagawa: warm, muted, low-contrast dark — matches ghostty (Kanagawa Wave),
-  -- with yazi/hunk/pi inheriting the terminal for a coherent stack.
+  -- Ayu: matches Zed/Ghostty/herdr theme stack
   {
-    "rebelot/kanagawa.nvim",
+    "Shatur/neovim-ayu",
     priority = 1000,
     opts = {
-      theme = "wave", -- wave (default dark) | dragon (darker/muted) | lotus (light)
-      background = { dark = "wave", light = "lotus" },
-      dimInactive = true, -- dim inactive splits — the multi-pane focus win
+      mirage = true, -- use mirage variant
+      overrides = {
+        Normal = { bg = "#252834" },
+        NormalFloat = { bg = "#363943" },
+        SignColumn = { bg = "#252834" },
+        LineNr = { bg = "#252834" },
+        -- brighter syntax
+        String = { fg = "#d5ff80" },      -- bright green
+        Keyword = { fg = "#ffae57" },     -- bright orange
+        Function = { fg = "#73d0ff" },    -- bright blue
+        Type = { fg = "#73d0ff" },        -- bright blue
+        Constant = { fg = "#dfbfff" },    -- bright purple
+        Number = { fg = "#dfbfff" },      -- bright purple
+        Comment = { fg = "#6c7086" },     -- slightly brighter gray
+        Identifier = { fg = "#cccac2" }, -- brighter text
+        Special = { fg = "#95e6cb" },    -- bright cyan
+        Statement = { fg = "#ffa759" },  -- bright orange
+      },
     },
+    config = function(_, opts)
+      require("ayu").setup(opts)
+    end,
   },
   -- override LazyVim default colorscheme
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "kanagawa",
+      colorscheme = "ayu-mirage",
     },
   },
 }

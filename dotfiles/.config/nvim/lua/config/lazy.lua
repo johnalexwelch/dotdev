@@ -28,6 +28,13 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.lang.toml" },
     -- formatting
     { import = "lazyvim.plugins.extras.formatting.prettier" },
+    -- coding extras
+    { import = "lazyvim.plugins.extras.coding.blink" },      -- blink.cmp (faster completion)
+    { import = "lazyvim.plugins.extras.coding.mini-surround" },
+    -- editor extras  
+    { import = "lazyvim.plugins.extras.editor.mini-diff" },  -- inline diff
+    -- dap (debugger)
+    { import = "lazyvim.plugins.extras.dap.core" },
     -- import/override with your plugins
     { import = "plugins" },
   },
