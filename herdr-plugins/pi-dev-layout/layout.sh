@@ -21,21 +21,21 @@ BOTTOM_RATIO="${PI_LAYOUT_BOTTOM_RATIO:-0.5}" # split point for nvim|yazi
 
 cfg="${HERDR_PLUGIN_CONFIG_DIR:-}"
 [ -n "$cfg" ] && [ -e "$cfg/off" ] && {
-	log "skip: layout off"
-	exit 0
+    log "skip: layout off"
+    exit 0
 }
 
 evt="${HERDR_PLUGIN_EVENT_JSON:-}"
 [ -n "$evt" ] || {
-	log "skip: no event json"
-	exit 0
+    log "skip: no event json"
+    exit 0
 }
 log "EVENT: $evt" # ponytail: raw dump for first-run field discovery; harmless to keep
 
 ws="$(printf '%s' "$evt" | jq -r '.data.workspace.workspace_id // .data.workspace_id // .data.worktree.workspace_id // .workspace_id // empty')"
 [ -n "$ws" ] || {
-	log "skip: no workspace_id"
-	exit 0
+    log "skip: no workspace_id"
+    exit 0
 }
 
 # Dedup + race guard: claim the workspace atomically (mkdir is atomic, so if
@@ -44,45 +44,45 @@ state="${HERDR_PLUGIN_STATE_DIR:-$HOME/.cache/pi-dev-layout}"
 mkdir -p "$state" 2>/dev/null
 marker="$state/$(printf '%s' "$ws" | tr -c 'A-Za-z0-9' _).done"
 mkdir "$marker" 2>/dev/null || {
-	log "skip: already claimed $ws"
-	exit 0
+    log "skip: already claimed $ws"
+    exit 0
 }
 
 # Wait for the agent pane to exist (herdr spawns it around create time).
 panes=""
 for _ in 1 2 3 4 5 6 7 8; do
-	panes="$("$herdr" pane list --workspace "$ws" 2>/dev/null | jq -c '.result.panes // []' 2>/dev/null)"
-	n="$(printf '%s' "$panes" | jq 'length' 2>/dev/null || echo 0)"
-	[ "${n:-0}" -ge 1 ] && break
-	sleep 0.4
+    panes="$("$herdr" pane list --workspace "$ws" 2>/dev/null | jq -c '.result.panes // []' 2>/dev/null)"
+    n="$(printf '%s' "$panes" | jq 'length' 2>/dev/null || echo 0)"
+    [ "${n:-0}" -ge 1 ] && break
+    sleep 0.4
 done
 n="$(printf '%s' "$panes" | jq 'length' 2>/dev/null || echo 0)"
 # Only decorate a pristine workspace (exactly one pane) so we never disturb a manual
 # layout. Release the claim on any non-decorate exit so nothing is permanently blocked.
 [ "${n:-0}" = "1" ] || {
-	log "skip: pane count=$n (not pristine)"
-	rmdir "$marker" 2>/dev/null
-	exit 0
+    log "skip: pane count=$n (not pristine)"
+    rmdir "$marker" 2>/dev/null
+    exit 0
 }
 
 primary="$(printf '%s' "$panes" | jq -r '.[0].pane_id')"
 cwd="$(printf '%s' "$panes" | jq -r '.[0].foreground_cwd // .[0].cwd // empty')"
 [ -n "$primary" ] || {
-	log "skip: no primary pane"
-	rmdir "$marker" 2>/dev/null
-	exit 0
+    log "skip: no primary pane"
+    rmdir "$marker" 2>/dev/null
+    exit 0
 }
 log "decorating ws=$ws primary=$primary cwd=$cwd"
 
 split() { # <pane> <right|down> <ratio> -> echoes new pane_id
-	"$herdr" pane split "$1" --direction "$2" --ratio "$3" --no-focus ${cwd:+--cwd "$cwd"} 2>/dev/null |
-		jq -r '.result.pane.pane_id // empty'
+    "$herdr" pane split "$1" --direction "$2" --ratio "$3" --no-focus ${cwd:+--cwd "$cwd"} 2>/dev/null |
+        jq -r '.result.pane.pane_id // empty'
 }
 
 right="$(split "$primary" right "$RIGHT_RATIO")"
 [ -n "$right" ] || {
-	log "err: right split failed"
-	exit 0
+    log "err: right split failed"
+    exit 0
 }
 "$herdr" pane run "$right" "$RIGHT_CMD" >/dev/null 2>&1
 
@@ -95,21 +95,21 @@ bottom="$(split "$right" down "$BOTTOM_RATIO")"
 # don't trigger an auto-open on workspace creation. Only new agent-created
 # changes will trigger hunk after this.
 if [ -n "$cwd" ] && [ -d "$cwd" ]; then
-	root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || true
-	if [ -n "$root" ]; then
-		sig="$({
-			git -C "$root" status --porcelain 2>/dev/null
-			git -C "$root" diff HEAD 2>/dev/null || git -C "$root" diff 2>/dev/null
-			git -C "$root" ls-files --others --exclude-standard 2>/dev/null | while IFS= read -r f; do
-				shasum "$root/$f" 2>/dev/null
-			done
-		} | shasum | awk '{print $1}')"
-		hunk_state="$HOME/.cache/herdr-hunk"
-		mkdir -p "$hunk_state" 2>/dev/null || true
-		key="$hunk_state/$(printf '%s' "$root" | shasum | awk '{print $1}').sig"
-		printf '%s' "$sig" >"$key" 2>/dev/null || true
-		log "hunk sig pre-populated for $root"
-	fi
+    root="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null)" || true
+    if [ -n "$root" ]; then
+        sig="$({
+            git -C "$root" status --porcelain 2>/dev/null
+            git -C "$root" diff HEAD 2>/dev/null || git -C "$root" diff 2>/dev/null
+            git -C "$root" ls-files --others --exclude-standard 2>/dev/null | while IFS= read -r f; do
+                shasum "$root/$f" 2>/dev/null
+            done
+        } | shasum | awk '{print $1}')"
+        hunk_state="$HOME/.cache/herdr-hunk"
+        mkdir -p "$hunk_state" 2>/dev/null || true
+        key="$hunk_state/$(printf '%s' "$root" | shasum | awk '{print $1}').sig"
+        printf '%s' "$sig" >"$key" 2>/dev/null || true
+        log "hunk sig pre-populated for $root"
+    fi
 fi
 
 log "done ws=$ws right=$right bottom=${bottom:-none}"

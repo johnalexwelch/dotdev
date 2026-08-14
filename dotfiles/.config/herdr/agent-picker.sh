@@ -5,8 +5,8 @@ herdr="${HERDR_BIN_PATH:-herdr}"
 
 agents=$("$herdr" integration list 2>/dev/null | jq -r '.result.integrations[]? | .id' 2>/dev/null)
 [ -n "$agents" ] || {
-	echo "No integrations found"
-	exit 0
+    echo "No integrations found"
+    exit 0
 }
 
 selected=$(printf '%s\n' "$agents" | fzf --prompt='agent> ' --height=60% --reverse) || exit 0

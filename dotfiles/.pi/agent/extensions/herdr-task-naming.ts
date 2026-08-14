@@ -46,7 +46,7 @@ export default function(pi: any): void {
     if (typeof content !== "string" || !content.trim()) return;
     // Skip slash commands
     if (content.trim().startsWith("/")) return;
-    
+
     taskSet = true;
     const task = truncate(content, MAX_TASK_LEN);
     setTask(task);
@@ -56,11 +56,11 @@ export default function(pi: any): void {
   pi.on("tool_result", (event: any) => {
     const toolName = event?.toolName ?? event?.name;
     if (toolName !== "create_goal" && toolName !== "pi__create_goal") return;
-    
+
     // Parse the result to find the objective
     const result = event?.result ?? event?.content;
     if (typeof result !== "string") return;
-    
+
     // Look for objective in the result
     const match = result.match(/objective[:\s]+["']?([^"'\n]+)/i);
     if (match?.[1]) {
@@ -76,7 +76,7 @@ export default function(pi: any): void {
     const goal = event?.goal ?? event?.context?.goal;
     if (!goal?.objective) return;
     if (typeof goal.objective !== "string") return;
-    
+
     taskSet = true;
     const task = truncate(goal.objective, MAX_TASK_LEN);
     setTask(task, task);

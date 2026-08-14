@@ -31,7 +31,7 @@ require("lazy").setup({
     -- coding extras
     { import = "lazyvim.plugins.extras.coding.blink" },      -- blink.cmp (faster completion)
     { import = "lazyvim.plugins.extras.coding.mini-surround" },
-    -- editor extras  
+    -- editor extras
     { import = "lazyvim.plugins.extras.editor.mini-diff" },  -- inline diff
     -- dap (debugger)
     { import = "lazyvim.plugins.extras.dap.core" },

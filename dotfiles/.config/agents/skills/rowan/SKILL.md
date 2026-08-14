@@ -12,6 +12,7 @@ ROWAN manages your Karpathy-style second brain at `~/Documents/Home/_brain/`.
 ## Triggers
 
 Invoke when user says:
+
 - "rowan ..." (any rowan-prefixed request)
 - "what do I know about ..."
 - "ingest this into my brain"
@@ -36,6 +37,7 @@ cd ~/Documents/Home/_brain/scripts && uv run brain query "topic" --limit 10
 ```
 
 Then read the top hits:
+
 ```bash
 uv run brain get-page <slug>
 ```
@@ -87,11 +89,13 @@ Scores and ranks unreviewed raw sources.
 This is a manual analysis workflow:
 
 1. Read the AGENTS.md to understand source paths:
+
 ```bash
 head -200 ~/Documents/Home/_brain/AGENTS.md
 ```
 
 2. List files in source folders that aren't yet ingested:
+
 ```bash
 # Check what's in Readwise inbox
 ls -lt ~/Documents/Home/\*\ Inbox/Readwise/Articles/ | head -20

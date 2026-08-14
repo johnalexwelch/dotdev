@@ -7,6 +7,7 @@ description: "DEPRECATED — use /rowan instead. This skill is retained for refe
 # Brain Ops (deprecated)
 
 **Use `/rowan` instead.** The rowan skill provides the same functionality with simpler invocation:
+
 - `rowan ingest X`
 - `rowan what do I know about X`
 - `rowan process inbox`
@@ -15,7 +16,7 @@ description: "DEPRECATED — use /rowan instead. This skill is retained for refe
 
 ---
 
-# Original Brain Ops Reference (archived)
+## Original Brain Ops Reference (archived)
 
 Operate on Alex's second brain (`~/Documents/Home/_brain/`) from any Claude session, regardless of current working directory.
 
