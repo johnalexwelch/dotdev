@@ -1,9 +1,11 @@
 tap "anomalyco/tap"
 tap "derailed/k9s"
+tap "felixkratz/formulae"
 tap "hashicorp/tap"
 tap "int128/kubelogin"
 tap "marcus/tap"
 tap "nikitabobko/tap"
+tap "rjyo/moshi"
 # Display directories as trees (with optional color/HTML output)
 brew "tree"
 # Automate deployment, configuration, and upgrading
@@ -132,6 +134,34 @@ brew "resvg"
 brew "yq"
 # Feature-rich command-line audio/video downloader
 brew "yt-dlp"
+# Simple, modern, secure file encryption
+brew "age"
+# Quickly rewrite git repository history
+brew "git-filter-repo"
+# Self-hosted Git service
+brew "gitea"
+# Handy way to save and run project-specific commands
+brew "just"
+# Remote terminal with mosh protocol
+brew "mosh"
+# Send push notifications to your phone or desktop
+brew "ntfy"
+# Secrets management (Vault fork)
+brew "openbao"
+# Swiss-army knife of markup format conversion
+brew "pandoc"
+# Open source vector similarity search for Postgres
+brew "pgvector"
+# Convert bitmaps to vector graphics
+brew "potrace"
+# Simple secrets management
+brew "sops"
+# Tool for creating small self-contained native apps
+brew "tea"
+# macOS status bar customization
+brew "felixkratz/formulae/sketchybar"
+# URL change notification hook
+brew "rjyo/moshi/moshi-hook"
 # Shell extension to navigate your filesystem faster
 brew "zoxide"
 # UNIX shell (command interpreter)

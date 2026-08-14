@@ -155,6 +155,12 @@ dotfiles/.pi/agent/*
 !dotfiles/.pi/agent/mcp.json.example
 # global agent context (declarative instructions loaded every session)
 !dotfiles/.pi/agent/AGENTS.md
+# pi agents (reviewer/specialist definitions)
+!dotfiles/.pi/agent/agents/
+# pi extensions (TUI customizations)
+!dotfiles/.pi/agent/extensions/
+# pi skills (graphify, etc)
+!dotfiles/.pi/agent/skills/
 # pi taskflow run history is runtime state, not config
 dotfiles/.pi/taskflows/runs/
 # stray repo-root .pi/ (taskflow runtime data when pi runs from ~/dotdev) — anchored so it never hits dotfiles/.pi

@@ -1,0 +1,30 @@
+{
+  "name": "zed-herdr",
+  "private": true,
+  "license": "MIT",
+  "author": "ImArtisann",
+  "type": "module",
+  "module": "index.ts",
+  "scripts": {
+    "build": "bun build ./index.ts --target bun --outdir ./dist",
+    "check": "bun run typecheck && bun run lint && bun run build && bun test",
+    "dev": "bun --watch ./index.ts daemon",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "format": "oxfmt .",
+    "start": "bun ./index.ts daemon",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.97.0",
+    "@effect/platform-bun": "^0.91.0",
+    "effect": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.14",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.74.0",
+    "typescript": "^5.9.3"
+  }
+}

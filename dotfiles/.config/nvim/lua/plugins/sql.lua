@@ -2,6 +2,10 @@ return {
   -- dadbod: database UI + completion (LazyVim sql extra brings core, we extend here)
   {
     "kristijanhusak/vim-dadbod-ui",
+    dependencies = {
+      "tpope/vim-dadbod",
+      "kristijanhusak/vim-dadbod-completion",
+    },
     keys = {
       { "<leader>D", "<cmd>DBUIToggle<cr>", desc = "Database UI" },
     },

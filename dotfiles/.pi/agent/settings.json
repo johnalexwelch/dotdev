@@ -1,12 +1,12 @@
 {
-  "lastChangelogVersion": "0.83.0",
+  "lastChangelogVersion": "0.84.1",
   "defaultProvider": "anthropic",
   "compaction": {
     "enabled": true,
     "reserveTokens": 120000,
     "keepRecentTokens": 40000
   },
-  "defaultModel": "claude-opus-4-8",
+  "defaultModel": "claude-opus-4-5",
   "providers": {
     "anthropic": {
       "modelOverrides": {
@@ -47,9 +47,10 @@
     "npm:pi-tool-display",
     "npm:@hypabolic/pi-hypa",
     "npm:@xynogen/pix-optimizer",
-    "npm:@ayulab/pi-rewind"
+    "npm:@ayulab/pi-rewind",
+    "npm:pi-herdr-subagents"
   ],
-  "theme": "dark",
+  "theme": "ayu-mirage",
   "skills": [
     "~/.claude/skills"
   ],
@@ -89,7 +90,7 @@
     "vision": "anthropic/claude-sonnet-4-6",
     "reasoner": "anthropic/claude-opus-4-5"
   },
-  "defaultThinkingLevel": "medium",
+  "defaultThinkingLevel": "high",
   "quietStartup": true,
   "hideThinkingBlock": true,
   "followUpMode": "one-at-a-time",

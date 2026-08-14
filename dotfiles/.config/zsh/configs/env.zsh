@@ -3,7 +3,7 @@
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="/opt/homebrew/bin:$PATH"
-export PATH="/Applications/Cursor.app/Contents/MacOS:$PATH"
+# Zed CLI is installed at ~/.local/bin/zed by the app
 
 # XDG Base Directory specification
 export XDG_CONFIG_HOME="$HOME/.config"
@@ -37,3 +37,9 @@ export LC_ALL=en_US.UTF-8
 export CORA_AUTO_UNINSTALL_DISABLED_CASKS=true
 export CORA_PR_MONITOR_NOTIFY_MACOS=true
 export CORA_AUTO_PR_REVIEW_FIXES=true
+
+# CHORUS fleet CLI
+export CHORUS_REGISTRY="$HOME/projects/chorus/registry.yaml"
+
+# Rowan brain (Obsidian knowledge system)
+export BRAIN_VAULT="$HOME/Documents/Home"

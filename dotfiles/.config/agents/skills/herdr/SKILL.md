@@ -59,6 +59,64 @@ list workspaces:
 herdr workspace list
 ```
 
+## name yourself
+
+when you receive a task, label yourself so humans can tell what you're working on at a glance. use `pane report-metadata` with your pane id from `$HERDR_PANE_ID`:
+
+```bash
+herdr pane report-metadata "$HERDR_PANE_ID" \
+  --source user:task \
+  --agent pi \
+  --token 'task=refactor auth middleware'
+```
+
+the `$task` token appears in the sidebar when configured (see below). replace `pi` with your agent type (`claude`, `codex`, etc.).
+
+for richer labeling, add title and state labels:
+
+```bash
+herdr pane report-metadata "$HERDR_PANE_ID" \
+  --source user:task \
+  --agent pi \
+  --token 'task=review PR #42' \
+  --title "Review PR #42" \
+  --state-label working="reviewing changes" \
+  --state-label blocked="needs human decision"
+```
+
+- `--token 'task=...'` — appears in sidebar (requires config, see below)
+- `--title` — shown in pane header
+- `--state-label <state>=<text>` — custom label per semantic state
+
+you can also rename yourself for display without full metadata:
+
+```bash
+herdr agent rename "$HERDR_PANE_ID" "reviewer"
+```
+
+clear a rename:
+
+```bash
+herdr agent rename "$HERDR_PANE_ID" --clear
+```
+
+**best practice:** name yourself immediately after understanding your task. a 3-5 word description that captures the task scope helps humans triage multiple agents.
+
+### sidebar config for task tokens
+
+to show `$task` in the sidebar, add to `~/.config/herdr/config.toml`:
+
+```toml
+[ui.sidebar.agents]
+rows = [
+  ["state_icon", "workspace", "tab"],
+  ["agent"],
+  [{ token = "$task", fg = "#72cffd", dim = true }],
+]
+```
+
+then reload: `herdr server reload-config`
+
 ## tab management
 
 list tabs in the current workspace:
@@ -276,6 +334,30 @@ herdr pane split 1-2 --direction right --no-focus
 herdr pane run 1-3 "claude"
 herdr wait output 1-3 --match ">" --timeout 15000
 herdr pane run 1-3 "review the test coverage in src/api/"
+```
+
+### spawn a named agent with a labeled task
+
+```bash
+# create a named tab for the task
+herdr tab create --workspace 1 --label "test coverage review"
+TAB_PANE=$(herdr tab get 1:2 | python3 -c 'import sys,json; print(json.load(sys.stdin)["result"]["root_pane"]["pane_id"])')
+
+# start the agent
+herdr pane run "$TAB_PANE" "claude"
+herdr wait output "$TAB_PANE" --match ">" --timeout 15000
+
+# give it a task — the agent should self-label via report-metadata
+herdr pane run "$TAB_PANE" "review the test coverage in src/api/"
+```
+
+alternatively, label the spawned agent yourself from the parent:
+
+```bash
+herdr pane report-metadata "$TAB_PANE" \
+  --source user:spawner \
+  --agent claude \
+  --token 'task=test coverage review'
 ```
 
 ### coordinate with another agent

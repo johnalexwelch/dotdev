@@ -55,6 +55,34 @@ taskflow.dispatch("security-reviewer", {
 })
 ```
 
+### Specialist review brief
+
+Each specialist receives context-rich questions (see main SKILL.md "Context-Rich Question Template"). The specialist brief:
+
+```markdown
+You are reviewing auto-accepted grill answers in your domain.
+
+For each question, you have:
+- **Question** and **Recommendation** (the auto-accepted answer)
+- **Why it matters** (impact if wrong)
+- **Current assumption** (what was accepted)
+- **Blocks** (downstream questions this unlocks)
+- **Alternatives considered** (tradeoffs already weighed)
+
+Your task per question:
+1. Does the recommendation fit the stated context/constraints?
+2. Does the assumption carry hidden risk the primary agent missed?
+3. Is the answer internally consistent with other answers in this batch?
+4. Are the alternatives fairly weighed, or was a better option dismissed?
+
+Output per question:
+- **APPROVE** — answer is sound; one-line rationale
+- **CHALLENGE** — [counter-proposal] + [reasoning] + [what changes if adopted]
+
+Do not challenge style or phrasing. Challenge only when the decision is wrong,
+risky, or inconsistent. Silence on a question = implicit APPROVE.
+```
+
 Completion criterion: specialist task completes and returns structured review output.
 
 ## D2: Consensus Loop with Override and Escalation
@@ -219,6 +247,7 @@ Tag decisions where auto-accept was affirmed or overridden+countered to consensu
 
 ```markdown
 provenance: "auto+specialist-consensus"
+status: "[CONSENSUS]"  # visible marker in output
 specialist_reviewed_by: ["analyst"]  # optional: list of specialists who reviewed
 override_summary: "Security reviewer challenged 'allow plaintext comms' → accepted override to require TLS"  # optional: if an override was countered to consensus
 ```
@@ -229,6 +258,7 @@ Tag decisions that required human judgment after specialist disagreement:
 
 ```markdown
 provenance: "escalated-human"
+status: "[UNRESOLVED]"  # visible marker until human decides; becomes [CONSENSUS] after
 escalation_reason: "Security reviewer and risk-reviewer diverged on acceptable MTTR after 3 rounds"
 specialist_positions: [
   { specialist: "risk-reviewer", position: "MTTR must be <30min", rationale: "SLO commitments" },
@@ -259,6 +289,33 @@ Do **not** compress the evidence trail. Every decision must show *how* it was re
 The evidence trail is the point; do not discard it for brevity.
 
 Completion criterion: every captured decision carries a provenance tag and relevant evidence context; the decision log is an auditable trail of how each decision was reached.
+
+---
+
+## Grill Summary Output (Delegate Mode)
+
+At grill conclusion, emit a summary table showing consensus status for all questions:
+
+```markdown
+## GRILL_CONSENSUS_SUMMARY
+
+| Q# | Title | Decision | Status | Reviewed By | Rounds |
+|----|-------|----------|--------|-------------|--------|
+| Q1 | Auth provider | NextAuth + GitHub OAuth | [CONSENSUS] | analyst | 1 |
+| Q2 | Session storage | Redis with 24h TTL | [CONSENSUS] | security-reviewer | 2 |
+| Q3 | Rate limiting | 100 req/min per user | [UNRESOLVED] | risk-reviewer | 3 → escalated |
+| Q4 | Error handling | Structured error codes | [CONSENSUS] | analyst | 1 |
+
+**Consensus rate:** 3/4 (75%)
+**Escalated to human:** Q3 (rate limiting)
+**Total specialist rounds:** 7
+```
+
+This summary:
+
+- Shows which questions reached AFK consensus vs needed human input
+- Tracks review depth (rounds) per question
+- Provides an audit trail for the grill's AFK effectiveness
 
 ---
 

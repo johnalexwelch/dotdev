@@ -1,0 +1,32 @@
+# Zed Ayu Mirage - warmer variant matching Zed editor
+# Based on Zed's Ayu Mirage theme colors
+
+# ANSI palette (0-7 normal, 8-15 bright)
+palette = 0=#242835
+palette = 1=#f18779
+palette = 2=#d5fe80
+palette = 3=#fecf72
+palette = 4=#72cffe
+palette = 5=#dfbfff
+palette = 6=#95e6cb
+palette = 7=#cccac2
+palette = 8=#67696e
+palette = 9=#f28779
+palette = 10=#d5ff80
+palette = 11=#ffd173
+palette = 12=#73d0ff
+palette = 13=#d2a6ff
+palette = 14=#95e6cb
+palette = 15=#ffffff
+
+# Core colors
+background = #363943
+foreground = #cccac2
+
+# Cursor
+cursor-color = #fecf72
+cursor-text = #242835
+
+# Selection
+selection-background = #409fff
+selection-foreground = #242835
