@@ -322,6 +322,30 @@ assert_status "bare 'fi' argument does not trip the fallback" 0 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then git push origin main; fi 2>/dev/null')"
 assert_status "real 'fi' terminator still trips the fallback" 2 "$STATUS"
 
+# A command substitution's closing paren is not a construct terminator
+# (tests lane R2): `echo $(date) <sup> && git push` has no compound
+# redirection at all and must not trip the whole-command fallback.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) 2>/dev/null && git push origin main')"
+assert_status "command-substitution paren does not trip the fallback" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(basename $(pwd)) 2>/dev/null && git push origin main')"
+assert_status "nested command substitution does not trip the fallback" 0 "$STATUS"
+
+# A mutation INSIDE a substitution is still judged in its own segment: the
+# masking is used only to identify terminators, never to hide mutations.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(git push origin main) 2>/dev/null')"
+assert_status "mutation inside a substitution stays blocked" 2 "$STATUS"
+
+# Negative coverage for the fail-closed fallback boundary (tests lane R2):
+# these benign compounds are DELIBERATELY blocked — a group redirect cannot
+# be attributed to one segment lexically, so the fallback errs toward
+# blocking. Pinned so the choice is visible if anyone narrows it later.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ npm run lint; } 2>/dev/null && git push origin main')"
+assert_status "benign brace group before a push blocks (fail-closed, pinned)" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then npm run lint; fi 2>/dev/null && git push origin main')"
+assert_status "benign conditional before a push blocks (fail-closed, pinned)" 2 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 
