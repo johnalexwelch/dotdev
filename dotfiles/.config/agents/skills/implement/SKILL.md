@@ -3,7 +3,7 @@ name: implement
 disable-model-invocation: true
 model: sonnet
 reasoning: medium
-description: Implement a piece of work from a PRD, issue, or spec. Use when the user says "implement this", "build this", "write the code for", or hands you a PRD/issue to execute.
+description: Chain-internal implementation step that executes a PRD, issue, or spec slice on the current branch — invoked from inside tdd and spec-review flows. Not a delivery entry point — when the user says "implement this", "build this", or hands over a PRD/issue for end-to-end delivery, route via workflow-router to workflow-deliver instead.
 ---
 
 ## Contract
