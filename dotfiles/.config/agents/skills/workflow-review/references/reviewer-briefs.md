@@ -64,4 +64,4 @@ Report only issues the author should fix. Do not list generic best practices, st
 2. Read this index.
 3. Read only the template files for active lanes.
 4. Instantiate placeholders and append the shared output contract if the lane file does not repeat it.
-5. If an active lane's template file is missing, halt with `NEEDS HUMAN`.
+5. If an active lane's template file is missing, halt with `NEEDS_HUMAN`.

@@ -30,4 +30,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `NEEDS HUMAN` for architectural tradeoffs that need owner judgment.
+Return the shared reviewer output contract. Use `NEEDS_HUMAN` for architectural tradeoffs that need owner judgment.
