@@ -599,6 +599,33 @@ assert_status "stamp finalize refuses mock forge without sentinel" 2 "$STATUS"
 assert_contains "mock refusal names FORGE_MOCK_DIR" "$OUT" "FORGE_MOCK_DIR"
 export LEDGER_ALLOW_FORGE_MOCK=1
 
+# --- finalize accepts a draft PR (Phase 3 review F3) ---
+# Default REPO_DELIVERY_POLICY (human-only) keeps the PR draft through the
+# stamp, and forge.sh maps isDraft to "draft" — so draft must stamp like open
+# (recording the actual state), while merged/closed still refuse.
+run_ledger "$wt1" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$lane1"
+assert_status "review re-stamp for draft-PR test exits 0" 0 "$STATUS"
+run_ledger "$wt1" verify-local
+assert_status "verify-local re-run for draft-PR test exits 0" 0 "$STATUS"
+
+printf '7\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature/review_gate"
+printf 'green\n' >"$FORGE_MOCK_DIR/forgejo-ci-status-7"
+printf 'draft\n' >"$FORGE_MOCK_DIR/forgejo-pr-state-7"
+printf 'yes\n' >"$FORGE_MOCK_DIR/forgejo-threads-resolved-7"
+
+run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize stamp accepts a draft PR" 0 "$STATUS"
+assert_file_contains "draft stamp records actual pr_state" \
+    "$wt1/docs/executions/state.yaml" "pr_state: draft"
+
+printf 'closed\n' >"$FORGE_MOCK_DIR/forgejo-pr-state-7"
+run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize stamp still refuses a closed PR" 2 "$STATUS"
+assert_contains "closed refusal names the state" "$OUT" "closed"
+
 run_ledger "$wt1" close
 assert_status "close exits 0" 0 "$STATUS"
 state_wt1=$(live_state "$wt1")
