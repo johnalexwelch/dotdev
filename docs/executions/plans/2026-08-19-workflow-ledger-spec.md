@@ -49,11 +49,14 @@ overrides: []                            # audit trail of every --override
 ## CLI contract (exit codes are the API — tests assert them)
 
 ### `ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>]`
+
 - Creates live state, all steps `pending`; `kind: bug` MUST auto-insert required `diagnose` and `fix` steps if absent from `--steps`.
 - Writes + commits the snapshot. Exit 0. Existing `status: active` run → exit 7 (refuse; `--force` overwrites with an `overrides[]` audit entry).
 
 ### `ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]`
+
 Transition rules (each MUST have a red test):
+
 - unknown step → exit 5
 - required step to `skipped` → exit 3, no write
 - `completed|skipped|blocked|failed` with empty evidence/reason → exit 4, no write
@@ -61,30 +64,37 @@ Transition rules (each MUST have a red test):
 - schema-invalid resulting doc → exit 6, no write
 
 ### `ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]`
+
 - Runs the gate's **checked** fields (table below). All pass → stamp written with current `head_sha`, snapshot committed, exit 0.
 - Any checked field fails → exit 2, listing each failure; nothing written (except with `--override`).
 - `--override` requires non-empty `--reason` (else exit 4); writes stamp with `override.active: true` + appends `overrides[]`; exit 0 with loud stderr warning.
 - Gate types: `diagnose|fix|review` are `reviewer-validation` (agent-stampable). `finalize` fields flagged maintainer/operator/secret-custody require `--human` (else exit 8) — Phase 0 ships `finalize` as reviewer-validation by default; the enum + `--human` path must exist and be tested.
 
 ### `ledger.sh check <gate>`
+
 - Exit 0 iff: stamp exists AND (all checked passed OR override active) AND fresh: every commit after `head_sha` touches ONLY the snapshot file, verified by `git diff-tree` contents — never by commit subject (R1 MF1 content-verified refinement of D-006 #4; the stamp's own snapshot commit is the only exempt shape).
 - Any commit after stamp → exit 1 `STALE`; missing stamp → exit 1 `MISSING`; override → exit 0 but prints `OVERRIDDEN: <reason>`.
 
 ### `ledger.sh reconcile [--apply]`
+
 - Compares live ledger vs git ground truth: branch exists, worktree alive, commits present beyond `next` (`git log <base>..HEAD` non-empty for steps claimed pending).
 - Prints true frontier; `--apply` updates `next`. Exit 0 clean, exit 1 drift-detected (report printed).
 
 ### `ledger.sh preflight --skill <name>`
+
 - Parses `Requires:` from `<skills-root>/<name>/SKILL.md` Contract; `which` each CLI tool. Exit 0 all present; exit 1 listing missing. Unknown skill → exit 5.
 
 ### `ledger.sh review-floor [--base <ref>]`
+
 - Computes diff stats vs base: files changed, LOC. `>15 files || >500 LOC` → `full`. Path-pattern hits (default patterns: `auth|secret|migration|infra|\.github/workflows`; optional repo override file `docs/executions/review-patterns.txt`) → at least `standard`, security-flagged. Else `fast`.
 - Prints one word: `fast|standard|full`. Deterministic: same diff → same output (test asserts).
 
 ### `ledger.sh verify-local`
+
 - Reads `docs/executions/ci-commands.yaml` (list of commands). Runs each, records pass/fail + head_sha into live state. All pass → exit 0; any fail → exit 1 with failing command echoed. Missing manifest → exit 9 (`NO_MANIFEST` — callers decide policy).
 
 ### `ledger.sh show` / `ledger.sh close`
+
 - `show`: render steps + stamps table. `close`: set `status: done`, `next: ""`, commit snapshot.
 
 ## Gate checked/attested fields
