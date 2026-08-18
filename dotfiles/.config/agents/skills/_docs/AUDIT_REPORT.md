@@ -62,5 +62,5 @@ Do not prune on-demand skills using only always-loaded references. Future prunin
 
 - Active skill count: 74 + all on-demand catalog-tier skills
 - No `_archive/2026-06-21/` skill archive remains
-- Redirect stubs (`pr-responder`, `pr-review`, `review`, `slop-cleaner`, `v1-idea-grill`, `rowan`) retained as bridges
+- Redirect stubs deleted 2026-08-18 per D-006 d14 (`pr-responder`, `pr-review`, `review`, `slop-cleaner`, `v1-idea-grill`); `rowan` live, excluded — see retirement table above
 - SKILL-MANIFEST.md references every active skill by exact name
