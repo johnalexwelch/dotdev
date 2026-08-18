@@ -4,7 +4,7 @@ kind: skill
 budget: one-reviewer
 status: done
 next: ''
-updated: '2026-08-18T22:45:06.004211+00:00'
+updated: '2026-08-18T22:52:53.720632+00:00'
 steps:
 - id: implement
   required: true
@@ -25,8 +25,8 @@ steps:
     PASS @ 396a9d3; full eval 43/44=97% PASS'
 stamps:
   review:
-    head_sha: 3d8317bfc3a4563186048baf98697cbaa84485b0
-    timestamp: '2026-08-18T22:45:06.004025+00:00'
+    head_sha: f411fa208d1bdaeab7f807717714f63496cab42e
+    timestamp: '2026-08-18T22:52:53.720339+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -62,9 +62,9 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 2f22c4190a3c9250a979e7afc8f619a1f6cc6555
+last_seen_sha: 323999ea0b5a9c926e8bfe406f60e53b70e24db7
 verify_local:
-  head_sha: 26a25d3ed1d00d0a87a2d5f20b3298699b303249
+  head_sha: 323999ea0b5a9c926e8bfe406f60e53b70e24db7
   passed: true
   results:
   - cmd: ./test/run-tests.sh
