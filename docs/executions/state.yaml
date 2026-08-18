@@ -2,9 +2,9 @@ run_id: 2026-08-18-draft-stamp
 workflow: workflow-deliver
 kind: bug
 budget: one-reviewer
-status: active
-next: diagnose
-updated: '2026-08-18T23:30:59.452462+00:00'
+status: done
+next: ''
+updated: '2026-08-18T23:31:18.845110+00:00'
 steps:
 - id: diagnose
   required: true
@@ -47,8 +47,11 @@ steps:
     + skill lints'
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'PR #170 draft (human-only default policy, left draft); verify-local green
+    at be81612; forge checks: ci=green (no checks configured for stacked base), pr_state=draft
+    (fixed kernel accepted it live), threads=yes (0 threads); finalize stamped at
+    253b8f6'
 stamps:
   diagnose:
     head_sha: b4f60131f3d69e2a38f02735a955aa80c30407e5
@@ -141,7 +144,7 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 253b8f69243fecd9208a5747ca999184d5a5b488
+last_seen_sha: 494f44f70cc789897b6e12bde5622535fc0a9363
 verify_local:
   head_sha: be81612c9a63f04dd7b6cc6707cba90c1f243683
   passed: true
