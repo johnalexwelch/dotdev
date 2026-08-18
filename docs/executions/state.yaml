@@ -4,7 +4,7 @@ kind: bug
 budget: one-reviewer
 status: active
 next: diagnose
-updated: '2026-08-18T23:26:18.843523+00:00'
+updated: '2026-08-18T23:30:39.323708+00:00'
 steps:
 - id: diagnose
   required: true
@@ -35,8 +35,10 @@ steps:
     green 114/114, tests untouched after red)'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'full profile (floor=full: 25 files > 15), 4 opus lanes all APPROVE at
+    a93c628; earlier integrated lane R1 REQUEST_CHANGES (pi mirror drift + stale base,
+    both fixed) R2 APPROVE; 6 non-blocking follow-ups recorded for PR body'
 - id: qa
   required: true
   status: completed
@@ -87,8 +89,8 @@ stamps:
       reason: ''
       timestamp: ''
   review:
-    head_sha: a93c62808d4e1e3bee6b4e6caa1bb060dae7d9de
-    timestamp: '2026-08-18T23:26:18.843373+00:00'
+    head_sha: be81612c9a63f04dd7b6cc6707cba90c1f243683
+    timestamp: '2026-08-18T23:30:39.323535+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -119,4 +121,14 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: a93c62808d4e1e3bee6b4e6caa1bb060dae7d9de
+last_seen_sha: 26201f806be8eef4aacfcc7f5a1f99a1502d960c
+verify_local:
+  head_sha: be81612c9a63f04dd7b6cc6707cba90c1f243683
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
