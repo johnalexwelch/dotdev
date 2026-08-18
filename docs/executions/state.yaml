@@ -4,7 +4,7 @@ kind: bug
 budget: one-reviewer
 status: active
 next: diagnose
-updated: '2026-08-18T23:07:53.551031+00:00'
+updated: '2026-08-18T23:26:18.843523+00:00'
 steps:
 - id: diagnose
   required: true
@@ -29,19 +29,20 @@ steps:
 - id: implement
   required: true
   status: completed
-  evidence: '3 items: ledger.sh accepts open|draft in checked_finalize; 11 spaced
-    verdict tokens underscored (10 briefs + reviewer-briefs.md orchestration rule);
-    workflow-finalize Step 8 collision paragraph replaced with resolved-state note;
-    tdd: ran (red 2 failing assertions b4f6013, green 114/114 at c84e3d6, tests untouched
-    after red)'
+  evidence: '4 commits at rebased base: red tests 617a85a; ledger.sh open|draft c8f15e0;
+    11 canonical token edits + Step 8 note a303da4; 10 pi mirror token edits bea36c3
+    (R1 finding, mirrors byte-identical again); tdd: ran (red 2 failing assertions,
+    green 114/114, tests untouched after red)'
 - id: review
   required: true
   status: pending
   evidence: ''
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'user-journey-qa not applicable: no frontend/user-facing surface (kernel
+    gate script, test suite, skill docs); verification is test/test-ledger.sh 114/114
+    + skill lints'
 - id: finalize
   required: true
   status: pending
@@ -85,5 +86,37 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  review:
+    head_sha: a93c62808d4e1e3bee6b4e6caa1bb060dae7d9de
+    timestamp: '2026-08-18T23:26:18.843373+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 1ffc558a930c594eba6a61aca38c9a814534ba02b4290ab13d8fe88313ee819d
+      lane_security_lines: '50'
+      lane_security_verdict: APPROVE
+      lane_security_model: opus
+      lane_logic_sha256: f9affcc74aed137a13aa5cb26626a0af757d0749f8667ab731158b864e5107aa
+      lane_logic_lines: '42'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: opus
+      lane_tests_sha256: 7d1ebe3e04c0bd60a528a2b161d8f5f88ec2e8b3111be5185a5ae62302c208c3
+      lane_tests_lines: '106'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: opus
+      lane_style_sha256: 1b6f19ce2c6cedc1b7f567809e7f64f34777413a42989733ee90169cf23c54d8
+      lane_style_lines: '42'
+      lane_style_verdict: APPROVE
+      lane_style_model: opus
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      verdict: approve
+      review_profile: full
+      lanes: security=/tmp/2026-08-18-draft-stamp-security-review.md,logic=/tmp/2026-08-18-draft-stamp-logic-review.md,tests=/tmp/2026-08-18-draft-stamp-tests-review.md,style=/tmp/2026-08-18-draft-stamp-style-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: 20c39767dea2f079bc80f824098bb4d61b68aa84
+last_seen_sha: a93c62808d4e1e3bee6b4e6caa1bb060dae7d9de
