@@ -3,8 +3,8 @@ workflow: workflow-debug
 kind: bug
 budget: one-reviewer
 status: active
-next: review
-updated: '2026-08-18T19:37:23.625232+00:00'
+next: finalize
+updated: '2026-08-18T20:23:45.656120+00:00'
 steps:
 - id: diagnose
   required: true
@@ -17,8 +17,9 @@ steps:
   evidence: repro green; test-ledger 108/0, test-guard-rules 39/0
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: fast profile, integrated lane approve (claude-fable-5), red/green independently
+    verified
 - id: finalize
   required: true
   status: pending
@@ -59,8 +60,8 @@ stamps:
       reason: ''
       timestamp: ''
   review:
-    head_sha: 02214fc8ec7c5764e6811c0924ffd765b03edd10
-    timestamp: '2026-08-18T19:37:23.625018+00:00'
+    head_sha: 9dad02988c6bf9f3f2f540633a6f184f3c2f069d
+    timestamp: '2026-08-18T20:23:45.655962+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -79,7 +80,7 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 02214fc8ec7c5764e6811c0924ffd765b03edd10
+last_seen_sha: 9639f5b99c7888e42f613311f5562941480c9370
 verify_local:
   head_sha: 02214fc8ec7c5764e6811c0924ffd765b03edd10
   passed: true
