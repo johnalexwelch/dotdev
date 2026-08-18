@@ -133,6 +133,11 @@ ledger_try() {
 echo "=== Workflow guard new-rule tests ==="
 echo ""
 
+# Stub bin used by the fail-closed probe: an awk that always fails.
+mkdir -p "$TMPDIR_BASE/broken-bin"
+printf '#!/usr/bin/env bash\nexit 127\n' >"$TMPDIR_BASE/broken-bin/awk"
+chmod +x "$TMPDIR_BASE/broken-bin/awk"
+
 # --- Rule 1: merge gate ---
 opted_gate=$(new_repo merge_gate opted)
 ledger_try "$opted_gate" init 2026-08-19-gate --workflow workflow-build-one \
@@ -345,6 +350,39 @@ assert_status "benign brace group before a push blocks (fail-closed, pinned)" 2 
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then npm run lint; fi 2>/dev/null && git push origin main')"
 assert_status "benign conditional before a push blocks (fail-closed, pinned)" 2 "$STATUS"
+
+# Suppression spellings beyond 2>/dev/null (security lane R2). The first is
+# the most common idiom in shell and was missed on origin/main too.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main >/dev/null 2>&1')"
+assert_status "stdout-to-null plus 2>&1 is suppression" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>>/dev/null')"
+assert_status "appending stderr redirect is suppression" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git push origin main 2>'/dev/null'")"
+assert_status "quoted /dev/null path is suppression" 2 "$STATUS"
+
+# 2>&1 without a /dev/null stdout target is NOT suppression — it merges
+# stderr into a stream the caller still sees.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>&1 | tee push.log')"
+assert_status "2>&1 into a visible stream is not suppression" 0 "$STATUS"
+
+# Escaped quote inside a double-quoted span must not desynchronize the quote
+# tracker and move the suppression off the mutating segment (security lane
+# R2: a surviving member of the MF2 class, and a regression vs origin/main).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "a \" ; b" 2>/dev/null')"
+assert_status "escaped quote does not split the mutating segment" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "a \" | b" 2>/dev/null')"
+assert_status "escaped quote with a pipe stays one segment" 2 "$STATUS"
+
+# Rule 3 must fail CLOSED if the masking helper breaks (security lane R2
+# note): an empty mask previously emptied every segment and permitted.
+OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'git push origin main 2>/dev/null')" |
+    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
+        PATH="$TMPDIR_BASE/broken-bin:$PATH" bash "$GUARD" 2>&1)"
+STATUS=$?
+assert_status "broken awk fails closed (still blocks)" 2 "$STATUS"
 
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
