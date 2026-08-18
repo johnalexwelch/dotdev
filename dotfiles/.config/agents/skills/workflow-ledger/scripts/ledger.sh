@@ -102,12 +102,52 @@ resolve_python() {
 PYPROG=$(
     cat <<'PYEOF'
 import os
+import re
 import sys
 from datetime import datetime, timezone
 
 import yaml
 
 LIVE = os.environ.get("LEDGER_LIVE", "")
+
+# Secret shapes redacted from script-captured output before it is stored
+# (batch #4). Checked values only — attested values like repro_cmd must stay
+# verbatim because the fix gate re-executes them.
+REDACT_PATTERNS = [
+    re.compile(r"\b(?:gh[pousr]|github_pat)_[A-Za-z0-9_]{8,}"),
+    re.compile(r"\bsk-[A-Za-z0-9_-]{16,}"),
+    re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{8,}"),
+    re.compile(r"\bglpat-[A-Za-z0-9_-]{8,}"),
+    re.compile(r"-----BEGIN[A-Z ]*PRIVATE KEY-----"),
+    re.compile(r"(authorization:?\s+(?:token|bearer)\s+)\S+", re.IGNORECASE),
+    re.compile(r"\b((?:api[_-]?key|token|secret|password|passwd)\s*[=:]\s*)\S+", re.IGNORECASE),
+]
+
+# The committed snapshot caps free-text command tails at this many chars;
+# the full (redacted) tail lives only in git-dir live state (batch #4).
+SNAPSHOT_TAIL_CAP = 64
+
+
+def redact(text):
+    if not isinstance(text, str):
+        return text
+    for pattern in REDACT_PATTERNS:
+        if pattern.groups:
+            text = pattern.sub(lambda m: m.group(1) + "[REDACTED]", text)
+        else:
+            text = pattern.sub("[REDACTED]", text)
+    return text
+
+
+def cap_tails(doc):
+    """Snapshot view: truncate free-text tails (in place); returns doc."""
+    for stamp in (doc.get("stamps") or {}).values():
+        checked = stamp.get("checked") or {}
+        tail = checked.get("repro_tail")
+        if isinstance(tail, str) and len(tail) > SNAPSHOT_TAIL_CAP:
+            checked["repro_tail"] = tail[:SNAPSHOT_TAIL_CAP] + "...[truncated]"
+    return doc
 
 KINDS = {"feature", "bug", "phase", "docs", "skill"}
 BUDGETS = {"direct", "one-reviewer", "multi-lane", "team"}
@@ -193,7 +233,7 @@ def save(doc):
     os.makedirs(os.path.dirname(LIVE), exist_ok=True)
     tmp = LIVE + ".tmp"
     with open(tmp, "w") as fh:
-        yaml.safe_dump(doc, fh, sort_keys=False, default_flow_style=False)
+        yaml.safe_dump(doc, fh, sort_keys=False, default_flow_style=False, width=4096)
     os.replace(tmp, LIVE)
 
 
@@ -344,7 +384,10 @@ def op_write_stamp(argv):
         "timestamp": now(),
         "gate_type": gate_type,
         "provenance": provenance,
-        "checked": split_kv(checked),
+        # Checked values are script-captured output — redact secret shapes
+        # before anything is stored (batch #4). Attested values stay verbatim
+        # (the fix gate re-executes the attested repro_cmd).
+        "checked": {k: redact(v) for k, v in split_kv(checked).items()},
         "attested": split_kv(attested),
         "override": {
             "active": is_override,
@@ -425,6 +468,21 @@ def op_show(argv):
         )
 
 
+def op_write_snapshot(argv):
+    # Snapshot = live state with free-text tails capped (batch #4): the full
+    # redacted tail stays in git-dir live state; the tracked, PR-visible copy
+    # carries at most SNAPSHOT_TAIL_CAP chars of it.
+    doc = cap_tails(load())
+    dest = argv[0]
+    dest_dir = os.path.dirname(dest)
+    if dest_dir:
+        os.makedirs(dest_dir, exist_ok=True)
+    tmp = dest + ".tmp"
+    with open(tmp, "w") as fh:
+        yaml.safe_dump(doc, fh, sort_keys=False, default_flow_style=False, width=4096)
+    os.replace(tmp, dest)
+
+
 def op_manifest(argv):
     try:
         with open(argv[0]) as fh:
@@ -450,6 +508,7 @@ HANDLERS = {
     "reconcile_apply": op_reconcile_apply,
     "close": op_close,
     "show": op_show,
+    "write_snapshot": op_write_snapshot,
     "manifest": op_manifest,
 }
 
@@ -477,14 +536,15 @@ add_failure() {
     FAILURES="${FAILURES}  - $*"$'\n'
 }
 
-# Copy live state to the committed snapshot and commit it. A stamp's own
-# snapshot commit must not make that stamp stale; the exemption is verified by
-# commit CONTENTS (touches only the snapshot file), never by subject — a
-# subject is attacker-controlled (review R1 MF1, D-006 #4).
+# Write the snapshot view of live state (free-text tails capped, batch #4)
+# to the committed snapshot and commit it. A stamp's own snapshot commit must
+# not make that stamp stale; the exemption is verified by commit CONTENTS
+# (touches only the snapshot file), never by subject — a subject is
+# attacker-controlled (review R1 MF1, D-006 #4).
 commit_snapshot() {
     local action="$1" target="$2"
     mkdir -p "$(dirname "$SNAPSHOT")"
-    cp "$LIVE" "$SNAPSHOT"
+    py write_snapshot "$SNAPSHOT" || exit $?
     git -C "$TOP" add -- "$SNAPSHOT_REL" || die 1 "git add failed for $SNAPSHOT_REL"
     if ! git -C "$TOP" diff --quiet HEAD -- "$SNAPSHOT_REL" 2>/dev/null; then
         git -C "$TOP" commit -q -m "chore(ledger): $action $target" -- "$SNAPSHOT_REL" ||
