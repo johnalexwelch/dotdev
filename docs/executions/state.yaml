@@ -4,7 +4,7 @@ kind: skill
 budget: one-reviewer
 status: done
 next: ''
-updated: '2026-08-18T22:26:28.415830+00:00'
+updated: '2026-08-18T22:34:28.023711+00:00'
 steps:
 - id: implement
   required: true
@@ -25,22 +25,21 @@ steps:
     PASS @ 396a9d3; full eval 43/44=97% PASS'
 stamps:
   review:
-    head_sha: b9c2c19aab974141568f99539b9d278b15441ee6
-    timestamp: '2026-08-18T22:17:33.807078+00:00'
+    head_sha: 7f92e9108e6b715271dea1b87dea982a99b2bee9
+    timestamp: '2026-08-18T22:34:28.023565+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 0cfc572874cfa8ba15c8798a7e7026e8ac323439706a7bbbb85a613e4d7ab886
-      lane_integrated_lines: '49'
-      lane_integrated_verdict: REQUEST_CHANGES
-      lane_integrated_model: claude-opus-5[1m]
+      lane_integrated_sha256: f43abcf5a925b5035ce71409ae7d86b5ceeb5b4a46c3c44a4c282f1b32e76081
+      lane_integrated_lines: '77'
+      lane_integrated_verdict: approve
+      lane_integrated_model: claude-fable-5
       review_floor: fast
       worktree_verify: pass
     attested:
       verdict: approve
       review_profile: fast
       lanes: integrated=/tmp/integrated-review.md
-      model_floor: sonnet
     override:
       active: false
       reason: ''
@@ -66,7 +65,7 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: b28e52c2e7edf6280bd95098d4ff05e123d17524
+last_seen_sha: d52ccf9bc809b69b3e06bd5f4292c117c30380a2
 verify_local:
   head_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
   passed: true
