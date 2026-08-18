@@ -3,8 +3,8 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 status: active
-next: review
-updated: '2026-08-18T22:30:38.556446+00:00'
+next: finalize
+updated: '2026-08-18T22:58:42.579254+00:00'
 steps:
 - id: implement
   required: true
@@ -13,21 +13,23 @@ steps:
     run-tests all green (322 pass/0 fail across suites)
 - id: review
   required: true
-  status: active
-  evidence: dispatching per computed floor
+  status: completed
+  evidence: 'fast profile (floor=fast), integrated lane opus, 2 rounds: R1 REQUEST_CHANGES
+    (7 findings; F1/F2/F4-F7 fixed, F3 documented+follow-up queued), R2 APPROVE; re-attested
+    post-rebase at 67990ba; stamp written'
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: verify-local + PR + finalize stamp
 stamps:
   review:
-    head_sha: 67990bae6551cdc4d23fdbd3230a1271c167705a
-    timestamp: '2026-08-18T22:30:38.556122+00:00'
+    head_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
+    timestamp: '2026-08-18T22:58:42.578887+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 1d4a2a4135904fe59636a048d9c26ac1e8743b04d7348876ae5c184b3089057f
-      lane_integrated_lines: '70'
+      lane_integrated_sha256: 5e70bf6af552f9ea54d3b7f63c7d7e5d2ff536540fa942735119c7b9bdd91301
+      lane_integrated_lines: '110'
       lane_integrated_verdict: APPROVE
       lane_integrated_model: claude-opus-5[1m]
       review_floor: fast
@@ -41,4 +43,14 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 67990bae6551cdc4d23fdbd3230a1271c167705a
+last_seen_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
+verify_local:
+  head_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
