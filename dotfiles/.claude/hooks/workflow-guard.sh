@@ -100,7 +100,13 @@ seg_has_suppression() {
 has_suppressed_mutating_segment() {
     local masked segs seg whole=0
     masked="$(mask_quoted_separators "$cmd")"
-    if grep -Eq '(\}|\)|\bdone\b|\bfi\b)[[:space:]]*(2>|&>)' <<<"$masked"; then
+    # `}`/`)` are unambiguous terminators. `done`/`fi` are ordinary words, so
+    # they only count as terminators when separator-preceded (`; done`, or at
+    # line start) — otherwise `echo done <suppression> && git push` would trip
+    # the fallback, which is the very false-positive class batch #1 removed
+    # (logic lane R2).
+    if grep -Eq '(\}|\))[[:space:]]*(2>|&>)' <<<"$masked" ||
+        grep -Eq '(^|[;&|])[[:space:]]*(done|fi)[[:space:]]*(2>|&>)' <<<"$masked"; then
         seg_has_suppression "$masked" && whole=1
     fi
     segs="${masked//"&&"/$'\n'}"
