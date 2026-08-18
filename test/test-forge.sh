@@ -65,6 +65,20 @@ assert_file_exists() {
     fi
 }
 
+assert_contains() {
+    local name="$1" haystack="$2" needle="$3"
+    if grep -Fq "$needle" <<<"$haystack"; then
+        echo "  PASS: $name"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: $name"
+        echo "    expected output to contain: $needle"
+        echo "    output was:"
+        echo "$haystack"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
 # Run forge.sh from inside a repo; captures OUT and STATUS. Mock mode is
 # always on and FORGE_URL points at an .invalid host so any accidental
 # network path fails instead of leaving the sandbox.
@@ -212,6 +226,44 @@ assert_equal "forgejo pr-state prints merged" "merged" "$OUT"
 run_forge "$repo_fj" threads-resolved 7
 assert_status "forgejo threads-resolved exits 0" 0 "$STATUS"
 assert_equal "forgejo threads-resolved prints no" "no" "$OUT"
+
+# --- FORGE_TOKEN hygiene (batch #5) ---
+# Real (non-mock) Forgejo calls must fail loudly on an empty FORGE_TOKEN
+# instead of sending an unauthenticated request.
+run_forge_real() {
+    local dir="$1" token="$2"
+    shift 2
+    OUT="$(cd "$dir" && FORGE_URL="https://forge.invalid" FORGE_TOKEN="$token" \
+        FORGE_SSH_CONFIG="$SSH_CFG" bash "$FORGE" "$@" 2>&1)"
+    STATUS=$?
+}
+
+run_forge_real "$repo_fj" "" ci-status 7
+assert_status "empty FORGE_TOKEN fails loudly (no unauthenticated call)" 1 "$STATUS"
+assert_contains "empty-token failure names FORGE_TOKEN" "$OUT" "FORGE_TOKEN"
+
+# The token must never travel on curl argv (visible in process listings);
+# it goes via a curl config read from stdin. Stub curl records its argv.
+STUB_BIN="$TMPDIR_BASE/stub-bin"
+mkdir -p "$STUB_BIN"
+cat >"$STUB_BIN/curl" <<STUB
+#!/usr/bin/env bash
+printf '%s\n' "\$@" >"$TMPDIR_BASE/curl-argv"
+[ -t 0 ] || cat >"$TMPDIR_BASE/curl-stdin"
+printf '{"merged":false,"draft":false,"state":"open"}'
+STUB
+chmod +x "$STUB_BIN/curl"
+
+OUT="$(cd "$repo_fj" && PATH="$STUB_BIN:$PATH" FORGE_URL="https://forge.invalid" \
+    FORGE_TOKEN="hunter2-token-value" FORGE_SSH_CONFIG="$SSH_CFG" \
+    bash "$FORGE" pr-state 9 2>&1)"
+STATUS=$?
+assert_status "forgejo pr-state via stub curl exits 0" 0 "$STATUS"
+assert_equal "stub-backed pr-state prints open" "open" "$OUT"
+assert_equal "token never appears on curl argv" "0" \
+    "$(grep -c 'hunter2-token-value' "$TMPDIR_BASE/curl-argv")"
+assert_equal "token reaches curl via non-argv channel" "1" \
+    "$(grep -c 'hunter2-token-value' "$TMPDIR_BASE/curl-stdin" 2>/dev/null || echo 0)"
 
 echo ""
 echo "Passed: $PASS"
