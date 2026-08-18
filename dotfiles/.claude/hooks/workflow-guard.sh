@@ -112,6 +112,9 @@ seg_has_suppression() {
 # a mutation inside a substitution is still caught in its own segment.
 mask_command_substitutions() {
     local s="$1" prev=""
+    # Arithmetic expansion first: its `))` is not a subshell close, and the
+    # substitution pattern below cannot consume it (nested parens).
+    s="$(sed -E 's/\$\(\([^()]*\)\)/__ARITH__/g' <<<"$s")"
     while [ "$s" != "$prev" ]; do
         prev="$s"
         s="$(sed -E 's/\$\([^()]*\)/__SUBST__/g' <<<"$s")"
@@ -143,8 +146,13 @@ has_suppressed_mutating_segment() {
     # separator-preceded (`; done`, or at line start) — otherwise
     # `echo done <suppression> && git push` would trip the fallback, the very
     # false-positive class batch #1 removed (logic lane R2).
-    if grep -Eq '(\}|\))[[:space:]]*(2>|&>)' <<<"$terminator_view" ||
-        grep -Eq '(^|[;&|])[[:space:]]*(done|fi)[[:space:]]*(2>|&>)' <<<"$terminator_view"; then
+    # ANY redirect after the terminator arms the fallback — a construct
+    # suppressed via stdout-dup (`} >/dev/null 2>&1`) is redirected just as
+    # thoroughly as one using `2>` (security lane R2). Whether it is really
+    # suppression stays seg_has_suppression's call, so widening here cannot
+    # block a construct that merely redirects to a file.
+    if grep -Eq '(\}|\))[[:space:]]*([0-9]*>>?|&>)' <<<"$terminator_view" ||
+        grep -Eq '(^|[;&|])[[:space:]]*(done|fi)[[:space:]]*([0-9]*>>?|&>)' <<<"$terminator_view"; then
         seg_has_suppression "$masked" && whole=1
     fi
     segs="${masked//"&&"/$'\n'}"
