@@ -434,11 +434,27 @@ run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) >/dev/null 2>&1
 assert_status "substitution before a stdout-dup redirect is not a terminator" 0 "$STATUS"
 
 # The load-bearing discriminator for widening the terminator alternation:
-# arming the fallback on any redirect is safe precisely because
-# seg_has_suppression still decides whether it is suppression, so a construct
-# whose output lands in a real file stays permitted.
+# arming the fallback is decided by whether the CONSTRUCT'S OWN redirect list
+# is suppression, so a construct whose output lands in a real file stays
+# permitted — including when unrelated suppression appears elsewhere in the
+# command (style lane R4: scoping this to the whole command re-blocked the
+# very class batch #1 exists to permit).
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } >push.log 2>&1')"
 assert_status "construct redirected to a real file is not suppression" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ npm run build; } > build.log && bash t.sh 2>/dev/null && git push origin main')"
+assert_status "file-redirected construct plus suppressed test segment permits" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '( echo x ) > out.log && bash t.sh 2>/dev/null && git push origin main')"
+assert_status "file-redirected subshell plus suppressed test segment permits" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '( cd s && npm test ) >> test.log && npm run lint 2>/dev/null && git push origin main')"
+assert_status "appending file redirect plus suppressed lint segment permits" 0 "$STATUS"
+
+# ...while a construct whose own redirect list IS suppression still arms the
+# fallback, even though the same command also redirects to a file.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ npm run build; } > build.log && { git push origin main; } >/dev/null 2>&1')"
+assert_status "suppressed construct still blocks alongside a file-redirected one" 2 "$STATUS"
 
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
