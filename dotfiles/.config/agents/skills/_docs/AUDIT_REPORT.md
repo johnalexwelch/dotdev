@@ -11,20 +11,20 @@ This document now serves as the canonical home for skill **overlap and consolida
 
 ## Skill Overlap and Consolidation Candidates
 
-These skills are **intentionally retained as redirect stubs** until explicit user approval + invocation history confirms archival readiness.
+Retirement executed 2026-08-18 per D-006 decision 14 (human provenance; explicit approval per the corrected audit rule below). Precondition met: `~/.claude/logs/skill-invocations.log` greped 2026-08-18 — zero invocations of any of the 6 names in the log's full span (log begins 2026-07-20; all `review` hits were suffix false-positives such as `clarity-review`/`workflow-review`).
 
-### Retirement-Leaning Skills (Status: Redirect Stubs, Awaiting Approval)
+### Retirement-Leaning Skills (Status: Resolved 2026-08-18)
 
-From workflow-router `## Catalog tier` section — self-declared superseded, not formally retired:
+From workflow-router `## Catalog tier` section — self-declared superseded, now formally retired (directories deleted; git history is the tombstone):
 
 | Stub Skill | Successor | Rationale | Status |
 |-----------|-----------|-----------|--------|
-| `pr-responder` | `receive-review` (Step 2 of `workflow-finalize`) | Restates reviewer-comment handling as a standalone entry point; receiver-review already covers this within workflow-finalize | Awaiting formal archival approval |
-| `pr-review` | `workflow-review` | PR code review gate; workflow-review is the authoritative review orchestrator | Awaiting formal archival approval |
-| `review` | `workflow-review` | Legacy alias for PR code review; workflow-review is the authoritative review orchestrator | Awaiting formal archival approval |
-| `slop-cleaner` | `humanizer` | Text de-AIing and clarity improvement; humanizer owns the full polish workflow | Awaiting formal archival approval |
-| `v1-idea-grill` | `grill-with-docs` (V1 mode) | V1 product discovery and interrogation; grill-with-docs replaced v1-idea-grill with full HITL/Delegate modes | Awaiting formal archival approval |
-| `rowan` | `brain-ops` | Brain/second-brain interaction; brain-ops owns the Karpathy-style knowledge workflow | Binary tombstoned 2026-07-20; awaiting formal archival approval |
+| `pr-responder` | `receive-review` (Step 2 of `workflow-finalize`) | Restates reviewer-comment handling as a standalone entry point; receiver-review already covers this within workflow-finalize | Retired 2026-08-18 (D-006 d14); directory deleted |
+| `pr-review` | `workflow-review` | PR code review gate; workflow-review is the authoritative review orchestrator | Retired 2026-08-18 (D-006 d14); directory deleted |
+| `review` | `workflow-review` | Legacy alias for PR code review; workflow-review is the authoritative review orchestrator | Retired 2026-08-18 (D-006 d14); directory deleted |
+| `slop-cleaner` | `humanizer` | Text de-AIing and clarity improvement; humanizer owns the full polish workflow | Retired 2026-08-18 (D-006 d14); directory deleted |
+| `v1-idea-grill` | `grill-with-docs` (V1 mode) | V1 product discovery and interrogation; grill-with-docs replaced v1-idea-grill with full HITL/Delegate modes | Retired 2026-08-18 (D-006 d14); directory deleted |
+| `rowan` | ~~`brain-ops`~~ (stale — direction reversed) | This row was stale: PR #103 (2026-07-24) stubbed rowan → brain-ops, but PR #149 (2026-08-14) reversed it — `rowan/SKILL.md` is the live knowledge-OS skill and `brain-ops/SKILL.md` now carries the "DEPRECATED — use /rowan" header | **EXCLUDED from the 2026-08-18 retirement; flagged for Alex** — deleting rowan would remove the only live brain-route skill. Decide direction (rowan vs brain-ops), then retire the loser |
 
 ### Consolidation Opportunities (Exploratory)
 

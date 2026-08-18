@@ -230,7 +230,7 @@ Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, 
 
 **Knowledge/utility** (9) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `stage-v1-concept`, `wayfinder`, `zoom-out`
 
-**Retirement-leaning** (6, per skill-suite audit F-6 — self-declared superseded, not formally retired yet): `pr-responder` (restates `receive-review` Step 4), `pr-review` / `review` (superseded by `workflow-review`), `slop-cleaner` (`humanizer` owns the route), `v1-idea-grill` (superseded by `grill-with-docs`), `rowan` (binary tombstoned 2026-07-20; `brain-ops` owns the brain route). Do not route new requests here; if invoked by name, note the successor.
+**Retired** (2026-08-18, D-006 decision 14 — directories deleted, git history is the tombstone): `pr-responder` → `receive-review`, `pr-review` / `review` → `workflow-review`, `slop-cleaner` → `humanizer`, `v1-idea-grill` → `grill-with-docs`. If invoked by name, use the successor. `rowan` was excluded from this retirement: PR #149 (2026-08-14) revived it as the live knowledge-OS skill and deprecated `brain-ops` in its favor — the old "rowan → brain-ops" catalog rows were stale; direction flagged for Alex in `_docs/AUDIT_REPORT.md`.
 
 ## Human-Gate Taxonomy Preflight
 
