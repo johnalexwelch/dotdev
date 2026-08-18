@@ -4,7 +4,7 @@ kind: skill
 budget: one-reviewer
 status: active
 next: finalize
-updated: '2026-08-18T22:58:42.579254+00:00'
+updated: '2026-08-18T22:59:04.648104+00:00'
 steps:
 - id: implement
   required: true
@@ -14,9 +14,9 @@ steps:
 - id: review
   required: true
   status: completed
-  evidence: 'fast profile (floor=fast), integrated lane opus, 2 rounds: R1 REQUEST_CHANGES
-    (7 findings; F1/F2/F4-F7 fixed, F3 documented+follow-up queued), R2 APPROVE; re-attested
-    post-rebase at 67990ba; stamp written'
+  evidence: fast profile (floor=fast), integrated lane opus (claude-opus-5[1m]); R1
+    REQUEST_CHANGES (7 findings) -> fixes -> R2 APPROVE; R3-R7 re-attestations across
+    3 rebase races + NEW-2/NEW-3 fixes; lane reviewed_sha=d2c3c24 == HEAD
 - id: finalize
   required: true
   status: active
@@ -42,8 +42,25 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 905dbd3dd8da54d0ef265a1f39cccaa277f1a20b
+    timestamp: '2026-08-18T22:59:04.647908+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '169'
+      post_mortem: not_applicable_with_reason_single_slice_no_drift
+      describe_pr: in_pr_body; mode=plan_backed(phase3 spec); issues=none; applied_to_pr=true
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
+last_seen_sha: 905dbd3dd8da54d0ef265a1f39cccaa277f1a20b
 verify_local:
   head_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
   passed: true
