@@ -3,10 +3,16 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-bash "$ROOT/test/test-commit-normalize.sh"
-bash "$ROOT/test/test-sync-codex-skills.sh"
-bash "$ROOT/test/test-skill-suite-lint.sh"
-bash "$ROOT/test/test-workflow-guard.sh"
-bash "$ROOT/test/test-worktree-baseline.sh"
-bash "$ROOT/test/test-validate-route-card.sh"
-bash "$ROOT/test/test-routing-eval.sh"
+# Auto-discover suites: every test/test-*.sh runs, no hand-maintained list.
+# A registry line per suite was a standing merge-conflict magnet whenever
+# parallel lanes each added a suite (bitten 2026-08-18, PR #160 vs #156).
+found=0
+for suite in "$ROOT"/test/test-*.sh; do
+    [ -f "$suite" ] || continue
+    found=1
+    bash "$suite"
+done
+[ "$found" -eq 1 ] || {
+    echo "no test suites found under $ROOT/test" >&2
+    exit 1
+}
