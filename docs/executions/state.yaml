@@ -4,7 +4,7 @@ kind: skill
 budget: one-reviewer
 status: done
 next: ''
-updated: '2026-08-18T22:34:28.023711+00:00'
+updated: '2026-08-18T22:35:15.801174+00:00'
 steps:
 - id: implement
   required: true
@@ -45,8 +45,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
-    timestamp: '2026-08-18T22:26:27.962847+00:00'
+    head_sha: 26a25d3ed1d00d0a87a2d5f20b3298699b303249
+    timestamp: '2026-08-18T22:35:15.801027+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -54,20 +54,17 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
       pr_number: '167'
-      describe_pr: "corpus sharpen batch 1: 5 description sharpens (audit \xA75),\
-        \ +4 golden seam cases, blank-log-line hook fix, audit doc committed"
-      post_mortem: 'clean run; one rebase mid-flight onto PR #165 golden migration
-        which converted the pre-existing 3-case eval failure into 43/44=97% PASS;
-        review M1+N2 folded same-session'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: d52ccf9bc809b69b3e06bd5f4292c117c30380a2
+last_seen_sha: 26a25d3ed1d00d0a87a2d5f20b3298699b303249
 verify_local:
-  head_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
+  head_sha: 26a25d3ed1d00d0a87a2d5f20b3298699b303249
   passed: true
   results:
   - cmd: ./test/run-tests.sh
