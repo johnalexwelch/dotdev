@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # workflow-guard.sh — PreToolUse/PostToolUse guard rails for delivery workflows.
 # D-006 additions: merge gate (ledger check finalize), state.yaml write block,
-# stderr-suppression block on mutating forge/git commands, and entry
-# enforcement (warn-only in Phase 0; LEDGER_ENTRY_ENFORCE=block escalates).
+# worktree-baseline sidecar write block, stderr-suppression block on mutating
+# forge/git commands, and entry enforcement (warn-only in Phase 0;
+# LEDGER_ENTRY_ENFORCE=block escalates).
 set -euo pipefail
 
 input="$(cat)"

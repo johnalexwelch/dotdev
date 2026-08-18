@@ -23,8 +23,8 @@
 #   7  base branch could not be resolved (neither origin/staging nor remote default)
 #   8  parent branch does not exist (cut, stacked)
 #   9  git worktree add failed
-#  10  git fetch origin --prune failed
-#  11  state sidecar does not match git ground truth (verify)
+#  10  git fetch origin --prune failed (cut; verify degrades to a stale-base warning)
+#  11  state sidecar does not match git ground truth (verify, emit)
 #  12  worktree is in detached HEAD state (verify)
 
 set -euo pipefail
@@ -62,10 +62,11 @@ usage() {
 #   4. else halt
 #
 # Sets the script-scope globals PREFERRED_BASE, RESOLVED_BASE,
-# FALLBACK_REASON, FETCHED directly (rather than printing KEY=VALUE for a
-# caller to eval) so shellcheck can see the assignment — an eval'd
-# assignment is invisible to static analysis and trips SC2154 at every
-# read site.
+# RESOLVED_BASE_REF, FALLBACK_REASON, STALE_BASE (true when the fetch was
+# degraded, so the base may be stale), and FETCHED directly (rather than
+# printing KEY=VALUE for a caller to eval) so shellcheck can see the
+# assignment — an eval'd assignment is invisible to static analysis and
+# trips SC2154 at every read site.
 # Refs are checked and returned fully qualified (refs/remotes/origin/...):
 # short-name resolution tries refs/tags/ and refs/heads/ before
 # refs/remotes/, so a local tag or branch literally named "origin/staging"
@@ -125,7 +126,11 @@ resolve_base() {
     RESOLVED_BASE="$resolved"
     RESOLVED_BASE_REF="$resolved_ref"
     FALLBACK_REASON="$fallback"
-    STALE_BASE=$([ "$fetch_ok" = "true" ] && echo "false" || echo "true")
+    if [ "$fetch_ok" = "true" ]; then
+        STALE_BASE=false
+    else
+        STALE_BASE=true
+    fi
     FETCHED=true
 }
 
@@ -187,14 +192,26 @@ write_state() {
 # (RESOLVED_BASE etc.), so no code-motion can quietly turn the sidecar back
 # into the ancestry source. Every known key is required: omitting one must
 # not let its cross-check pass vacuously.
-STATE_KEYS="BRANCH WT_PATH PREFERRED_BASE RESOLVED_BASE FALLBACK_REASON STACKED PARENT_BRANCH PARENT_PR"
+STATE_KEYS=(BRANCH WT_PATH PREFERRED_BASE RESOLVED_BASE FALLBACK_REASON STACKED PARENT_BRANCH PARENT_PR)
+
+# Declared at script scope so shellcheck sees an assignment for every read
+# site — load_state's printf -v writes are invisible to static analysis
+# (same rationale as resolve_base's direct global assignment).
+STATE_BRANCH=""
+STATE_WT_PATH=""
+STATE_PREFERRED_BASE=""
+STATE_RESOLVED_BASE=""
+STATE_FALLBACK_REASON=""
+STATE_STACKED=""
+STATE_PARENT_BRANCH=""
+STATE_PARENT_PR=""
 
 load_state() {
     local path="$1"
     local state_file line key seen=" "
     state_file="$(state_file_path "$path")"
     [ -f "$state_file" ] || return 1
-    for key in $STATE_KEYS; do
+    for key in "${STATE_KEYS[@]}"; do
         printf -v "STATE_$key" '%s' ""
     done
     # Exact-match key whitelist, never substring/glob: a compound key like
@@ -205,7 +222,7 @@ load_state() {
         [ -n "$line" ] || continue
         key="${line%%=*}"
         known=false
-        for k in $STATE_KEYS; do
+        for k in "${STATE_KEYS[@]}"; do
             if [ "$key" = "$k" ]; then
                 known=true
                 break
@@ -219,7 +236,7 @@ load_state() {
             die 11 "state file $state_file has an unrecognized line: $line"
         fi
     done <"$state_file"
-    for key in $STATE_KEYS; do
+    for key in "${STATE_KEYS[@]}"; do
         case "$seen" in
             *" $key "*) ;;
             *) die 11 "state file $state_file is missing required key: $key" ;;
