@@ -180,10 +180,12 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
 | "we're launching X", "launch plan", "launch checklist", "go-to-market checklist", "are we ready to ship", "go-live readiness" | **product launch** | product-launch-checklist |
 | "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog workflow** | workflow-autonomous-backlog |
-| Bug report, error, "it's broken", regression | **bug** | workflow-debug |
+| Bug report, error, "it's broken", regression | **bug** | workflow-deliver with `kind=bug` |
 | Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature |
 | "improve the wording", "the error message is confusing", "reword this label/tooltip/notification", any change to user-facing product copy or UX text | **UX copy change (tracked code)** | workflow-feature — user-visible copy lives in tracked source, so a copy edit is a code commit carrying the full worktree/review/finalize gates; never `direct` even when nothing is "broken" (baseline case 21: bug-ish phrasing, feature-shaped change) |
-| Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-build-one |
+| Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-deliver with `kind=feature` (`skill`/`docs` when the issue is a skill or docs change) |
+| A prompt/plan/handoff names `workflow-build-one` (superseded) | **ready issue (legacy name)** | workflow-deliver with `kind=feature` — tombstone redirect, D-006 #11 |
+| A prompt/plan/handoff names `workflow-debug` (superseded) | **bug (legacy name)** | workflow-deliver with `kind=bug` — tombstone redirect, D-006 #11 |
 | Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
 | "execute phase N", "run phase", "land phase", phase execution after an approved design-plan | **phase execution** | execute-phase (only when a `design-plan` artifact exists and the user has approved it) |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
@@ -221,7 +223,7 @@ This is why `receive-review` and `prompt-builder` are handled differently above:
 
 ## Bug routing rule
 
-**Never route bugs to workflow-build-one**, even if the fix appears obvious. Bugs always go to workflow-debug, which enforces diagnosis-first. This prevents:
+Bugs route to `workflow-deliver` with `kind=bug`, even if the fix appears obvious. Prefer correct classification — but the diagnose-first guarantee no longer lives in routing: `ledger.sh init --kind bug` inserts required `diagnose`/`fix` steps and the kernel refuses `stamp fix` without a captured red repro, so a misclassified bug is corrected mid-run by re-initing with `--kind bug`, not by re-routing (D-006 #11; the old "never route bugs to workflow-build-one" rule is superseded). Diagnosis-first still prevents:
 
 - Fixing symptoms instead of root causes
 - Missing regression tests
@@ -235,7 +237,7 @@ This is why `receive-review` and `prompt-builder` are handled differently above:
 |--------|-------|
 | "Execute PRD #N" / "implement all children" / parent issue with child task list | execute-prd |
 | "Run the backlog" / batch of independent `ready-for-agent` issues | run-backlog |
-| Single issue, no parent context | workflow-build-one |
+| Single issue, no parent context | workflow-deliver (kind per issue label) |
 
 If unclear: check whether the issues reference a parent. If yes → execute-prd. If no → run-backlog.
 
@@ -333,7 +335,7 @@ The authoritative workflow for all product work follows this sequence:
 ```
 workflow-feature → grill-with-docs → decision-log → to-prd →
 to-issues → triage →
-[execution: workflow-build-one | execute-prd | run-backlog] →
+[execution: workflow-deliver | execute-prd | run-backlog] →
 workflow-review → workflow-finalize → cleanup-delivery
 ```
 

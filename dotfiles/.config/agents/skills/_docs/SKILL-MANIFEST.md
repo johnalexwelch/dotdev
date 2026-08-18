@@ -75,8 +75,9 @@ Active skills:
 - `vendor-council`
 - `watch-ci`
 - `workflow-autonomous-backlog`
-- `workflow-build-one`
-- `workflow-debug`
+- `workflow-build-one` *(tombstone redirect since 2026-08-18 — merged into `workflow-deliver`, D-006 #11; directory removed in Phase 4/5)*
+- `workflow-debug` *(tombstone redirect since 2026-08-18 — merged into `workflow-deliver`, D-006 #11; directory removed in Phase 4/5)*
+- `workflow-deliver`
 - `skill-system-audit`
 - `workflow-executive-doc`
 - `workflow-feature`
