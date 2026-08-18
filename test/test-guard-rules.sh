@@ -310,6 +310,18 @@ assert_status "spaced /dev/null suppression blocked" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>&-')"
 assert_status "fd-close suppression blocked" 2 "$STATUS"
 
+# The compound fallback keys on loop/conditional TERMINATORS, so `done`/`fi`
+# must be separator-preceded (`; done`, newline) — as bare arguments they are
+# ordinary words and must not trip the whole-command fallback (logic lane R2).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo done 2>/dev/null && git push origin main')"
+assert_status "bare 'done' argument does not trip the fallback" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo fi 2>/dev/null && git push origin main')"
+assert_status "bare 'fi' argument does not trip the fallback" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then git push origin main; fi 2>/dev/null')"
+assert_status "real 'fi' terminator still trips the fallback" 2 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 
