@@ -306,6 +306,36 @@ run_ledger "$repoA" reconcile --apply
 run_ledger "$repoA" reconcile
 assert_status "reconcile clean again after --apply" 0 "$STATUS"
 
+# --- reconcile ground truth: branch/worktree/pending-step comparisons (batch #6) ---
+repoG=$(new_repo reconcile_truth)
+run_ledger "$repoG" init 2026-08-18-truth --workflow workflow-deliver \
+    --kind feature --steps "impl"
+run_ledger "$repoG" reconcile
+assert_status "ground-truth fixture clean right after init" 0 "$STATUS"
+
+git -C "$repoG" checkout -q -b feature/elsewhere
+run_ledger "$repoG" reconcile
+assert_status "branch change since init is drift (exit 1)" 1 "$STATUS"
+assert_contains "branch drift names the recorded branch" "$OUT" "main"
+run_ledger "$repoG" reconcile --apply
+run_ledger "$repoG" reconcile
+assert_status "reconcile --apply adopts the new branch" 0 "$STATUS"
+
+echo "work" >>"$repoG/src/app.py"
+commit_all "$repoG" "feat: commits while step still pending"
+run_ledger "$repoG" reconcile
+assert_status "commit drift still exits 1" 1 "$STATUS"
+assert_contains "commit drift names the pending step" "$OUT" "impl"
+run_ledger "$repoG" reconcile --apply
+
+mv "$repoG" "${repoG}-moved"
+run_ledger "${repoG}-moved" reconcile
+assert_status "worktree path change is drift (exit 1)" 1 "$STATUS"
+assert_contains "worktree drift names the worktree" "$OUT" "worktree"
+run_ledger "${repoG}-moved" reconcile --apply
+run_ledger "${repoG}-moved" reconcile
+assert_status "reconcile --apply adopts the new worktree path" 0 "$STATUS"
+
 # --- corrupt live state is exit 6, never silently rewritten ---
 repoH=$(new_repo corrupt_state)
 run_ledger "$repoH" init 2026-08-19-corrupt --workflow workflow-build-one \
