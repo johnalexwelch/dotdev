@@ -1,0 +1,180 @@
+# golden-routes.yaml — D-006 Track B golden routing eval set.
+#
+# Schema per case:
+#   prompt:         user request text (double-quoted; no embedded double quotes)
+#   expected_route: exact skill name from the workflow-router SKILL.md
+#                   classification table Routes-to column ("direct" for the
+#                   no-dispatch direct budget)
+#   source:         log | synthetic
+#     log       — the routed skill has a real invocation in
+#                 ~/.claude/logs/skill-invocations.log (date cited in notes);
+#                 the PHRASING is a conservative reconstruction, not a quote.
+#     synthetic — adversarial case targeting a documented router confusion.
+#   notes:          provenance / which rule the case exercises
+#
+# Regression corpus: every future misroute adds a case here.
+# Consumed by test/routing-eval.sh (deterministic string-match judge, no LLM
+# grading; pass gate >= 95%).
+cases:
+  # ---- Log-harvested (17) -------------------------------------------------
+  - prompt: "Humanize this draft — it reads like AI wrote it."
+    expected_route: humanizer
+    source: log
+    notes: "log 2026-07-24 10:31 humanizer; polish row"
+  - prompt: "De-AI this paragraph before I post it."
+    expected_route: humanizer
+    source: log
+    notes: "log 2026-08-06 17:09 humanizer; polish row"
+  - prompt: "Wrap up the session and save context for next time."
+    expected_route: handoff
+    source: log
+    notes: "log 2026-07-29 13:16 handoff; session exit row"
+  - prompt: "Handoff — I need to pick this up on the other machine tomorrow."
+    expected_route: handoff
+    source: log
+    notes: "log 2026-08-05 13:12 handoff; bare skill name"
+  - prompt: "Turn this conversation into a PRD and publish it to the tracker."
+    expected_route: to-prd
+    source: log
+    notes: "log 2026-07-31 09:04 to-prd"
+  - prompt: "Create a PRD from what we just discussed."
+    expected_route: to-prd
+    source: log
+    notes: "log 2026-07-31 09:51 to-prd"
+  - prompt: "Break this PRD into implementation issues."
+    expected_route: to-issues
+    source: log
+    notes: "log 2026-07-31 10:00 to-issues"
+  - prompt: "Convert the plan into independently grabbable tracker issues."
+    expected_route: to-issues
+    source: log
+    notes: "log 2026-07-31 18:47 to-issues"
+  - prompt: "Execute this PRD — implement all the children of the parent issue."
+    expected_route: execute-prd
+    source: log
+    notes: "log 2026-07-31 10:15 execute-prd; PRD execution row"
+  - prompt: "Review my changes on this branch before anything merges."
+    expected_route: workflow-review
+    source: log
+    notes: "log 2026-07-30 16:06 workflow-review; review row, no artifact signal"
+  - prompt: "Issue #12 is ready-for-agent with clear acceptance criteria — implement it end to end."
+    expected_route: workflow-build-one
+    source: log
+    notes: "log 2026-07-28 06:49 workflow-build-one; ready issue row"
+  - prompt: "Review this SQL query before it hits production."
+    expected_route: sql-review
+    source: log
+    notes: "log 2026-07-28 09:20 analytics:sql-review; artifact carve-out"
+  - prompt: "Is the new version of this skill actually better? Benchmark it."
+    expected_route: skill-evaluator
+    source: log
+    notes: "log 2026-07-30 10:23 skill-evaluator"
+  - prompt: "Process the skill backlog and decide what is worth doing."
+    expected_route: skill-backlog
+    source: log
+    notes: "log 2026-07-24 13:20 skill-backlog"
+  - prompt: "Revise the clarity-review skill's description — it triggers too eagerly."
+    expected_route: workflow-skill
+    source: log
+    notes: "log 2026-07-24 14:05 workflow-skill; skill revision row"
+  - prompt: "Write a new skill for generating weekly status updates."
+    expected_route: workflow-skill
+    source: log
+    notes: "log 2026-07-24 14:06 write-a-skill ran under workflow-skill; router owner is workflow-skill"
+  - prompt: "Prototype this state machine so we can sanity-check the model."
+    expected_route: prototype
+    source: log
+    notes: "log 2026-07-29 14:57 prototype"
+  # ---- Synthetic adversarial (23) -----------------------------------------
+  - prompt: "The morning briefing script is broken — it throws a 401 from the calendar API since yesterday."
+    expected_route: workflow-debug
+    source: synthetic
+    notes: "bug row; plain bug report"
+  - prompt: "It's a one-line fix — the retry default is wrong, just flip it to true."
+    expected_route: workflow-debug
+    source: synthetic
+    notes: "bug routing rule: obvious-fix trap, never workflow-build-one for bugs"
+  - prompt: "What if we added retry logic to the sync job so transient failures recover on their own?"
+    expected_route: workflow-feature
+    source: synthetic
+    notes: "bug-vs-feature: what-if phrasing is an ambiguous feature, not a bug"
+  - prompt: "The error message users see when upload fails is confusing — improve the wording."
+    expected_route: workflow-feature
+    source: synthetic
+    notes: "bug-vs-feature: reads bug-ish but nothing is broken; UX improvement"
+  - prompt: "Address the review comments on my PR."
+    expected_route: workflow-finalize
+    source: synthetic
+    notes: "owner-vs-sub-step rule (SB-021/022): default owner, not receive-review"
+  - prompt: "Just address the review comments on #42 — don't finalize or merge yet."
+    expected_route: receive-review
+    source: synthetic
+    notes: "owner-vs-sub-step carve-out: explicit 'just', pipeline scoped out"
+  - prompt: "Run receive-review on PR #17."
+    expected_route: receive-review
+    source: synthetic
+    notes: "owner-vs-sub-step carve-out: bare skill name"
+  - prompt: "The review bot left feedback — respond to it and then get the PR landed."
+    expected_route: workflow-finalize
+    source: synthetic
+    notes: "owner rule: comment resolution plus delivery closure = owner"
+  - prompt: "Review this dbt model for join fanout before it ships."
+    expected_route: sql-review
+    source: synthetic
+    notes: "artifact carve-out: dbt/SQL review, not workflow-review"
+  - prompt: "Review my dashboard redesign before I share it."
+    expected_route: dashboard-review
+    source: synthetic
+    notes: "artifact carve-out: dashboard"
+  - prompt: "Review the metric tree for the activation funnel."
+    expected_route: metric-tree-review
+    source: synthetic
+    notes: "artifact carve-out: metric tree"
+  - prompt: "Review this PR."
+    expected_route: workflow-review
+    source: synthetic
+    notes: "counter-case: plain PR review, no artifact signal"
+  - prompt: "Review the strategic analysis going to the exec team."
+    expected_route: strategic-analysis-review
+    source: synthetic
+    notes: "artifact carve-out: executive-facing analysis"
+  - prompt: "Work through parent issue #88 and its child task tree."
+    expected_route: execute-prd
+    source: synthetic
+    notes: "PRD-vs-backlog rule: parent with dependencies"
+  - prompt: "Run the backlog — the ready issues are independent and can go in any order."
+    expected_route: run-backlog
+    source: synthetic
+    notes: "PRD-vs-backlog rule: independent issues"
+  - prompt: "Does this branch still match the PRD, or has it drifted from the spec?"
+    expected_route: spec-review
+    source: synthetic
+    notes: "spec/standards conformance row, distinct from workflow-review"
+  - prompt: "Evaluate this prompt I wrote for a Codex run — is it clear enough? Don't change anything in the repo."
+    expected_route: direct
+    source: synthetic
+    notes: "prompt-evaluation row: evaluation only, no repo mutation = direct"
+  - prompt: "Rewrite this work-order so the AFK agent can execute it — just give me the text back."
+    expected_route: prompt-builder
+    source: synthetic
+    notes: "prompt-evaluation row: rewrite needed = prompt-builder, standalone per its contract"
+  - prompt: "Investigate how the auth middleware works in this codebase."
+    expected_route: repo-audit
+    source: synthetic
+    notes: "research row: codebase evidence"
+  - prompt: "Prune the stale worktrees piled up across all my repos."
+    expected_route: git-worktree-audit
+    source: synthetic
+    notes: "machine-wide sprawl, not one delivery's residue (vs cleanup-delivery)"
+  - prompt: "The PR merged — clean up the branches, worktree, and ticket state from this delivery."
+    expected_route: cleanup-delivery
+    source: synthetic
+    notes: "one delivery's residue (vs git-worktree-audit)"
+  - prompt: "Design the system architecture for this approved V1 brief."
+    expected_route: v1-workflow
+    source: synthetic
+    notes: "V1 row trap: do NOT route directly to v1-system-design (skips approval gates)"
+  - prompt: "Reflect on this session — what did we learn and what should improve?"
+    expected_route: session-insight
+    source: synthetic
+    notes: "session reflection row"

@@ -135,6 +135,11 @@ Rules:
 - If confidence is `low`, ask one clarifying question instead of asking the user to approve a route.
 - If confidence is `medium`, recommend the best route and include the closest alternative.
 - Do not perform target workflow preflight, create a worktree, scaffold a repo, write docs, create issues, or dispatch agents until the route is confirmed.
+- Schema validator: `scripts/validate-route-card.sh` reads a route card on stdin and asserts all 12 required fields plus legal `Confidence`/`Budget` values — pipe the emitted card through it when a workflow needs checked (not attested) route-card evidence.
+
+### Routing regression eval (D-006 Track B)
+
+Classification behavior is measured, not rules-engined: `references/golden-routes.yaml` holds the golden prompt→route set (log-harvested + synthetic adversarial; every future misroute adds a case), and `test/routing-eval.sh` runs it headless against this SKILL.md with a deterministic string-match judge (pass gate ≥95%). CI: `.github/workflows/routing-eval.yml`, path-filtered to this skill. Update the golden set whenever the classification table changes.
 
 ### Confirmation Language
 
