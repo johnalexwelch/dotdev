@@ -367,6 +367,26 @@ assert_status "appending stderr redirect is suppression" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git push origin main 2>'/dev/null'")"
 assert_status "quoted /dev/null path is suppression" 2 "$STATUS"
 
+# A redirect attached to the preceding token with no space is valid bash and
+# really does suppress, so it must be recognized (style lane R5). This is
+# pre-existing — main permits these too — but the branch pins the spaced
+# forms as must-block, so leaving the unspaced twin open is incoherent.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main>/dev/null 2>&1')"
+assert_status "unspaced stdout-dup suppression blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; }>/dev/null 2>&1')"
+assert_status "unspaced suppression on a construct blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>|/dev/null')"
+assert_status "force-clobber stderr redirect blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main>>/dev/null 2>&1')"
+assert_status "unspaced appending stdout-dup blocked" 2 "$STATUS"
+
+# The exclusion that keeps &> on its own branch must survive the widening.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main &>/dev/null')"
+assert_status "ampersand-redirect suppression still blocked" 2 "$STATUS"
+
 # 2>&1 without a /dev/null stdout target is NOT suppression — it merges
 # stderr into a stream the caller still sees.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>&1 | tee push.log')"
