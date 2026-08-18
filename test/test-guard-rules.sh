@@ -146,6 +146,11 @@ assert_status "forgejo curl merge blocked without finalize stamp" 2 "$STATUS"
 run_hook "$opted_gate" "$(json_bash "$opted_gate" "gh pr view 42")"
 assert_status "non-merge pr command not gated" 0 "$STATUS"
 
+# `gh pr merge-queue status` is a non-mutating query; `merge\b` alone
+# false-positives on it because `-` is a word boundary (R1/R2 batch #1).
+run_hook "$opted_gate" "$(json_bash "$opted_gate" "gh pr merge-queue status")"
+assert_status "gh pr merge-queue status is not a merge shape" 0 "$STATUS"
+
 plain_gate=$(new_repo merge_gate_plain plain)
 run_hook "$plain_gate" "$(json_bash "$plain_gate" "gh pr merge 42")"
 assert_status "merge allowed in non-opted-in repo" 0 "$STATUS"
@@ -215,6 +220,27 @@ assert_status "non-mutating git with 2>/dev/null allowed" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash "$plain_sup" "git push origin main")"
 assert_status "mutating command without suppression allowed" 0 "$STATUS"
+
+# Rule 3 is segment-scoped (R1/R2 batch #1, bit us twice live): suppression
+# on a NON-mutating segment chained with a mutating one must pass; the block
+# fires only when 2>/dev/null attaches to the mutating segment itself.
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "bash test.sh 2>/dev/null && git push origin main")"
+assert_status "suppressed test segment before push allowed (&&)" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "npm run lint 2>/dev/null; git commit -m wip")"
+assert_status "suppressed lint segment before commit allowed (;)" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "git log --oneline 2>/dev/null | head -5 && git push origin main")"
+assert_status "suppressed non-mutating pipe segment before push allowed" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "git push origin main 2>/dev/null && echo pushed")"
+assert_status "suppression on the mutating segment still blocked (&&)" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "bash test.sh && git commit -m wip 2>/dev/null")"
+assert_status "suppression on trailing mutating segment still blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "gh pr create --fill &>/dev/null || echo failed")"
+assert_status "&>/dev/null on the mutating segment still blocked (||)" 2 "$STATUS"
 
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
