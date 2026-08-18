@@ -29,4 +29,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` for accessibility or user-flow regressions.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` for accessibility or user-flow regressions.

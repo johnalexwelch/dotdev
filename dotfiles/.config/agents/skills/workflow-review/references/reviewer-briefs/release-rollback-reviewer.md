@@ -29,4 +29,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `NEEDS HUMAN` when rollout risk requires an owner decision.
+Return the shared reviewer output contract. Use `NEEDS_HUMAN` when rollout risk requires an owner decision.
