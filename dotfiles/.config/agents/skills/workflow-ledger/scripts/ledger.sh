@@ -250,6 +250,9 @@ def op_init(argv):
         "workflow": workflow,
         "kind": kind,
         "budget": budget,
+        # Unix epoch of init: lane files older than this are stale artifacts
+        # from an earlier session and cannot satisfy `stamp review` (batch #3).
+        "initialized_epoch": int(datetime.now(timezone.utc).timestamp()),
         "status": "active",
         "next": step_ids[0] if step_ids else "",
         "updated": now(),
@@ -611,6 +614,10 @@ file_sha256() {
     fi
 }
 
+file_mtime() {
+    stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null
+}
+
 tail_str() {
     printf '%s' "$1" | tail -c 200 | tr '\n' ' '
 }
@@ -741,11 +748,24 @@ checked_review() {
     fi
     lanes_spec="$(attest_get lanes "$@")" || lanes_spec=""
 
+    # Lane freshness binding (batch #3): lane files must postdate this run's
+    # init — a stale /tmp file from an earlier session cannot satisfy the
+    # stamp. Runs initialized before this field existed skip the check.
+    local init_epoch lane_mtime
+    init_epoch="$(py get initialized_epoch)" || init_epoch=""
+
     for lane in $(required_lanes "$profile"); do
         lane_file="$(lane_path_for "$lane" "$lanes_spec")"
         if [ ! -f "$lane_file" ]; then
             add_failure "required lane '$lane' review file missing: $lane_file"
             continue
+        fi
+        if [ -n "$init_epoch" ]; then
+            lane_mtime="$(file_mtime "$lane_file")"
+            if [ -n "$lane_mtime" ] && [ "$lane_mtime" -lt "$init_epoch" ]; then
+                add_failure "lane '$lane' review file predates this run's init (stale artifact from an earlier session): $lane_file"
+                continue
+            fi
         fi
         if ! grep -Eq '^verdict:' "$lane_file"; then
             add_failure "lane '$lane' review file has no verdict: line ($lane_file)"
