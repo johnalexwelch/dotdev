@@ -20,7 +20,7 @@ criteria are absent or materially ambiguous, stop and mark the child
 `needs-human` instead of producing this brief.
 
 ## Workflow
-`workflow-build-one`: preflight → triage → execute-phase → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+`workflow-deliver` (kind from the child issue): preflight → [diagnose iff kind=bug] → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
 
 `workflow-review` is a hard gate. The child may not proceed to `workflow-finalize`, PR creation, CI monitoring, reconcile, or clean handoff unless `workflow-review/SKILL.md` was explicitly loaded and returned APPROVE with dispatch evidence. Green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, or resolved PR comments do not substitute for this gate.
 

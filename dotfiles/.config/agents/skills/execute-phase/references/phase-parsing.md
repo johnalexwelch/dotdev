@@ -93,5 +93,7 @@ safe.
   branch from the issue number, and executes against acceptance
   criteria.
 
-Single-issue mode is invoked by `workflow-build-one` when there is no
+Single-issue mode exists for direct invocation when there is no
 design plan, only a ready issue with clear acceptance criteria.
+Normal issue delivery should route to `workflow-deliver` instead;
+`execute-phase` is a phase driver, not a delivery backend (D-006 #11).

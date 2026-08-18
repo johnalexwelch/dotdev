@@ -17,7 +17,7 @@ Runtime note: the project test runner or equivalent reproduction harness is requ
 
 ## Context
 
-Typical workflows: workflow-debug
+Typical workflows: workflow-deliver (kind=bug, required diagnose step)
 Pairs well with: tdd, implement, improve-codebase-architecture
 
 ## Diagnosis Modes

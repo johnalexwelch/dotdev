@@ -5,7 +5,7 @@
 #   Load and run `<name>/SKILL.md`   /   Load and execute `<name>/SKILL.md`   /   follow `<name>`
 # must point at a skill that is ACTIVE in the skills root (linked into it), not merely
 # present in canon. An active skill referencing an inactive one = a hollow loop
-# (the failure mode where /workflow-debug dies at "Step 1: diagnose" because diagnose
+# (the failure mode where /workflow-deliver dies at "Step 1: diagnose" because diagnose
 # isn't linked). See decision-log.md D-003.
 #
 # Usage: lint-skill-refs.sh [skills-root]   (default: ~/.claude/skills)

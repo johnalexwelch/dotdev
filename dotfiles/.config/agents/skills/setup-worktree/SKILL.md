@@ -43,15 +43,15 @@ writes:
 
 ## Deprecation Status
 
-Status: standalone use deprecated. This skill remains loadable only because `workflow-build-one, workflow-debug, run-backlog, or workflow-finalize human-gate sidecar` may invoke it as an implementation helper.
+Status: standalone use deprecated. This skill remains loadable only because `workflow-deliver, run-backlog, or workflow-finalize human-gate sidecar` may invoke it as an implementation helper.
 
-- Workflow owner: `workflow-build-one, workflow-debug, run-backlog, or workflow-finalize human-gate sidecar`
+- Workflow owner: `workflow-deliver, run-backlog, or workflow-finalize human-gate sidecar`
 - Reason: Worktree setup is a sidecar/helper, not an execution workflow.
 - Date: 2026-05-21
 
 ## `scripts/worktree-baseline.sh` (D-005)
 
-`scripts/worktree-baseline.sh` implements the accepted `cut`/`verify`/`emit` interface from `_docs/decision-log.md` D-005: base-branch resolution (per `references/base-branch-policy.md`), `git fetch --prune`, stacked-parent ancestry checks, path/branch derivation, env-file copy, and exact `WORKFLOW_BASE_GATE`/`WORKTREE_BASELINE_GATE`/`STACKED_WORKTREE_GATE` evidence-line emission. It is net-new and not yet wired into any caller (including this skill's own Steps 0-4 above, which still inline the same logic) — D-005's scope names `workflow-build-one` Step 0 as the first real caller, migrated in a follow-up phase. Tested by `test/test-worktree-baseline.sh`.
+`scripts/worktree-baseline.sh` implements the accepted `cut`/`verify`/`emit` interface from `_docs/decision-log.md` D-005: base-branch resolution (per `references/base-branch-policy.md`), `git fetch --prune`, stacked-parent ancestry checks, path/branch derivation, env-file copy, and exact `WORKFLOW_BASE_GATE`/`WORKTREE_BASELINE_GATE`/`STACKED_WORKTREE_GATE` evidence-line emission. It is the canonical cut/verify interface for delivery worktrees: `workflow-deliver` Step 0 (preflight) cuts every delivery worktree with `worktree-baseline.sh cut` (D-005 named the single-issue delivery workflow's Step 0 as the first real caller; that workflow is now `workflow-deliver`, D-006 #11). This skill's own Steps 0-4 below still inline the same logic. Tested by `test/test-worktree-baseline.sh`.
 
 ## Contract
 

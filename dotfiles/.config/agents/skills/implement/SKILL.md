@@ -16,7 +16,7 @@ Human gates: public interface confirmation before writing tests or code (see tdd
 
 ## Context
 
-Typical workflows: feature development (after to-prd/to-issues/triage); for worktree-tracked AFK work use workflow-build-one instead
+Typical workflows: feature development (after to-prd/to-issues/triage); for worktree-tracked AFK work use workflow-deliver instead
 Pairs well with: tdd, workflow-review, diagnose, improve-codebase-architecture
 
 # Implement

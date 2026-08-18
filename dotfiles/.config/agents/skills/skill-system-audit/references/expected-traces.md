@@ -12,5 +12,5 @@ this table and compare against the evidence.
 | `describe-pr` | PR body -> issue disposition -> record review expectations only |
 | `watch-ci` | draft PR -> CI poll -> bounded fixes -> security review -> reviewer-comment gate -> draft handoff gate |
 | `run-backlog` | queue -> dependency/stack plan -> prompt-builder per issue with mandatory base/worktree/stack command -> isolated per-issue workflow-base or stacked dispatch -> monitor -> reconcile -> handoff |
-| `workflow-build-one` | per-issue workflow-base worktree -> prompt-builder/preflight -> triage -> execute-phase -> workflow-review -> optional UJ QA -> workflow-finalize |
+| `workflow-deliver` | per-issue workflow-base worktree -> ledger init with kind -> prompt-builder/preflight -> [diagnose iff kind=bug] -> triage -> implement -> workflow-review -> optional UJ QA -> workflow-finalize |
 | `workflow-router` | classification evidence -> ROUTE_CARD -> user confirmation or valid direct/read-only skip -> target workflow preflight -> confirmed dispatch -> ROUTER_LEARNING_NOTE when completed, halted, or corrected |

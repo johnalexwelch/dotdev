@@ -2,7 +2,7 @@
 
 Load this reference when `/watch-ci` exhausts bounded auto-fix attempts or halts with no progress.
 
-`watch-ci` does not invoke `diagnose` directly. It produces a self-contained handoff artifact and halts. `workflow-debug` or `workflow-build-one` picks up the artifact and routes to diagnose.
+`watch-ci` does not invoke `diagnose` directly. It produces a self-contained handoff artifact and halts. `workflow-deliver` (kind=bug) picks up the artifact and routes to diagnose.
 
 ## Output Path
 

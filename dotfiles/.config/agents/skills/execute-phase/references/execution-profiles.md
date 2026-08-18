@@ -16,8 +16,11 @@ change phase structure, scope discipline, or verification gates.
 Select profiles in this priority order:
 
 1. Explicit user request, such as "use strict-tdd" or "caveman this".
-2. Workflow context, such as `workflow-debug` requiring strict TDD for
-   the fix step.
+2. Workflow context, such as a `design-plan` phase whose tasks are
+   behavior changes requiring strict TDD. (A bug *report* routed for
+   delivery never reaches execute-phase — `workflow-deliver` owns bug
+   delivery, D-006 #11. Fix-shaped plan phases still run here and may
+   select strict-tdd.)
 3. Issue labels, where `prototype` or `spike` select prototype mode.
 4. Default: normal.
 
