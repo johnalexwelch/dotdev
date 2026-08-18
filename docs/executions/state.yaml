@@ -3,20 +3,56 @@ workflow: workflow-build-one
 kind: skill
 budget: one-reviewer
 status: active
-next: implement
-updated: '2026-08-18T19:18:51.343211+00:00'
+next: review
+updated: '2026-08-18T19:43:55.820547+00:00'
 steps:
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: workflow-deliver authored (120 lines vs 361 source); tombstones + router
+    retarget + manifest/index/decision-log; lints 0 fail, dry-run OK, suite 317 PASS
+    @ 842ae69
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: dispatching standard-profile lanes
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 3b04593fea1a76eea7b48ecd201ba1c693d27778
+    timestamp: '2026-08-18T19:43:55.820368+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 154712e60f768245a5f640614a6422ab7a3707dec0d82361ad42d486d0972c74
+      lane_security_lines: '39'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-fable-5
+      lane_logic_sha256: 4dd12b760cc888a6ce369d0ef0221035f4be25534dddbb736d4b2fd271f376cb
+      lane_logic_lines: '46'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-fable-5
+      lane_tests_sha256: cf98d72cd916385fbcd4e3658d544f0f0f858448cf678caacb6cae8f3e355942
+      lane_tests_lines: '38'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-fable-5
+      lane_style_sha256: b560c7c8efb922efdfb5238cac718385f8fd9c162fdeb415fc768c494c4cdf97
+      lane_style_lines: '54'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-fable-5
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: full
+      lanes: security=/tmp/security-review.md,logic=/tmp/logic-review.md,tests=/tmp/tests-review.md,style=/tmp/style-review.md
+      model_floor: opus
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: c7a6df68ee809df5588d210fb19fe1848f2fefc6
