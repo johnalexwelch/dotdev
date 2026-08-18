@@ -77,6 +77,9 @@ contract_has_field() {
 needs_ledger() {
     case "$1" in
         workflow-ledger) return 1 ;; # kernel library, not an orchestrator (D-006 #12)
+        # Tombstone redirects to workflow-deliver (D-006 #11, Phase 2) — no steps
+        # to ledger. Remove these lines when Phase 4/5 deletes the directories.
+        workflow-build-one | workflow-debug) return 1 ;;
         workflow-* | run-backlog | watch-ci | execute-prd | execute-phase) return 0 ;;
         *) return 1 ;;
     esac
@@ -141,6 +144,17 @@ while IFS= read -r -d '' file; do
     if needs_ledger "$skill" && ! grep -q '^WORKFLOW_STEPS:' "$file"; then
         fail "$skill lacks WORKFLOW_STEPS ledger"
     fi
+
+    # The needs_ledger tombstone exemption is valid only while these stay
+    # tombstones — a revived skill under either name must not silently escape
+    # the WORKFLOW_STEPS check (D-006 #11, Phase 2).
+    case "$skill" in
+        workflow-build-one | workflow-debug)
+            if ! has_frontmatter_key "$file" disable-model-invocation; then
+                fail "$skill is exempted as a tombstone but lacks disable-model-invocation (revived? remove the needs_ledger exemption and restore WORKFLOW_STEPS)"
+            fi
+            ;;
+    esac
 
     if grep -q '^## Contract$' "$file"; then
         for field in Consumes Produces Requires "Side effects" "Human gates"; do
