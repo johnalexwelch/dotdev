@@ -219,7 +219,7 @@ Each issue runs through `workflow-deliver` with the issue's `kind` (`bug` for bu
 AFK execution must enforce this per-issue sequence; do not skip or reorder:
 
 1. `tdd` first (red -> green -> refactor) before code delivery work begins. If TDD is not applicable (for example docs-only or metadata-only issue), record `tdd_not_applicable_with_reason` in the issue run evidence.
-2. Execute implementation via `workflow-deliver` (Load and run `workflow-deliver/SKILL.md` with the issue's `kind`; `kind=bug` makes the kernel insert required diagnose/fix steps).
+2. Execute implementation via `workflow-deliver` (Load and run `workflow-deliver/SKILL.md` with the issue's `kind`). Bug issues MUST carry `kind=bug` — `ledger.sh init --kind bug` inserts the required diagnose/fix steps (D-006 #11).
 3. Run `workflow-review` and require `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
 4. Run `workflow-finalize` and require a complete `WORKFLOW_FINALIZE_GATE`.
 
