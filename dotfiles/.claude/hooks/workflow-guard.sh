@@ -139,6 +139,7 @@ mask_command_substitutions() {
 # Compound-redirection shapes — a suppression after `}`, `)`, `done`, or
 # `fi` redirects every segment inside the construct — fall back to
 # whole-command semantics (fail closed; the pre-segmentation behavior).
+# Arming is decided per construct, from that construct's own redirect list.
 has_suppressed_mutating_segment() {
     local masked terminator_view segs seg whole=0
     masked="$(mask_quoted_separators "$cmd")"
@@ -155,15 +156,26 @@ has_suppressed_mutating_segment() {
     # separator-preceded (`; done`, or at line start) — otherwise
     # `echo done <suppression> && git push` would trip the fallback, the very
     # false-positive class batch #1 removed (logic lane R2).
-    # ANY redirect after the terminator arms the fallback — a construct
+    # ANY redirect after the terminator is a candidate — a construct
     # suppressed via stdout-dup (`} >/dev/null 2>&1`) is redirected just as
-    # thoroughly as one using `2>` (security lane R2). Whether it is really
-    # suppression stays seg_has_suppression's call, so widening here cannot
-    # block a construct that merely redirects to a file.
-    if grep -Eq '(\}|\))[[:space:]]*([0-9]*>>?|&>)' <<<"$terminator_view" ||
-        grep -Eq '(^|[;&|])[[:space:]]*(done|fi)[[:space:]]*([0-9]*>>?|&>)' <<<"$terminator_view"; then
-        seg_has_suppression "$masked" && whole=1
-    fi
+    # thoroughly as one using `2>` (security lane R2). What decides arming is
+    # whether the CONSTRUCT'S OWN redirect list is suppression, so a construct
+    # redirecting to a real file never arms the fallback, even when unrelated
+    # suppression appears elsewhere in the command. Testing the whole command
+    # here re-blocked a suppressed lint/test segment chained before a push —
+    # the exact class batch #1 exists to permit (style lane R4).
+    # The captured tail must swallow `2>&1` / `2>&-` / `&>` (whose `&` is part
+    # of the redirect) while still stopping at a `&&` that starts the next
+    # segment — hence `&` is admitted only before a digit, `-`, or `>`.
+    local redirect_lists
+    redirect_lists="$(grep -oE '(\}|\)|(^|[;&|])[[:space:]]*(done|fi))[[:space:]]*([0-9]*>>?|&>)([^;&|]|&[0-9-]|&>)*' <<<"$terminator_view")"
+    while IFS= read -r seg; do
+        [ -n "$seg" ] || continue
+        if seg_has_suppression "$seg"; then
+            whole=1
+            break
+        fi
+    done <<<"$redirect_lists"
     segs="${masked//"&&"/$'\n'}"
     segs="${segs//"||"/$'\n'}"
     segs="${segs//";"/$'\n'}"
