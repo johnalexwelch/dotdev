@@ -22,6 +22,7 @@
 #   8  parent branch does not exist (cut, stacked)
 #   9  git worktree add failed
 #  10  git fetch origin --prune failed
+#  11  state sidecar does not match git ground truth (verify)
 
 set -euo pipefail
 
@@ -63,20 +64,21 @@ usage() {
 # assignment is invisible to static analysis and trips SC2154 at every
 # read site.
 resolve_base() {
-    if ! git fetch origin --prune >/dev/null 2>&1; then
+    local dir="${1:-.}"
+    if ! git -C "$dir" fetch origin --prune >/dev/null 2>&1; then
         die 10 "git fetch origin --prune failed."
     fi
 
     local preferred="origin/staging"
     local resolved="" fallback="not_applicable"
 
-    if git rev-parse --verify --quiet "$preferred" >/dev/null 2>&1; then
+    if git -C "$dir" rev-parse --verify --quiet "$preferred" >/dev/null 2>&1; then
         resolved="$preferred"
     else
         local default_branch
-        default_branch="$(git remote show origin | sed -n '/HEAD branch/s/.*: //p')"
+        default_branch="$(git -C "$dir" remote show origin | sed -n '/HEAD branch/s/.*: //p')"
         if [ -n "$default_branch" ] && [ "$default_branch" != "(unknown)" ] &&
-            git rev-parse --verify --quiet "origin/$default_branch" >/dev/null 2>&1; then
+            git -C "$dir" rev-parse --verify --quiet "origin/$default_branch" >/dev/null 2>&1; then
             resolved="origin/$default_branch"
             fallback="origin/staging_absent"
         else
@@ -140,14 +142,28 @@ write_state() {
 }
 
 # Load a previously-written state file into the current shell's variables.
-# Safe: the file is our own generated KEY=VALUE output, not external input.
+# Parsed strictly as KEY=VALUE for the known keys — never sourced. The file
+# is hand-writable by anyone, so sourcing it would hand a forged sidecar
+# arbitrary shell execution inside verify; any line that isn't a known
+# KEY=VALUE is treated as tampering and fails loudly.
 load_state() {
     local path="$1"
-    local state_file
+    local state_file line key
     state_file="$(state_file_path "$path")"
     [ -f "$state_file" ] || return 1
-    # shellcheck disable=SC1090
-    . "$state_file"
+    while IFS= read -r line || [ -n "$line" ]; do
+        [ -n "$line" ] || continue
+        key="${line%%=*}"
+        case "$key" in
+            BRANCH | WT_PATH | PREFERRED_BASE | RESOLVED_BASE | FALLBACK_REASON | STACKED | PARENT_BRANCH | PARENT_PR)
+                [ "$key" != "$line" ] || die 11 "state file $state_file has an unrecognized line (no '='): $line"
+                printf -v "$key" '%s' "${line#*=}"
+                ;;
+            *)
+                die 11 "state file $state_file has an unrecognized line: $line"
+                ;;
+        esac
+    done <"$state_file"
     return 0
 }
 
@@ -305,9 +321,36 @@ cmd_verify() {
 $dirty"
     fi
 
-    local resolved_base="$base_override" stacked="false" parent_branch=""
+    # Ground truth comes from git, never from the sidecar: an explicit --base
+    # wins, else the workflow base is re-resolved per base-branch-policy.md.
+    # The sidecar used to pick the ancestry target here, which let a
+    # hand-written one steer verify at any ref the checkout happened to
+    # descend from (PR #166 post_mortem, forged-baseline pattern).
+    local effective_base="$base_override"
+    if [ -z "$effective_base" ]; then
+        resolve_base "$path"
+        effective_base="$RESOLVED_BASE"
+    fi
+
+    if ! git -C "$path" merge-base --is-ancestor "$effective_base" HEAD 2>/dev/null; then
+        die 6 "worktree at $path is not a descendant of $effective_base"
+    fi
+
+    local actual_branch
+    actual_branch="$(git -C "$path" rev-parse --abbrev-ref HEAD)"
+
+    # The sidecar is a cross-check only. A mismatch against what git actually
+    # has is a loud failure, not a value to prefer — its only trusted role
+    # left is carrying the stacked-parent relationship, and even that ref is
+    # then ancestry-checked against real history below.
+    local stacked="false" parent_branch=""
     if load_state "$path"; then
-        resolved_base="${resolved_base:-$RESOLVED_BASE}"
+        if [ "${BRANCH:-}" != "$actual_branch" ]; then
+            die 11 "state file for $path does not match git ground truth: BRANCH is '${BRANCH:-}' but the checked-out branch is '$actual_branch'"
+        fi
+        if [ "${RESOLVED_BASE:-}" != "$effective_base" ]; then
+            die 11 "state file for $path does not match git ground truth: RESOLVED_BASE is '${RESOLVED_BASE:-}' but the resolved workflow base is '$effective_base'"
+        fi
         stacked="${STACKED:-false}"
         parent_branch="${PARENT_BRANCH:-}"
     fi
@@ -316,22 +359,21 @@ $dirty"
     # an ancestry check against that branch regardless of what (if anything)
     # the state file recorded. This lets verify be used standalone, without a
     # prior cut, against a caller-supplied parent.
-    local ancestry_base
+    local parent_to_check=""
     if [ -n "$parent_branch_override" ]; then
-        ancestry_base="$parent_branch_override"
+        parent_to_check="$parent_branch_override"
     elif [ "$stacked" = "true" ] && [ -n "$parent_branch" ]; then
-        ancestry_base="$parent_branch"
+        parent_to_check="$parent_branch"
+    fi
+
+    if [ -n "$parent_to_check" ]; then
+        if ! git -C "$path" merge-base --is-ancestor "$parent_to_check" HEAD 2>/dev/null; then
+            die 6 "worktree at $path is not a descendant of $parent_to_check"
+        fi
+        echo "PASS: $path is clean, descends from $effective_base, and descends from parent $parent_to_check"
     else
-        ancestry_base="$resolved_base"
+        echo "PASS: $path is clean and descends from $effective_base"
     fi
-
-    [ -n "$ancestry_base" ] || die 1 "no base ref available to verify ancestry against; pass --base or --parent-branch."
-
-    if ! git -C "$path" merge-base --is-ancestor "$ancestry_base" HEAD 2>/dev/null; then
-        die 6 "worktree at $path is not a descendant of $ancestry_base"
-    fi
-
-    echo "PASS: $path is clean and descends from $ancestry_base"
 }
 
 cmd_emit() {

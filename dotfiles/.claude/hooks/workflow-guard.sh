@@ -61,6 +61,15 @@ if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" 
         exit 2
     fi
 
+    # Rule 2b: worktree-baseline sidecars are script-owned as well — written
+    # by `worktree-baseline.sh cut`, cross-checked by `verify`. They live
+    # outside any repo (sibling of the worktree path), so match the filename
+    # pattern anywhere (D-006 hardening; PR #166 forged-baseline pattern).
+    if grep -Eq '(^|/)\.worktree-baseline\.[^/]+\.state$' <<<"$file_path"; then
+        printf 'Blocked: %s is script-owned; it is written by worktree-baseline.sh cut and cross-checked by verify — never write it by hand.\n' "$file_path" >&2
+        exit 2
+    fi
+
     # Rule 4: entry enforcement — tracked-code edit in an opted-in repo with no
     # active ledger run. Warn-only in Phase 0; LEDGER_ENTRY_ENFORCE=block
     # escalates to a hard block (the Phase 5 default flip).
