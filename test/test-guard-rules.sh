@@ -456,6 +456,45 @@ assert_status "appending file redirect plus suppressed lint segment permits" 0 "
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ npm run build; } > build.log && { git push origin main; } >/dev/null 2>&1')"
 assert_status "suppressed construct still blocks alongside a file-redirected one" 2 "$STATUS"
 
+# A parameter expansion's `}` is not a brace-group terminator (security lane
+# R5). A brace group's `}` is always separator-preceded; an expansion's never
+# is — so the discriminator is the same one `done`/`fi` already use. Without
+# it, ordinary commands using ${VAR} before a suppression get blocked, which
+# is the batch #1 false-positive class arriving through a new door.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'mkdir -p ${DIR} 2>/dev/null && git commit -m wip')"
+assert_status "parameter expansion before a suppression permits" 0 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo ${#items[@]} 2>/dev/null && git push origin main')"
+assert_status "array-length expansion before a suppression permits" 0 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo ${a[$((1+1))]} >/dev/null 2>&1 && git push origin main')"
+assert_status "subscripted expansion before a stdout-dup permits" 0 "$STATUS"
+
+# `esac` is a terminator like done/fi (security lane R5); main blocked this.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'case x in a) git push origin main;; esac 2>/dev/null')"
+assert_status "case statement suppressed as a whole blocks" 2 "$STATUS"
+
+# fd-close on a construct: the one suppression spelling with no construct-
+# level coverage until now (security lane R5).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } 2>&-')"
+assert_status "fd-close on a construct blocks" 2 "$STATUS"
+
+# A compound construct wrapped in a substitution must not lose its terminator
+# to the masker (security lane R5 — fail-open vs both main and 82b6249).
+# Terminator detection falls back to the unmasked view when a substitution
+# span is itself mutating; a benign span (see the $(date) pin above) does not
+# trigger that, so the batch #1 permits are untouched.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(true; { git push origin main; } 2>/dev/null)')"
+assert_status "mutating brace group inside a substitution blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(for i in 1; do git push origin main; done 2>/dev/null)')"
+assert_status "mutating loop inside a substitution blocks" 2 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 
