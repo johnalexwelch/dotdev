@@ -145,6 +145,17 @@ while IFS= read -r -d '' file; do
         fail "$skill lacks WORKFLOW_STEPS ledger"
     fi
 
+    # The needs_ledger tombstone exemption is valid only while these stay
+    # tombstones — a revived skill under either name must not silently escape
+    # the WORKFLOW_STEPS check (D-006 #11, Phase 2).
+    case "$skill" in
+        workflow-build-one | workflow-debug)
+            if ! has_frontmatter_key "$file" disable-model-invocation; then
+                fail "$skill is exempted as a tombstone but lacks disable-model-invocation (revived? remove the needs_ledger exemption and restore WORKFLOW_STEPS)"
+            fi
+            ;;
+    esac
+
     if grep -q '^## Contract$' "$file"; then
         for field in Consumes Produces Requires "Side effects" "Human gates"; do
             if ! contract_has_field "$file" "$field"; then

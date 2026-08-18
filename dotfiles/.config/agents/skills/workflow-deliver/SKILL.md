@@ -3,16 +3,16 @@ name: workflow-deliver
 layer: orchestrator
 model: sonnet
 reasoning: medium
-description: Deliver one unit of work end-to-end (preflight → [diagnose if bug] → triage → implement → review → finalize) with kind-templated ledger gates. Use for a ready-for-agent issue, a bug report, a skill change, or a docs change; supersedes workflow-build-one and workflow-debug (D-006 #11).
+description: Deliver one unit of work end-to-end (preflight → [diagnose if bug] → triage → implement → review → finalize) with kernel-enforced ledger gates; kind=bug templates required diagnose/fix steps. Use for a ready-for-agent issue, a bug report, a skill change, or a docs change; supersedes workflow-build-one and workflow-debug (D-006 #11).
 ---
 
 # Workflow Deliver
 
-One delivery orchestrator for single-unit work. The router (or a batch driver) passes a `kind` — `bug|feature|skill|docs` — and the ledger templates the required steps from it. This skill sequences; the gates are kernel calls (`workflow-ledger`), never prose checks.
+One delivery orchestrator for single-unit work. The router (or a batch driver) passes a `kind` — `bug|feature|skill|docs` — and `--kind bug` templates extra required steps into the ledger. This skill sequences; the gates are kernel calls (`workflow-ledger`), never prose checks.
 
 ## Kind selection — the enforcement
 
-`ledger.sh init <run_id> --workflow workflow-deliver --kind <k> --steps <csv>`; `--kind bug` auto-inserts required `diagnose`/`fix` steps, and the kernel refuses `stamp fix` without a captured red repro from `stamp diagnose`. That kernel check — not routing — is what guarantees bugs get diagnosed: a misclassified bug corrected mid-run just re-inits with `--kind bug`, it is not a fatal misroute (D-006 #11). Gate contract: `workflow-ledger/SKILL.md`.
+`ledger.sh init <run_id> --workflow workflow-deliver --kind <k> --steps preflight,triage,implement,review,qa,finalize` — use that canonical steps csv so AFK monitors read uniform step records. Only `--kind bug` inserts extra steps: required `diagnose`/`fix`, and the kernel refuses `stamp fix` without a captured red repro from `stamp diagnose`. That kernel check — not routing — is what guarantees bugs get diagnosed (D-006 #11). If mid-run evidence shows the item is actually a bug, you MUST re-init with `--kind bug` before any fix commit; on an active run that is `ledger.sh init <run_id> --kind bug --force` (audited `force-init` override entry; prior stamps are discarded and the bug run re-earns diagnose/fix). Agent-initiated force-init for kind correction is authorized — it is distinct from `stamp --override`, which stays human-instructed. Continuing a non-bug run on a known bug is a gate bypass, not a misroute recovery. Gate contract: `workflow-ledger/SKILL.md`.
 
 ## Flow
 
@@ -69,9 +69,9 @@ Confirm the item is well-formed for autonomous execution: clear acceptance crite
 ### Step 3: Implement
 
 - Implement against acceptance criteria; honor decision-log entries — do not re-open settled choices unless implementation evidence invalidates them.
-- **TDD decision is a ledger note:** either Load and run `tdd/SKILL.md` (default for bugs and behavior changes) or record `ledger.sh set implement active --evidence "tdd_not_applicable_with_reason: <reason>"`. AFK monitors flag a missing decision as `needs-human`.
+- **TDD decision is a ledger note:** either Load and run `tdd/SKILL.md` (default for bugs and behavior changes) or decide `tdd_not_applicable_with_reason: <reason>`. The decision must be in the implement step's **completion** evidence — `ledger.sh set implement completed --evidence "<summary>; tdd: ran|not_applicable_with_reason: <reason>"` — because each `set` overwrites the step's evidence field, so a decision recorded only at `active` is lost. AFK monitors flag a missing decision as `needs-human`.
 - `kind=bug`: write the regression test from the diagnosis artifact, then gate the fix with `ledger.sh stamp fix --attest rationale="..."` — the kernel re-runs the repro (must exit 0) and checks the regression test exists.
-- **Ops-backed / secret-runtime work:** before any value movement, build an **AUTHORITY INVENTORY** — read/admin handles, write handles, source-system access method, and host/user/privilege per command — and prove operator auth for both source and target. Auth failure is a blocker (`BLOCKER: operator auth failed on <system>; next: <elevation path>`, label `needs-ops-auth`), never an assumption. Record `tdd_not_applicable_with_reason: ops-backed value movement requires human operator authority`.
+- **Ops-backed / secret-runtime work:** exhaust all safe local and remote progress before delegating to a human operator. Before any value movement, build an **AUTHORITY INVENTORY** — read/admin handles, write handles, source-system access method, and host/user/privilege per command — and prove operator auth for both source and target. Auth failure is a blocker (`BLOCKER: operator auth failed on <system>; next: <elevation path>`, label `needs-ops-auth`), never an assumption. Record `tdd_not_applicable_with_reason: ops-backed value movement requires human operator authority`.
 - Commit incrementally with issue references.
 
 ### Step 4: Review

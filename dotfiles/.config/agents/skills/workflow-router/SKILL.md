@@ -223,7 +223,7 @@ This is why `receive-review` and `prompt-builder` are handled differently above:
 
 ## Bug routing rule
 
-Bugs route to `workflow-deliver` with `kind=bug`, even if the fix appears obvious. Prefer correct classification — but the diagnose-first guarantee no longer lives in routing: `ledger.sh init --kind bug` inserts required `diagnose`/`fix` steps and the kernel refuses `stamp fix` without a captured red repro, so a misclassified bug is corrected mid-run by re-initing with `--kind bug`, not by re-routing (D-006 #11; the old "never route bugs to workflow-build-one" rule is superseded). Diagnosis-first still prevents:
+Bugs route to `workflow-deliver` with `kind=bug`, even if the fix appears obvious. Prefer correct classification — but the diagnose-first guarantee no longer lives in routing: `ledger.sh init --kind bug` inserts required `diagnose`/`fix` steps and the kernel refuses `stamp fix` without a captured red repro. A bug discovered mid-run MUST be corrected by re-initing with `--kind bug` before any fix commit (`init --force` on an active run — audited force-init; prior stamps discarded), not by re-routing; a misroute is therefore recoverable, not fatal (D-006 #11; the old "never route bugs to workflow-build-one" rule is superseded). Diagnosis-first still prevents:
 
 - Fixing symptoms instead of root causes
 - Missing regression tests
