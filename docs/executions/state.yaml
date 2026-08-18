@@ -4,7 +4,7 @@ kind: bug
 budget: one-reviewer
 status: active
 next: diagnose
-updated: '2026-08-18T23:30:39.323708+00:00'
+updated: '2026-08-18T23:30:59.452462+00:00'
 steps:
 - id: diagnose
   required: true
@@ -120,8 +120,28 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 253b8f69243fecd9208a5747ca999184d5a5b488
+    timestamp: '2026-08-18T23:30:59.452292+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      ci: green
+      pr_state: draft
+      threads_resolved: 'yes'
+    attested:
+      post_mortem: 'not_applicable_with_reason: routine single-run bug delivery, no
+        design-plan/phase work; review follow-ups recorded in PR body'
+      describe_pr: 'body_file=docs/executions/.pr-bodies/2026-08-18-pr-ledger-draft-stamp.md;
+        mode=issue_only; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason:
+        no graphify-out/graph.json; applied_to_pr=true'
+      pr_number: '170'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: 26201f806be8eef4aacfcc7f5a1f99a1502d960c
+last_seen_sha: 253b8f69243fecd9208a5747ca999184d5a5b488
 verify_local:
   head_sha: be81612c9a63f04dd7b6cc6707cba90c1f243683
   passed: true
