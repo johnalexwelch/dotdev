@@ -4,7 +4,7 @@ kind: bug
 budget: one-reviewer
 status: active
 next: diagnose
-updated: '2026-08-18T19:30:12.051711+00:00'
+updated: '2026-08-18T19:30:14.079268+00:00'
 steps:
 - id: diagnose
   required: true
@@ -22,5 +22,24 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  diagnose:
+    head_sha: 8ba55d14e4b4e15794cf63f5fdee286fa37f5958
+    timestamp: '2026-08-18T19:30:14.079093+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '1'
+      repro_tail: 'no OVERRIDE_STALE prefix on a stale override; output: STALE: non-ledger
+        commits exist after the ''finalize'' stamp (3ffd1ebd93b36ed9c354270cf8f6e227de7e2b0f)'
+    attested:
+      repro_cmd: bash /private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-suspicious-cannon-32f671/94f9156c-ba33-4073-8be1-fabe428eea6a/scratchpad/repro-override-stale.sh
+      root_cause: check_gate collapses a stale override into the generic STALE line
+        and drops the recorded override reason; spec requires a distinct OVERRIDE_STALE
+        contract and no test locks override freshness
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: 8ba55d14e4b4e15794cf63f5fdee286fa37f5958
