@@ -3,13 +3,14 @@ workflow: workflow-debug
 kind: bug
 budget: one-reviewer
 status: active
-next: diagnose
-updated: '2026-08-18T19:30:14.079268+00:00'
+next: fix
+updated: '2026-08-18T19:33:29.710244+00:00'
 steps:
 - id: diagnose
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: repro red pre-fix (OVERRIDE_STALE prefix+reason absent), kernel-verified
+    at diagnose stamp
 - id: fix
   required: true
   status: pending
@@ -41,5 +42,21 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  fix:
+    head_sha: 2f3948295f39a2c42eb8c06aa910a1ef7fbee0d9
+    timestamp: '2026-08-18T19:33:29.709451+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-ledger.sh
+    attested:
+      regression_test: test/test-ledger.sh
+      rationale: stale-override branch in check_gate emits OVERRIDE_STALE with recorded
+        reason; 4 red assertions now green
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: 8ba55d14e4b4e15794cf63f5fdee286fa37f5958
+last_seen_sha: 4210fb3f905b658166cd9b9bb947f7621e2dcf2b
