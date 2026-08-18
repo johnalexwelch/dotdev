@@ -3,8 +3,8 @@ workflow: workflow-build-one
 kind: skill
 budget: one-reviewer
 status: active
-next: review
-updated: '2026-08-18T18:52:54.553573+00:00'
+next: finalize
+updated: '2026-08-18T19:02:14.966267+00:00'
 steps:
 - id: implement
   required: true
@@ -13,21 +13,22 @@ steps:
     lints clean; suite 317 PASS
 - id: review
   required: true
-  status: active
-  evidence: dispatching fast-profile workflow-review
+  status: completed
+  evidence: fast-profile integrated lane APPROVE (claude-fable-5, subagent a142d1ebc0014d6e1);
+    stamp @ f26c716
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: review stamped @ f26c716, verify-local PASS @ cfc0947
 stamps:
   review:
-    head_sha: f26c716f8f6289fc565246da59d1991fa7ce3c46
-    timestamp: '2026-08-18T18:52:54.553115+00:00'
+    head_sha: 5ddb5a8946e2dd403810ea042e0e086bd729f4bd
+    timestamp: '2026-08-18T19:02:14.966056+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: acc956012b8c3f9f6038bc14680b5504bfc60dafe74339dc2427ce02177bc286
-      lane_integrated_lines: '51'
+      lane_integrated_sha256: 4c5795169b04f383b1cbdd8acb2b69c0427a5f5166d3d00d96c48b8ac574cc03
+      lane_integrated_lines: '73'
       lane_integrated_verdict: APPROVE
       lane_integrated_model: claude-fable-5
       review_floor: fast
@@ -42,4 +43,14 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: c95938898b7089c148f9c4eb5570944decd9aeb0
+last_seen_sha: cfc094792b004c80c66a7a7aca70448931081d1c
+verify_local:
+  head_sha: cfc094792b004c80c66a7a7aca70448931081d1c
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
