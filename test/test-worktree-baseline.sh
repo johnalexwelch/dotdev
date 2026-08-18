@@ -278,6 +278,30 @@ set -e
 assert_status "verify fails on sidecar BRANCH mismatch" 11 "$branch_mismatch_status"
 assert_contains "branch-mismatch message names the field" "$branch_mismatch_output" "BRANCH"
 
+# A sidecar carrying anything but known KEY=VALUE lines is tampering, and it
+# must never execute: load_state used to source the file, so an injected
+# `echo PASS; exit 0` line ran as shell inside verify and won outright.
+work=$(new_fixture injected_sidecar)
+wt="$TMPDIR_BASE/injected_sidecar/wt1"
+git -C "$work" worktree add -b feature/inject "$wt" origin/main >/dev/null 2>&1
+cat >"$TMPDIR_BASE/injected_sidecar/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/inject
+WT_PATH=$wt
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=origin/main
+FALLBACK_REASON=origin/staging_absent
+echo "PASS: injected" ; exit 0
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+injected_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+injected_status=$?
+set -e
+assert_status "verify rejects a sidecar with a non-KEY=VALUE line" 11 "$injected_status"
+assert_contains "injected-line rejection names the problem" "$injected_output" "unrecognized"
+
 # No sidecar at all: verify stands on git ground truth alone — a clean
 # worktree genuinely descending from the resolved base passes standalone.
 work=$(new_fixture no_sidecar)
