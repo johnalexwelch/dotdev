@@ -474,6 +474,8 @@ work=$(new_fixture offline_verify)
 wt="$TMPDIR_BASE/offline_verify/wt1"
 (cd "$work" && bash "$SCRIPT" cut --branch feature/offline --path "$wt" >/dev/null)
 git -C "$work" remote set-url origin /nonexistent/nope.git
+offline_work="$work"
+offline_wt="$wt"
 set +e
 offline_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
 offline_status=$?
@@ -583,11 +585,13 @@ assert_contains "symref-retarget rejection names the real base" "$symref_output"
 # (ledger.sh) discard stderr on success, so a stale pass must be visibly
 # stale in the PASS line itself. Reuses the offline_verify fixture state.
 set +e
-offline_stdout=$(cd "$TMPDIR_BASE/offline_verify/work" && bash "$SCRIPT" verify --path "$TMPDIR_BASE/offline_verify/wt1" 2>/dev/null)
+offline_stdout=$(cd "$offline_work" && bash "$SCRIPT" verify --path "$offline_wt" 2>/dev/null)
 set -e
 assert_contains "offline PASS line itself carries the staleness marker" "$offline_stdout" "possibly stale"
 
-# ...while an equivalent spelling of the same worktree still passes.
+# Counterpart to the swapped_sidecar WT_PATH cross-check above: an
+# equivalent spelling (trailing slash) of the same worktree canonicalizes
+# equal and still passes.
 work=$(new_fixture path_spelling)
 wt="$TMPDIR_BASE/path_spelling/wt1"
 (cd "$work" && bash "$SCRIPT" cut --branch feature/spelling --path "$wt" >/dev/null)
