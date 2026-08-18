@@ -2,9 +2,9 @@ run_id: 2026-08-18-forge-ssh-alias-detect
 workflow: workflow-debug
 kind: bug
 budget: one-reviewer
-status: active
-next: finalize
-updated: '2026-08-18T19:38:56.330219+00:00'
+status: done
+next: ''
+updated: '2026-08-18T19:40:01.790131+00:00'
 steps:
 - id: diagnose
   required: true
@@ -39,8 +39,10 @@ steps:
     intentional) accepted as documented
 - id: finalize
   required: true
-  status: active
-  evidence: ''
+  status: completed
+  evidence: "finalize stamped at 965304a with NO override (contrast: run 2026-08-18-phase1-router\
+    \ needed audited override for this same gate); PR #162 open, CI green, threads\
+    \ resolved; merge blocked by session permission classifier \u2014 left to user"
 stamps:
   review:
     head_sha: b6a9036c340b3ca382b03ebcfbecf12a23d61692
@@ -83,7 +85,7 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 965304a9da04be962860cd9ec1db27817bb7044b
+last_seen_sha: 0e4c5f92d479a2bfcfaa4731f4b4facb315df1bb
 verify_local:
   head_sha: 965304a9da04be962860cd9ec1db27817bb7044b
   passed: true
