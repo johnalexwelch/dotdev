@@ -100,9 +100,14 @@ mask_quoted_separators() {
 #   the caller still sees, so it counts only alongside a /dev/null stdout.
 seg_has_suppression() {
     local seg="$1"
-    grep -Eq "2>>?[[:space:]]*['\"]?/dev/null|&>[[:space:]]*['\"]?/dev/null|2>&-" <<<"$seg" && return 0
+    grep -Eq "2>>?\|?[[:space:]]*['\"]?/dev/null|&>\|?[[:space:]]*['\"]?/dev/null|2>&-" <<<"$seg" && return 0
+    # Branch 2: stdout to /dev/null combined with a stderr merge. The leading
+    # class excludes `&` (so `&>` stays on branch 1, which already handles it)
+    # and `>` (so the second `>` of `>>` cannot start a match) — but NOT
+    # whitespace: `cmd>/dev/null 2>&1` is valid bash and really does suppress,
+    # and anchoring on whitespace let it through (style lane R5).
     grep -Eq '2>&1' <<<"$seg" &&
-        grep -Eq "(^|[[:space:]])[0-9]*>>?[[:space:]]*['\"]?/dev/null" <<<"$seg"
+        grep -Eq "(^|[^&>])[0-9]*>>?\|?[[:space:]]*['\"]?/dev/null" <<<"$seg"
 }
 
 # Blanks out command substitutions (`$( … )`, innermost-first so nesting
@@ -111,14 +116,16 @@ seg_has_suppression() {
 # detection — segment mutation matching always runs on the unmasked text, so
 # a mutation inside a substitution is still caught in its own segment.
 #
-# LIMITATION (tests lane R3): the inner classes are `[^()]`, so this masks
-# only substitutions and arithmetic whose contents carry no literal paren.
-# Nested-paren arithmetic, process substitution `<( … )`, a paren inside a
-# quoted argument, and array assignment all leave parens standing, arm the
-# fallback, and block a benign command. Every one of those is fail-closed and
-# was blocked on main too under whole-command semantics; the shapes are
-# pinned in test-guard-rules.sh so the boundary stays visible. Fixing them
-# properly needs a real paren-matching pass, not a wider character class.
+# LIMITATION (tests lane R3, sharpened by the style lane in R5): the inner
+# classes are `[^()]`, so this masks only substitutions and arithmetic whose
+# contents carry no literal paren. Nested-paren arithmetic, process
+# substitution `<( … )`, array assignment, and a quoted paren INSIDE a
+# substitution (`$(grep "x)y" f)`) leave parens standing, arm the fallback,
+# and block a benign command — all fail-closed, all pinned in
+# test-guard-rules.sh so the boundary stays visible. A quoted paren on its
+# own (`echo "a)" …`) does NOT arm: the closing quote sits between it and the
+# redirect, so the terminator pattern cannot match. Fixing the real ones
+# needs a paren-matching pass, not a wider character class.
 mask_command_substitutions() {
     local s="$1" prev=""
     # Arithmetic expansion first: its `))` is not a subshell close, and the
@@ -161,6 +168,10 @@ has_suppressed_mutating_segment() {
     # Fail CLOSED if a masking helper breaks: an empty mask would empty every
     # segment and permit the command outright (security lane R2 note).
     [ -n "$masked" ] || masked="$cmd"
+    # `>|` is force-clobber, not a pipe: normalize it away before splitting so
+    # segmentation does not cut a redirect in half and strand the suppression
+    # in a segment of its own (style lane R5).
+    masked="${masked//">|"/>}"
     # Terminator detection runs on a substitution-masked view so a `$( … )`
     # close-paren is not read as a subshell terminator (tests lane R2).
     # Mutation matching below always uses the unmasked segments.

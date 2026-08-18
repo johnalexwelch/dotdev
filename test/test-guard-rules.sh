@@ -449,6 +449,12 @@ assert_status "process substitution blocks (fail-closed, pinned)" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(grep "x)y" f) 2>/dev/null && git push origin main')"
 assert_status "paren inside a quoted substitution arg blocks (fail-closed, pinned)" 2 "$STATUS"
 
+# ...whereas a quoted paren NOT inside a substitution never arms: its closing
+# quote sits between the paren and the redirect (style lane R5 counterexample,
+# pinned so the two shapes are not conflated again).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo "a)" 2>/dev/null && git push origin main')"
+assert_status "bare quoted paren does not arm the fallback" 0 "$STATUS"
+
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'xs=(a b) 2>/dev/null; git push origin main')"
 assert_status "array assignment blocks (fail-closed, pinned)" 2 "$STATUS"
 
