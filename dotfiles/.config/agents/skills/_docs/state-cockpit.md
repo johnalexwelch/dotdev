@@ -1,5 +1,7 @@
 # State Cockpit — `docs/executions/state.yaml`
 
+> Superseded by `workflow-ledger` (D-006); kept as a pointer until chain skills rewire (Phases 1–4).
+
 Single machine-readable record of the active workflow run. Lets any agent
 resume exactly where a prior session stopped without replaying the transcript.
 Referenced by `workflow-router` (writer/resumer), `handoff` (reader), and

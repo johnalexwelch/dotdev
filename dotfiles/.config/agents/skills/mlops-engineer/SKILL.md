@@ -83,6 +83,38 @@ This skill encodes the Delphi MLOps platform decisions. **Do not recommend alter
 
 **Universal ban:** `CURRENT_DATE`/runtime date functions, personal/temp schemas in training queries
 
+## Infrastructure Patterns (cloud-ci-automation)
+
+**Before proposing GitHub Actions, environments, or IAM for a new repo:**
+
+1. Review `cloud-ci-automation/repo_config/` for similar repos to match company patterns
+2. Check for existing CI runner configs, IAM policies, and deployment namespaces
+
+### ML Model Repos Without K8s Deployment
+
+Follow `classification-models.yaml` pattern:
+
+```yaml
+name: <repo>
+team: <team>
+ciRunners: yes
+ciRunnerList:
+  - label_suffix:
+    docker_sidecar: yes
+extraAwsPolicies:
+  - # S3 artifacts access
+  - # MLflow/SageMaker access (if applicable)
+# No deploymentNamespaces — not a K8s service
+```
+
+### Approval Gates
+
+Company pattern: **branch protection on main** (PR review required), not GitHub environments.
+
+- Promotion = merge to main (requires review)
+- K8s services use namespace-per-branch (staging branch → staging namespace)
+- Non-K8s repos (ML models) use main-branch merge as the gate
+
 ## Stack Components
 
 | Layer | Tool | Notes |

@@ -1,0 +1,37 @@
+# Routing golden eval — D-006 Track B (router determinism = measurement).
+#
+# NON-BLOCKING for the first two weeks after landing (continue-on-error).
+# Planned flip: ~two weeks post-merge, remove `continue-on-error` and mark
+# the job required in branch protection so router/description changes gate
+# on the >= 95% pass rate.
+name: Routing eval
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "dotfiles/.config/agents/skills/workflow-router/**"
+      - "test/routing-eval.sh"
+      - ".github/workflows/routing-eval.yml"
+jobs:
+  routing-eval:
+    name: Router golden eval
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    env:
+      # Secrets are not readable in `if:` directly; surface presence via env.
+      HAS_ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v7
+      # Always: offline golden-set schema validation (no API calls).
+      - name: Dry-run schema validation
+        run: ./test/routing-eval.sh --dry-run
+      - name: Install Claude Code CLI
+        if: env.HAS_ANTHROPIC_KEY == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+      # Full eval only when the API key secret is available (skipped on forks
+      # and in repos without the secret configured).
+      - name: Full routing eval (sonnet, deterministic judge)
+        if: env.HAS_ANTHROPIC_KEY == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: ./test/routing-eval.sh --model sonnet
