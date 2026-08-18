@@ -151,6 +151,16 @@ assert_status "non-merge pr command not gated" 0 "$STATUS"
 run_hook "$opted_gate" "$(json_bash "$opted_gate" "gh pr merge-queue status")"
 assert_status "gh pr merge-queue status is not a merge shape" 0 "$STATUS"
 
+# Kernel ENV breakage (exit 10: missing PyYAML python etc.) must warn-permit
+# like corrupt state (6) and missing manifest (9) — a broken kernel must not
+# brick delivery, and env errors must not masquerade as gate-unmet exit 1
+# (R1/R2 batch #2).
+export LEDGER_PYTHON=/nonexistent-python-e93f
+run_hook "$opted_gate" "$(json_bash "$opted_gate" "gh pr merge 42")"
+assert_status "kernel env breakage warn-permits the merge" 0 "$STATUS"
+assert_contains "env-breakage permit says the gate ERRORED" "$OUT" "ERRORED"
+unset LEDGER_PYTHON
+
 plain_gate=$(new_repo merge_gate_plain plain)
 run_hook "$plain_gate" "$(json_bash "$plain_gate" "gh pr merge 42")"
 assert_status "merge allowed in non-opted-in repo" 0 "$STATUS"

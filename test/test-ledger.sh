@@ -318,6 +318,18 @@ run_ledger "$repoH" set plan active
 assert_status "corrupt live state exits 6 on set" 6 "$STATUS"
 assert_file_contains "corrupt live state not silently rewritten" "$stateH" "::: not yaml ["
 
+# --- env breakage is exit 10, distinct from gate-unmet exit 1 (batch #2) ---
+repoEnv=$(new_repo env_error)
+run_ledger "$repoEnv" init 2026-08-18-env --workflow workflow-deliver \
+    --kind feature --steps "impl"
+assert_status "env fixture init exits 0" 0 "$STATUS"
+export LEDGER_PYTHON=/nonexistent-python-e93f
+run_ledger "$repoEnv" show
+assert_status "misconfigured LEDGER_PYTHON exits 10 on show" 10 "$STATUS"
+run_ledger "$repoEnv" check finalize
+assert_status "check with broken python env exits 10, not 1" 10 "$STATUS"
+unset LEDGER_PYTHON
+
 # --- kind: bug template + diagnose/fix gates ---
 repoB=$(new_repo bug_template)
 stateB=$(live_state "$repoB")
