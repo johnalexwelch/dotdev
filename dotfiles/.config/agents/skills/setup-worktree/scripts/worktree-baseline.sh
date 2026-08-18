@@ -80,8 +80,10 @@ usage() {
 # failure: cutting a new worktree from an unfetchable base is different.
 resolve_base() {
     local dir="${1:-.}" allow_stale="${2:-false}"
+    local fetch_ok=true
     if ! git -C "$dir" fetch origin --prune >/dev/null 2>&1; then
         if [ "$allow_stale" = "true" ]; then
+            fetch_ok=false
             echo "WARNING: git fetch origin --prune failed; resolving base from existing remote-tracking refs (possibly stale)." >&2
         else
             die 10 "git fetch origin --prune failed."
@@ -95,12 +97,19 @@ resolve_base() {
         resolved="$preferred"
         resolved_ref="refs/remotes/$preferred"
     else
-        # Prefer the local origin/HEAD symref (works offline); fall back to
-        # asking the remote.
-        local default_branch
-        default_branch="$(git -C "$dir" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||' || true)"
-        if [ -z "$default_branch" ]; then
-            default_branch="$(git -C "$dir" remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p')"
+        # Default-branch detection: the remote's own answer (`remote show
+        # origin`) is authoritative whenever the network works. The local
+        # origin/HEAD symref is strictly an offline fallback — it is a plain
+        # hand-settable pointer that git never refreshes on fetch, so it can
+        # be retargeted to select a different base and it goes stale on
+        # default-branch renames; it must never outrank a live remote.
+        local default_branch=""
+        if [ "$fetch_ok" = "true" ]; then
+            default_branch="$(git -C "$dir" remote show origin 2>/dev/null | sed -n '/HEAD branch/s/.*: //p' || true)"
+        fi
+        if [ -z "$default_branch" ] || [ "$default_branch" = "(unknown)" ] ||
+            ! git -C "$dir" rev-parse --verify --quiet "refs/remotes/origin/$default_branch" >/dev/null 2>&1; then
+            default_branch="$(git -C "$dir" symbolic-ref --quiet refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||' || true)"
         fi
         if [ -n "$default_branch" ] && [ "$default_branch" != "(unknown)" ] &&
             git -C "$dir" rev-parse --verify --quiet "refs/remotes/origin/$default_branch" >/dev/null 2>&1; then
@@ -116,6 +125,7 @@ resolve_base() {
     RESOLVED_BASE="$resolved"
     RESOLVED_BASE_REF="$resolved_ref"
     FALLBACK_REASON="$fallback"
+    STALE_BASE=$([ "$fetch_ok" = "true" ] && echo "false" || echo "true")
     FETCHED=true
 }
 
@@ -187,19 +197,27 @@ load_state() {
     for key in $STATE_KEYS; do
         printf -v "STATE_$key" '%s' ""
     done
+    # Exact-match key whitelist, never substring/glob: a compound key like
+    # "BRANCH WT_PATH" must die here, not reach printf -v (whose failure a
+    # caller's if-guard would swallow, failing open).
+    local k known
     while IFS= read -r line || [ -n "$line" ]; do
         [ -n "$line" ] || continue
         key="${line%%=*}"
-        case " $STATE_KEYS " in
-            *" $key "*)
-                [ "$key" != "$line" ] || die 11 "state file $state_file has an unrecognized line (no '='): $line"
-                printf -v "STATE_$key" '%s' "${line#*=}"
-                seen="$seen$key "
-                ;;
-            *)
-                die 11 "state file $state_file has an unrecognized line: $line"
-                ;;
-        esac
+        known=false
+        for k in $STATE_KEYS; do
+            if [ "$key" = "$k" ]; then
+                known=true
+                break
+            fi
+        done
+        if [ "$known" = "true" ]; then
+            [ "$key" != "$line" ] || die 11 "state file $state_file has an unrecognized line (no '='): $line"
+            printf -v "STATE_$key" '%s' "${line#*=}"
+            seen="$seen$key "
+        else
+            die 11 "state file $state_file has an unrecognized line: $line"
+        fi
     done <"$state_file"
     for key in $STATE_KEYS; do
         case "$seen" in
@@ -404,6 +422,17 @@ $dirty"
         if [ "$STATE_BRANCH" != "$actual_branch" ]; then
             die 11 "state file for $path does not match git ground truth: BRANCH is '$STATE_BRANCH' but the checked-out branch is '$actual_branch'"
         fi
+        # WT_PATH pins the sidecar to this worktree so a complete, internally
+        # valid sidecar cut for another worktree can't be transplanted here
+        # (which would silently swap in that cut's stacked/parent fields).
+        # Compare canonicalized paths — trailing slashes and relative
+        # spellings of the same directory are the same worktree.
+        local canon_path canon_state_path
+        canon_path="$(cd "$path" && pwd -P)"
+        canon_state_path="$(cd "$STATE_WT_PATH" 2>/dev/null && pwd -P || printf '%s' "$STATE_WT_PATH")"
+        if [ "$canon_state_path" != "$canon_path" ]; then
+            die 11 "state file for $path does not match the verified worktree: WT_PATH is '$STATE_WT_PATH' but the worktree being verified is '$canon_path'"
+        fi
         if [ -z "$base_override" ] && [ "$STATE_RESOLVED_BASE" != "$effective_base" ]; then
             die 11 "state file for $path does not match git ground truth: RESOLVED_BASE is '$STATE_RESOLVED_BASE' but the resolved workflow base is '$effective_base'"
         fi
@@ -422,8 +451,15 @@ $dirty"
         parent_to_check="$parent_branch"
     fi
 
+    # The staleness marker must live in the stdout PASS line, not only the
+    # stderr warning: callers (ledger.sh) record stdout evidence on success
+    # and discard stderr, so a stale pass must be visibly stale in evidence.
     local base_label="$effective_base"
-    [ -z "$base_override" ] || base_label="caller-supplied base $base_override"
+    if [ -n "$base_override" ]; then
+        base_label="caller-supplied base $base_override"
+    elif [ "${STALE_BASE:-false}" = "true" ]; then
+        base_label="$effective_base (possibly stale: fetch failed)"
+    fi
 
     if [ -n "$parent_to_check" ]; then
         if ! git -C "$path" merge-base --is-ancestor "$parent_to_check" HEAD 2>/dev/null; then
