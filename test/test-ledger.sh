@@ -8,12 +8,17 @@ set -uo pipefail
 #   - `--attest lanes=` accepts comma-separated lane=path pairs (explicit
 #     lane->file mapping), overriding the /tmp/<lane>-review.md default so
 #     tests stay inside the sandbox.
-#   - Model ordering for floors: haiku < sonnet < opus.
-#   - A stamp's own `chore(ledger):` snapshot commit does not make that stamp
-#     stale; any non-ledger commit after the stamp does.
+#   - Model ordering for floors: haiku < sonnet < opus < fable; real model ids
+#     rank by family substring (R1 MF3).
+#   - A stamp's own snapshot commit does not make that stamp stale; the
+#     exemption is verified by commit CONTENTS (touches only the snapshot
+#     file), never by subject — a chore(ledger)-titled code commit is STALE
+#     (R1 MF1, D-006 #4 content-verified refinement).
 #   - `stamp finalize --gate-type <gate_type>` selects the gate type
 #     (default reviewer-validation); non-reviewer types require --human.
-#   - Absent pr_number attestation on finalize => forge checks skipped (no_pr).
+#   - Finalize resolves the branch PR via forge pr-for-branch itself; no_pr
+#     only when the lookup finds nothing. Mock forge answers require
+#     LEDGER_ALLOW_FORGE_MOCK=1 or the stamp refuses (R1 MF5/MF6).
 #   - ci-commands.yaml is a top-level YAML list of command strings.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -509,6 +514,15 @@ run_ledger "$wt1" verify-local
 assert_status "verify-local passes in worktree" 0 "$STATUS"
 
 # --- finalize gate ---
+# Finalize now resolves the branch PR via forge itself (R1 MF5); the fixture
+# has a file-path origin (detects as forgejo), so provide a mock lookup
+# answering "none" and the test sentinel that permits mock in stamps.
+FORGE_MOCK_DIR="$TMPDIR_BASE/review_gate/forge-mock"
+mkdir -p "$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature"
+printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature/review_gate"
+export FORGE_MOCK_DIR
+export LEDGER_ALLOW_FORGE_MOCK=1
+
 echo "scratch" >"$wt1/scratch.tmp"
 run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
@@ -535,6 +549,31 @@ assert_contains "stale finalize says STALE" "$OUT" "STALE"
 run_ledger "$wt1" stamp finalize --gate-type maintainer-decision --human \
     --attest post_mortem=docs/pm.md --attest describe_pr=done
 assert_status_not "--human path is accepted (never exit 8)" 8 "$STATUS"
+
+# R1 MF1 negative test: a code commit with a spoofed ledger subject must NOT
+# count as fresh — the exemption is content-verified, not subject-verified.
+# Re-establish the full fresh chain at current HEAD first.
+run_ledger "$wt1" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$lane1"
+assert_status "review re-stamp at current HEAD exits 0" 0 "$STATUS"
+run_ledger "$wt1" verify-local
+assert_status "verify-local re-run at current HEAD exits 0" 0 "$STATUS"
+run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize re-stamp for spoof test exits 0" 0 "$STATUS"
+echo "sneak" >>"$wt1/src/app.py"
+commit_all "$wt1" "chore(ledger): sneaky non-snapshot commit"
+run_ledger "$wt1" check finalize
+assert_status "chore(ledger)-titled code commit is NOT exempt" 1 "$STATUS"
+assert_contains "subject-spoofed commit reads STALE" "$OUT" "STALE"
+
+# Mock refusal without the sentinel (R1 MF6): same env minus the allowance.
+unset LEDGER_ALLOW_FORGE_MOCK
+run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "stamp finalize refuses mock forge without sentinel" 2 "$STATUS"
+assert_contains "mock refusal names FORGE_MOCK_DIR" "$OUT" "FORGE_MOCK_DIR"
+export LEDGER_ALLOW_FORGE_MOCK=1
 
 run_ledger "$wt1" close
 assert_status "close exits 0" 0 "$STATUS"
