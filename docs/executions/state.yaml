@@ -3,25 +3,32 @@ workflow: workflow-skill
 kind: skill
 budget: one-reviewer
 status: active
-next: scope
-updated: '2026-08-18T21:58:42.284840+00:00'
+next: review
+updated: '2026-08-18T22:17:32.182433+00:00'
 steps:
 - id: scope
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "SB-102/SB-103 approved BUILD in docs/executions/plans/2026-08-18-corpus-optimization-audit.md\
+    \ \xA74; specs in reflections 2026-08-04-airflow-resilience-evidence.md + 2026-08-11-3mf-multicolor-slicer-compatibility.md;\
+    \ targets dotfiles/.config/agents/skills/{airflow-failure-rca,external-tool-compatibility}/SKILL.md"
 - id: author
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'airflow-failure-rca/SKILL.md (76 lines) + external-tool-compatibility/SKILL.md
+    (59 lines) drafted per write-a-skill; frontmatter parses (yaml.safe_load OK);
+    Contract 5-field sections present; layer: judgment both'
 - id: eval-gate
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'skill-evaluator skipped per workflow-skill Step 3 predicate: both are
+    judgment-layer skills (type not eval-bearing); lint-skill-refs dangling=0, lint-skill-suite
+    failures=0, run-tests all suites 0 failed'
 - id: land
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'commits c06aef9 329ec4d pushed to feat/skills-airflow-rca-tool-compat;
+    PR #166 open; backlog rows SB-102/SB-103 -> implemented citing PR #166'
 - id: review
   required: true
   status: pending
@@ -30,5 +37,27 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: b864806316f5699bb3ebc52c1dd2e647108b12d6
+    timestamp: '2026-08-18T22:17:32.182241+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: fcf51366f94bf56960ca715b9f34ff835e771298f4d0ddf320614710216b201a
+      lane_integrated_lines: '93'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: opus
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      review_profile: fast
+      verdict: APPROVE
+      lanes: integrated=/private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-skills-workflows-deterministic-fa06ac/31fa3bf8-d87d-415c-b40f-b1585445ec8b/scratchpad/integrated-review.md
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: e62139900e41caf50cf577d142ccd75235c6136f
