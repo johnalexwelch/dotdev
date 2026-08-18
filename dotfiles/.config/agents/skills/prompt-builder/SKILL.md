@@ -20,8 +20,8 @@ Human gates: ambiguous behavior, scope, security, data, UX, or acceptance criter
 
 ## Soft Context
 
-Typical workflows: pre-dispatch (before run-backlog, workflow-build-one, or manual Codex task), handoff prep
-Pairs well with: triage (runs after triage labels issues ready-for-agent), run-backlog (calls prompt-builder per issue), handoff (prompt-builder generates prompts for suggested next-session work), workflow-build-one (can consume the generated prompt)
+Typical workflows: pre-dispatch (before run-backlog, workflow-deliver, or manual Codex task), handoff prep
+Pairs well with: triage (runs after triage labels issues ready-for-agent), run-backlog (calls prompt-builder per issue), handoff (prompt-builder generates prompts for suggested next-session work), workflow-deliver (can consume the generated prompt)
 
 ## Process
 
@@ -54,7 +54,7 @@ Based on issue labels and content:
 
 | Signal | Strategy |
 |--------|----------|
-| Label: `bug` | Use workflow-debug (diagnosis-first) with strict-tdd profile |
+| Label: `bug` | Use workflow-deliver with `kind=bug` (kernel-inserted diagnose/fix steps) and TDD-first implementation (`tdd/SKILL.md`) |
 | Label: `security` | Flag for human review gate; do not auto-merge |
 | Label: `needs-human-review` or explicit gate | Check gate type (see `_docs/human-gate-taxonomy.md`): maintainer/operator (types 1–3) requires `ready-for-human`; reviewer-validation (type 4) allows AFK with `needs-human-review` + validation steps in `workflow-finalize` |
 | Label: `frontend` | Include user-journey-qa step |
@@ -83,7 +83,7 @@ Structure the output as:
 ## Skill to invoke
 
 [Which workflow/skill to use and why]
-Example: `workflow-build-one` — this is a ready-for-agent issue with clear acceptance criteria.
+Example: `workflow-deliver` (kind=feature) — this is a ready-for-agent issue with clear acceptance criteria.
 
 ## Files to read first
 
@@ -204,7 +204,7 @@ Output must include:
 - task summary
 - issue URL/title
 - acceptance criteria
-- workflow: `workflow-build-one`
+- workflow: `workflow-deliver` (with the child's kind)
 - files to read first
 - related parent/child work
 - dependencies

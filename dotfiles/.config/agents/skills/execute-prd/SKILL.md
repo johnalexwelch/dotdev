@@ -32,7 +32,7 @@ Human gates: blocked children halt (with auto-handoff); not-AFK-safe children ha
 ## Soft Context
 
 Typical workflows: after workflow-feature produces a PRD + triaged issues, or when pointed at an existing PRD
-Pairs well with: workflow-feature (produces PRDs this executes), workflow-build-one (executes individual children), prompt-builder (generates child briefs), reconcile-issues (post-child reconciliation), handoff (auto-invoked at exit)
+Pairs well with: workflow-feature (produces PRDs this executes), workflow-deliver (executes individual children with kind), prompt-builder (generates child briefs), reconcile-issues (post-child reconciliation), handoff (auto-invoked at exit)
 
 ## Parameters
 
@@ -147,10 +147,10 @@ For each child (parallel within a wave, sequential across waves):
    ```
 
 3. **Record worktree baseline evidence**: `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch_prefix>/<issue-number>-<child-slug> @ ../worktrees/<issue-number>-<slug>`
-4. **Execute**: Load and run `workflow-build-one/SKILL.md` for the child. Its chain, as a map for the reader:
+4. **Execute**: Load and run `workflow-deliver/SKILL.md` for the child, passing its `kind` (`bug` for bug/regression children, else `feature`/`skill`/`docs`). Bug children MUST carry `kind=bug` — `ledger.sh init --kind bug` inserts the required diagnose/fix steps (D-006 #11). Its chain, as a map for the reader:
 
    ```
-   preflight → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
+   preflight → [diagnose iff kind=bug] → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize
    ```
 
 5. **Enforce the workflow-review gate** — the child may not proceed to `workflow-finalize`, PR creation, CI monitoring, reconcile, or clean handoff unless `workflow-review` emitted a complete `WORKFLOW_REVIEW_GATE` block with `review_profile`, `independent_review: true`, and `verdict: APPROVE`. Do not substitute green CI, GitHub reviews, Claude Code Review, Bugbot, Codex review, resolved PR comments, or prose claims that review happened.
@@ -230,7 +230,7 @@ Before any exit, enforce the Partial-Completion Contract for every child worktre
 
 | Scenario | Use |
 |----------|-----|
-| One ready issue, implement it | `workflow-build-one` |
+| One ready issue, implement it | `workflow-deliver` |
 | Batch of independent ready issues | `run-backlog` |
 | Parent PRD with dependent ordered children | **execute-prd** (this skill) |
 | Vague idea, needs definition first | `workflow-feature` → then `execute-prd` |

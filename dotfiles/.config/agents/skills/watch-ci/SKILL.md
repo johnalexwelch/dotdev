@@ -238,6 +238,6 @@ Use the chat summary format in `references/outcome-file-template.md`: one-senten
 ## Pairing
 
 Typical workflows: `workflow-finalize` after draft PR creation and review-comment handling, before repo-policy-controlled final action.
-Pairs well with: `workflow-finalize`, `receive-review`, `setup-worktree`, `workflow-debug`.
+Pairs well with: `workflow-finalize`, `receive-review`, `setup-worktree`, `workflow-deliver` (kind=bug).
 
 For examples and larger workflow context, load `references/examples.md`.

@@ -15,8 +15,8 @@ Human gates: ambiguous intents that cannot be resolved by reading commit message
 
 ## Context
 
-Typical workflows: standalone (pre-PR, post-rebase), workflow-build-one (conflict during feature branch sync)
-Pairs well with: tdd, workflow-review, workflow-build-one, workflow-finalize
+Typical workflows: standalone (pre-PR, post-rebase), workflow-deliver (conflict during feature branch sync)
+Pairs well with: tdd, workflow-review, workflow-deliver, workflow-finalize
 
 # Resolving Merge Conflicts
 

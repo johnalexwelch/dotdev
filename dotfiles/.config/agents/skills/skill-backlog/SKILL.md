@@ -10,7 +10,7 @@ codex-compatible: true
 
 The consumer that closes the loop `session-insight` opens. Each session drops improvement proposals and skill-extraction candidates into `~/dotdev/docs/executions/reflections/`; those pile up and no single session can see that the *same* friction recurred four times. This skill reads the whole pile, so **cross-session frequency of a failure mode** — the signal no producer has — becomes the primary prioritizer.
 
-It plans and stops at approval, then hands each approved item to `workflow-skill` for implementation (the same seam as `workflow-feature` → `workflow-build-one`). It never edits a skill itself.
+It plans and stops at approval, then hands each approved item to `workflow-skill` for implementation (the same seam as `workflow-feature` → `workflow-deliver`). It never edits a skill itself.
 
 ## When to invoke
 
@@ -107,7 +107,7 @@ Completion criterion: user selected items (possibly none).
 
 Per approved item, Load and run `workflow-skill/SKILL.md` with the scoped change and harvested evidence. Process independently; rejected/deferred items are not dispatched.
 
-**Resolve each item's *actual* target file before dispatching, and bundle same-file edits into one dispatch.** The ledger's "owning skill" is the *nominal* owner, which is not always where the change lands — a skill often delegates a gate to another (observed 2026-07-24: a `workflow-build-one` CI-parity item actually landed in `workflow-finalize`, because build-one delegates its finalize gate there). Two dispatches editing the same `SKILL.md` on independent branches force an avoidable rebase. Follow the delegation/reference chain to the file that will actually change, group approved items by that file, and dispatch one `workflow-skill` run per file.
+**Resolve each item's *actual* target file before dispatching, and bundle same-file edits into one dispatch.** The ledger's "owning skill" is the *nominal* owner, which is not always where the change lands — a skill often delegates a gate to another (observed 2026-07-24: a CI-parity item nominally owned by the delivery orchestrator — then `workflow-build-one`, now `workflow-deliver` — actually landed in `workflow-finalize`, because delivery delegates its finalize gate there). Two dispatches editing the same `SKILL.md` on independent branches force an avoidable rebase. Follow the delegation/reference chain to the file that will actually change, group approved items by that file, and dispatch one `workflow-skill` run per file.
 
 Completion criterion: every approved item dispatched (grouped by actual target file); `workflow-skill` result captured.
 

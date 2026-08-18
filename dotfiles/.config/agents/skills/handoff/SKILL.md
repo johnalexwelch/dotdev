@@ -44,12 +44,12 @@ The auto-handoff is silent — it writes the file and reports the path without c
 
 | Exit condition | Workflow(s) | What goes in the handoff |
 |---------------|-------------|--------------------------|
-| Halted: review needs human | workflow-build-one, workflow-debug | Review findings, file paths, what the reviewer flagged |
-| Halted: issue unclear | workflow-build-one | What's ambiguous, what question to ask |
+| Halted: review needs human | workflow-deliver | Review findings, file paths, what the reviewer flagged |
+| Halted: issue unclear | workflow-deliver | What's ambiguous, what question to ask |
 | Halted: CI exhaustion (3 attempts) | workflow-finalize, watch-ci | CI logs, what was tried, diagnosis hint |
-| Halted: needs-human diagnosis | workflow-debug | Diagnosis artifact path, reproduction steps |
-| Halted: architecture-review needed | workflow-debug | Diagnosis findings, why it's architectural |
-| Halted: unsafe-for-afk | workflow-debug | What makes it unsafe, what a human should verify |
+| Halted: needs-human diagnosis | workflow-deliver (kind=bug) | Diagnosis artifact path, reproduction steps |
+| Halted: architecture-review needed | workflow-deliver (kind=bug) | Diagnosis findings, why it's architectural |
+| Halted: unsafe-for-afk | workflow-deliver (kind=bug) | What makes it unsafe, what a human should verify |
 | Completed with follow-ups | workflow-finalize | NEW-NN findings, follow-up issues created |
 | Backlog run finished | run-backlog | Summary of results, failed issues, remaining queue |
 | Codex task done | any (via prompt-builder) | What was done, PR link, anything that needs human review |
@@ -181,7 +181,7 @@ decision is needed, not just "needs human".]
 
 [Ordered list of what the next session should do.]
 1. Resolve blocker on PR #142 (human decision needed first)
-2. workflow-build-one on issue #18
+2. workflow-deliver on issue #18
 3. watch-ci on PR #143
 
 ## Ready-to-use prompts
@@ -196,7 +196,7 @@ prompt-builder output ready for copy-paste into Claude or Codex.]
 ## Suggested skills
 
 [Skills the next session should consider invoking, given what remains.]
-- `workflow-debug` — PR #143 CI failure needs diagnosis
+- `workflow-deliver` (kind=bug) — PR #143 CI failure needs diagnosis
 - `receive-review` — PR #142 has unresolved review comments
 
 ## Files to read first

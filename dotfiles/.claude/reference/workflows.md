@@ -30,7 +30,7 @@ For all product / feature / delivery work:
 /triage                 ← move each issue through the triage state machine
         │
         ▼
-/workflow-build-one     ← implement one ready issue end-to-end (dispatches executor)
+/workflow-deliver       ← implement one ready issue end-to-end (kind from router; dispatches executor)
    (or /execute-prd     for a parent PRD tree;
        /run-backlog     for AFK batch processing)
         │
@@ -62,7 +62,7 @@ For all product / feature / delivery work:
 |------------------------|------------------------|
 | `/repo-audit` as a default loop entry | `/repo-audit` only as evidence input for `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` — never as a standalone loop |
 | `/design-plan` as the default for refactors | `/design-plan` only for refactor-scale phase plans that cannot be expressed as vertical-slice issues; otherwise go through `/to-prd → /to-issues` |
-| `/execute-phase` for issue work | `/workflow-build-one` per issue (or `/execute-prd` for a PRD tree, `/run-backlog` for batch) |
+| `/execute-phase` for issue work | `/workflow-deliver` per issue (or `/execute-prd` for a PRD tree, `/run-backlog` for batch) |
 | Standalone `/review` as a code-review gate | `/workflow-review` (multi-lane subagent dispatch) |
 | Standalone `/post-mortem` as a separate retro pass | Post-mortem invoked **inside** `/workflow-finalize` Step 0.5 when the work was audit-derived or generated `NEW-NN` findings |
 | Standalone `/describe-pr` to write a PR body | `/describe-pr` invoked **inside** `/workflow-finalize` Step 1; never run free-standing |
@@ -76,7 +76,7 @@ These cover work that doesn't fit the canonical loop and have their own routing 
 
 | Task type | Route | Notes |
 |-----------|-------|-------|
-| Bug fix | `/workflow-debug` (which begins with `superpowers:systematic-debugging`) | Bugs ALWAYS go through diagnose-first; never `workflow-build-one` |
+| Bug fix | `/workflow-deliver` with `kind=bug` | Diagnose-first is kernel-enforced: `ledger.sh init --kind bug` inserts required diagnose/fix steps and refuses `stamp fix` without a red repro (D-006 #11) |
 | V1 product idea grilling | `/grill-with-docs` (V1 discovery mode) → produces `V1_IDEA_BRIEF` | Pre-PRD shaping |
 | V1 technical system design | `/v1-system-design` (after the V1 grill) | Pre-implementation architecture |
 | Product/engineering roadmap | `/workflow-roadmap` | Multi-area sequencing; usually fed by `/repo-audit` |
@@ -102,7 +102,7 @@ These cover work that doesn't fit the canonical loop and have their own routing 
 
 Three distinct subagent contexts, no overlap:
 
-1. **Executor** (writes code) — dispatched by `workflow-build-one` or other implementation skills. Never reviews its own output.
+1. **Executor** (writes code) — dispatched by `workflow-deliver` or other implementation skills. Never reviews its own output.
 2. **Reviewer** (evaluates code) — dispatched by `workflow-review` as multiple parallel lanes (`security-reviewer`, `code-reviewer`, `test-engineer`, etc.). Fresh subagent per round. Never reviews their own prior review.
 3. **Post-mortem** (writes the retro) — dispatched inside `workflow-finalize` Step 0.5 when audit-derived or NEW-NN findings exist. Reads the plan, phase-run outcomes, and git range; writes `docs/executions/<date>-post-mortem.md`. The PR body (Step 1, `describe-pr`) then cites the retro.
 
@@ -114,7 +114,7 @@ OMC (oh-my-claudecode) is the **runtime** — it provides agent dispatch, model 
 
 Skills are the **curriculum** — they define *what* to do, while OMC provides *how* to execute it.
 
-- `team-exec` (OMC pipeline stage) executes `workflow-build-one`.
+- `team-exec` (OMC pipeline stage) executes `workflow-deliver`.
 - `team-verify` (OMC pipeline stage) executes `workflow-review`.
 - OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass `workflow-router`'s classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, and `WORKFLOW_FINALIZE_GATE`. The gates are non-negotiable regardless of dispatch path.
 - When OMC and a skill overlap: OMC provides the mechanics, the skill provides the domain logic. Example: `code-reviewer` is the OMC subagent type, dispatched BY `workflow-review` the skill.
@@ -131,7 +131,7 @@ Every transition through the canonical loop emits a progress board so the workfl
 ✅ /to-prd             → PRD #<N> published
 ⏭️ /to-issues          ← decomposing into <N> vertical-slice ready-for-agent issues
    /triage             → move each issue through the triage state machine
-   /workflow-build-one → implement one ready issue end-to-end
+   /workflow-deliver   → implement one ready issue end-to-end
    /workflow-review    → multi-lane subagent dispatch (fresh per round)
    /workflow-finalize  → describe-pr → CI → reconcile → final action
 ```
@@ -145,7 +145,7 @@ Every transition through the canonical loop emits a progress board so the workfl
   - **Before** invoking the next skill (active = next skill, with `← <what it'll do>`)
   - **After** completing a step (flip the active marker to `✅ <skill> → <outcome>`)
 - One board per transition. Don't spam multiple in a row; combine into a single rendering.
-- Substitute the alternative implementation skill (`/execute-prd` for PRD trees; `/run-backlog` for AFK batches; `/workflow-debug` for bugs) when the route diverges from `/workflow-build-one`.
+- Substitute the alternative implementation skill (`/execute-prd` for PRD trees; `/run-backlog` for AFK batches) when the route diverges; a bug stays `/workflow-deliver` with `kind=bug` — same skill, different kind.
 - Gate evidence (`WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, `WORKFLOW_FINALIZE_GATE`) is the verbose audit trail. The Loop Progress Board is the at-a-glance dashboard. Both are required.
 
 The owning agent (the main session orchestrating the loop) emits the board — not the skill itself. The agent has the state; the skill has the work.
@@ -154,9 +154,9 @@ The owning agent (the main session orchestrating the loop) emits the board — n
 
 - **Don't know where to start?** → `/workflow-router`
 - **Have a vague idea?** → `/workflow-router` → it'll route to `/workflow-feature` or `/v1-workflow`
-- **Have a clear `ready-for-agent` issue?** → `/workflow-router` → `/workflow-build-one`
+- **Have a clear `ready-for-agent` issue?** → `/workflow-router` → `/workflow-deliver` (kind=feature)
 - **Have a parent PRD with children?** → `/workflow-router` → `/execute-prd`
-- **Have a bug?** → `/workflow-router` → `/workflow-debug`
+- **Have a bug?** → `/workflow-router` → `/workflow-deliver` (kind=bug)
 - **Implementation done, need review?** → `/workflow-review`
 - **Review passed, need to ship?** → `/workflow-finalize`
 - **Someone says "do the audit loop"?** → translate per the table above, then route via `/workflow-router`
