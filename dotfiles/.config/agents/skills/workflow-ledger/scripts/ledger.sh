@@ -941,6 +941,9 @@ cmd_init() {
     done
     [ -n "$workflow" ] && [ -n "$kind" ] && [ -n "$steps" ] || usage
     py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" || exit $?
+    # Ground-truth anchors for reconcile (batch #6): where the run lives.
+    py set_meta branch "$(git -C "$TOP" branch --show-current 2>/dev/null)" || exit $?
+    py set_meta worktree "$TOP" || exit $?
     commit_snapshot init "$run_id"
     echo "initialized run $run_id ($kind via $workflow); live state: $LIVE"
 }
@@ -1067,10 +1070,13 @@ cmd_reconcile() {
         esac
     done
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
-    local last head drift next_step branch
+    local last head drift next_step branch rec_branch rec_wt next truth=""
     last="$(py get last_seen_sha)" || exit $?
     head="$(git -C "$TOP" rev-parse HEAD)"
     branch="$(git -C "$TOP" branch --show-current 2>/dev/null)"
+    rec_branch="$(py get branch)" || exit $?
+    rec_wt="$(py get worktree)" || exit $?
+    next="$(py get next)" || exit $?
     drift=""
     if [ -n "$last" ] && git -C "$TOP" cat-file -e "${last}^{commit}" 2>/dev/null; then
         # Content-verified: a commit is ledger-internal only if it touches
@@ -1085,16 +1091,41 @@ cmd_reconcile() {
         done <<<"$(git -C "$TOP" log --format=%H "${last}..HEAD" 2>/dev/null)"
         drift="${drift%$'\n'}"
     fi
+    # Ground-truth comparisons (batch #6): the run's recorded branch and
+    # worktree must still be where the run actually lives. Runs initialized
+    # before these fields existed ("" recorded) skip the comparison.
+    if [ -n "$rec_branch" ] && [ "$rec_branch" != "$branch" ]; then
+        if git -C "$TOP" show-ref --verify --quiet "refs/heads/$rec_branch"; then
+            truth="${truth}branch: run recorded '$rec_branch' but HEAD is on '${branch:-detached}'"$'\n'
+        else
+            truth="${truth}branch: run recorded '$rec_branch' which no longer exists (HEAD is on '${branch:-detached}')"$'\n'
+        fi
+    fi
+    if [ -n "$rec_wt" ] && [ "$rec_wt" != "$TOP" ]; then
+        truth="${truth}worktree: run recorded '$rec_wt' but is running in '$TOP'"$'\n'
+    fi
+    truth="${truth%$'\n'}"
     if [ "$apply" -eq 1 ]; then
         next_step="$(py reconcile_apply)" || exit $?
         py set_meta last_seen_sha "$head" || exit $?
-        echo "reconciled: next='${next_step}' last_seen_sha=$head branch=${branch:-detached}"
+        py set_meta branch "$branch" || exit $?
+        py set_meta worktree "$TOP" || exit $?
+        echo "reconciled: next='${next_step}' last_seen_sha=$head branch=${branch:-detached} worktree=$TOP"
         return 0
     fi
-    if [ -n "$drift" ]; then
-        echo "DRIFT: commits outside the ledger since $last:"
-        echo "$drift"
-        echo "true frontier: HEAD=$head branch=${branch:-detached}; run 'ledger.sh reconcile --apply' to adopt"
+    if [ -n "$drift" ] || [ -n "$truth" ]; then
+        echo "DRIFT:"
+        if [ -n "$truth" ]; then
+            echo "$truth"
+        fi
+        if [ -n "$drift" ]; then
+            echo "commits outside the ledger since $last:"
+            echo "$drift"
+            if [ -n "$next" ]; then
+                echo "step '$next' is still pending while those commits exist"
+            fi
+        fi
+        echo "true frontier: HEAD=$head branch=${branch:-detached} worktree=$TOP; run 'ledger.sh reconcile --apply' to adopt"
         exit 1
     fi
     echo "clean: ledger frontier matches git (HEAD=$head branch=${branch:-detached})"
