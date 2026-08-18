@@ -2,9 +2,9 @@ run_id: 2026-08-18-corpus-sharpen-batch1
 workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
-status: active
-next: finalize
-updated: '2026-08-18T22:26:27.963007+00:00'
+status: done
+next: ''
+updated: '2026-08-18T22:26:28.415830+00:00'
 steps:
 - id: implement
   required: true
@@ -20,8 +20,9 @@ steps:
     as PR-body follow-ups; lane red-verified hook test against pre-fix command'
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'finalize stamped; PR #167 open (do-not-merge per batch plan); verify-local
+    PASS @ 396a9d3; full eval 43/44=97% PASS'
 stamps:
   review:
     head_sha: b9c2c19aab974141568f99539b9d278b15441ee6
@@ -65,7 +66,7 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
+last_seen_sha: b28e52c2e7edf6280bd95098d4ff05e123d17524
 verify_local:
   head_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
   passed: true
