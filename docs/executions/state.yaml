@@ -4,7 +4,7 @@ kind: bug
 budget: one-reviewer
 status: active
 next: finalize
-updated: '2026-08-18T19:36:58.426262+00:00'
+updated: '2026-08-18T19:38:56.330219+00:00'
 steps:
 - id: diagnose
   required: true
@@ -39,7 +39,7 @@ steps:
     intentional) accepted as documented
 - id: finalize
   required: true
-  status: pending
+  status: active
   evidence: ''
 stamps:
   review:
@@ -63,5 +63,34 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 965304a9da04be962860cd9ec1db27817bb7044b
+    timestamp: '2026-08-18T19:38:56.330038+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '162'
+      describe_pr: PR body carries summary, test plan, breaking-changes per repo convention
+      post_mortem: 'root cause + forcing incident documented in PR #162 body and commit
+        b2f7527 message; original failure was the audited override on run 2026-08-18-phase1-router
+        (PR #161)'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: 725b922346eb141f034df17e9113aec9ed834e38
+last_seen_sha: 965304a9da04be962860cd9ec1db27817bb7044b
+verify_local:
+  head_sha: 965304a9da04be962860cd9ec1db27817bb7044b
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
