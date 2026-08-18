@@ -1,7 +1,7 @@
 ---
 name: dbt-project-evaluator
 model: sonnet
-description: 'Checks a dbt project against the dbt-labs dbt_project_evaluator rules and produces a categorized, actionable findings report — by default evaluated locally from manifest.json (fast, no warehouse) and scoped to the models touched by the current change plus their upstream/downstream lineage; full-project or warehouse package runs on explicit request. Covers staging/marts layering violations, direct joins to source, rejoined upstream concepts, fanout, undocumented or untested models, naming convention breaks, unused sources. Use when checking a dbt project structure or conventions, evaluating changed dbt models against best practices, auditing dbt project health, or the user asks to run, install, or interpret dbt_project_evaluator.'
+description: 'Checks whole-project dbt structure and conventions against the dbt-labs dbt_project_evaluator rules — a project-level layout audit, not a per-model correctness review (that is sql-review) — and produces a categorized, actionable findings report; by default evaluated locally from manifest.json (fast, no warehouse) and scoped to the models touched by the current change plus their upstream/downstream lineage; full-project or warehouse package runs on explicit request. Covers staging/marts layering violations, direct joins to source, rejoined upstream concepts, fanout, undocumented or untested models, naming convention breaks, unused sources. Use when checking a dbt project structure or conventions, evaluating changed dbt models against best practices, auditing dbt project health, or the user asks to run, install, or interpret dbt_project_evaluator.'
 ---
 
 # dbt Project Evaluator

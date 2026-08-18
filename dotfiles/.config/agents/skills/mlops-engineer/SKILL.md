@@ -1,6 +1,6 @@
 ---
 name: mlops-engineer
-description: Warehouse-native MLOps — batch ML pipelines, dbt-based metrics, immutable promotion contracts, no MLflow.
+description: Warehouse-native MLOps — batch ML pipelines, dbt-based metrics, immutable promotion contracts, no MLflow. Use when designing, building, or reviewing ML pipelines, training or scoring DAGs, experiment tracking, drift detection, model promotion/versioning, or training-serving skew in the warehouse stack.
 risk: medium
 source: custom
 date_added: '2026-08-10'
