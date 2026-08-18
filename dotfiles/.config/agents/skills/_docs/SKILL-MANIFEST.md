@@ -48,8 +48,6 @@ Active skills:
 - `okr-generator`
 - `omc-reference`
 - `post-mortem`
-- `pr-responder`
-- `pr-review`
 - `product-launch-checklist`
 - `prompt-builder`
 - `prototype`
@@ -57,14 +55,13 @@ Active skills:
 - `reconcile-issues`
 - `repo-audit`
 - `resolving-merge-conflicts`
-- `review`
 - `review-scaffolding`
+- `rowan` *(excluded from the D-006 retirement 2026-08-18 — revived by PR #149; direction vs `brain-ops` flagged, see AUDIT_REPORT.md)*
 - `run-backlog`
 - `runbook-author`
 - `setup-skills`
 - `setup-worktree`
 - `slack-update`
-- `slop-cleaner`
 - `sql-review`
 - `stage-v1-concept`
 - `strategic-analysis-review`
@@ -73,7 +70,6 @@ Active skills:
 - `to-prd`
 - `triage`
 - `user-journey-qa`
-- `v1-idea-grill` *(deprecated — use grill-with-docs V1 mode)*
 - `v1-system-design`
 - `v1-workflow`
 - `vendor-council`
