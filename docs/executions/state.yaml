@@ -3,20 +3,63 @@ workflow: workflow-skill
 kind: skill
 budget: one-reviewer
 status: active
-next: implement
-updated: '2026-08-18T21:55:26.382779+00:00'
+next: review
+updated: '2026-08-18T22:30:55.444031+00:00'
 steps:
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: '26 files, 69 ins/68 del: all in-scope callers rewired build-one/debug->workflow-deliver
+    (kind mapping); gates: lint-skill-refs 0 dangling, lint-skill-suite failures=0,
+    run-tests all suites 0 failed, routing-eval --dry-run OK; tdd: not_applicable_with_reason:
+    prose/doc caller rewires, no executable behavior change'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: dispatching workflow-review
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: ee7ef1f8ebaeb19ea8ac4692ec5ba2cd8312534c
+    timestamp: '2026-08-18T22:30:55.443869+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: b10f5951a777f9356410dba22db3e7ba58185ed2275a7119010da7f3ebee5db4
+      lane_security_lines: '40'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5[1m]
+      lane_logic_sha256: 5f16450f2caa248ae66366e484cb0a55b8ebff7f04fdd2cf91e8060d5d592e16
+      lane_logic_lines: '117'
+      lane_logic_verdict: REQUEST CHANGES
+      lane_logic_model: claude-opus-5[1m]
+      lane_tests_sha256: 2233f8c6759829d51832c5204cbe672c6836031ff9567c61cef9db1060312b6c
+      lane_tests_lines: '49'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-5[1m]
+      lane_style_sha256: 81759f06d2200c7d2658553cbea2bbc7b7297a1dd19ab8585b787bcef7774617
+      lane_style_lines: '42'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5[1m]
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      review_profile: full
+      lanes: security=/private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-skills-workflows-deterministic-fa06ac/31fa3bf8-d87d-415c-b40f-b1585445ec8b/scratchpad/security-review.md,logic=/private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-skills-workflows-deterministic-fa06ac/31fa3bf8-d87d-415c-b40f-b1585445ec8b/scratchpad/logic-review-r2.md,tests=/private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-skills-workflows-deterministic-fa06ac/31fa3bf8-d87d-415c-b40f-b1585445ec8b/scratchpad/tests-review.md,style=/private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-skills-workflows-deterministic-fa06ac/31fa3bf8-d87d-415c-b40f-b1585445ec8b/scratchpad/style-review.md
+      model_used: claude-opus-5[1m]
+      synthesis: 'security APPROVE; tests APPROVE; style APPROVE (4 should-fix applied);
+        logic r1 REQUEST CHANGES fixed; logic r2 REQUEST CHANGES (Medium: strict-tdd
+        token re-opened D-006 #11 drop) fixed post-review per the lane''s own prescription
+        (tdd/SKILL.md ref; decision log wins over style-lane token ask); r2 Low+Info
+        prescriptions also applied'
+      fixed_post_review: logic r2 Medium at prompt-builder:57, one-line ADR-conformance
+        fix, no further round per coordinator
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: 711bc9a9ea825e53dc9ac608cf8107f0e52aaa7d
