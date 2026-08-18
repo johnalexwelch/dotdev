@@ -75,6 +75,7 @@ contract_has_field() {
 
 needs_ledger() {
     case "$1" in
+        workflow-ledger) return 1 ;; # kernel library, not an orchestrator (D-006 #12)
         workflow-* | run-backlog | watch-ci | execute-prd | execute-phase) return 0 ;;
         *) return 1 ;;
     esac
