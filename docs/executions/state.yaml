@@ -3,8 +3,8 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 status: active
-next: review
-updated: '2026-08-18T22:17:33.807287+00:00'
+next: finalize
+updated: '2026-08-18T22:26:27.963007+00:00'
 steps:
 - id: implement
   required: true
@@ -14,8 +14,10 @@ steps:
     lint-suite failures=0; routing-eval --dry-run 44 cases OK
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'fast profile (floor: fast); integrated lane APPROVE (claude-fable-5,
+    /tmp/integrated-review.md): 0 blocker/major, M1+N2 folded @ b9c2c19, N3/N4 noted
+    as PR-body follow-ups; lane red-verified hook test against pre-fix command'
 - id: finalize
   required: true
   status: pending
@@ -42,5 +44,35 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
+    timestamp: '2026-08-18T22:26:27.962847+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '167'
+      describe_pr: "corpus sharpen batch 1: 5 description sharpens (audit \xA75),\
+        \ +4 golden seam cases, blank-log-line hook fix, audit doc committed"
+      post_mortem: 'clean run; one rebase mid-flight onto PR #165 golden migration
+        which converted the pre-existing 3-case eval failure into 43/44=97% PASS;
+        review M1+N2 folded same-session'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: a4ba46956108c02376da8f8a039560e9ecdf5b6b
+last_seen_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
+verify_local:
+  head_sha: 396a9d38c9be0fdd48ba4c4b09acb7a59e0dd99f
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
