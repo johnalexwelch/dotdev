@@ -1,0 +1,22 @@
+run_id: 2026-08-18-phase1-router
+workflow: workflow-build-one
+kind: skill
+budget: one-reviewer
+status: active
+next: implement
+updated: '2026-08-18T18:14:49.814688+00:00'
+steps:
+- id: implement
+  required: true
+  status: pending
+  evidence: ''
+- id: review
+  required: true
+  status: pending
+  evidence: ''
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps: {}
+overrides: []
