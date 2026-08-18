@@ -1,5 +1,6 @@
 ---
 name: triage
+layer: orchestrator
 model: sonnet
 reasoning: high
 description: Triage issues, and — when enabled — external PRs, through a state machine driven by triage roles. Runs a redundancy check before triaging bugs/feature requests and separates already-implemented from rejected outcomes. Use when user wants to create an issue, triage issues or PRs, review incoming bugs or feature requests, prepare issues for an AFK agent, or manage issue workflow.
@@ -135,7 +136,7 @@ When triaging nightly-scan CVE auto-filed issues as a group, follow this consoli
 
 3. **Reproduce (bugs) / verify (PRs).** Before any grilling, verify the claim. For a bug: read the reporter's steps, trace the relevant code, run tests or commands. For a PR: check it out and confirm the diff actually does what it claims — run the relevant tests or commands, and re-run the redundancy check against the diff specifically (a PR can duplicate existing behavior too). Report what happened — confirmed (with code path), failed, or insufficient detail (a strong `needs-info` signal). A confirmed repro or verification makes a much stronger agent brief.
 
-4. **Grill (if needed).** If the issue needs fleshing out, run a `/grill-with-docs` session.
+4. **Grill (if needed).** If the issue needs fleshing out, Load and run `grill-with-docs/SKILL.md` for a grill session.
 
 5. **Apply the outcome:**
    - `ready-for-agent` — post an agent brief comment ([AGENT-BRIEF.md](AGENT-BRIEF.md)) that includes the exact `WORKFLOW_BASE_GATE` plus `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch> @ <worktree-path>` requirement. If the issue carries `needs-human-review`, the brief must preserve the `Human review: required` field and `## Reviewer validation steps`. For a PR, the brief describes the next step on the existing diff rather than work from scratch.
