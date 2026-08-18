@@ -2,9 +2,9 @@ run_id: 2026-08-18-skills-airflow-rca-tool-compat
 workflow: workflow-skill
 kind: skill
 budget: one-reviewer
-status: active
-next: finalize
-updated: '2026-08-18T22:19:31.179979+00:00'
+status: done
+next: ''
+updated: '2026-08-18T22:20:02.066350+00:00'
 steps:
 - id: scope
   required: true
@@ -38,8 +38,10 @@ steps:
     review at b864806
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'finalize stamped at e649bba: verify-local PASSED (run-tests + both skill
+    lints), CI GREEN 6 checks on PR #166, tree clean, review stamp fresh; PR left
+    open per dispatch (do not merge)'
 stamps:
   review:
     head_sha: b864806316f5699bb3ebc52c1dd2e647108b12d6
@@ -86,7 +88,7 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: e649bbad0c223be2a55bb88cd0d82e16b700ef9b
+last_seen_sha: 25bc41db706c49819dddfe9d9d4f764508b50bab
 verify_local:
   head_sha: e649bbad0c223be2a55bb88cd0d82e16b700ef9b
   passed: true
