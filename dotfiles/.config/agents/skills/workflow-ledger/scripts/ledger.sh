@@ -770,11 +770,15 @@ checked_finalize() {
         add_failure "verify-local has no green record at HEAD (run ledger.sh verify-local)"
     fi
 
-    # Mock forge answers must never reach a real finalize stamp (R1 MF6).
-    if [ -n "${FORGE_MOCK_DIR:-}" ] && [ "${LEDGER_ALLOW_FORGE_MOCK:-0}" != "1" ]; then
+    # Mock forge answers must never reach a real finalize stamp (R1 MF6),
+    # and when the test sentinel permits them the stamp must say so — a
+    # mock-sourced stamp with no marker is a silent bypass (R2 MF1).
+    if [ -n "${FORGE_MOCK_DIR:-}" ]; then
         CHECKED+=("forge_mock=1")
-        add_failure "FORGE_MOCK_DIR is set — forge checks would be fabricated (unset it; tests set LEDGER_ALLOW_FORGE_MOCK=1)"
-        return
+        if [ "${LEDGER_ALLOW_FORGE_MOCK:-0}" != "1" ]; then
+            add_failure "FORGE_MOCK_DIR is set — forge checks would be fabricated (unset it; tests set LEDGER_ALLOW_FORGE_MOCK=1)"
+            return
+        fi
     fi
 
     # The gated party does not choose whether forge checks run (R1 MF5):

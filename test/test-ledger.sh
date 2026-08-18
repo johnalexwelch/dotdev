@@ -536,6 +536,9 @@ assert_status "non-reviewer gate type without --human exits 8" 8 "$STATUS"
 run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
 assert_status "finalize happy path (no PR yet) exits 0" 0 "$STATUS"
+# R2 MF1: a mock-sourced stamp must be self-evident in the committed snapshot.
+assert_file_contains "mock-allowed stamp carries forge_mock marker" \
+    "$wt1/docs/executions/state.yaml" "forge_mock"
 
 run_ledger "$wt1" check finalize
 assert_status "check finalize fresh after stamp" 0 "$STATUS"
