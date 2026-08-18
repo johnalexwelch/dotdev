@@ -790,6 +790,7 @@ run_ledger "$wt3" init 2026-08-18-snap --workflow workflow-deliver \
     --kind feature --steps "impl,review,finalize"
 # Give the run a long repro tail so the legacy-shape (uncapped byte-copy)
 # snapshot below exercises the cap-normalized comparison (logic R1).
+# shellcheck disable=SC2016 # the $(seq) must land literally in the script.
 printf '#!/usr/bin/env bash\nprintf "y%%.0s" $(seq 1 120)\nexit 1\n' >"$wt3/long.sh"
 commit_all "$wt3" "test: long-output red repro"
 run_ledger "$wt3" stamp diagnose --attest repro_cmd="bash long.sh" \

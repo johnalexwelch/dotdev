@@ -34,7 +34,8 @@
 #   8  stamp refused: non-reviewer-validation gate type without --human
 #   9  verify-local: no docs/executions/ci-commands.yaml manifest (NO_MANIFEST)
 #  10  environment breakage (no python3 with PyYAML; misconfigured
-#      LEDGER_PYTHON) — distinct from gate-unmet 1 so hooks can warn-permit
+#      LEDGER_PYTHON; not inside a git repo; git HEAD/snapshot-commit
+#      failures) — distinct from gate-unmet 1 so hooks can warn-permit
 
 set -uo pipefail
 
@@ -64,9 +65,9 @@ usage() {
 }
 
 require_repo() {
-    TOP="$(git rev-parse --show-toplevel 2>/dev/null)" || die 1 "not inside a git repository"
+    TOP="$(git rev-parse --show-toplevel 2>/dev/null)" || die 10 "not inside a git repository"
     local gitdir
-    gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || die 1 "cannot resolve the git dir"
+    gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || die 10 "cannot resolve the git dir"
     LIVE="$gitdir/ledger/state.yaml"
     SNAPSHOT="$TOP/$SNAPSHOT_REL"
 }
@@ -124,7 +125,7 @@ REDACT_PATTERNS = [
     re.compile(r"\b((?:api[_-]?key|token|secret|password|passwd)\s*[=:]\s*)\S+", re.IGNORECASE),
 ]
 
-# The committed snapshot caps free-text command tails at this many chars;
+# The committed snapshot caps the repro_tail field at this many chars;
 # the full (redacted) tail lives only in git-dir live state (batch #4).
 SNAPSHOT_TAIL_CAP = 64
 
@@ -140,10 +141,19 @@ def redact(text):
     return text
 
 
+# Snapshot view: truncate the repro_tail field (in place); returns doc.
+# Defensive on shape: also applied to untrusted committed snapshots during
+# snapshot_match, which may be arbitrarily malformed.
 def cap_tails(doc):
-    """Snapshot view: truncate free-text tails (in place); returns doc."""
-    for stamp in (doc.get("stamps") or {}).values():
+    stamps = doc.get("stamps") or {}
+    if not isinstance(stamps, dict):
+        return doc
+    for stamp in stamps.values():
+        if not isinstance(stamp, dict):
+            continue
         checked = stamp.get("checked") or {}
+        if not isinstance(checked, dict):
+            continue
         tail = checked.get("repro_tail")
         if isinstance(tail, str) and len(tail) > SNAPSHOT_TAIL_CAP:
             checked["repro_tail"] = tail[:SNAPSHOT_TAIL_CAP] + "...[truncated]"
@@ -486,13 +496,17 @@ def op_snapshot_match(argv):
     if not isinstance(snap, dict):
         print("0")
         return
+    # Normalize BOTH sides: pre-cap snapshots were byte-copies of live with
+    # uncapped tails — benign version skew must not read as tampering
+    # (logic lane, R1 should-fix).
+    snap = cap_tails(snap)
     live_view = {k: live.get(k) for k in keys}
     snap_view = {k: snap.get(k) for k in keys}
     print("1" if live_view == snap_view else "0")
 
 
 def op_write_snapshot(argv):
-    # Snapshot = live state with free-text tails capped (batch #4): the full
+    # Snapshot = live state with repro_tail capped (batch #4): the full
     # redacted tail stays in git-dir live state; the tracked, PR-visible copy
     # carries at most SNAPSHOT_TAIL_CAP chars of it.
     doc = cap_tails(load())
@@ -560,7 +574,7 @@ add_failure() {
     FAILURES="${FAILURES}  - $*"$'\n'
 }
 
-# Write the snapshot view of live state (free-text tails capped, batch #4)
+# Write the snapshot view of live state (repro_tail capped, batch #4)
 # to the committed snapshot and commit it. A stamp's own snapshot commit must
 # not make that stamp stale; the exemption is verified by commit CONTENTS
 # (touches only the snapshot file), never by subject — a subject is
@@ -569,10 +583,10 @@ commit_snapshot() {
     local action="$1" target="$2"
     mkdir -p "$(dirname "$SNAPSHOT")"
     py write_snapshot "$SNAPSHOT" || exit $?
-    git -C "$TOP" add -- "$SNAPSHOT_REL" || die 1 "git add failed for $SNAPSHOT_REL"
+    git -C "$TOP" add -- "$SNAPSHOT_REL" || die 10 "git add failed for $SNAPSHOT_REL"
     if ! git -C "$TOP" diff --quiet HEAD -- "$SNAPSHOT_REL" 2>/dev/null; then
         git -C "$TOP" commit -q -m "chore(ledger): $action $target" -- "$SNAPSHOT_REL" ||
-            die 1 "snapshot commit failed"
+            die 10 "snapshot commit failed"
     fi
     py set_meta last_seen_sha "$(git -C "$TOP" rev-parse HEAD)" || exit $?
 }
@@ -596,7 +610,7 @@ fresh_since() {
 }
 
 check_gate() {
-    local gate="$1" info status c_exists c_sha c_override c_reason
+    local gate="$1" info status c_exists c_sha c_override c_reason snap_ok
     if [ ! -f "$LIVE" ]; then
         echo "MISSING: no live ledger state (run ledger.sh init)"
         return 1
@@ -621,6 +635,17 @@ check_gate() {
         fi
         echo "STALE: non-ledger commits exist after the '$gate' stamp ($c_sha)"
         return 1
+    fi
+    # A snapshot-only tamper commit AFTER the stamp is freshness-exempt by
+    # design, so the finalize check re-compares the committed snapshot's
+    # durable content here (security lane: the stamp-time check alone left
+    # post-stamp rewrites invisible to the merge gate).
+    if [ "$gate" = "finalize" ]; then
+        snap_ok="$(py snapshot_match "$SNAPSHOT")" || snap_ok=""
+        if [ "$snap_ok" != "1" ]; then
+            echo "SNAPSHOT_DRIFT: committed $SNAPSHOT_REL no longer matches the live ledger (durable identity, stamps, overrides) — rewritten out-of-band after the stamp"
+            return 1
+        fi
     fi
     if [ "$c_override" = "1" ]; then
         echo "OVERRIDDEN: $c_reason"
@@ -700,8 +725,11 @@ file_sha256() {
     fi
 }
 
+# GNU order first: BSD `stat -c` fails cleanly (illegal option), while GNU
+# `stat -f` is filesystem mode and can print a non-mtime value with exit 0
+# (security lane). Callers must numeric-guard the output regardless.
 file_mtime() {
-    stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null
+    stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null
 }
 
 tail_str() {
@@ -819,6 +847,17 @@ checked_review() {
         add_failure "review requires --attest review_profile=<fast|standard|full>"
         return
     fi
+    # The attested profile is exactly one of the three words (logic/security
+    # lanes, R1 must-fix): a suffixed value like full+security would rank as
+    # full via profile_rank's suffix strip while required_lanes fell through
+    # to its single-lane default — silently collapsing the lane set.
+    case "$profile" in
+        fast | standard | full) ;;
+        *)
+            add_failure "attested review_profile must be exactly fast|standard|full (got '$profile')"
+            return
+            ;;
+    esac
     if ! floor="$(compute_floor "" 2>/dev/null)"; then
         add_failure "cannot compute the review floor (no resolvable base ref)"
         return
@@ -856,9 +895,11 @@ checked_review() {
 
     # Lane freshness binding (batch #3): lane files must postdate this run's
     # init — a stale /tmp file from an earlier session cannot satisfy the
-    # stamp. Runs initialized before this field existed skip the check.
+    # stamp. Runs initialized before this field existed skip the check
+    # (non-numeric stored epochs are treated as absent for the same reason).
     local init_epoch lane_mtime
     init_epoch="$(py get initialized_epoch)" || init_epoch=""
+    case "$init_epoch" in *[!0-9]* | '') init_epoch="" ;; esac
 
     for lane in $lanes_list; do
         lane_file="$(lane_path_for "$lane" "$lanes_spec")"
@@ -868,7 +909,15 @@ checked_review() {
         fi
         if [ -n "$init_epoch" ]; then
             lane_mtime="$(file_mtime "$lane_file")"
-            if [ -n "$lane_mtime" ] && [ "$lane_mtime" -lt "$init_epoch" ]; then
+            # Fail CLOSED on a non-numeric mtime: a broken stat must not
+            # silently disable the freshness binding (security lane).
+            case "$lane_mtime" in
+                *[!0-9]* | '')
+                    add_failure "cannot determine mtime for lane '$lane' review file (stat gave '${lane_mtime:-nothing}'): $lane_file"
+                    continue
+                    ;;
+            esac
+            if [ "$lane_mtime" -lt "$init_epoch" ]; then
                 add_failure "lane '$lane' review file predates this run's init (stale artifact from an earlier session): $lane_file"
                 continue
             fi
@@ -1074,7 +1123,7 @@ cmd_stamp() {
 
     local provenance="agent" head_sha
     [ "$human" -eq 1 ] && provenance="human"
-    head_sha="$(git -C "$TOP" rev-parse HEAD)" || die 1 "cannot resolve HEAD"
+    head_sha="$(git -C "$TOP" rev-parse HEAD)" || die 10 "cannot resolve HEAD"
 
     if [ "$override" -eq 1 ]; then
         [ -n "$reason" ] || die 4 "--override requires a non-empty --reason"
@@ -1127,13 +1176,13 @@ cmd_reconcile() {
         esac
     done
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
-    local last head drift next_step branch rec_branch rec_wt next truth=""
+    local last head drift next_step branch rec_branch rec_wt pending_step truth=""
     last="$(py get last_seen_sha)" || exit $?
     head="$(git -C "$TOP" rev-parse HEAD)"
     branch="$(git -C "$TOP" branch --show-current 2>/dev/null)"
     rec_branch="$(py get branch)" || exit $?
     rec_wt="$(py get worktree)" || exit $?
-    next="$(py get next)" || exit $?
+    pending_step="$(py get next)" || exit $?
     drift=""
     if [ -n "$last" ] && git -C "$TOP" cat-file -e "${last}^{commit}" 2>/dev/null; then
         # Content-verified: a commit is ledger-internal only if it touches
@@ -1178,8 +1227,8 @@ cmd_reconcile() {
         if [ -n "$drift" ]; then
             echo "commits outside the ledger since $last:"
             echo "$drift"
-            if [ -n "$next" ]; then
-                echo "step '$next' is still pending while those commits exist"
+            if [ -n "$pending_step" ]; then
+                echo "step '$pending_step' is still pending while those commits exist"
             fi
         fi
         echo "true frontier: HEAD=$head branch=${branch:-detached} worktree=$TOP; run 'ledger.sh reconcile --apply' to adopt"

@@ -48,6 +48,8 @@ overrides: []                            # audit trail of every --override
 
 ## CLI contract (exit codes are the API — tests assert them)
 
+Exit 10 (added by the R1/R2 batch, item #2) is environment breakage — no python3 with PyYAML, a misconfigured `LEDGER_PYTHON`, not inside a git repo, git HEAD/snapshot-commit failures — distinct from gate-unmet exit 1 so the merge-gate hook warn-permits it (with 6 and 9) instead of blocking as if the gate were unmet.
+
 ### `ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>]`
 
 - Creates live state, all steps `pending`; `kind: bug` MUST auto-insert required `diagnose` and `fix` steps if absent from `--steps`.
@@ -120,7 +122,7 @@ Lane files: `/tmp/<lane>-review.md`, required lanes derived from profile (`fast`
 
 1. **Merge gate** (PreToolUse Bash, exit 2): command matches merge shapes — `gh pr (merge|ready)`, `git-forge .*merge`, `tea pr merge`, `curl .*/pulls/.*/merge` — AND repo has `docs/executions/` AND `ledger.sh check finalize` ≠ 0 → block, print the check output. Override stamps pass (check exits 0) but the hook echoes the `OVERRIDDEN` line.
 2. **state.yaml write block** (PreToolUse Edit|Write, exit 2): target path matches `docs/executions/state.yaml` or `.git/**/ledger/state.yaml` → block: "script-owned; use ledger.sh".
-3. **stderr-suppression** (PreToolUse Bash, exit 2): mutating `git|gh|tea|git-forge` subcommand (push, commit, merge, pr create/edit/close, issue edit, api -X POST/PATCH/DELETE) combined with `2>/dev/null` or `&>/dev/null` → block.
+3. **stderr-suppression** (PreToolUse Bash, exit 2): a mutating `git|gh|tea|git-forge` subcommand (push, commit, merge, pr create/edit/close, issue edit, api -X POST/PATCH/DELETE) with stderr suppression (`2>/dev/null`, `&>/dev/null`, spaced forms, `2>&-`) **attached to the same command segment** → block. Compound commands are split on `&&`, `||`, `;`, `|` (quoted separators masked, line continuations unfolded) and each segment is judged on its own — a suppressed test/lint segment chained before a push passes (batch #1). Compound-redirection shapes (`{ …; } 2>/dev/null`, subshells, loops, conditionals) fall back to whole-command semantics, fail closed.
 4. **Entry enforcement — warn only in Phase 0** (PreToolUse Edit|Write, exit 0 + stderr): tracked-code file edit in a repo with `docs/executions/` and no live `status: active` run → warn "no active run — route via workflow-router or ledger.sh init". Escalation to exit 2 is a Phase 5 flip behind `LEDGER_ENTRY_ENFORCE=block`. Never fires on untracked files, non-opted-in repos, or `docs/executions/**` itself.
 
 ## Test requirements (red-first; tmp-git-repo harness per `test/test-worktree-baseline.sh`)
@@ -133,6 +135,19 @@ Lane files: `/tmp/<lane>-review.md`, required lanes derived from profile (`fast`
 - forge: mock-mode tests for all three ops on both forge types; `detect` on three remote shapes.
 - Hooks: run `workflow-guard.sh` with synthesized hook JSON on stdin; assert exit codes + messages for all 4 rules, including the entry-warn non-blocking behavior and the merge-gate pass-through when `check finalize` succeeds.
 - Tests MUST NOT touch network, `$HOME` state, or the real skills root (use `SKILLS_ROOT` env override in `preflight`).
+
+## R1/R2 should-fix batch (PR #160 review follow-ups)
+
+Key for the `batch #N` anchors in code comments (kernel scripts, hook, tests). Each item landed red-first on `fix/kernel-shouldfix-batch`.
+
+- **batch #1 — rule-3 segment scoping**: stderr suppression blocks only when attached to the mutating command segment (see Hook rules, rule 3); `gh pr merge-queue status` and other `-`-suffixed tokens are whole-token matched.
+- **batch #2 — distinct env-error exit**: environment breakage is exit 10 (see the CLI-contract note above); an explicitly-set unusable `LEDGER_PYTHON` is a config error, never a silent fallback.
+- **batch #3 — lane freshness binding**: `init` records `initialized_epoch`; `stamp review` refuses a required lane file whose mtime predates it (non-numeric mtimes fail closed; pre-field runs skip the check).
+- **batch #4 — repro_tail redaction + snapshot cap**: checked stamp values pass through secret-shape redaction; the committed snapshot carries at most 64 chars of `repro_tail` plus a truncation marker (full redacted tail lives only in git-dir live state). Attested values stay verbatim — the fix gate re-executes `repro_cmd`.
+- **batch #5 — FORGE_TOKEN hygiene**: forge.sh refuses empty-token Forgejo calls and passes the token via a curl config on stdin (`-K -`), never argv.
+- **batch #6 — reconcile ground truth**: `init` records branch/worktree; `reconcile` drifts on branch change/deletion, worktree move, and commits while the next step is still pending; `--apply` adopts.
+- **batch #7 — security-flagged floors**: `review-floor` appends `+security` on path-pattern hits; `stamp review` requires a security lane when flagged and records the full floor token (see review-floor section).
+- **batch #8 — mock sanitization + snapshot_current**: forge mock filenames flatten `/` to `_`; finalize's stamp and `check finalize` both compare the committed snapshot's durable content (run identity, stamps, overrides) against live state — a snapshot-only commit is freshness-exempt, so this closes the out-of-band rewrite hole.
 
 ## Implementation constraints
 
