@@ -3,8 +3,8 @@ workflow: workflow-skill
 kind: skill
 budget: one-reviewer
 status: active
-next: review
-updated: '2026-08-18T22:17:32.182433+00:00'
+next: finalize
+updated: '2026-08-18T22:19:31.179979+00:00'
 steps:
 - id: scope
   required: true
@@ -31,8 +31,11 @@ steps:
     PR #166 open; backlog rows SB-102/SB-103 -> implemented citing PR #166'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: fast profile (review-floor=fast); integrated lane dispatched to fresh
+    Opus subagent; verdict APPROVE; findings 1-2 fixed in b864806 + re-verified by
+    the lane reviewer; finding 3 declined-by-dispatch (model unset specified); stamp
+    review at b864806
 - id: finalize
   required: true
   status: pending
@@ -59,5 +62,38 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: e649bbad0c223be2a55bb88cd0d82e16b700ef9b
+    timestamp: '2026-08-18T22:19:31.179812+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '166'
+      describe_pr: "feat(skills): airflow-failure-rca + external-tool-compatibility\
+        \ (SB-103/SB-102) \u2014 two approved corpus-audit extractions; catalog-tier\
+        \ airflow RCA + model-invoked tool-compat discipline; manifest + backlog updated;\
+        \ golden-routes/skills-index/Codex-sync deferred per dispatch"
+      post_mortem: 'clean run; one process miss: worktree cut with raw git worktree
+        add instead of worktree-baseline.sh cut, so the review stamp''s baseline verify
+        failed until the state file was written with the values cut would have emitted
+        (origin/main base, staging absent)'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: e62139900e41caf50cf577d142ccd75235c6136f
+last_seen_sha: e649bbad0c223be2a55bb88cd0d82e16b700ef9b
+verify_local:
+  head_sha: e649bbad0c223be2a55bb88cd0d82e16b700ef9b
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
