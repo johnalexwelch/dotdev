@@ -620,8 +620,10 @@ attest_get() {
     return 1
 }
 
+# Ranks the base profile word; a +security suffix (batch #7) is a flag,
+# not a rank change, so it is stripped before ranking.
 profile_rank() {
-    case "$1" in
+    case "${1%%+*}" in
         fast) echo 1 ;;
         standard) echo 2 ;;
         full) echo 3 ;;
@@ -705,9 +707,11 @@ review_patterns() {
     fi
 }
 
-# Deterministic: same diff (base...HEAD) always yields the same word.
+# Deterministic: same diff (base...HEAD) always yields the same word. A
+# path-pattern hit appends +security (batch #7): the flag rides the floor so
+# stamp review can require a security lane instead of silently dropping it.
 compute_floor() {
-    local base="$1" numstat files=0 loc=0 added deleted path patterns hit=0
+    local base="$1" numstat files=0 loc=0 added deleted path patterns hit=0 floor
     if [ -z "$base" ]; then
         base="$(default_base)" || die 1 "cannot resolve a default base ref; pass --base <ref>"
     fi
@@ -728,11 +732,16 @@ compute_floor() {
         hit=1
     fi
     if [ "$files" -gt 15 ] || [ "$loc" -gt 500 ]; then
-        echo full
+        floor=full
     elif [ "$hit" -eq 1 ]; then
-        echo standard
+        floor=standard
     else
-        echo fast
+        floor=fast
+    fi
+    if [ "$hit" -eq 1 ]; then
+        echo "${floor}+security"
+    else
+        echo "$floor"
     fi
 }
 
@@ -797,7 +806,7 @@ checked_review() {
     # Floor derives from the computed profile; an attested value may only
     # escalate it — the checked party cannot lower or blank its own floor
     # (R1 MF3): fast=sonnet, standard/full=opus baseline.
-    case "$floor" in
+    case "${floor%%+*}" in
         fast) model_floor="sonnet" ;;
         *) model_floor="opus" ;;
     esac
@@ -808,13 +817,26 @@ checked_review() {
     fi
     lanes_spec="$(attest_get lanes "$@")" || lanes_spec=""
 
+    # A security-flagged floor (batch #7) requires a security lane even when
+    # the chosen profile's base lane set does not include one.
+    local lanes_list
+    lanes_list="$(required_lanes "$profile")"
+    case "$floor" in
+        *+security)
+            case " $lanes_list " in
+                *" security "*) ;;
+                *) lanes_list="$lanes_list security" ;;
+            esac
+            ;;
+    esac
+
     # Lane freshness binding (batch #3): lane files must postdate this run's
     # init — a stale /tmp file from an earlier session cannot satisfy the
     # stamp. Runs initialized before this field existed skip the check.
     local init_epoch lane_mtime
     init_epoch="$(py get initialized_epoch)" || init_epoch=""
 
-    for lane in $(required_lanes "$profile"); do
+    for lane in $lanes_list; do
         lane_file="$(lane_path_for "$lane" "$lanes_spec")"
         if [ ! -f "$lane_file" ]; then
             add_failure "required lane '$lane' review file missing: $lane_file"

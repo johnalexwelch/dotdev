@@ -87,7 +87,8 @@ Transition rules (each MUST have a red test):
 ### `ledger.sh review-floor [--base <ref>]`
 
 - Computes diff stats vs base: files changed, LOC. `>15 files || >500 LOC` → `full`. Path-pattern hits (default patterns: `auth|secret|migration|infra|\.github/workflows`; optional repo override file `docs/executions/review-patterns.txt`) → at least `standard`, security-flagged. Else `fast`.
-- Prints one word: `fast|standard|full`. Deterministic: same diff → same output (test asserts).
+- Prints one token: `fast|standard|full`, with a `+security` suffix when a path pattern hit (e.g. `standard+security`) — the flag rides the floor word so it is recorded, never silently dropped. Rank comparisons strip the suffix. Deterministic: same diff → same output (test asserts).
+- `stamp review` derives required lanes from the chosen profile and adds `security` when the floor is security-flagged; the full floor token (including the flag) is recorded in the stamp's checked `review_floor`.
 
 ### `ledger.sh verify-local`
 

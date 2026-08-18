@@ -27,7 +27,7 @@ ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] 
 ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, fresh (see Freshness)
 ledger.sh reconcile [--apply]     # ledger vs git ground truth; prints true frontier
 ledger.sh preflight --skill <name>
-ledger.sh review-floor [--base <ref>]   # prints fast|standard|full — the minimum profile
+ledger.sh review-floor [--base <ref>]   # prints fast|standard|full (+security when a path pattern hit) — the minimum profile
 ledger.sh verify-local            # runs docs/executions/ci-commands.yaml at HEAD
 ledger.sh show | close
 ```
@@ -42,7 +42,7 @@ A stamp is writable only when every **checked** field passes at stamp time; **at
 |---|---|---|
 | `diagnose` | `repro_cmd` runs now and exits non-zero (captured) | root_cause, repro_cmd |
 | `fix` | same repro_cmd now exits 0; regression test file exists | rationale |
-| `review` | worktree verify; chosen profile ≥ `review-floor`; every required lane file exists with `verdict:` line and an mtime no older than this run's init (a stale lane file from an earlier session is refused); per-lane `model:` ≥ floor; digests recorded | verdict, review_profile, lanes, model_floor |
+| `review` | worktree verify; chosen profile ≥ `review-floor` (a `+security`-flagged floor adds a required security lane); every required lane file exists with `verdict:` line and an mtime no older than this run's init (a stale lane file from an earlier session is refused); per-lane `model:` ≥ floor; digests recorded | verdict, review_profile, lanes, model_floor |
 | `finalize` | `check review` fresh; `git status --porcelain` empty; `verify-local` passed at HEAD; via `forge.sh`: CI green, PR state, threads resolved (`no_pr` noted when no PR) | post_mortem, describe_pr, pr_number |
 
 **Freshness is strict, with one content-verified exemption**: `check` fails `STALE` on any commit after the stamp unless that commit touches *only* the committed snapshot file (verified via `git diff-tree` contents — never by commit subject, which is forgeable). A stamp's own snapshot commit is therefore exempt; nothing else is. **Overrides are audited, not prevented**: `--override --reason` stamps with a loud `OVERRIDDEN` marker and an `overrides[]` audit entry; use only on explicit user instruction. The same freshness rule applies: a stale override fails `check` with `OVERRIDE_STALE: … recorded reason: <reason>` — an expired authorization, distinguishable from a gate that never passed.
