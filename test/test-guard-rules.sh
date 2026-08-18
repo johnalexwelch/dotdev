@@ -160,6 +160,17 @@ run_hook "$opted_ovr" "$(json_bash "$opted_ovr" "gh pr merge 42")"
 assert_status "merge passes when check finalize succeeds via override" 0 "$STATUS"
 assert_contains "override pass-through echoes OVERRIDDEN" "$OUT" "OVERRIDDEN"
 
+# An expired override must block the merge gate loudly, naming the bypass
+# that lapsed — not read as standing authorization or as a never-passed gate.
+echo "drift" >"$opted_ovr/src/drift.py"
+git -C "$opted_ovr" add -A
+git -C "$opted_ovr" commit -q -m "feat: work after the override"
+
+run_hook "$opted_ovr" "$(json_bash "$opted_ovr" "gh pr merge 42")"
+assert_status "merge blocked once the override is stale" 2 "$STATUS"
+assert_contains "stale-override block prints OVERRIDE_STALE" "$OUT" "OVERRIDE_STALE"
+assert_contains "stale-override block carries the recorded reason" "$OUT" "guard bypass test"
+
 # --- Rule 2: state.yaml write block ---
 opted_state=$(new_repo state_block opted)
 
