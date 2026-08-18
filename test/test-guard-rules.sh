@@ -384,6 +384,26 @@ OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'git push ori
 STATUS=$?
 assert_status "broken awk fails closed (still blocks)" 2 "$STATUS"
 
+# The terminator detector must accept ANY redirect after the terminator, not
+# only 2>/&> — a construct suppressed via stdout-dup otherwise falls through
+# the fallback and its internal separators split the mutation into a segment
+# carrying no suppression of its own (security lane R2, second pass).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } >/dev/null 2>&1')"
+assert_status "brace group suppressed via stdout-dup blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'for i in 1; do git push origin main; done >/dev/null 2>&1')"
+assert_status "loop suppressed via stdout-dup blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then git push origin main; fi >/dev/null 2>&1')"
+assert_status "conditional suppressed via stdout-dup blocks" 2 "$STATUS"
+
+# Widening the alternation must not make arithmetic expansion a terminator.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((1+2)) >/dev/null 2>&1 && git push origin main')"
+assert_status "arithmetic expansion is not a terminator" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) >/dev/null 2>&1 && git push origin main')"
+assert_status "substitution before a stdout-dup redirect is not a terminator" 0 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 
