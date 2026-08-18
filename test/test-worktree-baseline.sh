@@ -217,6 +217,79 @@ set -e
 assert_status "verify fails ancestry check against an unrelated parent" 6 "$ancestry_fail_status"
 assert_contains "ancestry failure message names the base" "$ancestry_fail_output" "not a descendant of"
 
+# --- Forged sidecar must not satisfy verify (PR #166 post_mortem pattern) ---
+# verify's ancestry ground truth comes from git itself (re-resolved base per
+# base-branch-policy), never from the cut-written sidecar; the sidecar is a
+# cross-check that fails loudly on mismatch.
+
+# A raw `git worktree add` checkout that does NOT descend from the real
+# resolved base, plus a hand-written sidecar pointing RESOLVED_BASE at a ref
+# the checkout does descend from. Trusting the sidecar passes this; ground
+# truth must reject it.
+work=$(new_fixture forged_sidecar)
+git -C "$work" branch stale
+echo "advance" >>"$work/README.md"
+git -C "$work" commit -qam "advance main past stale"
+git -C "$work" push -q origin main
+wt="$TMPDIR_BASE/forged_sidecar/wt1"
+git -C "$work" worktree add -b feature/forged "$wt" stale >/dev/null 2>&1
+cat >"$TMPDIR_BASE/forged_sidecar/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/forged
+WT_PATH=$wt
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=stale
+FALLBACK_REASON=origin/staging_absent
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+forged_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+forged_status=$?
+set -e
+assert_status "verify rejects forged sidecar on a non-descendant worktree" 6 "$forged_status"
+assert_contains "forged-sidecar rejection names the real base" "$forged_output" "not a descendant of origin/main"
+
+# Tampered RESOLVED_BASE on a genuinely well-based worktree: ancestry ground
+# truth holds, but the sidecar no longer matches it — fail loudly, don't trust.
+work=$(new_fixture tampered_base)
+wt="$TMPDIR_BASE/tampered_base/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/tamper --path "$wt" >/dev/null)
+git -C "$work" branch old origin/main
+sed -i '' 's|^RESOLVED_BASE=.*|RESOLVED_BASE=old|' "$TMPDIR_BASE/tampered_base/.worktree-baseline.wt1.state"
+set +e
+tampered_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+tampered_status=$?
+set -e
+assert_status "verify fails on sidecar RESOLVED_BASE mismatch" 11 "$tampered_status"
+assert_contains "base-mismatch message names ground truth" "$tampered_output" "does not match git ground truth"
+assert_contains "base-mismatch message names the field" "$tampered_output" "RESOLVED_BASE"
+
+# Tampered BRANCH: the sidecar's recorded branch must match the branch git
+# actually has checked out in the worktree.
+work=$(new_fixture tampered_branch)
+wt="$TMPDIR_BASE/tampered_branch/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/real --path "$wt" >/dev/null)
+sed -i '' 's|^BRANCH=.*|BRANCH=feature/imposter|' "$TMPDIR_BASE/tampered_branch/.worktree-baseline.wt1.state"
+set +e
+branch_mismatch_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+branch_mismatch_status=$?
+set -e
+assert_status "verify fails on sidecar BRANCH mismatch" 11 "$branch_mismatch_status"
+assert_contains "branch-mismatch message names the field" "$branch_mismatch_output" "BRANCH"
+
+# No sidecar at all: verify stands on git ground truth alone — a clean
+# worktree genuinely descending from the resolved base passes standalone.
+work=$(new_fixture no_sidecar)
+wt="$TMPDIR_BASE/no_sidecar/wt1"
+git -C "$work" worktree add -b feature/bare "$wt" origin/main >/dev/null 2>&1
+set +e
+no_sidecar_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+no_sidecar_status=$?
+set -e
+assert_status "verify passes without a sidecar on genuine ground truth" 0 "$no_sidecar_status"
+assert_contains "sidecar-less verify reports PASS" "$no_sidecar_output" "PASS:"
+
 echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"

@@ -191,6 +191,21 @@ run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/conf
 assert_status "unrelated state.yaml not blocked" 0 "$STATUS"
 assert_not_contains "unrelated state.yaml carries no block message" "$OUT" "script-owned"
 
+# Worktree-baseline sidecars are script-owned too (D-006 hardening; PR #166
+# post_mortem forged-baseline pattern). They live OUTSIDE the repo as siblings
+# of the worktree path, so the block matches the filename pattern anywhere.
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$TMPDIR_BASE/.worktree-baseline.wt1.state")"
+assert_status "Edit of worktree-baseline sidecar blocked" 2 "$STATUS"
+assert_contains "sidecar block says script-owned" "$OUT" "script-owned"
+assert_contains "sidecar block names the owning script" "$OUT" "worktree-baseline.sh"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$TMPDIR_BASE/nested/dir/.worktree-baseline.my-feature.state")"
+assert_status "Write of worktree-baseline sidecar blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/src/worktree-baseline-notes.state")"
+assert_status "non-sidecar .state file not blocked" 0 "$STATUS"
+assert_not_contains "non-sidecar .state carries no block message" "$OUT" "script-owned"
+
 # --- Rule 3: stderr suppression on mutating forge/git commands ---
 plain_sup=$(new_repo suppression plain)
 
