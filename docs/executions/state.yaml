@@ -1,112 +1,88 @@
-run_id: 2026-08-18-phase2-deliver
-workflow: workflow-build-one
-kind: skill
+run_id: 2026-08-18-override-stale
+workflow: workflow-debug
+kind: bug
 budget: one-reviewer
 status: active
 next: finalize
-updated: '2026-08-18T19:49:40.369212+00:00'
+updated: '2026-08-18T20:23:45.656120+00:00'
 steps:
-- id: implement
+- id: diagnose
   required: true
   status: completed
-  evidence: workflow-deliver authored (120 lines vs 361 source); tombstones + router
-    retarget + manifest/index/decision-log; lints 0 fail, dry-run OK, suite 317 PASS
-    @ 842ae69
+  evidence: repro red pre-fix (OVERRIDE_STALE prefix+reason absent), kernel-verified
+    at diagnose stamp
+- id: fix
+  required: true
+  status: completed
+  evidence: repro green; test-ledger 108/0, test-guard-rules 39/0
 - id: review
   required: true
   status: completed
-  evidence: full profile (kernel floor), 4 lanes APPROVE @ 3b04593; round-1 REQUEST
-    CHANGES (security, logic) fixed in 3b04593; stamp review written
+  evidence: fast profile, integrated lane approve (claude-fable-5), red/green independently
+    verified
 - id: finalize
   required: true
-  status: active
-  evidence: review stamped @ 3b04593; opening PR
+  status: pending
+  evidence: ''
 stamps:
-  review:
-    head_sha: 3b04593fea1a76eea7b48ecd201ba1c693d27778
-    timestamp: '2026-08-18T19:43:55.820368+00:00'
+  diagnose:
+    head_sha: 8ba55d14e4b4e15794cf63f5fdee286fa37f5958
+    timestamp: '2026-08-18T19:30:14.079093+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: 154712e60f768245a5f640614a6422ab7a3707dec0d82361ad42d486d0972c74
-      lane_security_lines: '39'
-      lane_security_verdict: APPROVE
-      lane_security_model: claude-fable-5
-      lane_logic_sha256: 4dd12b760cc888a6ce369d0ef0221035f4be25534dddbb736d4b2fd271f376cb
-      lane_logic_lines: '46'
-      lane_logic_verdict: APPROVE
-      lane_logic_model: claude-fable-5
-      lane_tests_sha256: cf98d72cd916385fbcd4e3658d544f0f0f858448cf678caacb6cae8f3e355942
-      lane_tests_lines: '38'
-      lane_tests_verdict: APPROVE
-      lane_tests_model: claude-fable-5
-      lane_style_sha256: b560c7c8efb922efdfb5238cac718385f8fd9c162fdeb415fc768c494c4cdf97
-      lane_style_lines: '54'
-      lane_style_verdict: APPROVE
-      lane_style_model: claude-fable-5
-      review_floor: full
-      worktree_verify: pass
+      repro_exit: '1'
+      repro_tail: 'no OVERRIDE_STALE prefix on a stale override; output: STALE: non-ledger
+        commits exist after the ''finalize'' stamp (3ffd1ebd93b36ed9c354270cf8f6e227de7e2b0f)'
     attested:
-      verdict: APPROVE
-      review_profile: full
-      lanes: security=/tmp/security-review.md,logic=/tmp/logic-review.md,tests=/tmp/tests-review.md,style=/tmp/style-review.md
-      model_floor: opus
+      repro_cmd: bash /private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-suspicious-cannon-32f671/94f9156c-ba33-4073-8be1-fabe428eea6a/scratchpad/repro-override-stale.sh
+      root_cause: check_gate collapses a stale override into the generic STALE line
+        and drops the recorded override reason; spec requires a distinct OVERRIDE_STALE
+        contract and no test locks override freshness
     override:
       active: false
       reason: ''
       timestamp: ''
-  finalize:
-    head_sha: 49d48c2c1458b9d395d53163648f5387babb364a
-    timestamp: '2026-08-18T19:49:40.369024+00:00'
+  fix:
+    head_sha: 2f3948295f39a2c42eb8c06aa910a1ef7fbee0d9
+    timestamp: '2026-08-18T19:33:29.709451+00:00'
     gate_type: reviewer-validation
     provenance: agent
-    checked: {}
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-ledger.sh
     attested:
-      pr_number: '164'
-      describe_pr: 'D-006 Phase 2: workflow-deliver merges build-one+debug; kind=bug
-        templates kernel-enforced diagnose/fix; tombstones + router retarget; golden
-        migration follows'
-      post_mortem: "Second fully-stamped delivery. Review round 1 caught two prose-vs-kernel\
-        \ contradictions (force-init recovery, TDD-evidence overwrite) \u2014 the\
-        \ kernel-first design is catching its own doc drift. Same forge.sh alias bug\
-        \ as Phase 1; stale /tmp lane files from an earlier session initially satisfied\
-        \ the file-existence check and were caught by mtime/content verification \u2014\
-        \ lane-freshness is a kernel gap worth closing."
+      regression_test: test/test-ledger.sh
+      rationale: stale-override branch in check_gate emits OVERRIDE_STALE with recorded
+        reason; 4 red assertions now green
     override:
-      active: true
-      reason: "Known kernel bug (decision-log D-006 Phase 1 entry): forge.sh detect\
-        \ misreads the github-personal SSH-alias origin as forgejo; FORGE_URL unset\
-        \ so the PR lookup cannot execute (fix already queued as follow-up from Phase\
-        \ 1). All finalize checked fields manually verified against ground truth at\
-        \ head 49d48c2: PR #164 OPEN, draft by design (human-only delivery policy;\
-        \ task instruction: do not merge); CI 6/7 checks SUCCESS (Lint, Secret scan,\
-        \ Shell syntax, Stow dry run, Test suite, Install dry run) \u2014 7th check\
-        \ Router golden eval FAIL is documented expected-red: cases 11/18/19 expect\
-        \ the pre-merge routes until the immediate golden-set migration PR, case 20\
-        \ is CI-flaky (passes 2/2 locally, sonnet); 0 unresolved review threads (gh\
-        \ graphql reviewThreads totalCount=0); git status --porcelain empty; verify-local\
-        \ PASSED at 49d48c2 (run-tests + lint-skill-refs + lint-skill-suite); check\
-        \ review fresh at 3b04593."
-      timestamp: '2026-08-18T19:49:40.369206+00:00'
-overrides:
-- gate: finalize
-  reason: "Known kernel bug (decision-log D-006 Phase 1 entry): forge.sh detect misreads\
-    \ the github-personal SSH-alias origin as forgejo; FORGE_URL unset so the PR lookup\
-    \ cannot execute (fix already queued as follow-up from Phase 1). All finalize\
-    \ checked fields manually verified against ground truth at head 49d48c2: PR #164\
-    \ OPEN, draft by design (human-only delivery policy; task instruction: do not\
-    \ merge); CI 6/7 checks SUCCESS (Lint, Secret scan, Shell syntax, Stow dry run,\
-    \ Test suite, Install dry run) \u2014 7th check Router golden eval FAIL is documented\
-    \ expected-red: cases 11/18/19 expect the pre-merge routes until the immediate\
-    \ golden-set migration PR, case 20 is CI-flaky (passes 2/2 locally, sonnet); 0\
-    \ unresolved review threads (gh graphql reviewThreads totalCount=0); git status\
-    \ --porcelain empty; verify-local PASSED at 49d48c2 (run-tests + lint-skill-refs\
-    \ + lint-skill-suite); check review fresh at 3b04593."
-  timestamp: '2026-08-18T19:49:40.369210+00:00'
-  head_sha: 49d48c2c1458b9d395d53163648f5387babb364a
-last_seen_sha: 49d48c2c1458b9d395d53163648f5387babb364a
+      active: false
+      reason: ''
+      timestamp: ''
+  review:
+    head_sha: 9dad02988c6bf9f3f2f540633a6f184f3c2f069d
+    timestamp: '2026-08-18T20:23:45.655962+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 1d849224788f7d43ce9759e8bc9b58ec724e1f6d1b544d90f1cf01fb5dff9f01
+      lane_integrated_lines: '18'
+      lane_integrated_verdict: approve
+      lane_integrated_model: claude-fable-5
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      review_profile: fast
+      lanes: integrated=/tmp/integrated-review.md
+      verdict: approve
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+overrides: []
+last_seen_sha: 9639f5b99c7888e42f613311f5562941480c9370
 verify_local:
-  head_sha: 49d48c2c1458b9d395d53163648f5387babb364a
+  head_sha: 02214fc8ec7c5764e6811c0924ffd765b03edd10
   passed: true
   results:
   - cmd: ./test/run-tests.sh

@@ -73,7 +73,7 @@ Transition rules (each MUST have a red test):
 ### `ledger.sh check <gate>`
 
 - Exit 0 iff: stamp exists AND (all checked passed OR override active) AND fresh: every commit after `head_sha` touches ONLY the snapshot file, verified by `git diff-tree` contents — never by commit subject (R1 MF1 content-verified refinement of D-006 #4; the stamp's own snapshot commit is the only exempt shape).
-- Any commit after stamp → exit 1 `STALE`; missing stamp → exit 1 `MISSING`; override → exit 0 but prints `OVERRIDDEN: <reason>`.
+- Any commit after stamp → exit 1 `STALE`; missing stamp → exit 1 `MISSING`; fresh override → exit 0 but prints `OVERRIDDEN: <reason>`. A **stale** override → exit 1 `OVERRIDE_STALE: … recorded reason: <reason>` — freshness applies to overridden stamps too; the distinct prefix tells the operator a previously-authorized bypass expired rather than never existed.
 
 ### `ledger.sh reconcile [--apply]`
 
@@ -110,7 +110,7 @@ Lane files: `/tmp/<lane>-review.md`, required lanes derived from profile (`fast`
 
 ## forge.sh contract
 
-- `forge.sh detect` → `github|forgejo|none` from `git remote get-url origin`.
+- `forge.sh detect` → `github|forgejo|none` from `git remote get-url origin`; `git config forge.type` (github|forgejo) wins when set, and ssh-style origins resolve their host through `ssh -G` HostName so ~/.ssh/config aliases (e.g. `git@github-personal:`) classify by destination (`FORGE_SSH_CONFIG` is the hermetic test seam).
 - `forge.sh ci-status <pr>` / `pr-state <pr>` / `threads-resolved <pr>` → normalized one-word outputs (`green|red|pending`, `open|merged|closed|draft`, `yes|no`).
 - GitHub via `gh` JSON; Forgejo via curl `$FORGE_URL/api/v1` with `$FORGE_TOKEN`.
 - **Mock mode**: `FORGE_MOCK_DIR=<dir>` reads canned responses from files — all ledger/guard tests run offline through mock mode; zero network in tests.

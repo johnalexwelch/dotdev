@@ -8,8 +8,12 @@ set -uo pipefail
 #   "$FORGE_MOCK_DIR/<forge>-<op>-<pr>" (e.g. github-ci-status-42) instead of
 #   touching gh or the Forgejo API. Zero network in mock mode — FORGE_URL is
 #   pointed at an .invalid host so any real call fails loudly.
-# Detect interpretation: origin URLs containing github.com => github; any
-# other origin URL => forgejo; no origin remote => none.
+# Detect interpretation: `git config forge.type` (github|forgejo) wins when
+# set; origin URLs containing github.com => github; ssh-style origins (scp-like
+# or ssh://) resolve their host through `ssh -G` HostName so ~/.ssh/config
+# aliases (git@github-personal:...) classify by destination; any other origin
+# URL => forgejo; no origin remote => none. FORGE_SSH_CONFIG substitutes the
+# ssh config consulted, keeping these tests hermetic to the runner's ~/.ssh.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORGE="$ROOT/dotfiles/.config/agents/skills/workflow-ledger/scripts/forge.sh"
@@ -69,6 +73,7 @@ run_forge() {
     shift
     OUT="$(cd "$dir" && FORGE_MOCK_DIR="$MOCK_DIR" \
         FORGE_URL="https://forge.invalid" FORGE_TOKEN="dummy-token" \
+        FORGE_SSH_CONFIG="$SSH_CFG" \
         bash "$FORGE" "$@" 2>&1)"
     STATUS=$?
 }
@@ -92,6 +97,16 @@ new_repo() {
 MOCK_DIR="$TMPDIR_BASE/mock"
 mkdir -p "$MOCK_DIR"
 
+# Hermetic ssh config: alias resolution must come from here, never the
+# runner's real ~/.ssh/config.
+SSH_CFG="$TMPDIR_BASE/ssh_config"
+cat >"$SSH_CFG" <<'EOF'
+Host github-personal
+    HostName github.com
+Host forge-personal
+    HostName code.example.org
+EOF
+
 echo "=== forge.sh tests ==="
 echo ""
 
@@ -113,6 +128,52 @@ assert_equal "detect prints forgejo for non-github https remote" "forgejo" "$OUT
 run_forge "$repo_none" detect
 assert_status "detect exits 0 with no origin remote" 0 "$STATUS"
 assert_equal "detect prints none without origin remote" "none" "$OUT"
+
+# --- detect: ssh host aliases resolve to their real HostName ---
+repo_gh_alias=$(new_repo gh_alias_repo "git@github-personal:johnalexwelch/dotdev.git")
+repo_fj_alias=$(new_repo fj_alias_repo "git@forge-personal:acme/widgets.git")
+repo_gh_alias_scheme=$(new_repo gh_alias_scheme_repo "ssh://git@github-personal/johnalexwelch/dotdev.git")
+repo_unknown_alias=$(new_repo unknown_alias_repo "git@no-such-alias:acme/widgets.git")
+
+run_forge "$repo_gh_alias" detect
+assert_status "detect exits 0 on github ssh-alias remote" 0 "$STATUS"
+assert_equal "detect resolves scp-like alias to github" "github" "$OUT"
+
+run_forge "$repo_fj_alias" detect
+assert_status "detect exits 0 on forgejo ssh-alias remote" 0 "$STATUS"
+assert_equal "detect resolves scp-like alias to forgejo" "forgejo" "$OUT"
+
+run_forge "$repo_gh_alias_scheme" detect
+assert_status "detect exits 0 on ssh:// alias remote" 0 "$STATUS"
+assert_equal "detect resolves ssh:// alias to github" "github" "$OUT"
+
+run_forge "$repo_unknown_alias" detect
+assert_status "detect exits 0 on unresolvable ssh alias" 0 "$STATUS"
+assert_equal "detect falls back to forgejo for unresolvable alias" "forgejo" "$OUT"
+
+# --- detect: git config forge.type override wins in both directions ---
+repo_forced_gh=$(new_repo forced_gh_repo "https://code.example.org/acme/widgets.git")
+git -C "$repo_forced_gh" config forge.type github
+repo_forced_fj=$(new_repo forced_fj_repo "git@github.com:acme/widgets.git")
+git -C "$repo_forced_fj" config forge.type forgejo
+repo_bad_override=$(new_repo bad_override_repo "git@github.com:acme/widgets.git")
+git -C "$repo_bad_override" config forge.type gitlab
+
+run_forge "$repo_forced_gh" detect
+assert_status "detect exits 0 with forge.type=github override" 0 "$STATUS"
+assert_equal "forge.type=github overrides non-github remote" "github" "$OUT"
+
+run_forge "$repo_forced_fj" detect
+assert_status "detect exits 0 with forge.type=forgejo override" 0 "$STATUS"
+assert_equal "forge.type=forgejo overrides github remote" "forgejo" "$OUT"
+
+run_forge "$repo_bad_override" detect
+assert_status "detect fails loudly on invalid forge.type" 1 "$STATUS"
+
+run_forge "$repo_bad_override" ci-status 42
+assert_status "ops fail on invalid forge.type" 1 "$STATUS"
+assert_equal "invalid forge.type does not cascade to a mock-missing error" \
+    "0" "$(printf '%s\n' "$OUT" | grep -c 'mock answer missing')"
 
 # --- github ops via mock mode ---
 printf 'green\n' >"$MOCK_DIR/github-ci-status-42"
