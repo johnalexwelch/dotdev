@@ -4,7 +4,7 @@ kind: skill
 budget: one-reviewer
 status: active
 next: finalize
-updated: '2026-08-18T19:02:14.966267+00:00'
+updated: '2026-08-18T19:08:17.660723+00:00'
 steps:
 - id: implement
   required: true
@@ -22,8 +22,8 @@ steps:
   evidence: review stamped @ f26c716, verify-local PASS @ cfc0947
 stamps:
   review:
-    head_sha: 5ddb5a8946e2dd403810ea042e0e086bd729f4bd
-    timestamp: '2026-08-18T19:02:14.966056+00:00'
+    head_sha: 921df7360bbdc21de90e0b6178b3169fcb4a5e3f
+    timestamp: '2026-08-18T19:08:17.660508+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -43,9 +43,9 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: cfc094792b004c80c66a7a7aca70448931081d1c
+last_seen_sha: ac014b458f341eb6854049a79793d5cb9279d083
 verify_local:
-  head_sha: cfc094792b004c80c66a7a7aca70448931081d1c
+  head_sha: ac014b458f341eb6854049a79793d5cb9279d083
   passed: true
   results:
   - cmd: ./test/run-tests.sh
