@@ -626,8 +626,9 @@ assert_status "verify-local passes in worktree" 0 "$STATUS"
 # has a file-path origin (detects as forgejo), so provide a mock lookup
 # answering "none" and the test sentinel that permits mock in stamps.
 FORGE_MOCK_DIR="$TMPDIR_BASE/review_gate/forge-mock"
-mkdir -p "$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature"
-printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature/review_gate"
+mkdir -p "$FORGE_MOCK_DIR"
+# Slashed branch names sanitize to flat mock filenames (batch #8).
+printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature_review_gate"
 export FORGE_MOCK_DIR
 export LEDGER_ALLOW_FORGE_MOCK=1
 
@@ -736,6 +737,52 @@ run_ledger "$wt2" stamp review --attest verdict=approve \
 assert_status "security lane present satisfies the flagged floor" 0 "$STATUS"
 assert_file_contains "checked review_floor records the security flag" \
     "$wt2/docs/executions/state.yaml" "standard+security"
+
+# --- snapshot_current: committed snapshot must match live at finalize (batch #8) ---
+# A hand-crafted commit that touches ONLY the snapshot file is
+# freshness-exempt by design, so the PR-visible record could be rewritten
+# without staling any stamp. Finalize closes the hole by comparing the
+# committed snapshot's durable content (run identity, stamps, overrides)
+# against live state.
+wt3=$(new_wt_fixture snapshot_drift)
+lanes3="$TMPDIR_BASE/snapshot_drift/lanes"
+mkdir -p "$lanes3"
+lane3="$lanes3/integrated-review.md"
+printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature_snapshot_drift"
+
+run_ledger "$wt3" init 2026-08-18-snap --workflow workflow-deliver \
+    --kind feature --steps "impl,review,finalize"
+printf -- '- "true"\n' >"$wt3/docs/executions/ci-commands.yaml"
+echo "tweak" >>"$wt3/src/app.py"
+commit_all "$wt3" "feat: change under review"
+printf 'model: opus\nverdict: approve\n' >"$lane3"
+run_ledger "$wt3" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$lane3"
+assert_status "snapshot fixture review stamp exits 0" 0 "$STATUS"
+
+sed -i.bak 's/^run_id: .*/run_id: forged-run/' "$wt3/docs/executions/state.yaml"
+rm -f "$wt3/docs/executions/state.yaml.bak"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp review" -- docs/executions/state.yaml
+
+run_ledger "$wt3" check review
+assert_status "snapshot-only tamper commit keeps stamps fresh (the hole)" 0 "$STATUS"
+
+run_ledger "$wt3" verify-local
+assert_status "verify-local passes in snapshot fixture" 0 "$STATUS"
+run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize refuses a tampered committed snapshot" 2 "$STATUS"
+assert_contains "snapshot mismatch failure names the snapshot" "$OUT" "snapshot"
+
+cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- docs/executions/state.yaml
+run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize passes once the snapshot matches live again" 0 "$STATUS"
+assert_file_contains "finalize records the snapshot_current checked field" \
+    "$wt3/docs/executions/state.yaml" "snapshot_current"
 
 echo ""
 echo "Passed: $PASS"

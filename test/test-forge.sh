@@ -227,6 +227,25 @@ run_forge "$repo_fj" threads-resolved 7
 assert_status "forgejo threads-resolved exits 0" 0 "$STATUS"
 assert_equal "forgejo threads-resolved prints no" "no" "$OUT"
 
+# --- pr-for-branch: direct coverage (batch #8) ---
+printf '31\n' >"$MOCK_DIR/github-pr-for-branch-mybranch"
+printf 'none\n' >"$MOCK_DIR/forgejo-pr-for-branch-mybranch"
+
+run_forge "$repo_gh" pr-for-branch mybranch
+assert_status "github pr-for-branch exits 0" 0 "$STATUS"
+assert_equal "github pr-for-branch prints the PR number" "31" "$OUT"
+
+run_forge "$repo_fj" pr-for-branch mybranch
+assert_status "forgejo pr-for-branch exits 0" 0 "$STATUS"
+assert_equal "forgejo pr-for-branch prints none when no open PR" "none" "$OUT"
+
+# Slashed branch names must sanitize to flat mock filenames, not nested
+# directories (batch #8: feature/x previously required a feature/ subdir).
+printf '77\n' >"$MOCK_DIR/github-pr-for-branch-feature_login-flow"
+run_forge "$repo_gh" pr-for-branch feature/login-flow
+assert_status "slashed-branch pr-for-branch exits 0" 0 "$STATUS"
+assert_equal "slashed branch reads a sanitized flat mock filename" "77" "$OUT"
+
 # --- FORGE_TOKEN hygiene (batch #5) ---
 # Real (non-mock) Forgejo calls must fail loudly on an empty FORGE_TOKEN
 # instead of sending an unauthenticated request.
