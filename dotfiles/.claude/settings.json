@@ -96,7 +96,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); mkdir -p \"$HOME/.claude/logs\"; name=$(printf '%s' \"$input\" | jq -r '.tool_input.skill? // empty | select(type==\"string\" and length>0)' 2>/dev/null); if [ -z \"$name\" ]; then raw=$(printf '%s' \"$input\" | jq -c '.tool_input? // empty' 2>/dev/null); [ -n \"$raw\" ] || raw=$(printf '%s' \"$input\" | tr -d '\\t\\n' | cut -c1-200); name=\"unknown:$(printf '%s' \"$raw\" | cut -c1-200)\"; fi; printf '%s\\t%s\\n' \"$(date '+%Y-%m-%d %H:%M')\" \"$name\" >> \"$HOME/.claude/logs/skill-invocations.log\"",
+            "command": "input=$(cat); mkdir -p \"$HOME/.claude/logs\"; name=$(printf '%s' \"$input\" | jq -r '.tool_input.skill? // empty | select(type==\"string\" and length>0) | gsub(\"[\\n\\r\\t]\"; \" \")' 2>/dev/null); if [ -z \"$name\" ]; then raw=$(printf '%s' \"$input\" | jq -c '.tool_input? // empty' 2>/dev/null); [ -n \"$raw\" ] || raw=$(printf '%s' \"$input\" | tr -d '\\t\\n\\r' | cut -c1-200); name=\"unknown:$(printf '%s' \"$raw\" | cut -c1-200)\"; fi; printf '%s\\t%s\\n' \"$(date '+%Y-%m-%d %H:%M')\" \"$name\" >> \"$HOME/.claude/logs/skill-invocations.log\"",
             "timeout": 5
           }
         ]

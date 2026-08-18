@@ -103,6 +103,10 @@ check "non-string skill value logs unknown:<raw>" \
     '{"tool_input":{"skill":{"nested":true}}}' \
     'unknown:{"skill":{"nested":true}}'
 
+check "embedded newline in skill name stays a single log line (M1)" \
+    '{"tool_input":{"skill":"bad\nname"}}' \
+    "bad name"
+
 # Cross-cutting invariant: no line in the log may have an empty name field.
 blank_lines=$(awk -F'\t' '$2 == "" || NF < 2' "$LOG" | wc -l | tr -d ' ')
 if [ "$blank_lines" -eq 0 ]; then
