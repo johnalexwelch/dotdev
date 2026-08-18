@@ -6,6 +6,7 @@ The prior keep rule was too narrow: on-demand skills are intentionally absent fr
 
 Active skills:
 
+- `airflow-failure-rca`
 - `analysis-council`
 - `analysis-design`
 - `brain-ops`
@@ -31,6 +32,7 @@ Active skills:
 - `execute-phase`
 - `execute-prd`
 - `experiment-design`
+- `external-tool-compatibility`
 - `graph-first`
 - `grill-with-docs`
 - `handoff`
