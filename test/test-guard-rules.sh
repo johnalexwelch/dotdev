@@ -404,6 +404,13 @@ assert_status "arithmetic expansion is not a terminator" 0 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) >/dev/null 2>&1 && git push origin main')"
 assert_status "substitution before a stdout-dup redirect is not a terminator" 0 "$STATUS"
 
+# The load-bearing discriminator for widening the terminator alternation:
+# arming the fallback on any redirect is safe precisely because
+# seg_has_suppression still decides whether it is suppression, so a construct
+# whose output lands in a real file stays permitted.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } >push.log 2>&1')"
+assert_status "construct redirected to a real file is not suppression" 0 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 
