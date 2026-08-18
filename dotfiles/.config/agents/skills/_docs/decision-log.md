@@ -74,3 +74,69 @@ Accepted decisions for the personal skills corpus (`~/dotdev/dotfiles/.config/ag
 **Alternatives considered & rejected.** Prose-only interface (no script) — rejected because it cannot be tested at the seam, only re-read by an agent, which is what caused the drift this candidate exists to fix.
 
 **Status.** Design accepted (grill complete); no code, script, or SKILL.md edits made yet — implementation pending explicit go-ahead.
+
+## D-006 — Deterministic workflow enforcement: `workflow-ledger` kernel, blocking hooks, corpus restructure (2026-08-19)
+
+**Decision (grilled 2026-08-18/19, HITL, all recommendations accepted; provenance: human).** Move workflow enforcement from prose the model complies with to scripts and hooks the model cannot silently bypass. Full scope:
+
+**1. Substrate first, then chain.** Phase 0 builds the enforcement kernel; chain skills are then migrated in flow order starting at `workflow-router`. Router hardening without the kernel is better prose on the same honor system.
+
+**2. Kernel = new library skill `workflow-ledger`** (dotdev canon; `user-invocable: false`, `disable-model-invocation: true`). Absorbs `_docs/step-ledger.md` + `_docs/state-cockpit.md` (two halves of one protocol) and `_docs/human-gate-taxonomy.md` (gate types become a validated enum: only `reviewer-validation` gates are agent-stampable; `maintainer-decision`/`operator-runtime`/`secret-custody` require `--human` provenance). `scripts/ledger.sh` subcommands: `init`, `set` (validated transitions: required steps unskippable, completed/skipped/blocked require evidence, schema-checked writes), `stamp`, `check`, `show`, `reconcile` (ledger vs git ground truth — closes backlog C20/C32/C15), `preflight` (Requires-field tool checks), `review-floor`, `verify-local` (repo-manifest CI command set run at HEAD — closes C19).
+
+**3. Checked vs attested gate fields.** Every gate field is classified: *checked* fields are computed by the script at stamp time (worktree verify, CI state via gh, resolved review threads, git-clean, freshness, lane artifacts); *attested* fields are recorded verbatim with timestamp (verdicts, rationale). A stamp is writable only when all checked fields pass. Model keeps judgment; loses the ability to report a state that isn't true.
+
+**4. Freshness = strict SHA equality.** `stamp` records `head_sha`; `check` fails on any commit after the stamp, docs-only included. No pathspec exceptions — every exclusion is a future bypass argument. Replaces three prose restatements of review-freshness in `workflow-finalize`.
+
+**5. Override = audited, not prevented.** `stamp --override --reason` writes an `overrides:` entry (reason, timestamp, sha); hooks warn loudly but permit. The model can bypass any control it can execute — the design goal is that bypasses are impossible to do *silently*. Hard-block-only rejected: one script bug would brick delivery and teach hook-disabling.
+
+**6. Blocking hooks** (extend `workflow-guard.sh`): `gh pr merge|ready` blocked (exit 2) without fresh finalize stamp; Edit/Write to `state.yaml` blocked (script-owned; no crypto needed); stderr-suppression (`2>/dev/null`) on mutating `git`/`gh` commands blocked (closes C36). Hooks bite only where `docs/executions/` exists (implicit repo opt-in); work repos untouched.
+
+**7. Router determinism = measurement, not rules engine.** Classification stays model-judged; a golden trigger eval (~40 prompts→expected-route harvested from `skill-invocations.log`, run via `skill-evaluator` trigger-accuracy mode) gates CI on router/description changes. ROUTE_CARD emission gets a schema validator. A keyword rules engine was rejected: deterministically wrong on paraphrase.
+
+**8. Model pinning.** Planning/synthesis tier pinned to Fable (`wayfinder`, `design-plan`, `grill-with-docs`, `v1-system-design`, `workflow-roadmap`); router/execution stay sonnet until eval pass-rate justifies a bump. Verify `model: fable` frontmatter support on one skill before fleet rollout. Wayfinder is the user's high-level planning entry point — judgment layer, Fable-pinned, floor pass only (its determinism comes from the funnel it feeds, not stamps).
+
+**9. Two-lane TDD, enforced.** Test-author agent (spec→red) and implementer agent (green) in separate contexts; implementer's commits must show an empty diff on test files vs the test-author's commit — a checked field at review. Piloted on the ledger slice itself; promote into `tdd` if it holds.
+
+**10. `workflow-debug` diagnose-first becomes mechanical.** `stamp diagnose` requires `repro_cmd` with captured non-zero exit (checked) + attested root cause; `stamp fix` requires the same command exiting 0 (checked) + regression test present. Irreproducible bugs use the audited override.
+
+**11. Merge `workflow-build-one` + `workflow-debug` → `workflow-deliver`.** One orchestrator; ledger step-template differs by `kind` (`bug` inserts required `diagnose`). The "never route bugs to build-one" cardinal rule moves from routing (fragile) to the ledger (a `kind: bug` run cannot reach `stamp fix` without a red repro) — misroutes stop being fatal. `execute-prd`/`run-backlog`/`execute-phase` (batch/phase drivers) and `workflow-feature` (pre-delivery) stay separate.
+
+**12. Three-layer corpus architecture, lint-enforced.** `layer:` frontmatter — **kernel** (deterministic scripts+tests, no LLM judgment), **orchestrator** (thin sequencers; gates are kernel calls; no inline bash procedures), **judgment** (reviews/councils/planning; determinism via evals + report contracts, never stamps). `lint-skill-suite.sh` enforces layer rules.
+
+**13. Review deep pass.** Profile floor computed from diff stats + per-repo path patterns; model may escalate, never run below floor (`stamp review` fails if chosen < computed floor, absent override). Lane files stay in `/tmp` but `stamp review` ingests them: existence + `verdict:` line verified; per-lane verdict/sha256/linecount/`model_used` digests recorded in `state.yaml`; stamp fails if a lane's model is below the profile floor (closes C29; active transcript cross-check explicitly deferred). TDD decision (`ran|not_applicable_with_reason`) becomes a ledger field, warn-level at review stamp initially.
+
+**14. Retirements now, overlap consolidations deferred.** The 6 self-declared-superseded stubs (`pr-responder`, `pr-review`, `review`, `slop-cleaner`, `v1-idea-grill`, `rowan`) are formally retired this effort after an invocation-log check. AUDIT_REPORT overlap groups (decision-log/-memo; repo-audit/improve-codebase-architecture/deep-dive-review) go to skill-backlog as separate grills — bolting judgment-skill consolidation onto an enforcement effort bloats both.
+
+**15. Scoreboard** (reported by `skill-system-audit`): golden-eval pass rate (≥95%), gate coverage (% merges with valid stamps in opted-in repos, target 100%), override rate (~0–2/mo with real reasons; a spike means fix the gate, not the metric), corpus lint (zero dangling/arrow-only refs in orchestrators, layer rules clean). Placement: lints in pre-commit; ledger tests always in CI; golden evals path-filtered in CI.
+
+**16. Bootstrap exception, explicit and expiring.** Phase 0 (kernel) is reviewed under today's prose `workflow-review`, noted in the PR. Every Phase 1+ PR must carry ledger stamps — the system reviews its own rollout. Exception expires when Phase 0 merges.
+
+**17. Backlog reconciliation.** Before Phase 1: ground-truth in-flight PRs #104–#113 (`gh pr list`) — router/finalize are shared files. On landing: flip resolved skill-backlog rows (C22 fully; C19, C29, C20/C32 parts) with ground-truth citations, so the next harvest doesn't re-propose what this effort built.
+
+**Alternatives considered & rejected** (per-question detail in grill transcript 2026-08-18): router-first rollout (nothing to write evidence into); pathspec-aware freshness (judgment in a script costume); hard-block-only override (bricks delivery on script bugs); routes.yaml rules engine (deterministically wrong); uniform deep pass on all chain skills (wayfinder churn, build-one already migrated); full corpus reorg now (half-migrated-corpus risk — the 2026-06-21 restore incident); committing lane review files to the repo (PR noise; digests give ~90% of audit value); HMAC-signed stamps (hook-blocking direct edits is simpler; crypto is a later add-on if bypasses appear).
+
+**Status.** Design accepted (grill complete, all decisions human-provenance). Implementation pending: phase plan → Phase 0 kernel slice. Supersedes-in-part: D-005's caller-migration backlog folds into the chain floor passes; `_docs/step-ledger.md` + `state-cockpit.md` + `human-gate-taxonomy.md` become `workflow-ledger` content when Phase 0 lands.
+
+### D-006 addendum — August-reflection review (2026-08-19, decisions 18–21, human provenance)
+
+Reviewed all 20 unharvested reflections (2026-08-04 → 2026-08-17) against the design; four additions accepted:
+
+**18. Entry enforcement (closes the ad-hoc spiral).** In opted-in repos, Edit/Write to tracked code with no active run in the ledger → hook warns (week 1), then exits 2 with "route via workflow-router or `ledger.sh init`". Evidence: 3MF sessions (2026-08-11) — three ignored reminders to use workflow-debug/tdd/router; exit gates can't catch a session that never enters the system. Rollout per the 2026-08-05 blast-radius lesson: warn-first, opted-in repos only.
+
+**19. Ledger durability.** Live run state moves to `.git/ledger/state.yaml` (survives `reset --hard`/checkout; naturally per-worktree); `stamp` writes a committed snapshot to `docs/executions/state.yaml` for the PR-visible audit record. Evidence: AE-232 (2026-08-17) lost state.yaml edits to a reset. Rejected: auto-commit every write (history noise); tracked-only (proven lossy); untracked-only (no audit).
+
+**20. Forge abstraction.** Checked fields (`ci`, `pr_state`, resolved threads) dispatch through a `forge.sh` shim (origin-detected: gh vs Forgejo API, per the existing `git-forge` pattern); merge-gate hook regex covers `gh pr merge|ready`, `git-forge` merge, `tea pr merge`, and curl `/pulls/*/merge`. Documented honestly: merge shapes outside those patterns bypass the hook — audited-override philosophy (loud where not preventable). Evidence: 3× "Forgejo ≠ GitHub" reflections (2026-08-11/12); GitHub-only enforcement would miss the personal-infra fleet where ad-hoc pressure is highest.
+
+**21. Watch-item + floor riders.** (a) Counter-evidence logged: rowan-soak (2026-08-11) found specialist fan-out added orchestration overhead without decision-quality gain — two-lane TDD pilot (decision 9) keeps its anti-self-approval rationale but collapses to single-lane + empty-test-diff check if the pilot reproduces overhead-without-value. (b) grill-with-docs floor pass adds the pre-lock ground-truth gate (Iceberg reversal 2026-08-06 + Airflow proxy-fix 2026-08-04: in-repo-checkable decisions must be verified before locking/durable fan-out). (c) Phase 5 adds a `skill-backlog` harvest run — the 20 August reflections are unharvested; this effort's cluster consumption (C19/C22/C29/C20/C32) and the August material must land in the ledger, not bypass it.
+
+### D-006 track decisions (2026-08-19, Q32–Q36, human provenance)
+
+**Track B (router measurement).** Golden set: ~40 cases at `workflow-router/references/golden-routes.yaml` (~25 harvested from `skill-invocations.log`, ~15 synthetic adversarial on known confusions); a regression corpus — every future misroute adds a case. Runner `test/routing-eval.sh`: `claude -p` headless, sonnet pinned, deterministic string-match on the ROUTE_CARD `Selected flow` line — no LLM judge. Pass ≥95%. CI: workflow_dispatch + path-filtered PR trigger; non-blocking two weeks, then required.
+
+**Track C (floor mechanics).** Layer tagging staged: tag only touched skills now; lint warn-mode for untagged, error-mode for tagged-but-violating; fleet-wide sweep only after the taxonomy survives ~20 skills. Arrow-ref conversion: one cheap-agent PR, long-tail only; agent classifies invocation-arrows vs map-arrows and escalates ambiguous cases rather than converting them; `lint-skill-refs.sh` must pass after.
+
+**Track D (hygiene).** Retirements: delete the 6 stub dirs outright (git history is the tombstone), atomic catalog updates (router section, skills-index, SKILL-MANIFEST, AUDIT_REPORT) + lint + post-merge Codex mirror; precondition per the 2026-06-21 corrected audit rule: grep `skill-invocations.log`, any invocation in 60 days → escalate that stub to Alex instead of deleting. stderr-suppression hook moved to Track A (already in the Phase 0 spec). August-reflection harvest runs via `skill-backlog` as its own lane.
+
+### D-006 eval substrate (2026-08-19, human provenance)
+
+Pre/post evals adopted: Track B's first real eval run = the router baseline; a read-only gate-compliance transcript audit (last ~40 merged PRs) = the gate baseline, captured before any enforcement merges; `skill-evaluator` blind A/B reserved for Phase 3's review/finalize rewrites only. **`~/projects/audition` adopted as the A/B eval substrate** for Phase 3 and the two-lane-TDD watch-item (D-006 addendum #21a) — its verdict discipline (median >10% AND disjoint ranges, else inconclusive) and `already_tested` ledger dedup replace hand-rolled comparisons. Prerequisite queued in the audition repo (outside dotdev): a `claude -p` launch adapter (audition currently launches `pi` only — per the target-runtime rule, pi-runtime A/Bs are a proxy for Claude-harness skills) plus an optional per-run content-assertion hook (e.g. "output contains a well-formed gate block"). Quality judge stays deferred per audition's own rule. Not used for Track B's router eval (per-case exact-match, not A/B).
