@@ -9,8 +9,12 @@
 #   forge.sh pr-state <pr>           -> open|merged|closed|draft
 #   forge.sh threads-resolved <pr>   -> yes|no
 #
-# Detection: origin URLs containing github.com are github; any other origin
-# URL is forgejo; no origin remote is none.
+# Detection: `git config forge.type` (github|forgejo) wins when set; origin
+# URLs containing github.com are github; ssh-style origins (scp-like or
+# ssh://) resolve their host through `ssh -G` HostName so ~/.ssh/config
+# aliases (git@github-personal:...) classify by destination, not alias
+# spelling; any other origin URL is forgejo; no origin remote is none.
+# FORGE_SSH_CONFIG substitutes the ssh config consulted (test seam).
 #
 # Mock mode: FORGE_MOCK_DIR=<dir> reads the canned normalized answer from
 # "$FORGE_MOCK_DIR/<forge>-<op>-<pr>" (e.g. github-ci-status-42) — zero
@@ -28,14 +32,70 @@ usage() {
     exit 1
 }
 
+# Extracts the ssh host from scp-like (user@host:path) and ssh:// origin
+# URLs; prints nothing for other schemes (their hostname is already literal).
+ssh_host_of() {
+    local url="$1" host=""
+    case "$url" in
+        ssh://*)
+            host="${url#ssh://}"
+            host="${host%%/*}"
+            host="${host##*@}"
+            host="${host%%:*}"
+            ;;
+        *://*) ;;
+        *@*:*)
+            host="${url#*@}"
+            host="${host%%:*}"
+            ;;
+    esac
+    printf '%s' "$host"
+}
+
+# Prints the HostName ssh would actually connect to for a host alias.
+# `ssh -G` only evaluates config — no network, no key exchange.
+resolve_ssh_hostname() {
+    local host="$1"
+    if [ -n "${FORGE_SSH_CONFIG:-}" ]; then
+        ssh -G -F "$FORGE_SSH_CONFIG" -- "$host" 2>/dev/null
+    else
+        ssh -G -- "$host" 2>/dev/null
+    fi | awk '/^hostname /{print $2; exit}'
+}
+
 detect_forge() {
-    local url
+    local url override host resolved
+    override="$(git config --get forge.type 2>/dev/null)" || override=""
+    case "$override" in
+        "") ;;
+        github | forgejo)
+            echo "$override"
+            return 0
+            ;;
+        *) die "invalid forge.type: $override (expected github|forgejo)" ;;
+    esac
     url="$(git remote get-url origin 2>/dev/null)" || url=""
     case "$url" in
-        "") echo none ;;
-        *github.com*) echo github ;;
-        *) echo forgejo ;;
+        "")
+            echo none
+            return 0
+            ;;
+        *github.com*)
+            echo github
+            return 0
+            ;;
     esac
+    host="$(ssh_host_of "$url")"
+    if [ -n "$host" ]; then
+        resolved="$(resolve_ssh_hostname "$host")"
+        case "$resolved" in
+            github.com | *.github.com)
+                echo github
+                return 0
+                ;;
+        esac
+    fi
+    echo forgejo
 }
 
 repo_path() {
