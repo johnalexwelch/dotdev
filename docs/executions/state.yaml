@@ -3,32 +3,65 @@ workflow: workflow-debug
 kind: bug
 budget: one-reviewer
 status: active
-next: diagnose
-updated: '2026-08-18T19:19:25.868695+00:00'
+next: finalize
+updated: '2026-08-18T19:36:58.426262+00:00'
 steps:
 - id: diagnose
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'live repro: origin git@github-personal:johnalexwelch/dotdev.git; forge.sh
+    detect => forgejo; ssh -G github-personal => hostname github.com; root cause detect_forge()
+    classifies any non-github.com URL as forgejo without resolving ssh aliases'
 - id: red-tests
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'test/test-forge.sh: 5 new failing assertions (scp alias->github, ssh://
+    alias->github, forge.type override x2, invalid override exit 1); 28 passing incl.
+    original 3 remote shapes'
 - id: fix
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'detect_forge(): forge.type override (fail-loud on invalid), github.com
+    literal, ssh -G HostName resolution for scp-like and ssh:// origins, forgejo fallback;
+    FORGE_SSH_CONFIG test seam'
 - id: verify
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: test/test-forge.sh 33/0; full run-tests.sh exit 0 (ledger 102/0, guard
+    36/0, gh-shim 38/0); shellcheck strict + shfmt -i=4 -ci clean; live repo detect
+    => github (was forgejo)
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: independent integrated lane (claude-fable-5) APPROVE at /tmp/integrated-review.md;
+    finding 1 (run_op die-in-subshell cascade) fixed red-first in follow-up commit;
+    findings 2 (ipv6 bracket parse, safe fallback) and 3 (override beats no-origin,
+    intentional) accepted as documented
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: b6a9036c340b3ca382b03ebcfbecf12a23d61692
+    timestamp: '2026-08-18T19:36:58.426094+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: d72a47d6dd218568376f6d386e7c1ad20d908b57e6dad8ad495be9741bd9e0d1
+      lane_integrated_lines: '42'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: claude-fable-5
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: fast
+      lanes: integrated=/tmp/integrated-review.md
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: 725b922346eb141f034df17e9113aec9ed834e38
