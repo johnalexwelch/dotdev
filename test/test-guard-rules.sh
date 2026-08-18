@@ -330,14 +330,19 @@ assert_status "real 'fi' terminator still trips the fallback" 2 "$STATUS"
 # A command substitution's closing paren is not a construct terminator
 # (tests lane R2): `echo $(date) <sup> && git push` has no compound
 # redirection at all and must not trip the whole-command fallback.
+# Single quotes throughout this block are deliberate: the substitution must
+# reach the hook payload literally, which is the property under test.
+# shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) 2>/dev/null && git push origin main')"
 assert_status "command-substitution paren does not trip the fallback" 0 "$STATUS"
 
+# shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(basename $(pwd)) 2>/dev/null && git push origin main')"
 assert_status "nested command substitution does not trip the fallback" 0 "$STATUS"
 
 # A mutation INSIDE a substitution is still judged in its own segment: the
 # masking is used only to identify terminators, never to hide mutations.
+# shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(git push origin main) 2>/dev/null')"
 assert_status "mutation inside a substitution stays blocked" 2 "$STATUS"
 
@@ -398,9 +403,11 @@ run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then git push origi
 assert_status "conditional suppressed via stdout-dup blocks" 2 "$STATUS"
 
 # Widening the alternation must not make arithmetic expansion a terminator.
+# shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((1+2)) >/dev/null 2>&1 && git push origin main')"
 assert_status "arithmetic expansion is not a terminator" 0 "$STATUS"
 
+# shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) >/dev/null 2>&1 && git push origin main')"
 assert_status "substitution before a stdout-dup redirect is not a terminator" 0 "$STATUS"
 
