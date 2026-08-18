@@ -3,20 +3,42 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 status: active
-next: implement
-updated: '2026-08-18T21:56:43.736817+00:00'
+next: review
+updated: '2026-08-18T22:30:38.556446+00:00'
 steps:
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: review 108->96, finalize 277->196 lines; kernel refs in place; lints clean,
+    run-tests all green (322 pass/0 fail across suites)
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: dispatching per computed floor
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 67990bae6551cdc4d23fdbd3230a1271c167705a
+    timestamp: '2026-08-18T22:30:38.556122+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 1d4a2a4135904fe59636a048d9c26ac1e8743b04d7348876ae5c184b3089057f
+      lane_integrated_lines: '70'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: claude-opus-5[1m]
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      review_profile: fast
+      verdict: APPROVE
+      lanes: integrated=/tmp/2026-08-18-phase3-integrated-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: 67990bae6551cdc4d23fdbd3230a1271c167705a
