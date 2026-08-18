@@ -2,9 +2,9 @@ run_id: 2026-08-18-phase3
 workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
-status: active
-next: finalize
-updated: '2026-08-18T22:59:04.648104+00:00'
+status: done
+next: ''
+updated: '2026-08-18T22:59:18.509545+00:00'
 steps:
 - id: implement
   required: true
@@ -19,8 +19,9 @@ steps:
     3 rebase races + NEW-2/NEW-3 fixes; lane reviewed_sha=d2c3c24 == HEAD
 - id: finalize
   required: true
-  status: active
-  evidence: verify-local + PR + finalize stamp
+  status: completed
+  evidence: 'PR #169 open non-draft (F3 route a); CI 6/6 green at d2c3c24; verify-local
+    PASS; finalize stamp clean at 905dbd3 (checked: ci=green pr_state=open threads=yes)'
 stamps:
   review:
     head_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
@@ -60,7 +61,7 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 905dbd3dd8da54d0ef265a1f39cccaa277f1a20b
+last_seen_sha: 1d27cfb0fd7a1d7cf9f0341b5dcc2cffaed6b310
 verify_local:
   head_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
   passed: true
