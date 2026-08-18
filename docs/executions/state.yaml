@@ -1,88 +1,96 @@
-run_id: 2026-08-18-override-stale
-workflow: workflow-debug
-kind: bug
+run_id: 2026-08-18-skills-airflow-rca-tool-compat
+workflow: workflow-skill
+kind: skill
 budget: one-reviewer
-status: active
-next: finalize
-updated: '2026-08-18T20:23:45.656120+00:00'
+status: done
+next: ''
+updated: '2026-08-18T22:20:02.066350+00:00'
 steps:
-- id: diagnose
+- id: scope
   required: true
   status: completed
-  evidence: repro red pre-fix (OVERRIDE_STALE prefix+reason absent), kernel-verified
-    at diagnose stamp
-- id: fix
+  evidence: "SB-102/SB-103 approved BUILD in docs/executions/plans/2026-08-18-corpus-optimization-audit.md\
+    \ \xA74; specs in reflections 2026-08-04-airflow-resilience-evidence.md + 2026-08-11-3mf-multicolor-slicer-compatibility.md;\
+    \ targets dotfiles/.config/agents/skills/{airflow-failure-rca,external-tool-compatibility}/SKILL.md"
+- id: author
   required: true
   status: completed
-  evidence: repro green; test-ledger 108/0, test-guard-rules 39/0
+  evidence: 'airflow-failure-rca/SKILL.md (76 lines) + external-tool-compatibility/SKILL.md
+    (59 lines) drafted per write-a-skill; frontmatter parses (yaml.safe_load OK);
+    Contract 5-field sections present; layer: judgment both'
+- id: eval-gate
+  required: true
+  status: completed
+  evidence: 'skill-evaluator skipped per workflow-skill Step 3 predicate: both are
+    judgment-layer skills (type not eval-bearing); lint-skill-refs dangling=0, lint-skill-suite
+    failures=0, run-tests all suites 0 failed'
+- id: land
+  required: true
+  status: completed
+  evidence: 'commits c06aef9 329ec4d pushed to feat/skills-airflow-rca-tool-compat;
+    PR #166 open; backlog rows SB-102/SB-103 -> implemented citing PR #166'
 - id: review
   required: true
   status: completed
-  evidence: fast profile, integrated lane approve (claude-fable-5), red/green independently
-    verified
+  evidence: fast profile (review-floor=fast); integrated lane dispatched to fresh
+    Opus subagent; verdict APPROVE; findings 1-2 fixed in b864806 + re-verified by
+    the lane reviewer; finding 3 declined-by-dispatch (model unset specified); stamp
+    review at b864806
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'finalize stamped at e649bba: verify-local PASSED (run-tests + both skill
+    lints), CI GREEN 6 checks on PR #166, tree clean, review stamp fresh; PR left
+    open per dispatch (do not merge)'
 stamps:
-  diagnose:
-    head_sha: 8ba55d14e4b4e15794cf63f5fdee286fa37f5958
-    timestamp: '2026-08-18T19:30:14.079093+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      repro_exit: '1'
-      repro_tail: 'no OVERRIDE_STALE prefix on a stale override; output: STALE: non-ledger
-        commits exist after the ''finalize'' stamp (3ffd1ebd93b36ed9c354270cf8f6e227de7e2b0f)'
-    attested:
-      repro_cmd: bash /private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-suspicious-cannon-32f671/94f9156c-ba33-4073-8be1-fabe428eea6a/scratchpad/repro-override-stale.sh
-      root_cause: check_gate collapses a stale override into the generic STALE line
-        and drops the recorded override reason; spec requires a distinct OVERRIDE_STALE
-        contract and no test locks override freshness
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  fix:
-    head_sha: 2f3948295f39a2c42eb8c06aa910a1ef7fbee0d9
-    timestamp: '2026-08-18T19:33:29.709451+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      repro_exit: '0'
-      regression_test: test/test-ledger.sh
-    attested:
-      regression_test: test/test-ledger.sh
-      rationale: stale-override branch in check_gate emits OVERRIDE_STALE with recorded
-        reason; 4 red assertions now green
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
   review:
-    head_sha: 9dad02988c6bf9f3f2f540633a6f184f3c2f069d
-    timestamp: '2026-08-18T20:23:45.655962+00:00'
+    head_sha: b864806316f5699bb3ebc52c1dd2e647108b12d6
+    timestamp: '2026-08-18T22:17:32.182241+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 1d849224788f7d43ce9759e8bc9b58ec724e1f6d1b544d90f1cf01fb5dff9f01
-      lane_integrated_lines: '18'
-      lane_integrated_verdict: approve
-      lane_integrated_model: claude-fable-5
+      lane_integrated_sha256: fcf51366f94bf56960ca715b9f34ff835e771298f4d0ddf320614710216b201a
+      lane_integrated_lines: '93'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: opus
       review_floor: fast
       worktree_verify: pass
     attested:
       review_profile: fast
-      lanes: integrated=/tmp/integrated-review.md
-      verdict: approve
+      verdict: APPROVE
+      lanes: integrated=/private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-skills-workflows-deterministic-fa06ac/31fa3bf8-d87d-415c-b40f-b1585445ec8b/scratchpad/integrated-review.md
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  finalize:
+    head_sha: e649bbad0c223be2a55bb88cd0d82e16b700ef9b
+    timestamp: '2026-08-18T22:19:31.179812+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '166'
+      describe_pr: "feat(skills): airflow-failure-rca + external-tool-compatibility\
+        \ (SB-103/SB-102) \u2014 two approved corpus-audit extractions; catalog-tier\
+        \ airflow RCA + model-invoked tool-compat discipline; manifest + backlog updated;\
+        \ golden-routes/skills-index/Codex-sync deferred per dispatch"
+      post_mortem: 'clean run; one process miss: worktree cut with raw git worktree
+        add instead of worktree-baseline.sh cut, so the review stamp''s baseline verify
+        failed until the state file was written with the values cut would have emitted
+        (origin/main base, staging absent)'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 9639f5b99c7888e42f613311f5562941480c9370
+last_seen_sha: 25bc41db706c49819dddfe9d9d4f764508b50bab
 verify_local:
-  head_sha: 02214fc8ec7c5764e6811c0924ffd765b03edd10
+  head_sha: e649bbad0c223be2a55bb88cd0d82e16b700ef9b
   passed: true
   results:
   - cmd: ./test/run-tests.sh
