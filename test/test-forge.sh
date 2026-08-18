@@ -247,22 +247,8 @@ assert_status "slashed-branch pr-for-branch exits 0" 0 "$STATUS"
 assert_equal "slashed branch reads a sanitized flat mock filename" "77" "$OUT"
 
 # --- FORGE_TOKEN hygiene (batch #5) ---
-# Real (non-mock) Forgejo calls must fail loudly on an empty FORGE_TOKEN
-# instead of sending an unauthenticated request.
-run_forge_real() {
-    local dir="$1" token="$2"
-    shift 2
-    OUT="$(cd "$dir" && FORGE_URL="https://forge.invalid" FORGE_TOKEN="$token" \
-        FORGE_SSH_CONFIG="$SSH_CFG" bash "$FORGE" "$@" 2>&1)"
-    STATUS=$?
-}
-
-run_forge_real "$repo_fj" "" ci-status 7
-assert_status "empty FORGE_TOKEN fails loudly (no unauthenticated call)" 1 "$STATUS"
-assert_contains "empty-token failure names FORGE_TOKEN" "$OUT" "FORGE_TOKEN"
-
-# The token must never travel on curl argv (visible in process listings);
-# it goes via a curl config read from stdin. Stub curl records its argv.
+# Stub curl (PATH-prepended) records argv and stdin; every real-mode probe in
+# this section runs through it so no probe can leave the sandbox.
 STUB_BIN="$TMPDIR_BASE/stub-bin"
 mkdir -p "$STUB_BIN"
 cat >"$STUB_BIN/curl" <<STUB
@@ -273,10 +259,27 @@ printf '{"merged":false,"draft":false,"state":"open"}'
 STUB
 chmod +x "$STUB_BIN/curl"
 
-OUT="$(cd "$repo_fj" && PATH="$STUB_BIN:$PATH" FORGE_URL="https://forge.invalid" \
-    FORGE_TOKEN="hunter2-token-value" FORGE_SSH_CONFIG="$SSH_CFG" \
-    bash "$FORGE" pr-state 9 2>&1)"
-STATUS=$?
+# Runs forge.sh in real (non-mock) Forgejo mode behind the stub curl.
+run_forge_stubbed() {
+    local dir="$1" token="$2"
+    shift 2
+    OUT="$(cd "$dir" && PATH="$STUB_BIN:$PATH" FORGE_URL="https://forge.invalid" \
+        FORGE_TOKEN="$token" FORGE_SSH_CONFIG="$SSH_CFG" bash "$FORGE" "$@" 2>&1)"
+    STATUS=$?
+}
+
+# Empty FORGE_TOKEN must fail loudly BEFORE any request: the stub proves
+# curl is never invoked (tests-lane fix: the exit code alone was vacuous).
+rm -f "$TMPDIR_BASE/curl-argv"
+run_forge_stubbed "$repo_fj" "" ci-status 7
+assert_status "empty FORGE_TOKEN fails loudly (no unauthenticated call)" 1 "$STATUS"
+assert_contains "empty-token failure names FORGE_TOKEN" "$OUT" "FORGE_TOKEN"
+assert_equal "curl is never invoked on an empty token" "missing" \
+    "$([ -f "$TMPDIR_BASE/curl-argv" ] && echo present || echo missing)"
+
+# The token must never travel on curl argv (visible in process listings);
+# it goes via a curl config read from stdin.
+run_forge_stubbed "$repo_fj" "hunter2-token-value" pr-state 9
 assert_status "forgejo pr-state via stub curl exits 0" 0 "$STATUS"
 assert_equal "stub-backed pr-state prints open" "open" "$OUT"
 assert_equal "token never appears on curl argv" "0" \

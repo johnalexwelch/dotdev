@@ -316,7 +316,7 @@ assert_status "ground-truth fixture clean right after init" 0 "$STATUS"
 git -C "$repoG" checkout -q -b feature/elsewhere
 run_ledger "$repoG" reconcile
 assert_status "branch change since init is drift (exit 1)" 1 "$STATUS"
-assert_contains "branch drift names the recorded branch" "$OUT" "main"
+assert_contains "branch drift names the recorded branch" "$OUT" "recorded 'main'"
 run_ledger "$repoG" reconcile --apply
 run_ledger "$repoG" reconcile
 assert_status "reconcile --apply adopts the new branch" 0 "$STATUS"
@@ -331,10 +331,26 @@ run_ledger "$repoG" reconcile --apply
 mv "$repoG" "${repoG}-moved"
 run_ledger "${repoG}-moved" reconcile
 assert_status "worktree path change is drift (exit 1)" 1 "$STATUS"
-assert_contains "worktree drift names the worktree" "$OUT" "worktree"
+# The needle must be the RECORDED (old) path phrase — the frontier line
+# always prints the current worktree, which contains the old path as a
+# substring (tests-lane vacuity fix). Symlink-agnostic: match the phrase
+# ending at the old basename, which the -moved path cannot produce.
+assert_contains "worktree drift names the recorded path" "$OUT" \
+    "reconcile_truth' but is running in"
 run_ledger "${repoG}-moved" reconcile --apply
 run_ledger "${repoG}-moved" reconcile
 assert_status "reconcile --apply adopts the new worktree path" 0 "$STATUS"
+
+# Pre-field (legacy) live states skip the new ground-truth comparisons
+# instead of erroring (tests-lane back-compat pin).
+repoL=$(new_repo legacy_fields)
+run_ledger "$repoL" init 2026-08-18-legacy --workflow workflow-deliver \
+    --kind feature --steps "impl"
+stateL=$(live_state "$repoL")
+sed -i.bak '/^initialized_epoch:/d; /^branch:/d; /^worktree:/d' "$stateL"
+rm -f "$stateL.bak"
+run_ledger "$repoL" reconcile
+assert_status "legacy state without new fields reconciles clean" 0 "$STATUS"
 
 # --- corrupt live state is exit 6, never silently rewritten ---
 repoH=$(new_repo corrupt_state)
@@ -433,8 +449,12 @@ exit 1
 LEAK
 commit_all "$repoRT" "test: leaky red repro"
 run_ledger "$repoRT" stamp diagnose --attest repro_cmd="bash leaky.sh" \
-    --attest root_cause="leaky output"
+    --attest root_cause="token=attested-stays-verbatim by design"
 assert_status "diagnose stamp with leaky repro exits 0" 0 "$STATUS"
+# Attested values must stay verbatim (the fix gate re-executes repro_cmd);
+# redaction covers only script-captured checked values (tests-lane pin).
+assert_file_contains "attested values are not redacted" "$stateRT" \
+    "token=attested-stays-verbatim"
 assert_file_not_contains "live tail redacts the ghp_ token" "$stateRT" \
     "ghp_ABCDEFGHIJKLMNOPQRSTuvwx"
 assert_file_not_contains "live tail redacts the token= value" "$stateRT" \
@@ -796,7 +816,8 @@ assert_status "verify-local passes in snapshot fixture" 0 "$STATUS"
 run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
 assert_status "finalize refuses a tampered committed snapshot" 2 "$STATUS"
-assert_contains "snapshot mismatch failure names the snapshot" "$OUT" "snapshot"
+assert_contains "snapshot mismatch failure is the snapshot check itself" "$OUT" \
+    "does not match live ledger state"
 
 # Deliberate legacy-shape restore: a byte-copy of live state (pre-cap
 # snapshots were exactly this). snapshot_match must normalize both sides,
@@ -809,6 +830,35 @@ run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
 assert_status "finalize passes on a legacy byte-copy snapshot of live" 0 "$STATUS"
 assert_file_contains "finalize records the snapshot_current checked field" \
     "$wt3/docs/executions/state.yaml" "snapshot_current"
+
+# A tamper AFTER the finalize stamp is freshness-exempt (snapshot-only
+# commit), so `check finalize` itself must compare the snapshot (security
+# lane): stamps and overrides are the durable keys worth forging.
+run_ledger "$wt3" check finalize
+assert_status "check finalize OK after the finalize stamp" 0 "$STATUS"
+
+sed -i.bak 's/verdict: approve/verdict: forged/g' "$wt3/docs/executions/state.yaml"
+rm -f "$wt3/docs/executions/state.yaml.bak"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "post-stamp verdict tamper fails check finalize" 1 "$STATUS"
+assert_contains "post-stamp tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
+
+cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "check finalize recovers after restore" 0 "$STATUS"
+
+sed -i.bak 's/^overrides: \[\]/overrides: [{gate: finalize, reason: forged-bypass}]/' \
+    "$wt3/docs/executions/state.yaml"
+rm -f "$wt3/docs/executions/state.yaml.bak"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "post-stamp overrides tamper fails check finalize" 1 "$STATUS"
+assert_contains "overrides tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
 
 echo ""
 echo "Passed: $PASS"

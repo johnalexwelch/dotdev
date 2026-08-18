@@ -90,6 +90,14 @@ json_bash() {
         "$cwd" "$cmd"
 }
 
+# jq-built variant for commands carrying quotes/newlines that printf-splicing
+# cannot legally embed in JSON.
+json_bash_jq() {
+    local cwd="$1" cmd="$2"
+    jq -Rn --arg cwd "$cwd" --arg c "$cmd" \
+        '{hook_event_name:"PreToolUse",tool_name:"Bash",cwd:$cwd,tool_input:{command:$c}}'
+}
+
 json_file_tool() {
     local tool="$1" cwd="$2" path="$3"
     printf '{"hook_event_name":"PreToolUse","tool_name":"%s","cwd":"%s","tool_input":{"file_path":"%s"}}' \
@@ -278,6 +286,29 @@ assert_status "subshell suppression over a push still blocked" 2 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash "$plain_sup" "for b in a b; do git push origin b; done 2>/dev/null")"
 assert_status "loop-body suppression over a push still blocked" 2 "$STATUS"
+
+# Fail-open shapes found by the security lane: line-continuation folding and
+# separators inside quoted arguments must not move the suppression into a
+# different segment from the mutation.
+lc_cmd="$(printf 'git push origin main \\\n  2>/dev/null')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$lc_cmd")"
+assert_status "line-continuation folded suppression still blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "fix: a | b" 2>/dev/null')"
+assert_status "quoted pipe does not split the mutating segment" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git commit -m 'wip; more' 2>/dev/null")"
+assert_status "quoted semicolon does not split the mutating segment" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo "a|b" 2>/dev/null && git push origin main')"
+assert_status "quoted pipe in a non-mutating segment still allowed" 0 "$STATUS"
+
+# Alternate suppression spellings (security lane note).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2> /dev/null')"
+assert_status "spaced /dev/null suppression blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>&-')"
+assert_status "fd-close suppression blocked" 2 "$STATUS"
 
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
