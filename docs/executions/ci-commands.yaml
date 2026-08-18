@@ -1,0 +1,6 @@
+# Local CI-parity command set, run by workflow-ledger's `ledger.sh verify-local`
+# at HEAD before a finalize stamp. Top-level YAML list of command strings,
+# executed from the repo root. Keep in sync with the repo's CI gates.
+- ./test/run-tests.sh
+- ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+- ./dotfiles/.config/agents/skills/lint-skill-suite.sh
