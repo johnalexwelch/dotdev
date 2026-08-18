@@ -26,7 +26,7 @@ Pairs well with: diagnose (single hard bug after RCA points at code), incident-r
 
 ### 0. Verify `error_detail` availability (fleet check)
 
-The structured `error_detail` field may be a dojo task-listener extension rather than generic Airflow. Before relying on it: fetch one known-failed TI's log and confirm the "Task failed with exception" event carries `error_detail[0]` with `exc_type`/`exc_value`. If absent on this fleet, fall back to parsing the traceback from the flat log text — the discipline (logs before fixes) is unchanged, only the extraction.
+The structured `error_detail` field may be a dojo task-listener extension rather than generic Airflow. Run this check on the **first log fetch of step 2** (any failed TI from the step-1 pull works): confirm the "Task failed with exception" event carries `error_detail[0]` with `exc_type`/`exc_value`. If absent on this fleet, fall back to parsing the traceback from the flat log text — the discipline (logs before fixes) is unchanged, only the extraction.
 
 Done when: one sample log confirms which extraction path this installation supports.
 
@@ -47,7 +47,7 @@ For each top offender, fetch the log of the **last real attempt** and extract `e
 | `error_detail` location | It is a per-event field on the "Task failed with exception" log *item*, not in the flat log text |
 | Mapped tasks (`expand_kwargs`) | Include `&map_index=N` (from the TI) or the log fetch returns empty |
 | `run_id` in URLs | URL-encode it — `:` and `+` break the path otherwise |
-| Attempt numbering | `try_number` in the API can be one past `max_tries` |
+| Attempt numbering | Treat it as uncertain — `try_number` in the API can be one past `max_tries`; if the log fetch at `try_number` returns empty, retry the adjacent index rather than concluding "no log" |
 
 Done when: every top offender has a captured `exc_type`/`exc_value` from a specific TI (non-empty log for mapped tasks).
 
