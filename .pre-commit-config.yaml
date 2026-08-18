@@ -29,6 +29,9 @@ repos:
     rev: v0.11.0
     hooks:
       - id: yamlfmt
+        # Ledger snapshot is machine-written by workflow-ledger/scripts/ledger.sh
+        # (Edit/Write hook-blocked); do not reformat script-owned output.
+        exclude: ^docs/executions/state\.yaml$
   - repo: local
     hooks:
       - id: skill-suite-lint
