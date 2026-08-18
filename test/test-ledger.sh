@@ -534,6 +534,17 @@ run_ledger "$wt1" stamp review --attest verdict=approve \
 assert_status "lane model below floor exits 2" 2 "$STATUS"
 assert_contains "below-floor failure names model" "$OUT" "model"
 
+# Lane freshness binding (batch #3, bit us twice live): a lane file whose
+# mtime predates this run's init is a stale artifact from an earlier
+# session and must not satisfy the stamp.
+printf 'model: opus\nverdict: approve\n' >"$lane1"
+touch -t 202001010000 "$lane1"
+run_ledger "$wt1" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$lane1" \
+    --attest model_floor=sonnet
+assert_status "lane file predating run init exits 2" 2 "$STATUS"
+assert_contains "stale lane failure says predates" "$OUT" "predates"
+
 printf 'model: opus\nverdict: approve\n' >"$lane1"
 run_ledger "$wt1" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$lane1" \
