@@ -3,8 +3,8 @@ workflow: workflow-deliver
 kind: bug
 budget: one-reviewer
 status: active
-next: fix
-updated: '2026-08-18T22:59:14.212352+00:00'
+next: review
+updated: '2026-08-18T23:54:14.916224+00:00'
 steps:
 - id: diagnose
   required: true
@@ -17,8 +17,8 @@ steps:
     \ file"
 - id: fix
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'stamp fix at cf71697: repro green (both suites), regression_test=test/test-worktree-baseline.sh'
 - id: preflight
   required: true
   status: completed
@@ -36,8 +36,12 @@ steps:
     \ recompute and (b) hook sidecar block"
 - id: implement
   required: true
-  status: active
-  evidence: editing worktree-baseline.sh cmd_verify + workflow-guard.sh rule 2
+  status: completed
+  evidence: 'worktree-baseline.sh cmd_verify ground-truth rewrite + load_state strict
+    parse + workflow-guard rule 2b; full run-tests.sh green (33 baseline / 45 guard-rules
+    / 108 ledger / all others), lint-refs+lint-suite 0, shellcheck clean on new code
+    (one pre-existing SC2015 info untouched); tdd: ran (red-first two-lane: c2b5ca6,
+    186d973 test lane; cf71697 impl lane, no test files touched)'
 - id: review
   required: true
   status: pending
@@ -92,5 +96,36 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  review:
+    head_sha: 8e55a9ddf95beb9123208105efdef6999a8c9b99
+    timestamp: '2026-08-18T23:54:14.916080+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: efba2ceb2ed5094bba7d22a096af32b9ecb64a501079eaa47dcbe2b967e623a0
+      lane_security_lines: '25'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-4-5
+      lane_logic_sha256: a81c8107af965469339a8a8a0f533bd45a78caa24570ced95647b2beb9683303
+      lane_logic_lines: '27'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-opus-4-5
+      lane_tests_sha256: b1bb6b1985b6441e57698f977029bc59dc13efb001e945a0b31c3ff0d6d45938
+      lane_tests_lines: '25'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-4-5
+      lane_style_sha256: 653c404fb72487eccb6a9d188ed581c101e467e186a74afd5f58dff3e91ba751
+      lane_style_lines: '28'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-4-5
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      review_profile: full
+      verdict: APPROVE
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: b4bf69a791aabb8e4511a24121d0439427e22878
+last_seen_sha: bcdbd789ae622bc88863e9ec1f885e346a145648
