@@ -225,14 +225,21 @@ assert_contains "self-skip: resolves past itself to the stub" "$log" \
 assert_contains "self-skip: still injects the token" "$log" \
     "GH_TOKEN:fake-token-for-johnalexwelch"
 
-# No real gh anywhere on PATH: clear error, exit 127.
-EMPTY_PATH_DIR="$TMPDIR_BASE/onlyshim"
-mkdir -p "$EMPTY_PATH_DIR"
-ln -s "$SHIM" "$EMPTY_PATH_DIR/gh"
+# No real gh anywhere on PATH: clear error, exit 127. The fixture PATH must be
+# hermetic — CI runners preinstall gh in /usr/bin or linuxbrew, so system dirs
+# cannot appear on PATH. Build a tmpdir holding ONLY the shim (as `gh`) plus
+# bash plus the coreutils the shim needs before it errors out (the
+# `/usr/bin/env bash` shebang resolves `bash` through PATH too).
+HERMETIC_DIR="$TMPDIR_BASE/onlyshim"
+mkdir -p "$HERMETIC_DIR"
+ln -s "$SHIM" "$HERMETIC_DIR/gh"
+for util in bash readlink dirname basename; do
+    ln -s "$(command -v "$util")" "$HERMETIC_DIR/$util"
+done
 set +e
 out=$(cd "$NOT_A_REPO" && env -u GH_TOKEN -u GITHUB_TOKEN \
-    HOME="$HOME_WITH_MAP" PATH="$EMPTY_PATH_DIR:/usr/bin:/bin" \
-    "$EMPTY_PATH_DIR/gh" pr view 1 2>&1)
+    HOME="$HOME_WITH_MAP" PATH="$HERMETIC_DIR" \
+    "$HERMETIC_DIR/gh" pr view 1 2>&1)
 status=$?
 set -e
 assert_status "no real gh on PATH exits 127" 127 "$status"

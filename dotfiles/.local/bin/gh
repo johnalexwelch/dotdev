@@ -23,8 +23,8 @@ resolve_path() {
     while [ -L "$p" ] && [ "$hops" -lt 40 ]; do
         target=$(readlink "$p") || break
         case "$target" in
-        /*) p="$target" ;;
-        *) p="$(dirname "$p")/$target" ;;
+            /*) p="$target" ;;
+            *) p="$(dirname "$p")/$target" ;;
         esac
         hops=$((hops + 1))
     done
@@ -73,15 +73,15 @@ parse_repo_spec() {
     local spec="$1"
     spec="${spec%.git}"
     case "$spec" in
-    *://*)
-        spec="${spec#*://}" # drop scheme
-        spec="${spec#*@}"   # drop user@, if any
-        ;;
-    *@*:*)
-        spec="${spec#*@}" # drop user@
-        # scp-like host:owner/repo -> host/owner/repo
-        spec="${spec%%:*}/${spec#*:}"
-        ;;
+        *://*)
+            spec="${spec#*://}" # drop scheme
+            spec="${spec#*@}"   # drop user@, if any
+            ;;
+        *@*:*)
+            spec="${spec#*@}" # drop user@
+            # scp-like host:owner/repo -> host/owner/repo
+            spec="${spec%%:*}/${spec#*:}"
+            ;;
     esac
     local IFS='/'
     local -a parts=()
@@ -103,17 +103,17 @@ for a in "$@"; do
         break
     fi
     case "$a" in
-    -R | --repo) expect_value=1 ;;
-    --repo=*)
-        repo_arg="${a#--repo=}"
-        break
-        ;;
-    -R?*)
-        # attached short-flag forms: -ROWNER/REPO and cobra's -R=OWNER/REPO
-        repo_arg="${a#-R}"
-        repo_arg="${repo_arg#=}"
-        break
-        ;;
+        -R | --repo) expect_value=1 ;;
+        --repo=*)
+            repo_arg="${a#--repo=}"
+            break
+            ;;
+        -R?*)
+            # attached short-flag forms: -ROWNER/REPO and cobra's -R=OWNER/REPO
+            repo_arg="${a#-R}"
+            repo_arg="${repo_arg#=}"
+            break
+            ;;
     esac
 done
 
