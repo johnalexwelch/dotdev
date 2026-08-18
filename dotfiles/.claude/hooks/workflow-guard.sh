@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
+# workflow-guard.sh — PreToolUse/PostToolUse guard rails for delivery workflows.
+# D-006 additions: merge gate (ledger check finalize), state.yaml write block,
+# stderr-suppression block on mutating forge/git commands, and entry
+# enforcement (warn-only in Phase 0; LEDGER_ENTRY_ENFORCE=block escalates).
 set -euo pipefail
 
 input="$(cat)"
 event="$(jq -r '.hook_event_name // ""' <<<"$input" 2>/dev/null || true)"
 tool="$(jq -r '.tool_name // ""' <<<"$input" 2>/dev/null || true)"
 cmd="$(jq -r '.tool_input.command // ""' <<<"$input" 2>/dev/null || true)"
+file_path="$(jq -r '.tool_input.file_path // ""' <<<"$input" 2>/dev/null || true)"
+cwd="$(jq -r '.cwd // ""' <<<"$input" 2>/dev/null || true)"
+[ -n "$cwd" ] || cwd="$PWD"
 
-[ "$tool" = "Bash" ] || exit 0
-[ -n "$cmd" ] || exit 0
+SKILLS_ROOT="${SKILLS_ROOT:-$HOME/.config/agents/skills}"
+LEDGER_SH="$SKILLS_ROOT/workflow-ledger/scripts/ledger.sh"
 
 has() {
     grep -Eiq "$1" <<<"$cmd"
@@ -29,12 +36,88 @@ existing_issue_text() {
     gh issue view "$issue" --json title,body --jq '.title + "\n" + (.body // "")' 2>/dev/null || true
 }
 
+is_merge_shape() {
+    has '\bgh[[:space:]]+pr[[:space:]]+(merge|ready)\b' ||
+        has '\btea[[:space:]]+pr[[:space:]]+merge\b' ||
+        has '\bgit-forge\b[^|;&]*\bmerge\b' ||
+        has '\bcurl\b[^|;&]*/pulls/[^[:space:]]*/merge'
+}
+
+is_mutating_forge_cmd() {
+    has '\bgit[[:space:]]+(push|commit|merge|rebase)\b' ||
+        has '\bgh[[:space:]]+pr[[:space:]]+(create|edit|close|merge|ready)\b' ||
+        has '\bgh[[:space:]]+issue[[:space:]]+edit\b' ||
+        has '\bgh[[:space:]]+api\b[^|;&]*-X[[:space:]]+(POST|PATCH|DELETE)\b' ||
+        has '\btea[[:space:]]+pr[[:space:]]+(create|edit|close|merge)\b' ||
+        has '\bgit-forge\b[^|;&]*\b(merge|create|edit|close)\b'
+}
+
+# ---- Edit/Write rules (D-006 rules 2 and 4) ---------------------------------
+
+if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" ]; } && [ -n "$file_path" ]; then
+    # Rule 2: ledger state files are script-owned; direct edits are blocked.
+    if grep -Eq '(^|/)docs/executions/state\.yaml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
+        printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/close) instead of editing it directly.\n' "$file_path" >&2
+        exit 2
+    fi
+
+    # Rule 4: entry enforcement — tracked-code edit in an opted-in repo with no
+    # active ledger run. Warn-only in Phase 0; LEDGER_ENTRY_ENFORCE=block
+    # escalates to a hard block (the Phase 5 default flip).
+    if ! grep -Eq '(^|/)docs/executions/' <<<"$file_path"; then
+        repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+        if [ -n "$repo_top" ] && [ -d "$repo_top/docs/executions" ] &&
+            git -C "$cwd" ls-files --error-unmatch -- "$file_path" >/dev/null 2>&1; then
+            git_dir="$(git -C "$cwd" rev-parse --absolute-git-dir 2>/dev/null || true)"
+            live_state="$git_dir/ledger/state.yaml"
+            if [ ! -f "$live_state" ] || ! grep -q '^status: active' "$live_state" 2>/dev/null; then
+                printf '[WORKFLOW GUARD] no active run — route via workflow-router or ledger.sh init before editing tracked code.\n' >&2
+                if [ "${LEDGER_ENTRY_ENFORCE:-}" = "block" ]; then
+                    exit 2
+                fi
+            fi
+        fi
+    fi
+    exit 0
+fi
+
+[ "$tool" = "Bash" ] || exit 0
+[ -n "$cmd" ] || exit 0
+
 if [ "$event" = "PreToolUse" ]; then
     if has '\bgh[[:space:]]+issue[[:space:]]+(create|edit)\b' &&
         adds_ready_for_agent &&
         { prd_like_text "$cmd" || prd_like_text "$(existing_issue_text)"; }; then
         printf 'Blocked: PRD/spec parent issues must not be labeled ready-for-agent. Use child implementation issues from to-issues.\n' >&2
         exit 2
+    fi
+
+    # Rule 3: stderr suppression on mutating git/gh/tea/git-forge commands
+    # hides failures the workflow depends on seeing (D-006, closes C36).
+    if has '2>/dev/null|&>/dev/null' && is_mutating_forge_cmd; then
+        printf 'Blocked: stderr suppression on a mutating git/gh/tea/git-forge command hides failures. Re-run it without 2>/dev/null (or &>/dev/null).\n' >&2
+        exit 2
+    fi
+
+    # Rule 1: merge gate — in opted-in repos (docs/executions/ present) a merge
+    # needs a fresh finalize stamp. Short-circuits cheaply when the repo is not
+    # opted in or the ledger kernel is absent.
+    if is_merge_shape; then
+        repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+        if [ -n "$repo_top" ] && [ -d "$repo_top/docs/executions" ] && [ -f "$LEDGER_SH" ]; then
+            set +e
+            check_out="$( (cd "$cwd" && bash "$LEDGER_SH" check finalize) 2>&1)"
+            check_status=$?
+            set -e
+            if [ "$check_status" -ne 0 ]; then
+                printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
+                exit 2
+            fi
+            # Override stamps pass, but the bypass stays loud.
+            case "$check_out" in
+                *OVERRIDDEN*) printf '%s\n' "$check_out" ;;
+            esac
+        fi
     fi
     exit 0
 fi

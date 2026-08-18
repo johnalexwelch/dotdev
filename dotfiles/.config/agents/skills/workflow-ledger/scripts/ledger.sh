@@ -1,0 +1,1064 @@
+#!/usr/bin/env bash
+# ledger.sh — workflow-ledger kernel CLI (D-006 Phase 0).
+#
+# Moves workflow enforcement from prose the model complies with to a script
+# the model cannot silently bypass. Live state lives in the git-dir (survives
+# reset --hard, naturally per-worktree); stamp/init/close also write a
+# committed snapshot at docs/executions/state.yaml for the PR-visible record.
+#
+# Spec: docs/executions/plans/2026-08-19-workflow-ledger-spec.md
+# Authority: _docs/decision-log.md § D-006 (+ addenda).
+#
+# Usage:
+#   ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--force]
+#   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
+#   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
+#   ledger.sh check <gate>
+#   ledger.sh reconcile [--apply]
+#   ledger.sh preflight --skill <name>
+#   ledger.sh review-floor [--base <ref>]
+#   ledger.sh verify-local
+#   ledger.sh show
+#   ledger.sh close
+#
+# Exit codes (the API — tests assert them):
+#   0  success / check passed
+#   1  check failed (MISSING|STALE), reconcile drift, preflight missing tool,
+#      verify-local command failure, usage/environment errors
+#   2  stamp refused: one or more checked fields failed
+#   3  set refused: required step cannot be skipped
+#   4  set refused: terminal status without evidence/reason; override without --reason
+#   5  unknown step / unknown skill / unknown gate
+#   6  corrupt or schema-invalid state (never silently rewritten)
+#   7  init refused: an active run already exists (use --force)
+#   8  stamp refused: non-reviewer-validation gate type without --human
+#   9  verify-local: no docs/executions/ci-commands.yaml manifest (NO_MANIFEST)
+
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILLS_ROOT="${SKILLS_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
+FORGE_SH="$SCRIPT_DIR/forge.sh"
+BASELINE_SH="$SKILLS_ROOT/setup-worktree/scripts/worktree-baseline.sh"
+SNAPSHOT_REL="docs/executions/state.yaml"
+
+TOP=""
+LIVE=""
+SNAPSHOT=""
+PYBIN=""
+FAILURES=""
+CHECKED=()
+
+die() {
+    local code="$1"
+    shift
+    echo "Error: $*" >&2
+    exit "$code"
+}
+
+usage() {
+    sed -n '/^# Usage:/,/^# Exit codes/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
+    exit 1
+}
+
+require_repo() {
+    TOP="$(git rev-parse --show-toplevel 2>/dev/null)" || die 1 "not inside a git repository"
+    local gitdir
+    gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || die 1 "cannot resolve the git dir"
+    LIVE="$gitdir/ledger/state.yaml"
+    SNAPSHOT="$TOP/$SNAPSHOT_REL"
+}
+
+# The default `python3` on some machines (mise/pyenv shims, brew) lacks PyYAML;
+# probe for one that can import yaml instead of failing at first use.
+resolve_python() {
+    local cand
+    for cand in "${LEDGER_PYTHON:-}" python3 /usr/bin/python3 /opt/homebrew/bin/python3; do
+        [ -n "$cand" ] || continue
+        command -v "$cand" >/dev/null 2>&1 || continue
+        if "$cand" -c 'import yaml' >/dev/null 2>&1; then
+            PYBIN="$cand"
+            return 0
+        fi
+    done
+    die 1 "no python3 with PyYAML found (set LEDGER_PYTHON to one that has it)"
+}
+
+# Single python state engine: all YAML reads/writes/validation go through it so
+# a corrupt or schema-invalid document is exit 6 and never silently rewritten.
+PYPROG=$(
+    cat <<'PYEOF'
+import os
+import sys
+from datetime import datetime, timezone
+
+import yaml
+
+LIVE = os.environ.get("LEDGER_LIVE", "")
+
+KINDS = {"feature", "bug", "phase", "docs", "skill"}
+BUDGETS = {"direct", "one-reviewer", "multi-lane", "team"}
+RUN_STATUSES = {"active", "paused", "done"}
+STEP_STATUSES = {"pending", "active", "completed", "skipped", "blocked", "failed"}
+TERMINAL = {"completed", "skipped", "blocked", "failed"}
+GATES = {"diagnose", "fix", "review", "finalize"}
+GATE_TYPES = {
+    "reviewer-validation",
+    "maintainer-decision",
+    "operator-runtime",
+    "secret-custody",
+}
+
+
+def now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def err(code, msg):
+    print("Error: " + msg, file=sys.stderr)
+    sys.exit(code)
+
+
+def validate(doc):
+    if not isinstance(doc, dict):
+        raise ValueError("state is not a mapping")
+    for key in ("run_id", "workflow", "kind", "budget", "status", "next", "updated", "steps"):
+        if key not in doc:
+            raise ValueError("missing key: " + key)
+    if doc["kind"] not in KINDS:
+        raise ValueError("bad kind: %r" % (doc["kind"],))
+    if doc["budget"] not in BUDGETS:
+        raise ValueError("bad budget: %r" % (doc["budget"],))
+    if doc["status"] not in RUN_STATUSES:
+        raise ValueError("bad run status: %r" % (doc["status"],))
+    if not isinstance(doc["steps"], list):
+        raise ValueError("steps must be a list")
+    for step in doc["steps"]:
+        if not isinstance(step, dict) or not step.get("id"):
+            raise ValueError("bad step entry")
+        if step.get("status") not in STEP_STATUSES:
+            raise ValueError("bad step status: %r" % (step.get("status"),))
+        if not isinstance(step.get("required"), bool):
+            raise ValueError("step 'required' must be a bool")
+    stamps = doc.get("stamps") or {}
+    if not isinstance(stamps, dict):
+        raise ValueError("stamps must be a mapping")
+    for gate, stamp in stamps.items():
+        if gate not in GATES:
+            raise ValueError("bad gate: %r" % (gate,))
+        if not isinstance(stamp, dict) or not stamp.get("head_sha"):
+            raise ValueError("bad stamp for gate %r" % (gate,))
+        if stamp.get("gate_type") not in GATE_TYPES:
+            raise ValueError("bad gate_type on %r" % (gate,))
+        if stamp.get("provenance") not in {"agent", "human"}:
+            raise ValueError("bad provenance on %r" % (gate,))
+    if not isinstance(doc.get("overrides", []), list):
+        raise ValueError("overrides must be a list")
+
+
+def load():
+    if not os.path.exists(LIVE):
+        err(1, "no live ledger state at %s (run ledger.sh init)" % LIVE)
+    try:
+        with open(LIVE) as fh:
+            doc = yaml.safe_load(fh)
+    except yaml.YAMLError as exc:
+        err(6, "live state is not valid YAML (refusing to touch it): %s" % exc)
+    try:
+        validate(doc)
+    except ValueError as exc:
+        err(6, "live state failed schema validation (refusing to touch it): %s" % exc)
+    return doc
+
+
+def save(doc):
+    doc["updated"] = now()
+    try:
+        validate(doc)
+    except ValueError as exc:
+        err(6, "refusing write: resulting state would be schema-invalid: %s" % exc)
+    os.makedirs(os.path.dirname(LIVE), exist_ok=True)
+    tmp = LIVE + ".tmp"
+    with open(tmp, "w") as fh:
+        yaml.safe_dump(doc, fh, sort_keys=False, default_flow_style=False)
+    os.replace(tmp, LIVE)
+
+
+def split_kv(items):
+    out = {}
+    for item in items:
+        if "=" not in item:
+            err(4, "expected key=value, got: %r" % (item,))
+        key, _, val = item.partition("=")
+        out[key] = val
+    return out
+
+
+def op_init(argv):
+    run_id, workflow, kind, steps_csv, budget, force = argv
+    force = force == "1"
+    prior_note = ""
+    if os.path.exists(LIVE):
+        old = None
+        try:
+            with open(LIVE) as fh:
+                old = yaml.safe_load(fh)
+            validate(old)
+        except (yaml.YAMLError, ValueError):
+            old = None
+            if not force:
+                err(6, "existing live state is corrupt; refusing to overwrite without --force")
+            prior_note = "corrupt prior state"
+        if old is not None:
+            if old.get("status") == "active" and not force:
+                err(7, "active run %r already exists; re-init refused (use --force)" % old.get("run_id"))
+            prior_note = "prior run %s" % old.get("run_id")
+    if kind not in KINDS:
+        err(6, "invalid kind: %r" % (kind,))
+    if budget not in BUDGETS:
+        err(6, "invalid budget: %r" % (budget,))
+    step_ids = [s.strip() for s in steps_csv.split(",") if s.strip()]
+    if kind == "bug":
+        # bug runs cannot skip diagnosis: auto-insert required diagnose/fix.
+        for required_step in ("fix", "diagnose"):
+            if required_step not in step_ids:
+                step_ids.insert(0, required_step)
+    overrides = []
+    if force and prior_note:
+        overrides.append(
+            {
+                "action": "force-init",
+                "reason": "--force re-init over %s" % prior_note,
+                "timestamp": now(),
+            }
+        )
+    doc = {
+        "run_id": run_id,
+        "workflow": workflow,
+        "kind": kind,
+        "budget": budget,
+        "status": "active",
+        "next": step_ids[0] if step_ids else "",
+        "updated": now(),
+        "steps": [
+            {"id": sid, "required": True, "status": "pending", "evidence": ""}
+            for sid in step_ids
+        ],
+        "stamps": {},
+        "overrides": overrides,
+    }
+    save(doc)
+
+
+def op_set(argv):
+    step_id, status, evidence, reason = argv
+    doc = load()
+    step = next((s for s in doc["steps"] if s["id"] == step_id), None)
+    if step is None:
+        err(5, "unknown step: %r" % (step_id,))
+    if status not in STEP_STATUSES:
+        err(6, "invalid step status: %r" % (status,))
+    if status == "skipped" and step.get("required"):
+        err(3, "step %r is required and cannot be set to that status" % (step_id,))
+    if status in TERMINAL and not (evidence or reason):
+        err(4, "terminal statuses require --evidence or --reason")
+    step["status"] = status
+    if evidence or reason:
+        step["evidence"] = evidence or reason
+    if doc.get("next") == step_id and status in TERMINAL:
+        remaining = [s["id"] for s in doc["steps"] if s["status"] == "pending" or s["status"] == "active"]
+        doc["next"] = remaining[0] if remaining else ""
+    save(doc)
+
+
+def op_get(argv):
+    doc = load()
+    print(doc.get(argv[0], "") or "")
+
+
+def op_set_meta(argv):
+    key, value = argv
+    doc = load()
+    doc[key] = value
+    save(doc)
+
+
+def op_check_info(argv):
+    doc = load()
+    stamp = (doc.get("stamps") or {}).get(argv[0])
+    if not stamp:
+        print("exists=0")
+        return
+    override = stamp.get("override") or {}
+    print("exists=1")
+    print("head_sha=" + str(stamp.get("head_sha", "")))
+    print("override=" + ("1" if override.get("active") else "0"))
+    print("reason=" + str(override.get("reason", "")))
+
+
+def op_diagnose_repro(argv):
+    doc = load()
+    stamp = (doc.get("stamps") or {}).get("diagnose")
+    if not stamp:
+        sys.exit(1)
+    cmd = (stamp.get("attested") or {}).get("repro_cmd", "")
+    if not cmd:
+        sys.exit(1)
+    print(cmd)
+
+
+def op_write_stamp(argv):
+    gate, head, gate_type, provenance, override, reason = argv[:6]
+    attested, checked = [], []
+    bucket = None
+    for item in argv[6:]:
+        if item == "--attest":
+            bucket = attested
+            continue
+        if item == "--checked":
+            bucket = checked
+            continue
+        if bucket is None:
+            err(4, "unexpected stamp argument: %r" % (item,))
+        bucket.append(item)
+    doc = load()
+    is_override = override == "1"
+    stamp = {
+        "head_sha": head,
+        "timestamp": now(),
+        "gate_type": gate_type,
+        "provenance": provenance,
+        "checked": split_kv(checked),
+        "attested": split_kv(attested),
+        "override": {
+            "active": is_override,
+            "reason": reason if is_override else "",
+            "timestamp": now() if is_override else "",
+        },
+    }
+    doc.setdefault("stamps", {})[gate] = stamp
+    if is_override:
+        doc.setdefault("overrides", []).append(
+            {"gate": gate, "reason": reason, "timestamp": now(), "head_sha": head}
+        )
+    save(doc)
+
+
+def op_record_verify(argv):
+    head, passed = argv[0], argv[1]
+    rest = argv[2:]
+    results = []
+    for i in range(0, len(rest) - 1, 2):
+        results.append({"cmd": rest[i + 1], "exit": int(rest[i])})
+    doc = load()
+    doc["verify_local"] = {"head_sha": head, "passed": passed == "1", "results": results}
+    save(doc)
+
+
+def op_verify_info(argv):
+    doc = load()
+    info = doc.get("verify_local") or {}
+    print("head_sha=" + str(info.get("head_sha", "")))
+    print("passed=" + ("1" if info.get("passed") else "0"))
+
+
+def op_reconcile_apply(argv):
+    doc = load()
+    remaining = [s["id"] for s in doc["steps"] if s["status"] not in TERMINAL]
+    doc["next"] = remaining[0] if remaining else ""
+    save(doc)
+    print(doc["next"])
+
+
+def op_close(argv):
+    doc = load()
+    doc["status"] = "done"
+    doc["next"] = ""
+    save(doc)
+    print(doc["run_id"])
+
+
+def op_show(argv):
+    doc = load()
+    print("run_id:   %s" % doc["run_id"])
+    print("workflow: %s  kind: %s  budget: %s" % (doc["workflow"], doc["kind"], doc["budget"]))
+    print("status:   %s  next: %s" % (doc["status"], doc.get("next") or "-"))
+    print("")
+    print("steps:")
+    for step in doc["steps"]:
+        print(
+            "  %-20s required=%-5s %-10s %s"
+            % (step["id"], str(step["required"]).lower(), step["status"], step.get("evidence") or "-")
+        )
+    stamps = doc.get("stamps") or {}
+    print("")
+    print("stamps:")
+    if not stamps:
+        print("  (none)")
+    for gate, stamp in stamps.items():
+        override = " OVERRIDE" if (stamp.get("override") or {}).get("active") else ""
+        print(
+            "  %-10s %-12s %s %s%s"
+            % (
+                gate,
+                str(stamp.get("head_sha", ""))[:12],
+                stamp.get("gate_type", ""),
+                stamp.get("provenance", ""),
+                override,
+            )
+        )
+
+
+def op_manifest(argv):
+    try:
+        with open(argv[0]) as fh:
+            data = yaml.safe_load(fh)
+    except (OSError, yaml.YAMLError) as exc:
+        err(6, "ci-commands manifest unreadable: %s" % exc)
+    if not isinstance(data, list) or not all(isinstance(c, str) and c for c in data):
+        err(6, "ci-commands.yaml must be a top-level YAML list of command strings")
+    for cmd in data:
+        print(cmd)
+
+
+HANDLERS = {
+    "init": op_init,
+    "set": op_set,
+    "get": op_get,
+    "set_meta": op_set_meta,
+    "check_info": op_check_info,
+    "diagnose_repro": op_diagnose_repro,
+    "write_stamp": op_write_stamp,
+    "record_verify": op_record_verify,
+    "verify_info": op_verify_info,
+    "reconcile_apply": op_reconcile_apply,
+    "close": op_close,
+    "show": op_show,
+    "manifest": op_manifest,
+}
+
+
+def main():
+    if len(sys.argv) < 2 or sys.argv[1] not in HANDLERS:
+        err(1, "unknown state-engine op")
+    HANDLERS[sys.argv[1]](sys.argv[2:])
+
+
+main()
+PYEOF
+)
+
+py() {
+    if [ -z "$PYBIN" ]; then
+        resolve_python
+    fi
+    LEDGER_LIVE="$LIVE" "$PYBIN" -c "$PYPROG" "$@"
+}
+
+# ---- shared helpers --------------------------------------------------------
+
+add_failure() {
+    FAILURES="${FAILURES}  - $*"$'\n'
+}
+
+# Copy live state to the committed snapshot and commit it. A stamp's own
+# chore(ledger): commit must not make that stamp stale, so freshness checks
+# exempt chore(ledger): subjects (see fresh_since).
+commit_snapshot() {
+    local action="$1" target="$2"
+    mkdir -p "$(dirname "$SNAPSHOT")"
+    cp "$LIVE" "$SNAPSHOT"
+    git -C "$TOP" add -- "$SNAPSHOT_REL" || die 1 "git add failed for $SNAPSHOT_REL"
+    if ! git -C "$TOP" diff --quiet HEAD -- "$SNAPSHOT_REL" 2>/dev/null; then
+        git -C "$TOP" commit -q -m "chore(ledger): $action $target" -- "$SNAPSHOT_REL" ||
+            die 1 "snapshot commit failed"
+    fi
+    py set_meta last_seen_sha "$(git -C "$TOP" rev-parse HEAD)" || exit $?
+}
+
+# Fresh iff every commit after the recorded sha is a ledger snapshot commit.
+fresh_since() {
+    local sha="$1" subjects subject
+    [ -n "$sha" ] || return 1
+    git -C "$TOP" cat-file -e "${sha}^{commit}" 2>/dev/null || return 1
+    subjects="$(git -C "$TOP" log --format=%s "${sha}..HEAD" 2>/dev/null)" || return 1
+    [ -n "$subjects" ] || return 0
+    while IFS= read -r subject; do
+        case "$subject" in
+            "chore(ledger):"*) ;;
+            *) return 1 ;;
+        esac
+    done <<<"$subjects"
+    return 0
+}
+
+check_gate() {
+    local gate="$1" info status c_exists c_sha c_override c_reason
+    if [ ! -f "$LIVE" ]; then
+        echo "MISSING: no live ledger state (run ledger.sh init)"
+        return 1
+    fi
+    info="$(py check_info "$gate")"
+    status=$?
+    [ "$status" -eq 0 ] || return "$status"
+    c_exists="$(sed -n 's/^exists=//p' <<<"$info")"
+    c_sha="$(sed -n 's/^head_sha=//p' <<<"$info")"
+    c_override="$(sed -n 's/^override=//p' <<<"$info")"
+    c_reason="$(sed -n 's/^reason=//p' <<<"$info")"
+    if [ "$c_exists" != "1" ]; then
+        echo "MISSING: no '$gate' stamp"
+        return 1
+    fi
+    if ! fresh_since "$c_sha"; then
+        echo "STALE: non-ledger commits exist after the '$gate' stamp ($c_sha)"
+        return 1
+    fi
+    if [ "$c_override" = "1" ]; then
+        echo "OVERRIDDEN: $c_reason"
+        return 0
+    fi
+    echo "OK: '$gate' stamp fresh at $c_sha"
+    return 0
+}
+
+attest_get() {
+    local key="$1" kv
+    shift
+    for kv in "$@"; do
+        case "$kv" in
+            "$key="*)
+                printf '%s' "${kv#*=}"
+                return 0
+                ;;
+        esac
+    done
+    return 1
+}
+
+profile_rank() {
+    case "$1" in
+        fast) echo 1 ;;
+        standard) echo 2 ;;
+        full) echo 3 ;;
+        *) echo 0 ;;
+    esac
+}
+
+model_rank() {
+    case "$1" in
+        haiku) echo 1 ;;
+        sonnet) echo 2 ;;
+        opus) echo 3 ;;
+        *) echo 0 ;;
+    esac
+}
+
+required_lanes() {
+    case "$1" in
+        fast) echo "integrated" ;;
+        standard) echo "logic tests" ;;
+        full) echo "security logic tests style" ;;
+        *) echo "integrated" ;;
+    esac
+}
+
+# lanes attestation: comma-separated lane=path pairs; default /tmp/<lane>-review.md.
+lane_path_for() {
+    local lane="$1" spec="$2" pair
+    if [ -n "$spec" ]; then
+        while IFS= read -r pair; do
+            case "$pair" in
+                "$lane="*)
+                    printf '%s' "${pair#*=}"
+                    return 0
+                    ;;
+            esac
+        done <<<"$(tr ',' '\n' <<<"$spec")"
+    fi
+    printf '/tmp/%s-review.md' "$lane"
+}
+
+file_sha256() {
+    if command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    else
+        sha256sum "$1" | awk '{print $1}'
+    fi
+}
+
+tail_str() {
+    printf '%s' "$1" | tail -c 200 | tr '\n' ' '
+}
+
+default_base() {
+    local ref
+    for ref in origin/staging \
+        "$(git -C "$TOP" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null)" \
+        origin/main origin/master main master; do
+        [ -n "$ref" ] || continue
+        if git -C "$TOP" rev-parse --verify --quiet "${ref}^{commit}" >/dev/null 2>&1; then
+            printf '%s' "$ref"
+            return 0
+        fi
+    done
+    return 1
+}
+
+review_patterns() {
+    local override_file="$TOP/docs/executions/review-patterns.txt"
+    if [ -f "$override_file" ]; then
+        grep -Ev '^[[:space:]]*(#|$)' "$override_file" | paste -s -d '|' -
+    else
+        printf '%s' 'auth|secret|migration|infra|\.github/workflows'
+    fi
+}
+
+# Deterministic: same diff (base...HEAD) always yields the same word.
+compute_floor() {
+    local base="$1" numstat files=0 loc=0 added deleted path patterns hit=0
+    if [ -z "$base" ]; then
+        base="$(default_base)" || die 1 "cannot resolve a default base ref; pass --base <ref>"
+    fi
+    git -C "$TOP" rev-parse --verify --quiet "${base}^{commit}" >/dev/null 2>&1 ||
+        die 1 "base ref not found: $base"
+    numstat="$(git -C "$TOP" diff --numstat "${base}...HEAD" 2>/dev/null)"
+    if [ -n "$numstat" ]; then
+        while read -r added deleted path; do
+            [ -n "$path" ] || continue
+            files=$((files + 1))
+            case "$added" in '' | *[!0-9]*) ;; *) loc=$((loc + added)) ;; esac
+            case "$deleted" in '' | *[!0-9]*) ;; *) loc=$((loc + deleted)) ;; esac
+        done <<<"$numstat"
+    fi
+    patterns="$(review_patterns)"
+    if [ -n "$patterns" ] &&
+        git -C "$TOP" diff --name-only "${base}...HEAD" 2>/dev/null | grep -Eq "$patterns"; then
+        hit=1
+    fi
+    if [ "$files" -gt 15 ] || [ "$loc" -gt 500 ]; then
+        echo full
+    elif [ "$hit" -eq 1 ]; then
+        echo standard
+    else
+        echo fast
+    fi
+}
+
+# ---- checked-field runners (one per gate) ----------------------------------
+
+checked_diagnose() {
+    local repro out rc
+    if ! repro="$(attest_get repro_cmd "$@")" || [ -z "$repro" ]; then
+        add_failure "diagnose requires --attest repro_cmd=<command>"
+        return
+    fi
+    out="$( (cd "$TOP" && bash -c "$repro") 2>&1)"
+    rc=$?
+    if [ "$rc" -eq 0 ]; then
+        add_failure "repro_cmd exited 0 — diagnose needs a red (non-zero) repro: $repro"
+        return
+    fi
+    CHECKED+=("repro_exit=$rc")
+    CHECKED+=("repro_tail=$(tail_str "$out")")
+}
+
+checked_fix() {
+    local repro="" out rc="" regression=""
+    if ! repro="$(py diagnose_repro 2>/dev/null)" || [ -z "$repro" ]; then
+        add_failure "diagnose gate unmet: stamp diagnose (with repro_cmd) before stamp fix"
+        return
+    fi
+    out="$( (cd "$TOP" && bash -c "$repro") 2>&1)"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        add_failure "stored repro_cmd still exits $rc — fix requires it green: $repro ($(tail_str "$out"))"
+    fi
+    if ! regression="$(attest_get regression_test "$@")" || [ -z "$regression" ]; then
+        add_failure "fix requires --attest regression_test=<path>"
+    elif [ ! -f "$TOP/$regression" ]; then
+        add_failure "regression test file missing: $regression"
+    fi
+    CHECKED+=("repro_exit=$rc")
+    CHECKED+=("regression_test=$regression")
+}
+
+checked_review() {
+    local verify_out profile floor model_floor lanes_spec lane lane_file lane_model verdict
+    local worktree_ok=1
+    if ! verify_out="$(bash "$BASELINE_SH" verify --path "$TOP" 2>&1)"; then
+        worktree_ok=0
+        add_failure "worktree baseline verify failed: $verify_out"
+    fi
+
+    if ! profile="$(attest_get review_profile "$@")" || [ -z "$profile" ]; then
+        add_failure "review requires --attest review_profile=<fast|standard|full>"
+        return
+    fi
+    if ! floor="$(compute_floor "" 2>/dev/null)"; then
+        add_failure "cannot compute the review floor (no resolvable base ref)"
+        return
+    fi
+    if [ "$(profile_rank "$profile")" -lt "$(profile_rank "$floor")" ]; then
+        add_failure "chosen review profile '$profile' is below the computed floor '$floor'"
+    fi
+
+    model_floor="$(attest_get model_floor "$@")" || model_floor="sonnet"
+    lanes_spec="$(attest_get lanes "$@")" || lanes_spec=""
+
+    for lane in $(required_lanes "$profile"); do
+        lane_file="$(lane_path_for "$lane" "$lanes_spec")"
+        if [ ! -f "$lane_file" ]; then
+            add_failure "required lane '$lane' review file missing: $lane_file"
+            continue
+        fi
+        if ! grep -Eq '^verdict:' "$lane_file"; then
+            add_failure "lane '$lane' review file has no verdict: line ($lane_file)"
+            continue
+        fi
+        lane_model="$(sed -n 's/^model:[[:space:]]*//p' "$lane_file" | head -1)"
+        if [ "$(model_rank "$lane_model")" -lt "$(model_rank "$model_floor")" ]; then
+            add_failure "lane '$lane' model '${lane_model:-missing}' is below the model floor '$model_floor'"
+            continue
+        fi
+        verdict="$(sed -n 's/^verdict:[[:space:]]*//p' "$lane_file" | head -1)"
+        CHECKED+=("lane_${lane}_sha256=$(file_sha256 "$lane_file")")
+        CHECKED+=("lane_${lane}_lines=$(wc -l <"$lane_file" | tr -d ' ')")
+        CHECKED+=("lane_${lane}_verdict=$verdict")
+        CHECKED+=("lane_${lane}_model=$lane_model")
+    done
+    CHECKED+=("review_floor=$floor")
+    CHECKED+=("worktree_verify=$([ "$worktree_ok" -eq 1 ] && echo pass || echo fail)")
+}
+
+checked_finalize() {
+    local review_out porcelain vinfo v_sha v_pass pr ci prstate threads
+    if ! review_out="$(check_gate review)"; then
+        add_failure "review gate: $review_out"
+    fi
+
+    porcelain="$(git -C "$TOP" status --porcelain)"
+    if [ -n "$porcelain" ]; then
+        add_failure "working tree not clean: $(tr '\n' ' ' <<<"$porcelain")"
+    fi
+
+    vinfo="$(py verify_info)" || vinfo=""
+    v_sha="$(sed -n 's/^head_sha=//p' <<<"$vinfo")"
+    v_pass="$(sed -n 's/^passed=//p' <<<"$vinfo")"
+    if [ "$v_pass" != "1" ] || ! fresh_since "$v_sha"; then
+        add_failure "verify-local has no green record at HEAD (run ledger.sh verify-local)"
+    fi
+
+    if pr="$(attest_get pr_number "$@")" && [ -n "$pr" ]; then
+        ci="$(bash "$FORGE_SH" ci-status "$pr" 2>&1)" || ci="error: $ci"
+        [ "$ci" = "green" ] || add_failure "forge CI not green for PR #$pr: $ci"
+        prstate="$(bash "$FORGE_SH" pr-state "$pr" 2>&1)" || prstate="error: $prstate"
+        [ "$prstate" = "open" ] || add_failure "PR #$pr is not open: $prstate"
+        threads="$(bash "$FORGE_SH" threads-resolved "$pr" 2>&1)" || threads="error: $threads"
+        [ "$threads" = "yes" ] || add_failure "review threads not resolved on PR #$pr: $threads"
+        CHECKED+=("ci=$ci" "pr_state=$prstate" "threads_resolved=$threads")
+    else
+        # No PR yet: forge checks explicitly skipped, recorded as no_pr.
+        CHECKED+=("forge=no_pr")
+    fi
+}
+
+# ---- subcommands ------------------------------------------------------------
+
+cmd_init() {
+    [ $# -ge 1 ] || usage
+    local run_id="$1" workflow="" kind="" steps="" budget="one-reviewer" force=0
+    shift
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --workflow)
+                workflow="$2"
+                shift 2
+                ;;
+            --kind)
+                kind="$2"
+                shift 2
+                ;;
+            --steps)
+                steps="$2"
+                shift 2
+                ;;
+            --budget)
+                budget="$2"
+                shift 2
+                ;;
+            --force)
+                force=1
+                shift
+                ;;
+            *) usage ;;
+        esac
+    done
+    [ -n "$workflow" ] && [ -n "$kind" ] && [ -n "$steps" ] || usage
+    py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" || exit $?
+    commit_snapshot init "$run_id"
+    echo "initialized run $run_id ($kind via $workflow); live state: $LIVE"
+}
+
+cmd_set() {
+    [ $# -ge 2 ] || usage
+    local step="$1" status="$2" evidence="" reason=""
+    shift 2
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --evidence)
+                evidence="$2"
+                shift 2
+                ;;
+            --reason)
+                reason="$2"
+                shift 2
+                ;;
+            *) usage ;;
+        esac
+    done
+    py set "$step" "$status" "$evidence" "$reason" || exit $?
+    echo "step '$step' -> $status"
+}
+
+cmd_stamp() {
+    [ $# -ge 1 ] || usage
+    local gate="$1" gate_type="reviewer-validation" human=0 override=0 reason=""
+    local attests=()
+    shift
+    case "$gate" in
+        diagnose | fix | review | finalize) ;;
+        *) die 5 "unknown gate: $gate (expected diagnose|fix|review|finalize)" ;;
+    esac
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --attest)
+                attests+=("$2")
+                shift 2
+                ;;
+            --gate-type)
+                gate_type="$2"
+                shift 2
+                ;;
+            --human)
+                human=1
+                shift
+                ;;
+            --override)
+                override=1
+                shift
+                ;;
+            --reason)
+                reason="$2"
+                shift 2
+                ;;
+            *) usage ;;
+        esac
+    done
+
+    case "$gate_type" in
+        reviewer-validation | maintainer-decision | operator-runtime | secret-custody) ;;
+        *) die 6 "invalid gate type: $gate_type" ;;
+    esac
+    if [ "$gate_type" != "reviewer-validation" ] && [ "$human" -ne 1 ]; then
+        die 8 "gate type '$gate_type' requires --human provenance (only reviewer-validation gates are agent-stampable)"
+    fi
+
+    [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
+    py get run_id >/dev/null || exit $?
+
+    local provenance="agent" head_sha
+    [ "$human" -eq 1 ] && provenance="human"
+    head_sha="$(git -C "$TOP" rev-parse HEAD)" || die 1 "cannot resolve HEAD"
+
+    if [ "$override" -eq 1 ]; then
+        [ -n "$reason" ] || die 4 "--override requires a non-empty --reason"
+        py write_stamp "$gate" "$head_sha" "$gate_type" "$provenance" 1 "$reason" \
+            --attest ${attests[@]+"${attests[@]}"} --checked || exit $?
+        commit_snapshot stamp "$gate"
+        printf 'WARNING: OVERRIDE stamp on %s gate — checked fields bypassed: %s\n' \
+            "$gate" "$reason" >&2
+        return 0
+    fi
+
+    FAILURES=""
+    CHECKED=()
+    case "$gate" in
+        diagnose) checked_diagnose ${attests[@]+"${attests[@]}"} ;;
+        fix) checked_fix ${attests[@]+"${attests[@]}"} ;;
+        review) checked_review ${attests[@]+"${attests[@]}"} ;;
+        finalize) checked_finalize ${attests[@]+"${attests[@]}"} ;;
+    esac
+
+    if [ -n "$FAILURES" ]; then
+        printf 'stamp %s refused; checked fields failed:\n%s' "$gate" "$FAILURES"
+        exit 2
+    fi
+
+    py write_stamp "$gate" "$head_sha" "$gate_type" "$provenance" 0 "" \
+        --attest ${attests[@]+"${attests[@]}"} --checked ${CHECKED[@]+"${CHECKED[@]}"} || exit $?
+    commit_snapshot stamp "$gate"
+    echo "stamped $gate at $head_sha"
+}
+
+cmd_check() {
+    [ $# -ge 1 ] || usage
+    local out status
+    out="$(check_gate "$1")"
+    status=$?
+    printf '%s\n' "$out"
+    exit "$status"
+}
+
+cmd_reconcile() {
+    local apply=0
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --apply)
+                apply=1
+                shift
+                ;;
+            *) usage ;;
+        esac
+    done
+    [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
+    local last head drift next_step branch
+    last="$(py get last_seen_sha)" || exit $?
+    head="$(git -C "$TOP" rev-parse HEAD)"
+    branch="$(git -C "$TOP" branch --show-current 2>/dev/null)"
+    drift=""
+    if [ -n "$last" ] && git -C "$TOP" cat-file -e "${last}^{commit}" 2>/dev/null; then
+        drift="$(git -C "$TOP" log --format='%h %s' "${last}..HEAD" |
+            grep -Ev '^[0-9a-f]+ chore\(ledger\):' || true)"
+    fi
+    if [ "$apply" -eq 1 ]; then
+        next_step="$(py reconcile_apply)" || exit $?
+        py set_meta last_seen_sha "$head" || exit $?
+        echo "reconciled: next='${next_step}' last_seen_sha=$head branch=${branch:-detached}"
+        return 0
+    fi
+    if [ -n "$drift" ]; then
+        echo "DRIFT: commits outside the ledger since $last:"
+        echo "$drift"
+        echo "true frontier: HEAD=$head branch=${branch:-detached}; run 'ledger.sh reconcile --apply' to adopt"
+        exit 1
+    fi
+    echo "clean: ledger frontier matches git (HEAD=$head branch=${branch:-detached})"
+}
+
+cmd_preflight() {
+    local skill=""
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --skill)
+                skill="$2"
+                shift 2
+                ;;
+            *) usage ;;
+        esac
+    done
+    [ -n "$skill" ] || usage
+    local skill_md="$SKILLS_ROOT/$skill/SKILL.md"
+    [ -f "$skill_md" ] || die 5 "unknown skill: $skill (no SKILL.md under $SKILLS_ROOT)"
+    local requires missing="" tool
+    requires="$(sed -n 's/^Requires:[[:space:]]*//p' "$skill_md" | head -1)"
+    if [ -z "$requires" ] || [ "$requires" = "none" ]; then
+        echo "preflight OK: $skill declares no required CLI tools"
+        return 0
+    fi
+    while IFS= read -r tool; do
+        # Bare tool names only; strip whitespace and parenthetical notes.
+        tool="${tool%%(*}"
+        tool="$(tr -d '[:space:]' <<<"$tool")"
+        [ -n "$tool" ] || continue
+        [ "$tool" = "none" ] && continue
+        command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
+    done <<<"$(tr ',' '\n' <<<"$requires")"
+    if [ -n "$missing" ]; then
+        echo "preflight FAILED for $skill: missing tools:$missing"
+        exit 1
+    fi
+    echo "preflight OK: $skill requires ($requires) — all present"
+}
+
+cmd_review_floor() {
+    local base=""
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --base)
+                base="$2"
+                shift 2
+                ;;
+            *) usage ;;
+        esac
+    done
+    compute_floor "$base"
+}
+
+cmd_verify_local() {
+    local manifest="$TOP/docs/executions/ci-commands.yaml"
+    if [ ! -f "$manifest" ]; then
+        echo "NO_MANIFEST: $manifest not found — callers decide policy"
+        exit 9
+    fi
+    local cmds head_sha failed=0 failing="" cmd rc passed
+    local results=()
+    cmds="$(py manifest "$manifest")" || exit $?
+    head_sha="$(git -C "$TOP" rev-parse HEAD)"
+    while IFS= read -r cmd; do
+        [ -n "$cmd" ] || continue
+        (cd "$TOP" && bash -c "$cmd") >/dev/null 2>&1
+        rc=$?
+        results+=("$rc" "$cmd")
+        if [ "$rc" -ne 0 ]; then
+            failed=1
+            failing="$cmd"
+            echo "FAIL ($rc): $cmd"
+        else
+            echo "PASS: $cmd"
+        fi
+    done <<<"$cmds"
+    passed=1
+    [ "$failed" -eq 0 ] || passed=0
+    if [ -f "$LIVE" ]; then
+        py record_verify "$head_sha" "$passed" ${results[@]+"${results[@]}"} || exit $?
+    fi
+    if [ "$failed" -ne 0 ]; then
+        echo "verify-local FAILED: $failing"
+        exit 1
+    fi
+    echo "verify-local PASSED at $head_sha"
+}
+
+cmd_show() {
+    py show
+    exit $?
+}
+
+cmd_close() {
+    local run_id
+    run_id="$(py close)" || exit $?
+    commit_snapshot close "$run_id"
+    echo "closed run $run_id"
+}
+
+main() {
+    [ $# -ge 1 ] || usage
+    local sub="$1"
+    shift
+    require_repo
+    case "$sub" in
+        init) cmd_init "$@" ;;
+        set) cmd_set "$@" ;;
+        stamp) cmd_stamp "$@" ;;
+        check) cmd_check "$@" ;;
+        reconcile) cmd_reconcile "$@" ;;
+        preflight) cmd_preflight "$@" ;;
+        review-floor) cmd_review_floor "$@" ;;
+        verify-local) cmd_verify_local "$@" ;;
+        show) cmd_show "$@" ;;
+        close) cmd_close "$@" ;;
+        *) usage ;;
+    esac
+}
+
+main "$@"
