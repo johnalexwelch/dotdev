@@ -4,20 +4,26 @@ kind: bug
 budget: one-reviewer
 status: active
 next: diagnose
-updated: '2026-08-18T22:46:58.684407+00:00'
+updated: '2026-08-18T22:53:39.165529+00:00'
 steps:
 - id: diagnose
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: 'repro confirmed in scratch fixture: raw worktree add from stale branch
+    + hand-written sidecar (RESOLVED_BASE=stale) -> verify exit 0 despite is-ancestor(origin/main,HEAD)=false'
 - id: fix
   required: true
   status: pending
   evidence: ''
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'WORKFLOW_BASE_GATE origin/staging->origin/main (staging absent, fetched);
+    WORKTREE_BASELINE_GATE origin/main -> fix/worktree-verify-ground-truth @ .claude/worktrees/verify-ground-truth;
+    graphify: not_available_with_reason: no graphify-out/graph.json in repo; context:
+    user report cites PR #166 post_mortem forged-baseline pattern, files read (worktree-baseline.sh,
+    test-worktree-baseline.sh, ledger.sh checked_review, workflow-guard.sh, D-006
+    log)'
 - id: triage
   required: true
   status: pending
@@ -38,5 +44,28 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  diagnose:
+    head_sha: c2b5ca6fa8ced4b18978f25993e67ed37229b228
+    timestamp: '2026-08-18T22:53:39.165368+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '1'
+      repro_tail: ' sidecar-less verify reports PASS     expected output to contain:
+        PASS:     output was: Blocked: no base ref available to verify ancestry against;
+        pass --base or --parent-branch.  Passed: 22 Failed: 9'
+    attested:
+      root_cause: 'cmd_verify derives its ancestry target from the cut-written sidecar
+        (load_state -> RESOLVED_BASE/STACKED/PARENT_BRANCH), a plain hand-writable
+        file; a forged sidecar points verify at any ref the checkout descends from,
+        so a non-descendant worktree passes, and the recorded BRANCH is never checked
+        against git at all. ledger.sh checked_review''s worktree_verify field inherits
+        the bypass. Observed as PR #166''s forged-baseline pattern.'
+      repro_cmd: bash test/test-worktree-baseline.sh && bash test/test-guard-rules.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: 13e485076e44039f263df631a3c04dd3b4761d63
