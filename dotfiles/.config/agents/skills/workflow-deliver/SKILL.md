@@ -76,8 +76,8 @@ Confirm the item is well-formed for autonomous execution: clear acceptance crite
 
 ### Step 4: Review
 
-- Load and run `workflow-review/SKILL.md` — never inline, self-review, or substitute CI/bot reviews. Profile: `fast` for small low-risk, `standard` for normal work and bug fixes, `full` when the change (or a bug's root cause) touches auth/data/infra/concurrency/broad behavior; security lane mandatory for auth/data-handling bugs.
-- Gate: `ledger.sh stamp review` — it verifies the profile floor, lane files, and per-lane models; a stamp that won't write means the review didn't happen.
+- Load and run `workflow-review/SKILL.md` — never inline, self-review, or substitute CI/bot reviews. Profile: at least `ledger.sh review-floor`; escalate per workflow-review's judgment guidance (security lane mandatory for auth/data-handling bugs).
+- workflow-review is `layer: judgment` — it returns lane files plus a synthesis verdict and never stamps (D-006 #12). This orchestrator records the gate: `ledger.sh stamp review --attest review_profile=<p> verdict=<v> lanes=<lane>=<run-scoped path>,...` — always pass run-scoped lane paths via `lanes=` (the kernel's bare `/tmp/<lane>-review.md` default can pick up a stale file from another run), confirm each lane file's `reviewed_sha` matches HEAD before stamping, and when the chosen profile escalates above a `fast` computed floor add `model_floor=opus` (the kernel's model floor tracks the computed floor, not the chosen profile). The kernel verifies the profile floor, lane files, and per-lane models; a stamp that won't write means the review didn't happen.
 - REQUEST_CHANGES: iterate, max 2 rounds, then auto-handoff with findings. NEEDS_HUMAN: auto-handoff with the flagged decision and halt.
 
 ### Step 5: User Journey QA (conditional blocking gate)

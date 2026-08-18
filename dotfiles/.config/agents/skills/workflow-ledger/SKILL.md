@@ -74,5 +74,5 @@ Human gates: `--human` for maintainer/operator/secret-custody gate types; `--ove
 
 ## Context
 
-Typical workflows: workflow-router (init/reconcile/preflight), workflow-deliver (kind-templated steps; diagnose/fix stamps for kind=bug), workflow-review (review-floor + review stamp), workflow-finalize (check review + finalize stamp + verify-local), run-backlog/execute-prd (read state for AFK monitoring)
+Typical workflows: workflow-router (init/reconcile/preflight), workflow-deliver (kind-templated steps; diagnose/fix stamps for kind=bug; records the review stamp for workflow-review's verdict), workflow-review (review-floor only — `layer: judgment`, never stamps), workflow-finalize (check review + finalize stamp + verify-local), run-backlog/execute-prd (read state for AFK monitoring)
 Pairs well with: setup-worktree (worktree verify is a review checked field), skill-system-audit (reads stamps for the D-006 scoreboard)

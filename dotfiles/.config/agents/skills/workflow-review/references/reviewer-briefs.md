@@ -13,9 +13,13 @@ Use this index to load only the prompt templates for active reviewer lanes. Do n
 
 ## Shared Output Contract
 
-Every reviewer brief returns:
+Every reviewer lane writes its full review to its lane file (see the lane-file contract in `workflow-review/SKILL.md`). The file MUST begin with these machine-parsed header lines — the kernel greps `^model:`/`^verdict:` and fails the review gate on any lane file missing either, so underscored verdict tokens are mandatory (a spaced `REQUEST CHANGES` does not parse):
 
 ```markdown
+model: <exact model id that ran this review>
+verdict: APPROVE|REQUEST_CHANGES|NEEDS_HUMAN
+reviewed_sha: <git HEAD sha of the diff reviewed>
+
 ## <Lane Name> Review
 
 ### Findings
@@ -28,8 +32,8 @@ Every reviewer brief returns:
 ### Skipped Checks
 - [Check skipped + reason]
 
-### Verdict
-APPROVE | REQUEST CHANGES | NEEDS HUMAN
+### Verdict rationale
+[why the header verdict was chosen]
 ```
 
 Report only issues the author should fix. Do not list generic best practices, style preferences, or speculative concerns below 70% confidence.

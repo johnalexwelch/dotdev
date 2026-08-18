@@ -23,7 +23,13 @@ Report only issues the author should fix now. If a concern would normally belong
 
 ## Output
 
+Write the full review to the lane file, starting with the machine-parsed header lines from the Shared Output Contract (`references/reviewer-briefs.md`):
+
 ```markdown
+model: <exact model id that ran this review>
+verdict: APPROVE|REQUEST_CHANGES|NEEDS_HUMAN
+reviewed_sha: <git HEAD sha of the diff reviewed>
+
 ## Integrated Reviewer Review
 
 ### Findings
@@ -36,6 +42,6 @@ Report only issues the author should fix now. If a concern would normally belong
 ### Skipped Checks
 - [Check skipped + reason]
 
-### Verdict
-APPROVE | REQUEST CHANGES | NEEDS HUMAN
+### Verdict rationale
+[why the header verdict was chosen]
 ```
