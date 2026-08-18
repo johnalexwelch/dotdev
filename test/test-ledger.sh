@@ -388,6 +388,27 @@ run_ledger "$repoB" check diagnose
 assert_status "check passes on overridden gate" 0 "$STATUS"
 assert_contains "overridden check prints OVERRIDDEN with reason" "$OUT" "OVERRIDDEN: post-fix restamp"
 
+# --- override freshness: an expired override is not standing authorization ---
+repoOS=$(new_repo override_stale)
+run_ledger "$repoOS" init 2026-08-18-ovstale --workflow workflow-debug \
+    --kind bug --steps "diagnose,fix,review,finalize"
+run_ledger "$repoOS" stamp finalize --override --reason "audited bypass: repro window"
+assert_status "finalize override stamp exits 0" 0 "$STATUS"
+
+run_ledger "$repoOS" check finalize
+assert_status "fresh override check exits 0" 0 "$STATUS"
+assert_contains "fresh override prints OVERRIDDEN with reason" "$OUT" \
+    "OVERRIDDEN: audited bypass: repro window"
+
+echo "drift" >"$repoOS/src/drift.py"
+commit_all "$repoOS" "feat: non-snapshot commit after the override"
+
+run_ledger "$repoOS" check finalize
+assert_status "stale override check exits 1" 1 "$STATUS"
+assert_contains "stale override prints the distinct OVERRIDE_STALE prefix" "$OUT" "OVERRIDE_STALE:"
+assert_contains "stale override output carries the recorded reason" "$OUT" \
+    "audited bypass: repro window"
+
 # --- verify-local ---
 repoF=$(new_repo verify_local)
 run_ledger "$repoF" init 2026-08-19-verify --workflow workflow-build-one \

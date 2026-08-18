@@ -513,6 +513,12 @@ check_gate() {
         return 1
     fi
     if ! fresh_since "$c_sha"; then
+        # A stale override is an expired authorization, not a gate that never
+        # passed — say so, and carry the audited reason to the operator.
+        if [ "$c_override" = "1" ]; then
+            echo "OVERRIDE_STALE: override on '$gate' expired — non-ledger commits exist after its stamp ($c_sha); recorded reason: $c_reason"
+            return 1
+        fi
         echo "STALE: non-ledger commits exist after the '$gate' stamp ($c_sha)"
         return 1
     fi

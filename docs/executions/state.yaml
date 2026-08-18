@@ -1,92 +1,88 @@
-run_id: 2026-08-18-forge-ssh-alias-detect
+run_id: 2026-08-18-override-stale
 workflow: workflow-debug
 kind: bug
 budget: one-reviewer
-status: done
-next: ''
-updated: '2026-08-18T20:21:08.740046+00:00'
+status: active
+next: finalize
+updated: '2026-08-18T20:23:45.656120+00:00'
 steps:
 - id: diagnose
   required: true
   status: completed
-  evidence: 'live repro: origin git@github-personal:johnalexwelch/dotdev.git; forge.sh
-    detect => forgejo; ssh -G github-personal => hostname github.com; root cause detect_forge()
-    classifies any non-github.com URL as forgejo without resolving ssh aliases'
-- id: red-tests
-  required: true
-  status: completed
-  evidence: 'test/test-forge.sh: 5 new failing assertions (scp alias->github, ssh://
-    alias->github, forge.type override x2, invalid override exit 1); 28 passing incl.
-    original 3 remote shapes'
+  evidence: repro red pre-fix (OVERRIDE_STALE prefix+reason absent), kernel-verified
+    at diagnose stamp
 - id: fix
   required: true
   status: completed
-  evidence: 'detect_forge(): forge.type override (fail-loud on invalid), github.com
-    literal, ssh -G HostName resolution for scp-like and ssh:// origins, forgejo fallback;
-    FORGE_SSH_CONFIG test seam'
-- id: verify
-  required: true
-  status: completed
-  evidence: test/test-forge.sh 33/0; full run-tests.sh exit 0 (ledger 102/0, guard
-    36/0, gh-shim 38/0); shellcheck strict + shfmt -i=4 -ci clean; live repo detect
-    => github (was forgejo)
+  evidence: repro green; test-ledger 108/0, test-guard-rules 39/0
 - id: review
   required: true
   status: completed
-  evidence: independent integrated lane (claude-fable-5) APPROVE at /tmp/integrated-review.md;
-    finding 1 (run_op die-in-subshell cascade) fixed red-first in follow-up commit;
-    findings 2 (ipv6 bracket parse, safe fallback) and 3 (override beats no-origin,
-    intentional) accepted as documented
+  evidence: fast profile, integrated lane approve (claude-fable-5), red/green independently
+    verified
 - id: finalize
   required: true
-  status: completed
-  evidence: "finalize stamped at 965304a with NO override (contrast: run 2026-08-18-phase1-router\
-    \ needed audited override for this same gate); PR #162 open, CI green, threads\
-    \ resolved; merge blocked by session permission classifier \u2014 left to user"
+  status: pending
+  evidence: ''
 stamps:
-  review:
-    head_sha: 2ae65006f39c60a1597acfb73abf901e8b2e6d8b
-    timestamp: '2026-08-18T20:21:08.739882+00:00'
+  diagnose:
+    head_sha: 8ba55d14e4b4e15794cf63f5fdee286fa37f5958
+    timestamp: '2026-08-18T19:30:14.079093+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 68b78d4dcb47a4bd8c49f377dedfc98c7a501d7a4ccdcf7fcb77976b363252df
-      lane_integrated_lines: '16'
+      repro_exit: '1'
+      repro_tail: 'no OVERRIDE_STALE prefix on a stale override; output: STALE: non-ledger
+        commits exist after the ''finalize'' stamp (3ffd1ebd93b36ed9c354270cf8f6e227de7e2b0f)'
+    attested:
+      repro_cmd: bash /private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-suspicious-cannon-32f671/94f9156c-ba33-4073-8be1-fabe428eea6a/scratchpad/repro-override-stale.sh
+      root_cause: check_gate collapses a stale override into the generic STALE line
+        and drops the recorded override reason; spec requires a distinct OVERRIDE_STALE
+        contract and no test locks override freshness
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  fix:
+    head_sha: 2f3948295f39a2c42eb8c06aa910a1ef7fbee0d9
+    timestamp: '2026-08-18T19:33:29.709451+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-ledger.sh
+    attested:
+      regression_test: test/test-ledger.sh
+      rationale: stale-override branch in check_gate emits OVERRIDE_STALE with recorded
+        reason; 4 red assertions now green
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  review:
+    head_sha: 9dad02988c6bf9f3f2f540633a6f184f3c2f069d
+    timestamp: '2026-08-18T20:23:45.655962+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 1d849224788f7d43ce9759e8bc9b58ec724e1f6d1b544d90f1cf01fb5dff9f01
+      lane_integrated_lines: '18'
       lane_integrated_verdict: approve
       lane_integrated_model: claude-fable-5
       review_floor: fast
       worktree_verify: pass
     attested:
       review_profile: fast
-      lanes: integrated=/tmp/integrated-review-162.md
+      lanes: integrated=/tmp/integrated-review.md
       verdict: approve
     override:
       active: false
       reason: ''
       timestamp: ''
-  finalize:
-    head_sha: 965304a9da04be962860cd9ec1db27817bb7044b
-    timestamp: '2026-08-18T19:38:56.330038+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      ci: green
-      pr_state: open
-      threads_resolved: 'yes'
-    attested:
-      pr_number: '162'
-      describe_pr: PR body carries summary, test plan, breaking-changes per repo convention
-      post_mortem: 'root cause + forcing incident documented in PR #162 body and commit
-        b2f7527 message; original failure was the audited override on run 2026-08-18-phase1-router
-        (PR #161)'
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
 overrides: []
-last_seen_sha: 7e892d90830ccd7d5346a99f19b2fb1fde37011c
+last_seen_sha: 9639f5b99c7888e42f613311f5562941480c9370
 verify_local:
-  head_sha: 2ae65006f39c60a1597acfb73abf901e8b2e6d8b
+  head_sha: 02214fc8ec7c5764e6811c0924ffd765b03edd10
   passed: true
   results:
   - cmd: ./test/run-tests.sh
