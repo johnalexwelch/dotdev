@@ -382,6 +382,36 @@ assert_status "stamp fix green repro + regression exits 0" 0 "$STATUS"
 run_ledger "$repoB" check fix
 assert_status "check fix fresh after stamp" 0 "$STATUS"
 
+# --- repro_tail redaction + snapshot cap (batch #4) ---
+repoRT=$(new_repo redact_tail)
+stateRT=$(live_state "$repoRT")
+run_ledger "$repoRT" init 2026-08-18-redact --workflow workflow-deliver \
+    --kind bug --steps "impl"
+cat >"$repoRT/leaky.sh" <<'LEAK'
+#!/usr/bin/env bash
+echo "token=supersecretvalue1234 ghp_ABCDEFGHIJKLMNOPQRSTuvwx"
+printf 'x%.0s' $(seq 1 120)
+echo ""
+exit 1
+LEAK
+commit_all "$repoRT" "test: leaky red repro"
+run_ledger "$repoRT" stamp diagnose --attest repro_cmd="bash leaky.sh" \
+    --attest root_cause="leaky output"
+assert_status "diagnose stamp with leaky repro exits 0" 0 "$STATUS"
+assert_file_not_contains "live tail redacts the ghp_ token" "$stateRT" \
+    "ghp_ABCDEFGHIJKLMNOPQRSTuvwx"
+assert_file_not_contains "live tail redacts the token= value" "$stateRT" \
+    "supersecretvalue1234"
+assert_file_contains "live tail carries a REDACTED marker" "$stateRT" "REDACTED"
+assert_file_not_contains "committed snapshot never carries the secret" \
+    "$repoRT/docs/executions/state.yaml" "supersecretvalue1234"
+long_run="$(printf 'x%.0s' $(seq 1 100))"
+assert_file_contains "live state keeps the full tail" "$stateRT" "$long_run"
+assert_file_not_contains "snapshot repro_tail is capped" \
+    "$repoRT/docs/executions/state.yaml" "$long_run"
+assert_file_contains "snapshot marks the truncation" \
+    "$repoRT/docs/executions/state.yaml" "truncated"
+
 # --- override flow ---
 run_ledger "$repoB" stamp diagnose --attest repro_cmd="bash repro.sh" \
     --attest root_cause="restamp after fix"
