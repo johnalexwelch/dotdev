@@ -412,9 +412,12 @@ assert_status "paren-free arithmetic expansion is not a terminator" 0 "$STATUS"
 
 # Beyond that boundary the masker leaves parens standing and the fallback
 # arms, blocking a benign command (tests lane R3). Every shape below is
-# fail-closed and was blocked on origin/main too under whole-command
-# semantics — no regression, and pinned so the limitation is visible rather
-# than inferred from the happy case above.
+# fail-closed and pinned so the limitation is visible rather than inferred
+# from the happy case above. Provenance, corrected by the security lane in
+# R5: under the `2>/dev/null` spelling these were blocked on main too, so
+# that much is preserved behavior — but main never recognized
+# `>/dev/null 2>&1`, so the stdout-dup variants are NEW false positives
+# introduced by this batch, not inherited ones.
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(( (1+2)*3 )) 2>/dev/null && git push origin main')"
 assert_status "nested-paren arithmetic blocks (fail-closed, pinned)" 2 "$STATUS"

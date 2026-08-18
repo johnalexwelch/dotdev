@@ -131,6 +131,21 @@ mask_command_substitutions() {
     printf '%s' "${s//\`/ }"
 }
 
+# Prints the text of every `$( … )` span, innermost-first. Used to decide
+# whether masking substitutions would hide a compound construct that mutates
+# (security lane R5): a construct wrapped in a substitution otherwise loses
+# its terminator and the fallback never arms.
+substitution_spans() {
+    local s="$1" prev="" spans=""
+    s="$(sed -E 's/\$\(\([^()]*\)\)/__ARITH__/g' <<<"$s")"
+    while [ "$s" != "$prev" ]; do
+        prev="$s"
+        spans="${spans}$(grep -oE '\$\([^()]*\)' <<<"$s")"$'\n'
+        s="$(sed -E 's/\$\([^()]*\)/__SUBST__/g' <<<"$s")"
+    done
+    printf '%s' "$spans"
+}
+
 # Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
 # Suppression on a test/lint segment chained before a push must not block
 # (R1/R2 batch #1 — segment scoping; bit us twice live). Split order
@@ -151,11 +166,20 @@ has_suppressed_mutating_segment() {
     # Mutation matching below always uses the unmasked segments.
     terminator_view="$(mask_command_substitutions "$masked")"
     [ -n "$terminator_view" ] || terminator_view="$masked"
-    # `}`/`)` are unambiguous terminators once substitutions are masked.
-    # `done`/`fi` are ordinary words, so they only count when
-    # separator-preceded (`; done`, or at line start) — otherwise
-    # `echo done <suppression> && git push` would trip the fallback, the very
-    # false-positive class batch #1 removed (logic lane R2).
+    # ...unless masking would swallow a MUTATING construct along with its
+    # terminator, in which case judge terminators unmasked (security lane R5).
+    # A benign span never triggers this, so `echo $(date) 2>/dev/null && git
+    # push` still permits.
+    if is_mutating_forge_segment "$(substitution_spans "$masked")"; then
+        terminator_view="$masked"
+    fi
+    # `)` is an unambiguous terminator once substitutions are masked. `}`,
+    # `done`, `fi`, and `esac` are not: a brace group's `}` is always
+    # separator-preceded while a parameter expansion's `${VAR}` never is, and
+    # the word terminators appear as ordinary arguments. Requiring a preceding
+    # separator (or line start) keeps `mkdir -p ${DIR} <suppression> && git
+    # commit` and `echo done <suppression> && git push` out of the fallback —
+    # the batch #1 false-positive class (logic lane R2, security lane R5).
     # ANY redirect after the terminator is a candidate — a construct
     # suppressed via stdout-dup (`} >/dev/null 2>&1`) is redirected just as
     # thoroughly as one using `2>` (security lane R2). What decides arming is
@@ -168,7 +192,7 @@ has_suppressed_mutating_segment() {
     # of the redirect) while still stopping at a `&&` that starts the next
     # segment — hence `&` is admitted only before a digit, `-`, or `>`.
     local redirect_lists
-    redirect_lists="$(grep -oE '(\}|\)|(^|[;&|])[[:space:]]*(done|fi))[[:space:]]*([0-9]*>>?|&>)([^;&|]|&[0-9-]|&>)*' <<<"$terminator_view")"
+    redirect_lists="$(grep -oE '(\)|(^|[;&|])[[:space:]]*(\}|done|fi|esac))[[:space:]]*([0-9]*>>?|&>)([^;&|]|&[0-9-]|&>)*' <<<"$terminator_view")"
     while IFS= read -r seg; do
         [ -n "$seg" ] || continue
         if seg_has_suppression "$seg"; then
