@@ -1,112 +1,92 @@
-run_id: 2026-08-18-phase2-deliver
-workflow: workflow-build-one
-kind: skill
+run_id: 2026-08-18-forge-ssh-alias-detect
+workflow: workflow-debug
+kind: bug
 budget: one-reviewer
-status: active
-next: finalize
-updated: '2026-08-18T19:49:40.369212+00:00'
+status: done
+next: ''
+updated: '2026-08-18T20:21:08.740046+00:00'
 steps:
-- id: implement
+- id: diagnose
   required: true
   status: completed
-  evidence: workflow-deliver authored (120 lines vs 361 source); tombstones + router
-    retarget + manifest/index/decision-log; lints 0 fail, dry-run OK, suite 317 PASS
-    @ 842ae69
+  evidence: 'live repro: origin git@github-personal:johnalexwelch/dotdev.git; forge.sh
+    detect => forgejo; ssh -G github-personal => hostname github.com; root cause detect_forge()
+    classifies any non-github.com URL as forgejo without resolving ssh aliases'
+- id: red-tests
+  required: true
+  status: completed
+  evidence: 'test/test-forge.sh: 5 new failing assertions (scp alias->github, ssh://
+    alias->github, forge.type override x2, invalid override exit 1); 28 passing incl.
+    original 3 remote shapes'
+- id: fix
+  required: true
+  status: completed
+  evidence: 'detect_forge(): forge.type override (fail-loud on invalid), github.com
+    literal, ssh -G HostName resolution for scp-like and ssh:// origins, forgejo fallback;
+    FORGE_SSH_CONFIG test seam'
+- id: verify
+  required: true
+  status: completed
+  evidence: test/test-forge.sh 33/0; full run-tests.sh exit 0 (ledger 102/0, guard
+    36/0, gh-shim 38/0); shellcheck strict + shfmt -i=4 -ci clean; live repo detect
+    => github (was forgejo)
 - id: review
   required: true
   status: completed
-  evidence: full profile (kernel floor), 4 lanes APPROVE @ 3b04593; round-1 REQUEST
-    CHANGES (security, logic) fixed in 3b04593; stamp review written
+  evidence: independent integrated lane (claude-fable-5) APPROVE at /tmp/integrated-review.md;
+    finding 1 (run_op die-in-subshell cascade) fixed red-first in follow-up commit;
+    findings 2 (ipv6 bracket parse, safe fallback) and 3 (override beats no-origin,
+    intentional) accepted as documented
 - id: finalize
   required: true
-  status: active
-  evidence: review stamped @ 3b04593; opening PR
+  status: completed
+  evidence: "finalize stamped at 965304a with NO override (contrast: run 2026-08-18-phase1-router\
+    \ needed audited override for this same gate); PR #162 open, CI green, threads\
+    \ resolved; merge blocked by session permission classifier \u2014 left to user"
 stamps:
   review:
-    head_sha: 3b04593fea1a76eea7b48ecd201ba1c693d27778
-    timestamp: '2026-08-18T19:43:55.820368+00:00'
+    head_sha: 2ae65006f39c60a1597acfb73abf901e8b2e6d8b
+    timestamp: '2026-08-18T20:21:08.739882+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: 154712e60f768245a5f640614a6422ab7a3707dec0d82361ad42d486d0972c74
-      lane_security_lines: '39'
-      lane_security_verdict: APPROVE
-      lane_security_model: claude-fable-5
-      lane_logic_sha256: 4dd12b760cc888a6ce369d0ef0221035f4be25534dddbb736d4b2fd271f376cb
-      lane_logic_lines: '46'
-      lane_logic_verdict: APPROVE
-      lane_logic_model: claude-fable-5
-      lane_tests_sha256: cf98d72cd916385fbcd4e3658d544f0f0f858448cf678caacb6cae8f3e355942
-      lane_tests_lines: '38'
-      lane_tests_verdict: APPROVE
-      lane_tests_model: claude-fable-5
-      lane_style_sha256: b560c7c8efb922efdfb5238cac718385f8fd9c162fdeb415fc768c494c4cdf97
-      lane_style_lines: '54'
-      lane_style_verdict: APPROVE
-      lane_style_model: claude-fable-5
-      review_floor: full
+      lane_integrated_sha256: 68b78d4dcb47a4bd8c49f377dedfc98c7a501d7a4ccdcf7fcb77976b363252df
+      lane_integrated_lines: '16'
+      lane_integrated_verdict: approve
+      lane_integrated_model: claude-fable-5
+      review_floor: fast
       worktree_verify: pass
     attested:
-      verdict: APPROVE
-      review_profile: full
-      lanes: security=/tmp/security-review.md,logic=/tmp/logic-review.md,tests=/tmp/tests-review.md,style=/tmp/style-review.md
-      model_floor: opus
+      review_profile: fast
+      lanes: integrated=/tmp/integrated-review-162.md
+      verdict: approve
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 49d48c2c1458b9d395d53163648f5387babb364a
-    timestamp: '2026-08-18T19:49:40.369024+00:00'
+    head_sha: 965304a9da04be962860cd9ec1db27817bb7044b
+    timestamp: '2026-08-18T19:38:56.330038+00:00'
     gate_type: reviewer-validation
     provenance: agent
-    checked: {}
+    checked:
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
     attested:
-      pr_number: '164'
-      describe_pr: 'D-006 Phase 2: workflow-deliver merges build-one+debug; kind=bug
-        templates kernel-enforced diagnose/fix; tombstones + router retarget; golden
-        migration follows'
-      post_mortem: "Second fully-stamped delivery. Review round 1 caught two prose-vs-kernel\
-        \ contradictions (force-init recovery, TDD-evidence overwrite) \u2014 the\
-        \ kernel-first design is catching its own doc drift. Same forge.sh alias bug\
-        \ as Phase 1; stale /tmp lane files from an earlier session initially satisfied\
-        \ the file-existence check and were caught by mtime/content verification \u2014\
-        \ lane-freshness is a kernel gap worth closing."
+      pr_number: '162'
+      describe_pr: PR body carries summary, test plan, breaking-changes per repo convention
+      post_mortem: 'root cause + forcing incident documented in PR #162 body and commit
+        b2f7527 message; original failure was the audited override on run 2026-08-18-phase1-router
+        (PR #161)'
     override:
-      active: true
-      reason: "Known kernel bug (decision-log D-006 Phase 1 entry): forge.sh detect\
-        \ misreads the github-personal SSH-alias origin as forgejo; FORGE_URL unset\
-        \ so the PR lookup cannot execute (fix already queued as follow-up from Phase\
-        \ 1). All finalize checked fields manually verified against ground truth at\
-        \ head 49d48c2: PR #164 OPEN, draft by design (human-only delivery policy;\
-        \ task instruction: do not merge); CI 6/7 checks SUCCESS (Lint, Secret scan,\
-        \ Shell syntax, Stow dry run, Test suite, Install dry run) \u2014 7th check\
-        \ Router golden eval FAIL is documented expected-red: cases 11/18/19 expect\
-        \ the pre-merge routes until the immediate golden-set migration PR, case 20\
-        \ is CI-flaky (passes 2/2 locally, sonnet); 0 unresolved review threads (gh\
-        \ graphql reviewThreads totalCount=0); git status --porcelain empty; verify-local\
-        \ PASSED at 49d48c2 (run-tests + lint-skill-refs + lint-skill-suite); check\
-        \ review fresh at 3b04593."
-      timestamp: '2026-08-18T19:49:40.369206+00:00'
-overrides:
-- gate: finalize
-  reason: "Known kernel bug (decision-log D-006 Phase 1 entry): forge.sh detect misreads\
-    \ the github-personal SSH-alias origin as forgejo; FORGE_URL unset so the PR lookup\
-    \ cannot execute (fix already queued as follow-up from Phase 1). All finalize\
-    \ checked fields manually verified against ground truth at head 49d48c2: PR #164\
-    \ OPEN, draft by design (human-only delivery policy; task instruction: do not\
-    \ merge); CI 6/7 checks SUCCESS (Lint, Secret scan, Shell syntax, Stow dry run,\
-    \ Test suite, Install dry run) \u2014 7th check Router golden eval FAIL is documented\
-    \ expected-red: cases 11/18/19 expect the pre-merge routes until the immediate\
-    \ golden-set migration PR, case 20 is CI-flaky (passes 2/2 locally, sonnet); 0\
-    \ unresolved review threads (gh graphql reviewThreads totalCount=0); git status\
-    \ --porcelain empty; verify-local PASSED at 49d48c2 (run-tests + lint-skill-refs\
-    \ + lint-skill-suite); check review fresh at 3b04593."
-  timestamp: '2026-08-18T19:49:40.369210+00:00'
-  head_sha: 49d48c2c1458b9d395d53163648f5387babb364a
-last_seen_sha: 49d48c2c1458b9d395d53163648f5387babb364a
+      active: false
+      reason: ''
+      timestamp: ''
+overrides: []
+last_seen_sha: 7e892d90830ccd7d5346a99f19b2fb1fde37011c
 verify_local:
-  head_sha: 49d48c2c1458b9d395d53163648f5387babb364a
+  head_sha: 2ae65006f39c60a1597acfb73abf901e8b2e6d8b
   passed: true
   results:
   - cmd: ./test/run-tests.sh
