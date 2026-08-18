@@ -110,6 +110,15 @@ seg_has_suppression() {
 # subshell/group terminator (tests lane R2). Used ONLY for terminator
 # detection — segment mutation matching always runs on the unmasked text, so
 # a mutation inside a substitution is still caught in its own segment.
+#
+# LIMITATION (tests lane R3): the inner classes are `[^()]`, so this masks
+# only substitutions and arithmetic whose contents carry no literal paren.
+# Nested-paren arithmetic, process substitution `<( … )`, a paren inside a
+# quoted argument, and array assignment all leave parens standing, arm the
+# fallback, and block a benign command. Every one of those is fail-closed and
+# was blocked on main too under whole-command semantics; the shapes are
+# pinned in test-guard-rules.sh so the boundary stays visible. Fixing them
+# properly needs a real paren-matching pass, not a wider character class.
 mask_command_substitutions() {
     local s="$1" prev=""
     # Arithmetic expansion first: its `))` is not a subshell close, and the

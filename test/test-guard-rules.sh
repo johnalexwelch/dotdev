@@ -402,10 +402,32 @@ assert_status "loop suppressed via stdout-dup blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then git push origin main; fi >/dev/null 2>&1')"
 assert_status "conditional suppressed via stdout-dup blocks" 2 "$STATUS"
 
-# Widening the alternation must not make arithmetic expansion a terminator.
+# Widening the alternation must not make a PAREN-FREE arithmetic expansion a
+# terminator. The masker's inner classes are [^()], so it collapses only
+# substitutions and arithmetic containing no literal parens — the pins below
+# fix the boundary so this one case is not read as general support.
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((1+2)) >/dev/null 2>&1 && git push origin main')"
-assert_status "arithmetic expansion is not a terminator" 0 "$STATUS"
+assert_status "paren-free arithmetic expansion is not a terminator" 0 "$STATUS"
+
+# Beyond that boundary the masker leaves parens standing and the fallback
+# arms, blocking a benign command (tests lane R3). Every shape below is
+# fail-closed and was blocked on origin/main too under whole-command
+# semantics — no regression, and pinned so the limitation is visible rather
+# than inferred from the happy case above.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(( (1+2)*3 )) 2>/dev/null && git push origin main')"
+assert_status "nested-paren arithmetic blocks (fail-closed, pinned)" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'diff <(echo a) <(echo b) 2>/dev/null && git push origin main')"
+assert_status "process substitution blocks (fail-closed, pinned)" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(grep "x)y" f) 2>/dev/null && git push origin main')"
+assert_status "paren inside a quoted substitution arg blocks (fail-closed, pinned)" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'xs=(a b) 2>/dev/null; git push origin main')"
+assert_status "array assignment blocks (fail-closed, pinned)" 2 "$STATUS"
 
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) >/dev/null 2>&1 && git push origin main')"
