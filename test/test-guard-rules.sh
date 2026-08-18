@@ -266,6 +266,19 @@ assert_status "git-forge merge-queue status with suppression allowed" 0 "$STATUS
 run_hook "$plain_sup" "$(json_bash "$plain_sup" "git merge feature-x 2>/dev/null")"
 assert_status "real git merge with suppression still blocked" 2 "$STATUS"
 
+# Compound-redirection shapes (logic lane): a suppression on a group, subshell,
+# loop, or conditional redirects everything inside it — lexical splitting must
+# not file it under the closing token's segment. Fail closed: these fall back
+# to whole-command semantics (the pre-batch behavior).
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "{ git push origin main; } 2>/dev/null")"
+assert_status "brace-group suppression over a push still blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "( git push origin main ; ) 2>/dev/null")"
+assert_status "subshell suppression over a push still blocked" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "for b in a b; do git push origin b; done 2>/dev/null")"
+assert_status "loop-body suppression over a push still blocked" 2 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 
