@@ -206,6 +206,14 @@ run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/src/
 assert_status "non-sidecar .state file not blocked" 0 "$STATUS"
 assert_not_contains "non-sidecar .state carries no block message" "$OUT" "script-owned"
 
+# macOS APFS is case-insensitive: a case-variant spelling writes the real
+# sidecar (or state.yaml), so the pattern match must be case-insensitive.
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$TMPDIR_BASE/.Worktree-Baseline.wt1.state")"
+assert_status "case-variant sidecar spelling blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/State.YAML")"
+assert_status "case-variant state.yaml spelling blocked" 2 "$STATUS"
+
 # --- Rule 3: stderr suppression on mutating forge/git commands ---
 plain_sup=$(new_repo suppression plain)
 
