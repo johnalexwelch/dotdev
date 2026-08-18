@@ -540,7 +540,7 @@ run_ledger "$wt1" close
 assert_status "close exits 0" 0 "$STATUS"
 state_wt1=$(live_state "$wt1")
 assert_file_contains "close sets status done" "$state_wt1" "status: done"
-assert_file_matches "close empties next" "$state_wt1" "^next: *(''|\"\"|)$"
+assert_file_matches "close empties next" "$state_wt1" "^next: *(''|\"\")?$"
 last_msg=$(git -C "$wt1" log -1 --pretty=%s)
 assert_contains "close commits snapshot as chore(ledger)" "$last_msg" "chore(ledger): close"
 
