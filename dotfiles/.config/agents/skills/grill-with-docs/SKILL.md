@@ -1,6 +1,7 @@
 ---
 name: grill-with-docs
-model: opus
+layer: judgment
+model: fable
 reasoning: high
 description: "Canonical grill engine for design interrogation, V1 product discovery, and doc-driven interviews. Challenges plans against domain context, sharpens terms, captures accepted decisions, and updates docs when a repo exists. Supports HITL and Delegate execution modes. Triggers: \"grill me\", \"stress test this\", \"poke holes\", \"challenge this\", \"v1 grill\", \"product grill\"."
 ---
@@ -236,7 +237,7 @@ V1_IDEA_BRIEF:
 
 If a question can be answered from resources available to you (codebase, docs, ADRs, web search), answer it that way instead of asking.
 
-**Decision log requirement:** Use `decision-log` for every accepted
+**Decision log requirement:** follow `decision-log` for every accepted
 recommendation or user-edited answer when a repo decision log exists. In scratch
 or ephemeral states, emit accepted answers as `pending_decision_log_entries`
 with the same fields: question, decision, what else was considered, and
@@ -244,6 +245,14 @@ tradeoffs accepted. In Delegate mode, **tag each entry with provenance**:
 `human`, `auto+specialist-consensus`, or `escalated-human` (see D5 in `references/delegate-mode.md`). A grill output is incomplete until accepted decisions are
 captured either as pending entries or durable repo entries, with full provenance
 in Delegate mode. Draft recommendations, rejected answers, and unresolved questions stay out of the log.
+
+**Pre-lock ground-truth gate:** Before locking a decision whose correctness
+depends on how something is actually implemented (substrate, engine,
+integration, data location, read/write path), verify it against the
+authoritative repo or running state — not priors, memory, or verbal summaries.
+While a checkable verification question is open, do not fan the decision out to
+durable records (decision log, CONTEXT.md, ADRs, tickets); resolve the check
+first, then lock and capture.
 
 **Promotion/staging handoff:** If a scratch/ephemeral grill becomes worth
 building, do not create a repo yourself unless the user explicitly asks. Hand

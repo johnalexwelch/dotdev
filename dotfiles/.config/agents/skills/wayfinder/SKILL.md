@@ -1,6 +1,7 @@
 ---
 name: wayfinder
-model: opus
+layer: judgment
+model: fable
 reasoning: high
 disable-model-invocation: true
 description: Plan a huge, foggy chunk of work — more than one agent session can hold — as a shared map of investigation tickets on GitHub, resolved one at a time until the route to the destination is clear enough to hand into the normal delivery funnel. Use for efforts too big or too uncertain for workflow-feature to hold in a single session. Explicit-invocation only (/wayfinder).

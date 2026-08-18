@@ -1,5 +1,6 @@
 ---
 name: execute-prd
+layer: orchestrator
 model: sonnet
 reasoning: medium
 description: "Execute a parent PRD issue tree end-to-end: orders children by dependency, generates execution briefs, creates worktrees, implements unblocked slices, opens PRs, runs review/CI, reconciles, writes handoff. Use for \"execute this PRD\", \"implement all children of #N\"."
@@ -146,7 +147,7 @@ For each child (parallel within a wave, sequential across waves):
    ```
 
 3. **Record worktree baseline evidence**: `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch_prefix>/<issue-number>-<child-slug> @ ../worktrees/<issue-number>-<slug>`
-4. **Execute** using the `workflow-build-one` chain:
+4. **Execute**: Load and run `workflow-build-one/SKILL.md` for the child. Its chain, as a map for the reader:
 
    ```
    preflight → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize

@@ -1,5 +1,6 @@
 ---
 name: v1-workflow
+layer: orchestrator
 model: opus
 reasoning: high
 description: Master orchestration for turning a product idea into a complete V1 system design with ready-to-implement issues. Use when starting a new V1 product from an idea or when building a major version from concept.
@@ -62,7 +63,7 @@ Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEP
 
 ### Step 1: V1 Idea Grill
 
-**Invoke:** `grill-with-docs` in **V1 product discovery mode**
+**Invoke:** Load and run `grill-with-docs/SKILL.md` in **V1 product discovery mode**
 
 Trigger V1 mode by framing the invocation as product/idea discovery. The skill auto-selects V1 mode when the context is a loose product idea.
 
@@ -78,7 +79,7 @@ Trigger V1 mode by framing the invocation as product/idea discovery. The skill a
 
 ### Step 2: Capture Grill Decisions in Decision Log
 
-**Invoke:** `decision-log`
+**Invoke:** follow `decision-log`
 
 For every significant decision accepted during the idea grill, create a decision-log entry:
 
@@ -92,6 +93,8 @@ This log becomes the context for system design and downstream PRDs.
 **Evidence:** decision-log.md with entries for all grill decisions.
 
 ### Step 2.5: Prototype (Conditional)
+
+**Invoke:** Load and run `prototype/SKILL.md`
 
 **Trigger when:** Grilling surfaces a question that reasoning alone cannot answer.
 
@@ -107,7 +110,7 @@ This log becomes the context for system design and downstream PRDs.
 
 ### Step 3: V1 System Design
 
-**Invoke:** `v1-system-design`
+**Invoke:** Load and run `v1-system-design/SKILL.md`
 
 - Validate the approved V1_IDEA_BRIEF exists
 - Inspect existing codebase context if building in an existing repo
@@ -122,7 +125,7 @@ This log becomes the context for system design and downstream PRDs.
 
 ### Step 4: Update Decision Log with Design Decisions
 
-**Invoke:** `decision-log`
+**Invoke:** follow `decision-log`
 
 For every significant architectural decision in the system design, create a decision-log entry:
 
@@ -137,7 +140,7 @@ This ensures downstream PRD writers and implementers understand the "why" behind
 
 ### Step 5: Create V1 Roadmap
 
-**Invoke:** `workflow-roadmap`
+**Invoke:** Load and run `workflow-roadmap/SKILL.md`
 
 - Sequence the implementation slices identified in system design
 - Define milestones and dependencies
@@ -151,7 +154,7 @@ This ensures downstream PRD writers and implementers understand the "why" behind
 
 ### Step 6: Write PRD(s)
 
-**Invoke:** `to-prd`
+**Invoke:** Load and run `to-prd/SKILL.md`
 
 - For each major vertical slice from the roadmap, create a PRD
 - Each PRD should represent one shippable increment of V1
@@ -163,7 +166,7 @@ This ensures downstream PRD writers and implementers understand the "why" behind
 
 ### Step 7: Create Issues
 
-**Invoke:** `to-issues`
+**Invoke:** Load and run `to-issues/SKILL.md`
 
 - For each PRD, create child issues representing implementation tasks
 - All issues must be vertical slices (end-to-end feature behavior)
@@ -175,7 +178,7 @@ This ensures downstream PRD writers and implementers understand the "why" behind
 
 ### Step 8: Triage
 
-**Invoke:** `triage`
+**Invoke:** Load and run `triage/SKILL.md`
 
 - Classify each issue as `ready-for-agent` or `ready-for-human`
 - Verify all mandatory fields are present (acceptance criteria, test plan, effort estimate)
