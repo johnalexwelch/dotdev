@@ -252,6 +252,20 @@ assert_status "suppression on trailing mutating segment still blocked" 2 "$STATU
 run_hook "$plain_sup" "$(json_bash "$plain_sup" "gh pr create --fill &>/dev/null || echo failed")"
 assert_status "&>/dev/null on the mutating segment still blocked (||)" 2 "$STATUS"
 
+# Whole-token boundaries everywhere `-` is a word boundary (style R1):
+# merge-base / commit-graph / git-forge merge-queue are non-mutating.
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "git merge-base HEAD origin/main 2>/dev/null")"
+assert_status "git merge-base with suppression allowed" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "git commit-graph write 2>/dev/null")"
+assert_status "git commit-graph with suppression allowed" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "git-forge merge-queue status 2>/dev/null")"
+assert_status "git-forge merge-queue status with suppression allowed" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash "$plain_sup" "git merge feature-x 2>/dev/null")"
+assert_status "real git merge with suppression still blocked" 2 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 

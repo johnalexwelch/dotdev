@@ -360,6 +360,13 @@ run_ledger "$repoEnv" check finalize
 assert_status "check with broken python env exits 10, not 1" 10 "$STATUS"
 unset LEDGER_PYTHON
 
+# Git/repo breakage is env-shaped too (style R1): running outside a git
+# repository is exit 10, not the gate-unmet/usage exit 1.
+norepo="$TMPDIR_BASE/norepo"
+mkdir -p "$norepo"
+run_ledger "$norepo" show
+assert_status "outside a git repository exits 10" 10 "$STATUS"
+
 # --- kind: bug template + diagnose/fix gates ---
 repoB=$(new_repo bug_template)
 stateB=$(live_state "$repoB")
@@ -738,6 +745,15 @@ assert_status "security lane present satisfies the flagged floor" 0 "$STATUS"
 assert_file_contains "checked review_floor records the security flag" \
     "$wt2/docs/executions/state.yaml" "standard+security"
 
+# The attested profile is exactly fast|standard|full (logic R1 must-fix): a
+# suffixed value like full+security must be rejected, not rank as full while
+# collapsing required_lanes to its default.
+run_ledger "$wt2" stamp review --attest verdict=approve \
+    --attest review_profile=full+security \
+    --attest "lanes=integrated=$lane2_logic,logic=$lane2_logic,tests=$lane2_tests,security=$lane2_sec"
+assert_status "suffixed attested review_profile is rejected" 2 "$STATUS"
+assert_contains "invalid profile failure names review_profile" "$OUT" "review_profile"
+
 # --- snapshot_current: committed snapshot must match live at finalize (batch #8) ---
 # A hand-crafted commit that touches ONLY the snapshot file is
 # freshness-exempt by design, so the PR-visible record could be rewritten
@@ -752,6 +768,13 @@ printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature_snapshot_drift"
 
 run_ledger "$wt3" init 2026-08-18-snap --workflow workflow-deliver \
     --kind feature --steps "impl,review,finalize"
+# Give the run a long repro tail so the legacy-shape (uncapped byte-copy)
+# snapshot below exercises the cap-normalized comparison (logic R1).
+printf '#!/usr/bin/env bash\nprintf "y%%.0s" $(seq 1 120)\nexit 1\n' >"$wt3/long.sh"
+commit_all "$wt3" "test: long-output red repro"
+run_ledger "$wt3" stamp diagnose --attest repro_cmd="bash long.sh" \
+    --attest root_cause="long tail fixture"
+assert_status "wt3 diagnose stamp exits 0" 0 "$STATUS"
 printf -- '- "true"\n' >"$wt3/docs/executions/ci-commands.yaml"
 echo "tweak" >>"$wt3/src/app.py"
 commit_all "$wt3" "feat: change under review"
@@ -775,12 +798,15 @@ run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
 assert_status "finalize refuses a tampered committed snapshot" 2 "$STATUS"
 assert_contains "snapshot mismatch failure names the snapshot" "$OUT" "snapshot"
 
+# Deliberate legacy-shape restore: a byte-copy of live state (pre-cap
+# snapshots were exactly this). snapshot_match must normalize both sides,
+# so benign version skew is never misdiagnosed as tampering (logic R1).
 cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
 git -C "$wt3" add -- docs/executions/state.yaml
 git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- docs/executions/state.yaml
 run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
-assert_status "finalize passes once the snapshot matches live again" 0 "$STATUS"
+assert_status "finalize passes on a legacy byte-copy snapshot of live" 0 "$STATUS"
 assert_file_contains "finalize records the snapshot_current checked field" \
     "$wt3/docs/executions/state.yaml" "snapshot_current"
 
