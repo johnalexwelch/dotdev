@@ -225,7 +225,9 @@ print("no" if "REQUEST_CHANGES" in latest.values() else "yes")
 
 run_op() {
     local op="$1" pr="$2" forge
-    forge="$(detect_forge)"
+    # detect_forge dies inside the substitution's subshell (e.g. invalid
+    # forge.type); propagate that instead of cascading into bogus errors.
+    forge="$(detect_forge)" || exit 1
     [ "$forge" != "none" ] || die "no origin remote; cannot dispatch $op"
     if [ -n "${FORGE_MOCK_DIR:-}" ]; then
         local mock="$FORGE_MOCK_DIR/$forge-$op-$pr"

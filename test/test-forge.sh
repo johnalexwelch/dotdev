@@ -170,6 +170,11 @@ assert_equal "forge.type=forgejo overrides github remote" "forgejo" "$OUT"
 run_forge "$repo_bad_override" detect
 assert_status "detect fails loudly on invalid forge.type" 1 "$STATUS"
 
+run_forge "$repo_bad_override" ci-status 42
+assert_status "ops fail on invalid forge.type" 1 "$STATUS"
+assert_equal "invalid forge.type does not cascade to a mock-missing error" \
+    "0" "$(printf '%s\n' "$OUT" | grep -c 'mock answer missing')"
+
 # --- github ops via mock mode ---
 printf 'green\n' >"$MOCK_DIR/github-ci-status-42"
 printf 'open\n' >"$MOCK_DIR/github-pr-state-42"
