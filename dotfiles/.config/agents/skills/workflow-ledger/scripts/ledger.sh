@@ -468,6 +468,29 @@ def op_show(argv):
         )
 
 
+def op_snapshot_match(argv):
+    # Compares the committed snapshot's DURABLE content (run identity, stamps,
+    # overrides) against live state (batch #8). Steps and meta keys change
+    # between snapshot commits legitimately; stamps/overrides only change via
+    # ops that immediately re-commit the snapshot, so a mismatch means the
+    # tracked file was rewritten out-of-band (a snapshot-only tamper commit is
+    # freshness-exempt by design — this closes that hole). Prints 1 or 0.
+    keys = ("run_id", "workflow", "kind", "budget", "stamps", "overrides")
+    live = cap_tails(load())
+    try:
+        with open(argv[0]) as fh:
+            snap = yaml.safe_load(fh)
+    except (OSError, yaml.YAMLError):
+        print("0")
+        return
+    if not isinstance(snap, dict):
+        print("0")
+        return
+    live_view = {k: live.get(k) for k in keys}
+    snap_view = {k: snap.get(k) for k in keys}
+    print("1" if live_view == snap_view else "0")
+
+
 def op_write_snapshot(argv):
     # Snapshot = live state with free-text tails capped (batch #4): the full
     # redacted tail stays in git-dir live state; the tracked, PR-visible copy
@@ -508,6 +531,7 @@ HANDLERS = {
     "reconcile_apply": op_reconcile_apply,
     "close": op_close,
     "show": op_show,
+    "snapshot_match": op_snapshot_match,
     "write_snapshot": op_write_snapshot,
     "manifest": op_manifest,
 }
@@ -889,6 +913,17 @@ checked_finalize() {
     v_pass="$(sed -n 's/^passed=//p' <<<"$vinfo")"
     if [ "$v_pass" != "1" ] || ! fresh_since "$v_sha"; then
         add_failure "verify-local has no green record at HEAD (run ledger.sh verify-local)"
+    fi
+
+    # snapshot_current (batch #8): the committed snapshot's durable content
+    # must match live state — a snapshot-only commit is freshness-exempt, so
+    # without this check the PR-visible record could be rewritten silently.
+    local snap_ok
+    snap_ok="$(py snapshot_match "$SNAPSHOT")" || snap_ok=""
+    if [ "$snap_ok" != "1" ]; then
+        add_failure "committed snapshot ($SNAPSHOT_REL) does not match live ledger state — the tracked snapshot was rewritten out-of-band"
+    else
+        CHECKED+=("snapshot_current=1")
     fi
 
     # Mock forge answers must never reach a real finalize stamp (R1 MF6),

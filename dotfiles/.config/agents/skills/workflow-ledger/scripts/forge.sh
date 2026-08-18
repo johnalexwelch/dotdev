@@ -237,7 +237,10 @@ run_op() {
     forge="$(detect_forge)" || exit 1
     [ "$forge" != "none" ] || die "no origin remote; cannot dispatch $op"
     if [ -n "${FORGE_MOCK_DIR:-}" ]; then
-        local mock="$FORGE_MOCK_DIR/$forge-$op-$pr"
+        # Branch names may carry slashes (pr-for-branch feature/x); sanitize
+        # so mock answers are flat files, never nested dirs (batch #8).
+        local safe_pr="${pr//\//_}"
+        local mock="$FORGE_MOCK_DIR/$forge-$op-$safe_pr"
         [ -f "$mock" ] || die "mock answer missing: $mock"
         head -n 1 "$mock"
         return 0

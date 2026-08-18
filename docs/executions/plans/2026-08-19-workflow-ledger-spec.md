@@ -105,7 +105,7 @@ Transition rules (each MUST have a red test):
 | `diagnose` | `repro_cmd` runs NOW and exits **non-zero** (captured exit code + tail of output) | `root_cause`, `repro_cmd` string itself |
 | `fix` | same stored `repro_cmd` runs NOW and exits **0**; regression test file exists (path from `--attest regression_test=<path>`) | rationale |
 | `review` | worktree valid (`setup-worktree/scripts/worktree-baseline.sh verify` exit 0); chosen profile ≥ `review-floor` output; every required lane file exists and contains a `verdict:` line; per-lane `model:` line ≥ profile floor; digests (sha256, linecount, verdict, model) recorded | `verdict`, `review_profile`, `lanes`, `model_floor` |
-| `finalize` | `check review` passes (fresh); `git status --porcelain` empty; `verify-local` recorded pass at HEAD; via `forge.sh`: CI green, PR state, review threads resolved (skipped with explicit `no_pr` note when no PR exists yet) | `post_mortem`, `describe_pr`, `pr_number` |
+| `finalize` | `check review` passes (fresh); `git status --porcelain` empty; `verify-local` recorded pass at HEAD; committed snapshot's durable content matches live state (`snapshot_current` — closes the snapshot-only-commit rewrite hole); via `forge.sh`: CI green, PR state, review threads resolved (skipped with explicit `no_pr` note when no PR exists yet) | `post_mortem`, `describe_pr`, `pr_number` |
 
 Lane files: `/tmp/<lane>-review.md`, required lanes derived from profile (`fast`: integrated; `standard`: logic,tests[,security,style]; `full`: security,logic,tests,style). Lane→file mapping passed via `--attest lanes=<csv>`.
 
