@@ -24,7 +24,7 @@ Autonomously process a queue of `ready-for-agent` issues without human supervisi
 | Mode | Dispatch | When to use |
 |------|----------|-------------|
 | **Codex** (default) | `omc team 1:codex` per issue | AFK runs, batch processing, issues needing isolation |
-| **Claude** | Sequential workflow-build-one invocations | Interactive sessions, when user wants to observe |
+| **Claude** | Sequential workflow-deliver invocations (kind per issue) | Interactive sessions, when user wants to observe |
 
 ## Flow
 
@@ -120,7 +120,7 @@ For each issue in queue order:
    - Pass the issue number and target tool (codex or claude)
    - prompt-builder gathers repo/code context only after the per-issue worktree exists, determines execution strategy, and produces a structured prompt
    - In Codex mode, the generated prompt is the primary input to the dispatch (Codex cannot ask clarifying questions)
-   - In Claude mode, the prompt seeds workflow-build-one with pre-gathered context
+   - In Claude mode, the prompt seeds workflow-deliver with pre-gathered context
    - The prompt must instruct the worker to use this per-issue worktree, verify `WORKFLOW_BASE_GATE` plus either `WORKTREE_BASELINE_GATE` or `STACKED_WORKTREE_GATE`, and include the matching gate evidence in the handoff.
    - If the prompt lacks the per-issue worktree/stack command or gate requirement, do not dispatch the issue; regenerate the prompt or mark the issue `needs-human`.
    - If the issue has `needs-human-review`, `Human review: required`, or an equivalent human-review gate, the prompt must include the issue's concrete `## Reviewer validation steps` and instruct the worker to preserve them through `describe-pr`/`workflow-finalize` so the PR body ends with that section.
@@ -130,17 +130,16 @@ For each issue in queue order:
       - Human-review-required issues override auto-merge eligibility: leave the PR draft or otherwise blocked for human validation, and do not mark ready, merge, or enable auto-merge until the human validation is complete.
    - The prompt must require the AFK execution chain and evidence:
       - `tdd` first (or `tdd_not_applicable_with_reason`)
-      - implementation via `workflow-build-one` or `workflow-debug`
+      - implementation via `workflow-deliver` with the issue's `kind` (`bug` for bug/regression issues)
       - `workflow-review` with `WORKFLOW_REVIEW_GATE.verdict: APPROVE`
       - `workflow-finalize` with a complete `WORKFLOW_FINALIZE_GATE`
-   - The prompt must include the Partial-Completion Contract from `workflow-build-one`: before exit the worker must be Complete (all changes committed and pushed), WIP-paused (pushed `wip:` commit naming exactly what remains), or Rolled back (`git reset --hard <baseline>` with a clean worktree).
+   - The prompt must include the Partial-Completion Contract from `workflow-deliver`: before exit the worker must be Complete (all changes committed and pushed), WIP-paused (pushed `wip:` commit naming exactly what remains), or Rolled back (`git reset --hard <baseline>` with a clean worktree).
    - The prompt must require final `git status --short`; if any source file shows `M` or `??`, the worker must commit or reset and re-check before exiting.
 4. Dispatch:
    - **Codex mode**: require `omc`; if unavailable, halt for user approval before switching modes. Do not silently downgrade AFK isolation to direct Claude execution.
    - **Claude mode**:
-      - bug/regression issue -> Load and run `workflow-debug/SKILL.md` with the generated prompt as context
-      - non-bug issue -> Load and run `workflow-build-one/SKILL.md` with the generated prompt as context
-      - do not route bug work to `workflow-build-one`
+      - Load and run `workflow-deliver/SKILL.md` with the generated prompt as context, passing the issue's kind: `kind=bug` for bug/regression issues, else `feature`/`skill`/`docs` as the issue warrants
+      - bug work MUST carry `kind=bug` — `ledger.sh init --kind bug` inserts the required diagnose/fix steps (D-006 #11)
 5. Each dispatch is independent — failure of one does not block others
 
 ### Phase 3: Monitor
@@ -160,7 +159,7 @@ For each issue in queue order:
    - Human-review-required issue: require `WORKFLOW_FINALIZE_GATE.pr_state: pending_human_validation` or an equivalent draft/pending-human state; do not mark the issue `done` until human validation is recorded or the PR is merged by a human
    - `WORKFLOW_FINALIZE_GATE.pr_state: ready_auto_merge_enabled` but missing post-auto-merge follow-through evidence (`session-insight` and `cleanup-delivery`, or explicit skip reason) → flag `needs-human`
    - PR failed CI → leave for watch-ci auto-fix (or flag for human if exhausted)
-   - PR needs review → leave (workflow-build-one handles its own review cycle)
+   - PR needs review → leave (workflow-deliver handles its own review cycle)
    - PR merged by GitHub auto-merge and all required gate blocks are present → update issue label to `done`, remove `in-progress`
    - Dispatch failed → remove `in-progress`, add `needs-human` label, log failure
 3. Re-check `references/outage-risk-policy.md`; if a completed PR touched an excluded/high-risk category that was not approved, label `needs-human` and do not mark the issue done
@@ -226,17 +225,17 @@ Requires: gh, omc, git
 Side effects: creates branches/PRs, modifies issue labels, writes run summary file
 Human gates: work queue approval unless explicitly AFK-approved in the current invocation; high-risk outage categories require explicit issue-level approval; failed dispatches flagged; PRs lacking workflow-review independent review evidence flagged `needs-human`; release/merge remains human-only only for repositories listed as `human-only` in `references/repo-delivery-policy.md`
 
-Runtime note: requirements are conservative because the default mode is Codex and Claude fallback delegates to `workflow-build-one`. If the user explicitly selects Claude mode and `omc` is the only missing dependency, halt and ask whether to proceed in Claude mode; do not silently downgrade.
+Runtime note: requirements are conservative because the default mode is Codex and Claude fallback delegates to `workflow-deliver`. If the user explicitly selects Claude mode and `omc` is the only missing dependency, halt and ask whether to proceed in Claude mode; do not silently downgrade.
 
 ## Mode-Specific Preflight Gates
 
 Before Phase 1:
 
 - If mode is Codex/default: require `gh` and `omc`. If `omc` is unavailable, halt unless the user explicitly approves switching to Claude mode.
-- If mode is Claude: require `gh`, `git`, `subagent-dispatch`, and `project-test-runner` because execution delegates to `workflow-build-one`.
+- If mode is Claude: require `gh`, `git`, `subagent-dispatch`, and `project-test-runner` because execution delegates to `workflow-deliver`.
 - Do not dispatch any issue until the selected mode's requirements pass.
 
 ## Context
 
 Typical workflows: standalone (periodic AFK execution), after workflow-feature (processes produced issues), workflow-autonomous-backlog (module discovery through backlog handoff)
-Pairs well with: workflow-build-one (Claude mode), reconcile-issues (post-run cleanup), triage (pre-run preparation), prompt-builder (generates per-issue prompts before dispatch), handoff (mandatory end-of-run exit), skill-system-audit (post-run governance)
+Pairs well with: workflow-deliver (Claude mode), reconcile-issues (post-run cleanup), triage (pre-run preparation), prompt-builder (generates per-issue prompts before dispatch), handoff (mandatory end-of-run exit), skill-system-audit (post-run governance)

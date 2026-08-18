@@ -92,7 +92,7 @@ resolve_base() {
 
 # Emit the exact WORKFLOW_BASE_GATE block plus WORKTREE_BASELINE_GATE or
 # STACKED_WORKTREE_GATE line, matching the format hand-written by existing
-# callers (base-branch-policy.md, workflow-build-one/SKILL.md,
+# callers (base-branch-policy.md, workflow-deliver/SKILL.md,
 # workflow-router/SKILL.md).
 emit_gates() {
     local branch="$1" path="$2" preferred="$3" resolved="$4" fallback="$5" \

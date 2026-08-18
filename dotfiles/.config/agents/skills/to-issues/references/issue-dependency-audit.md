@@ -22,7 +22,7 @@ ISSUE_DEPENDENCY_AUDIT:
     state_label:
     review_gate_labels:
     route_eligible: yes|no
-    recommended_executor: workflow-build-one|execute-prd|run-backlog|needs-human
+    recommended_executor: workflow-deliver|execute-prd|run-backlog|needs-human
 - independent_backlog_safe: yes|no
 - dependency_tree_safe: yes|no
 - notes:

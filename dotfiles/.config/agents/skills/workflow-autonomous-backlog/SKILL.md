@@ -214,12 +214,12 @@ The run must record `REPO_DELIVERY_POLICY` before dispatch:
 
 ### 6. Execute backlog
 
-Each issue runs through `workflow-build-one` or `workflow-debug`.
+Each issue runs through `workflow-deliver` with the issue's `kind` (`bug` for bug/regression issues, else `feature`/`skill`/`docs`).
 
 AFK execution must enforce this per-issue sequence; do not skip or reorder:
 
 1. `tdd` first (red -> green -> refactor) before code delivery work begins. If TDD is not applicable (for example docs-only or metadata-only issue), record `tdd_not_applicable_with_reason` in the issue run evidence.
-2. Execute implementation via `workflow-build-one` or `workflow-debug`.
+2. Execute implementation via `workflow-deliver` (Load and run `workflow-deliver/SKILL.md` with the issue's `kind`; `kind=bug` makes the kernel insert required diagnose/fix steps).
 3. Run `workflow-review` and require `WORKFLOW_REVIEW_GATE` with `review_profile`, `independent_review: true`, and `verdict: APPROVE`.
 4. Run `workflow-finalize` and require a complete `WORKFLOW_FINALIZE_GATE`.
 
@@ -268,7 +268,7 @@ After a parent issue PR merges (reported by `workflow-finalize` with `pr_state: 
    - If all blockers are satisfied, remove the `blocked` label from the child issue.
    - If other blockers remain, keep `blocked` and halt at this child.
 3. **Continue or halt**:
-   - For each child now labeled `ready-for-agent`: record it for continuation in the next AFK execution wave (or continue immediately if unattended backlog execution is enabled). Dispatch `workflow-build-one` for the child.
+   - For each child now labeled `ready-for-agent`: record it for continuation in the next AFK execution wave (or continue immediately if unattended backlog execution is enabled). Dispatch `workflow-deliver` for the child with its `kind`.
    - For each child labeled `ready-for-human`: halt. Do not attempt to continue human-gated work; report it as needing explicit human advancement or approval.
    - For any child still `blocked` after reconciliation: halt and report the remaining blocker.
 4. **Record in handoff**: For each child continued, record the parent-merge confirmation, label reconciliation, and the child's issue link. For halts, record the reason (human gate, unresolved blocker).
