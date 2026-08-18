@@ -139,11 +139,12 @@ if [ "$event" = "PreToolUse" ]; then
             set -e
             if [ "$check_status" -ne 0 ]; then
                 # Block only on a working kernel's verdict (1 = gate unmet,
-                # 2 = checked fields failed). Kernel/env breakage (corrupt
-                # state 6, missing manifest 9, python/env errors) warns and
-                # permits — a broken kernel must never brick delivery, since
+                # 2 = checked fields failed). Kernel/env breakage — corrupt
+                # state (6), missing manifest (9), env breakage such as a
+                # missing PyYAML python (10), and anything else — warns and
+                # permits: a broken kernel must never brick delivery, since
                 # the --override recovery path runs through the same kernel
-                # (D-006 #5; review R1 should-fix).
+                # (D-006 #5; review R1 should-fix; batch #2).
                 case "$check_status" in
                     1 | 2)
                         printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2

@@ -24,7 +24,7 @@
 # Exit codes (the API — tests assert them):
 #   0  success / check passed
 #   1  check failed (MISSING|STALE), reconcile drift, preflight missing tool,
-#      verify-local command failure, usage/environment errors
+#      verify-local command failure, usage errors
 #   2  stamp refused: one or more checked fields failed
 #   3  set refused: required step cannot be skipped
 #   4  set refused: terminal status without evidence/reason; override without --reason
@@ -33,6 +33,8 @@
 #   7  init refused: an active run already exists (use --force)
 #   8  stamp refused: non-reviewer-validation gate type without --human
 #   9  verify-local: no docs/executions/ci-commands.yaml manifest (NO_MANIFEST)
+#  10  environment breakage (no python3 with PyYAML; misconfigured
+#      LEDGER_PYTHON) — distinct from gate-unmet 1 so hooks can warn-permit
 
 set -uo pipefail
 
@@ -71,17 +73,28 @@ require_repo() {
 
 # The default `python3` on some machines (mise/pyenv shims, brew) lacks PyYAML;
 # probe for one that can import yaml instead of failing at first use.
+# Environment breakage is exit 10 — distinct from gate-unmet exit 1 so the
+# merge-gate hook warn-permits instead of blocking (batch #2). An explicit
+# LEDGER_PYTHON is honored strictly: if it is set but unusable that is a
+# config error (exit 10), never a silent fallback.
 resolve_python() {
     local cand
-    for cand in "${LEDGER_PYTHON:-}" python3 /usr/bin/python3 /opt/homebrew/bin/python3; do
-        [ -n "$cand" ] || continue
+    if [ -n "${LEDGER_PYTHON:-}" ]; then
+        if command -v "$LEDGER_PYTHON" >/dev/null 2>&1 &&
+            "$LEDGER_PYTHON" -c 'import yaml' >/dev/null 2>&1; then
+            PYBIN="$LEDGER_PYTHON"
+            return 0
+        fi
+        die 10 "LEDGER_PYTHON ($LEDGER_PYTHON) is not a python3 with PyYAML"
+    fi
+    for cand in python3 /usr/bin/python3 /opt/homebrew/bin/python3; do
         command -v "$cand" >/dev/null 2>&1 || continue
         if "$cand" -c 'import yaml' >/dev/null 2>&1; then
             PYBIN="$cand"
             return 0
         fi
     done
-    die 1 "no python3 with PyYAML found (set LEDGER_PYTHON to one that has it)"
+    die 10 "no python3 with PyYAML found (set LEDGER_PYTHON to one that has it)"
 }
 
 # Single python state engine: all YAML reads/writes/validation go through it so
