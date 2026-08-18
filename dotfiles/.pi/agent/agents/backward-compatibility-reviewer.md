@@ -36,4 +36,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` for silent breaking changes.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` for silent breaking changes.

@@ -33,4 +33,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` for unsafe dependencies or unexplained lockfile churn.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` for unsafe dependencies or unexplained lockfile churn.
