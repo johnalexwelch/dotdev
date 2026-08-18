@@ -147,7 +147,7 @@ For each child (parallel within a wave, sequential across waves):
    ```
 
 3. **Record worktree baseline evidence**: `WORKFLOW_BASE_GATE` and `WORKTREE_BASELINE_GATE: <workflow-base-ref> -> <branch_prefix>/<issue-number>-<child-slug> @ ../worktrees/<issue-number>-<slug>`
-4. **Execute**: Load and run `workflow-deliver/SKILL.md` for the child, passing its `kind` (`bug` for bug/regression children, else `feature`/`skill`/`docs`). Its chain, as a map for the reader:
+4. **Execute**: Load and run `workflow-deliver/SKILL.md` for the child, passing its `kind` (`bug` for bug/regression children, else `feature`/`skill`/`docs`). Bug children MUST carry `kind=bug` — `ledger.sh init --kind bug` inserts the required diagnose/fix steps (D-006 #11). Its chain, as a map for the reader:
 
    ```
    preflight → [diagnose iff kind=bug] → triage → implement → workflow-review → [conditional blocking] user-journey-qa → workflow-finalize

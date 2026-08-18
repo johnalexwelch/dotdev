@@ -96,4 +96,4 @@ safe.
 Single-issue mode exists for direct invocation when there is no
 design plan, only a ready issue with clear acceptance criteria.
 Normal issue delivery should route to `workflow-deliver` instead;
-execute-phase is a phase driver, not a delivery backend (D-006 #11).
+`execute-phase` is a phase driver, not a delivery backend (D-006 #11).

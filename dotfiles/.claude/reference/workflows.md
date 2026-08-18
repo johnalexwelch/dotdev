@@ -145,7 +145,7 @@ Every transition through the canonical loop emits a progress board so the workfl
   - **Before** invoking the next skill (active = next skill, with `← <what it'll do>`)
   - **After** completing a step (flip the active marker to `✅ <skill> → <outcome>`)
 - One board per transition. Don't spam multiple in a row; combine into a single rendering.
-- Substitute the alternative implementation skill (`/execute-prd` for PRD trees; `/run-backlog` for AFK batches; `kind=bug` for bugs) when the route diverges from a plain `/workflow-deliver` feature run.
+- Substitute the alternative implementation skill (`/execute-prd` for PRD trees; `/run-backlog` for AFK batches) when the route diverges; a bug stays `/workflow-deliver` with `kind=bug` — same skill, different kind.
 - Gate evidence (`WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, `WORKFLOW_FINALIZE_GATE`) is the verbose audit trail. The Loop Progress Board is the at-a-glance dashboard. Both are required.
 
 The owning agent (the main session orchestrating the loop) emits the board — not the skill itself. The agent has the state; the skill has the work.

@@ -54,7 +54,7 @@ Based on issue labels and content:
 
 | Signal | Strategy |
 |--------|----------|
-| Label: `bug` | Use workflow-deliver with `kind=bug` (kernel-inserted diagnose/fix steps) and strict TDD |
+| Label: `bug` | Use workflow-deliver with `kind=bug` (kernel-inserted diagnose/fix steps) and the `strict-tdd` profile |
 | Label: `security` | Flag for human review gate; do not auto-merge |
 | Label: `needs-human-review` or explicit gate | Check gate type (see `_docs/human-gate-taxonomy.md`): maintainer/operator (types 1–3) requires `ready-for-human`; reviewer-validation (type 4) allows AFK with `needs-human-review` + validation steps in `workflow-finalize` |
 | Label: `frontend` | Include user-journey-qa step |
