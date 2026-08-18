@@ -165,3 +165,6 @@ dotfiles/.pi/agent/*
 dotfiles/.pi/taskflows/runs/
 # stray repo-root .pi/ (taskflow runtime data when pi runs from ~/dotdev) — anchored so it never hits dotfiles/.pi
 /.pi/
+
+# dotfiles/.local is real stow payload (gh shim) — override global ~/.gitignore_global ".local/"
+!dotfiles/.local/

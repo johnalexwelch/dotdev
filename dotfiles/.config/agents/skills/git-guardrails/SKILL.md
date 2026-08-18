@@ -37,6 +37,9 @@ When blocked, Claude sees a message on stderr telling it that it does not have a
 
 ## Agent conduct: multi-account GitHub (not hook-enforced)
 
+**Primary mechanism: the `gh` shim** at `~/.local/bin/gh` (source: `dotfiles/.local/bin/gh`, map: `~/.config/gh-accounts.map`) routes personal-mapped owners/hosts through per-invocation `GH_TOKEN` injection automatically — no manual token plumbing needed where it's installed.
+The manual patterns below are the fallback for machines without the shim (or when bypassing it with an explicit token).
+
 **Do NOT parallelize `gh auth switch`.** When multiple agents or concurrent operations may call `gh auth switch --user <owner>`, the calls race a shared keyring and corrupt auth state. Serialize `gh auth switch` calls, or avoid them entirely by using an explicit token pattern.
 
 When pushing to a repo owned by a different account and `git push` fails with a credential error:
