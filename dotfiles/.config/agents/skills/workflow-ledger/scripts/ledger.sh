@@ -462,8 +462,9 @@ add_failure() {
 }
 
 # Copy live state to the committed snapshot and commit it. A stamp's own
-# chore(ledger): commit must not make that stamp stale, so freshness checks
-# exempt chore(ledger): subjects (see fresh_since).
+# snapshot commit must not make that stamp stale; the exemption is verified by
+# commit CONTENTS (touches only the snapshot file), never by subject — a
+# subject is attacker-controlled (review R1 MF1, D-006 #4).
 commit_snapshot() {
     local action="$1" target="$2"
     mkdir -p "$(dirname "$SNAPSHOT")"
@@ -476,19 +477,21 @@ commit_snapshot() {
     py set_meta last_seen_sha "$(git -C "$TOP" rev-parse HEAD)" || exit $?
 }
 
-# Fresh iff every commit after the recorded sha is a ledger snapshot commit.
+# Fresh iff every commit after the recorded sha touches ONLY the snapshot
+# file (verified by contents via diff-tree, never by subject — subjects are
+# attacker-controlled). Also requires sha to be an ancestor of HEAD: a HEAD
+# moved backwards (reset) must read STALE, not fresh.
 fresh_since() {
-    local sha="$1" subjects subject
+    local sha="$1" commits c paths
     [ -n "$sha" ] || return 1
     git -C "$TOP" cat-file -e "${sha}^{commit}" 2>/dev/null || return 1
-    subjects="$(git -C "$TOP" log --format=%s "${sha}..HEAD" 2>/dev/null)" || return 1
-    [ -n "$subjects" ] || return 0
-    while IFS= read -r subject; do
-        case "$subject" in
-            "chore(ledger):"*) ;;
-            *) return 1 ;;
-        esac
-    done <<<"$subjects"
+    git -C "$TOP" merge-base --is-ancestor "$sha" HEAD 2>/dev/null || return 1
+    commits="$(git -C "$TOP" log --format=%H "${sha}..HEAD" 2>/dev/null)" || return 1
+    [ -n "$commits" ] || return 0
+    while IFS= read -r c; do
+        paths="$(git -C "$TOP" diff-tree --no-commit-id --name-only -r "$c" 2>/dev/null)"
+        [ "$paths" = "$SNAPSHOT_REL" ] || return 1
+    done <<<"$commits"
     return 0
 }
 
@@ -544,11 +547,14 @@ profile_rank() {
     esac
 }
 
+# Rank by family substring so real ids (anthropic/claude-opus-4-5,
+# claude-fable-5) rank correctly, not just bare aliases (R1 MF3).
 model_rank() {
     case "$1" in
-        haiku) echo 1 ;;
-        sonnet) echo 2 ;;
-        opus) echo 3 ;;
+        *fable*) echo 4 ;;
+        *opus*) echo 3 ;;
+        *sonnet*) echo 2 ;;
+        *haiku*) echo 1 ;;
         *) echo 0 ;;
     esac
 }
@@ -702,7 +708,18 @@ checked_review() {
         add_failure "chosen review profile '$profile' is below the computed floor '$floor'"
     fi
 
-    model_floor="$(attest_get model_floor "$@")" || model_floor="sonnet"
+    # Floor derives from the computed profile; an attested value may only
+    # escalate it — the checked party cannot lower or blank its own floor
+    # (R1 MF3): fast=sonnet, standard/full=opus baseline.
+    case "$floor" in
+        fast) model_floor="sonnet" ;;
+        *) model_floor="opus" ;;
+    esac
+    attested_floor="$(attest_get model_floor "$@")" || attested_floor=""
+    if [ -n "$attested_floor" ] &&
+        [ "$(model_rank "$attested_floor")" -gt "$(model_rank "$model_floor")" ]; then
+        model_floor="$attested_floor"
+    fi
     lanes_spec="$(attest_get lanes "$@")" || lanes_spec=""
 
     for lane in $(required_lanes "$profile"); do
@@ -715,7 +732,12 @@ checked_review() {
             add_failure "lane '$lane' review file has no verdict: line ($lane_file)"
             continue
         fi
-        lane_model="$(sed -n 's/^model:[[:space:]]*//p' "$lane_file" | head -1)"
+        # Accept both `model:` and workflow-review's `model_used:` field.
+        lane_model="$(sed -n -e 's/^model:[[:space:]]*//p' -e 's/^model_used:[[:space:]]*//p' "$lane_file" | head -1)"
+        if [ "$(model_rank "$lane_model")" -eq 0 ]; then
+            add_failure "lane '$lane' model '${lane_model:-missing}' is unrecognized (rank 0); cannot verify floor"
+            continue
+        fi
         if [ "$(model_rank "$lane_model")" -lt "$(model_rank "$model_floor")" ]; then
             add_failure "lane '$lane' model '${lane_model:-missing}' is below the model floor '$model_floor'"
             continue
@@ -748,7 +770,28 @@ checked_finalize() {
         add_failure "verify-local has no green record at HEAD (run ledger.sh verify-local)"
     fi
 
-    if pr="$(attest_get pr_number "$@")" && [ -n "$pr" ]; then
+    # Mock forge answers must never reach a real finalize stamp (R1 MF6).
+    if [ -n "${FORGE_MOCK_DIR:-}" ] && [ "${LEDGER_ALLOW_FORGE_MOCK:-0}" != "1" ]; then
+        CHECKED+=("forge_mock=1")
+        add_failure "FORGE_MOCK_DIR is set — forge checks would be fabricated (unset it; tests set LEDGER_ALLOW_FORGE_MOCK=1)"
+        return
+    fi
+
+    # The gated party does not choose whether forge checks run (R1 MF5):
+    # resolve the branch's open PR ourselves; an attested pr_number must match.
+    local branch looked_up
+    branch="$(git -C "$TOP" branch --show-current 2>/dev/null)"
+    looked_up="$(bash "$FORGE_SH" pr-for-branch "$branch" 2>&1)" || {
+        add_failure "cannot resolve PR for branch '$branch' via forge: $looked_up"
+        return
+    }
+    pr="$(attest_get pr_number "$@")" || pr=""
+    if [ -n "$pr" ] && [ "$pr" != "$looked_up" ]; then
+        add_failure "attested pr_number=$pr does not match forge lookup ($looked_up) for branch '$branch'"
+        return
+    fi
+    pr="$looked_up"
+    if [ "$pr" != "none" ]; then
         ci="$(bash "$FORGE_SH" ci-status "$pr" 2>&1)" || ci="error: $ci"
         [ "$ci" = "green" ] || add_failure "forge CI not green for PR #$pr: $ci"
         prstate="$(bash "$FORGE_SH" pr-state "$pr" 2>&1)" || prstate="error: $prstate"
@@ -757,7 +800,7 @@ checked_finalize() {
         [ "$threads" = "yes" ] || add_failure "review threads not resolved on PR #$pr: $threads"
         CHECKED+=("ci=$ci" "pr_state=$prstate" "threads_resolved=$threads")
     else
-        # No PR yet: forge checks explicitly skipped, recorded as no_pr.
+        # Forge lookup ran and found no open PR — the only path to no_pr.
         CHECKED+=("forge=no_pr")
     fi
 }
@@ -927,8 +970,17 @@ cmd_reconcile() {
     branch="$(git -C "$TOP" branch --show-current 2>/dev/null)"
     drift=""
     if [ -n "$last" ] && git -C "$TOP" cat-file -e "${last}^{commit}" 2>/dev/null; then
-        drift="$(git -C "$TOP" log --format='%h %s' "${last}..HEAD" |
-            grep -Ev '^[0-9a-f]+ chore\(ledger\):' || true)"
+        # Content-verified: a commit is ledger-internal only if it touches
+        # exactly the snapshot file (same rule as fresh_since; R1 MF1).
+        drift=""
+        while IFS= read -r _c; do
+            [ -n "$_c" ] || continue
+            _paths="$(git -C "$TOP" diff-tree --no-commit-id --name-only -r "$_c" 2>/dev/null)"
+            if [ "$_paths" != "$SNAPSHOT_REL" ]; then
+                drift="${drift}$(git -C "$TOP" log -1 --format='%h %s' "$_c")"$'\n'
+            fi
+        done <<<"$(git -C "$TOP" log --format=%H "${last}..HEAD" 2>/dev/null)"
+        drift="${drift%$'\n'}"
     fi
     if [ "$apply" -eq 1 ]; then
         next_step="$(py reconcile_apply)" || exit $?
@@ -965,14 +1017,22 @@ cmd_preflight() {
         echo "preflight OK: $skill declares no required CLI tools"
         return 0
     fi
+    # Strip ALL parenthetical notes first (a segment-leading paren must not
+    # swallow the rest of the line — R1 MF4), split on ',' AND ';'/' or ',
+    # then check the first word of each segment when it is CLI-shaped.
+    # Non-CLI-shaped segments (prose) are reported, never silently dropped.
+    local skipped=""
     while IFS= read -r tool; do
-        # Bare tool names only; strip whitespace and parenthetical notes.
-        tool="${tool%%(*}"
-        tool="$(tr -d '[:space:]' <<<"$tool")"
+        tool="$(sed -E 's/^[[:space:]]+//; s/[[:space:]].*$//' <<<"$tool")"
         [ -n "$tool" ] || continue
         [ "$tool" = "none" ] && continue
+        if ! grep -Eq '^[a-z][a-z0-9_.-]*$' <<<"$tool"; then
+            skipped="$skipped $tool"
+            continue
+        fi
         command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
-    done <<<"$(tr ',' '\n' <<<"$requires")"
+    done <<<"$(sed -E 's/\([^)]*\)//g; s/ or /\n/g' <<<"$requires" | tr ',;' '\n')"
+    [ -n "$skipped" ] && echo "preflight note: unparsed segments (not checked):$skipped"
     if [ -n "$missing" ]; then
         echo "preflight FAILED for $skill: missing tools:$missing"
         exit 1

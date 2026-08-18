@@ -24,7 +24,7 @@ Full contract with exit codes and test-enforced refinements: `docs/executions/pl
 ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--force]
 ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
-ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, head_sha == HEAD
+ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, fresh (see Freshness)
 ledger.sh reconcile [--apply]     # ledger vs git ground truth; prints true frontier
 ledger.sh preflight --skill <name>
 ledger.sh review-floor [--base <ref>]   # prints fast|standard|full — the minimum profile
@@ -45,7 +45,7 @@ A stamp is writable only when every **checked** field passes at stamp time; **at
 | `review` | worktree verify; chosen profile ≥ `review-floor`; every required lane file exists with `verdict:` line; per-lane `model:` ≥ floor; digests recorded | verdict, review_profile, lanes, model_floor |
 | `finalize` | `check review` fresh; `git status --porcelain` empty; `verify-local` passed at HEAD; via `forge.sh`: CI green, PR state, threads resolved (`no_pr` noted when no PR) | post_mortem, describe_pr, pr_number |
 
-**Freshness is strict SHA equality**: any non-`chore(ledger):` commit after a stamp makes `check` fail `STALE`. **Overrides are audited, not prevented**: `--override --reason` stamps with a loud `OVERRIDDEN` marker and an `overrides[]` audit entry; use only on explicit user instruction.
+**Freshness is strict, with one content-verified exemption**: `check` fails `STALE` on any commit after the stamp unless that commit touches *only* the committed snapshot file (verified via `git diff-tree` contents — never by commit subject, which is forgeable). A stamp's own snapshot commit is therefore exempt; nothing else is. **Overrides are audited, not prevented**: `--override --reason` stamps with a loud `OVERRIDDEN` marker and an `overrides[]` audit entry; use only on explicit user instruction.
 
 ## Gate types (AFK semantics)
 

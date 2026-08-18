@@ -110,8 +110,21 @@ if [ "$event" = "PreToolUse" ]; then
             check_status=$?
             set -e
             if [ "$check_status" -ne 0 ]; then
-                printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
-                exit 2
+                # Block only on a working kernel's verdict (1 = gate unmet,
+                # 2 = checked fields failed). Kernel/env breakage (corrupt
+                # state 6, missing manifest 9, python/env errors) warns and
+                # permits — a broken kernel must never brick delivery, since
+                # the --override recovery path runs through the same kernel
+                # (D-006 #5; review R1 should-fix).
+                case "$check_status" in
+                    1 | 2)
+                        printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
+                        exit 2
+                        ;;
+                    *)
+                        printf '[WORKFLOW GUARD] merge gate ERRORED (exit %s) — permitting merge, but the ledger kernel needs repair:\n%s\n' "$check_status" "$check_out" >&2
+                        ;;
+                esac
             fi
             # Override stamps pass, but the bypass stays loud.
             case "$check_out" in

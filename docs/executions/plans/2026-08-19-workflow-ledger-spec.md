@@ -60,14 +60,14 @@ Transition rules (each MUST have a red test):
 - valid transition → live-state write, `updated` bumped, exit 0
 - schema-invalid resulting doc → exit 6, no write
 
-### `ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human]`
+### `ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]`
 - Runs the gate's **checked** fields (table below). All pass → stamp written with current `head_sha`, snapshot committed, exit 0.
 - Any checked field fails → exit 2, listing each failure; nothing written (except with `--override`).
 - `--override` requires non-empty `--reason` (else exit 4); writes stamp with `override.active: true` + appends `overrides[]`; exit 0 with loud stderr warning.
 - Gate types: `diagnose|fix|review` are `reviewer-validation` (agent-stampable). `finalize` fields flagged maintainer/operator/secret-custody require `--human` (else exit 8) — Phase 0 ships `finalize` as reviewer-validation by default; the enum + `--human` path must exist and be tested.
 
 ### `ledger.sh check <gate>`
-- Exit 0 iff: stamp exists AND (all checked passed OR override active) AND `head_sha == git rev-parse HEAD` (strict, D-006 #4).
+- Exit 0 iff: stamp exists AND (all checked passed OR override active) AND fresh: every commit after `head_sha` touches ONLY the snapshot file, verified by `git diff-tree` contents — never by commit subject (R1 MF1 content-verified refinement of D-006 #4; the stamp's own snapshot commit is the only exempt shape).
 - Any commit after stamp → exit 1 `STALE`; missing stamp → exit 1 `MISSING`; override → exit 0 but prints `OVERRIDDEN: <reason>`.
 
 ### `ledger.sh reconcile [--apply]`

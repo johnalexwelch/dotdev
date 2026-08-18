@@ -63,6 +63,14 @@ gh_pr_state() {
         --jq 'if .isDraft then "draft" else (.state | ascii_downcase) end'
 }
 
+# Prints the open PR number for a branch, or "none" when no open PR exists.
+gh_pr_for_branch() {
+    local branch="$1" n
+    n="$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // "none"')" ||
+        return 1
+    echo "$n"
+}
+
 gh_threads_resolved() {
     local pr="$1" repo owner name unresolved
     repo="$(repo_path)"
@@ -118,6 +126,23 @@ else:
 '
 }
 
+# Prints the open PR number for a branch, or "none" when no open PR exists.
+fj_pr_for_branch() {
+    local branch="$1" repo
+    repo="$(repo_path)"
+    fj_api "/repos/$repo/pulls?state=open" | python3 -c '
+import json, sys
+
+branch = sys.argv[1]
+for pr in json.load(sys.stdin) or []:
+    if (pr.get("head") or {}).get("ref") == branch:
+        print(pr.get("number"))
+        break
+else:
+    print("none")
+' "$branch"
+}
+
 fj_threads_resolved() {
     # Forgejo/Gitea has no first-class thread-resolution flag; approximate with
     # the latest review verdict per reviewer — any standing REQUEST_CHANGES
@@ -152,9 +177,11 @@ run_op() {
         github-ci-status) gh_ci_status "$pr" ;;
         github-pr-state) gh_pr_state "$pr" ;;
         github-threads-resolved) gh_threads_resolved "$pr" ;;
+        github-pr-for-branch) gh_pr_for_branch "$pr" ;;
         forgejo-ci-status) fj_ci_status "$pr" ;;
         forgejo-pr-state) fj_pr_state "$pr" ;;
         forgejo-threads-resolved) fj_threads_resolved "$pr" ;;
+        forgejo-pr-for-branch) fj_pr_for_branch "$pr" ;;
         *) die "unsupported op: $op" ;;
     esac
 }
@@ -165,7 +192,7 @@ main() {
     shift
     case "$sub" in
         detect) detect_forge ;;
-        ci-status | pr-state | threads-resolved)
+        ci-status | pr-state | threads-resolved | pr-for-branch)
             [ $# -ge 1 ] || usage
             run_op "$sub" "$1"
             ;;
