@@ -4,7 +4,7 @@ kind: skill
 budget: one-reviewer
 status: done
 next: ''
-updated: '2026-08-18T22:52:53.720632+00:00'
+updated: '2026-08-18T22:53:50.624121+00:00'
 steps:
 - id: implement
   required: true
@@ -62,9 +62,9 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 323999ea0b5a9c926e8bfe406f60e53b70e24db7
+last_seen_sha: a295fbbaac4e0b6780a735479756c3d3c1061560
 verify_local:
-  head_sha: 323999ea0b5a9c926e8bfe406f60e53b70e24db7
+  head_sha: a295fbbaac4e0b6780a735479756c3d3c1061560
   passed: true
   results:
   - cmd: ./test/run-tests.sh
