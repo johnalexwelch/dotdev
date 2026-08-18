@@ -27,6 +27,7 @@ SKILL="${ROUTING_EVAL_SKILL:-${ROOT}/dotfiles/.config/agents/skills/workflow-rou
 MODEL="sonnet"
 DRY_RUN=0
 ONLY_CASE=""
+JUDGE_SELF_TEST=0
 
 usage() {
     sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -37,6 +38,10 @@ while [ $# -gt 0 ]; do
     case "$1" in
         --dry-run)
             DRY_RUN=1
+            shift
+            ;;
+        --judge-self-test)
+            JUDGE_SELF_TEST=1
             shift
             ;;
         --case)
@@ -55,6 +60,48 @@ while [ $# -gt 0 ]; do
             ;;
     esac
 done
+
+extract_route() {
+    # Last "Selected flow:" line, stripped of markdown formatting; first token.
+    local raw="$1" line=""
+    line="$(printf '%s\n' "${raw}" | grep -E 'Selected flow:' | tail -n 1 || true)"
+    printf '%s\n' "${line}" |
+        sed -E 's/.*Selected flow:[[:space:]]*//; s/[`*_]//g; s/^[[:space:]]*//' |
+        sed -E 's/^([a-z0-9-]+).*/\1/'
+}
+
+# Offline self-test for the deterministic judge: canned model-output shapes
+# the extractor must survive. Run by test/test-routing-eval.sh.
+judge_self_test() {
+    local failures=0
+    check() {
+        local name="$1" raw="$2" want="$3" got=""
+        got="$(extract_route "${raw}")"
+        if [ "${got}" = "${want}" ]; then
+            echo "  PASS: judge ${name}"
+        else
+            echo "  FAIL: judge ${name} (want '${want}', got '${got}')"
+            failures=$((failures + 1))
+        fi
+    }
+    check "plain line" "Selected flow: workflow-debug" "workflow-debug"
+    check "backticked route" 'Selected flow: `workflow-review`' "workflow-review"
+    check "bolded label and route" "**Selected flow:** **receive-review**" "receive-review"
+    check "trailing prose on the line" "Selected flow: workflow-finalize (owner rule)" "workflow-finalize"
+    check "multi-line output, answer embedded" $'Reasoning first.\nSelected flow: to-prd\nDone.' "to-prd"
+    check "takes the LAST selected-flow line" $'Selected flow: run-backlog\nCorrection:\nSelected flow: execute-prd' "execute-prd"
+    check "garbage yields empty (never a false pass)" "no route in this output" ""
+    [ "${failures}" -eq 0 ]
+}
+
+if [ "${JUDGE_SELF_TEST}" -eq 1 ]; then
+    if judge_self_test; then
+        echo "judge self-test: OK"
+        exit 0
+    fi
+    echo "judge self-test: FAILED" >&2
+    exit 1
+fi
 
 [ -f "${GOLDEN}" ] || {
     echo "Blocked: golden set not found at ${GOLDEN}" >&2
@@ -105,16 +152,19 @@ parse_golden() {
         }
         /^    expected_route: [a-z0-9-]+$/ {
             if (!in_case) { fail("expected_route outside a case"); next }
+            if (route != "") { fail("case " n " has duplicate expected_route"); next }
             route = $2
             next
         }
         /^    source: (log|synthetic)$/ {
             if (!in_case) { fail("source outside a case"); next }
+            if (src != "") { fail("case " n " has duplicate source"); next }
             src = $2
             next
         }
         /^    notes: ".*"$/ {
             if (!in_case) { fail("notes outside a case"); next }
+            if (notes != "") { fail("case " n " has duplicate notes"); next }
             notes = $0
             sub(/^    notes: "/, "", notes)
             sub(/"$/, "", notes)
@@ -155,11 +205,15 @@ for src in "${SOURCES[@]}"; do
     fi
 done
 
-# Every expected route must exist verbatim in the router SKILL.md
-# (classification-table names; "direct" is the direct-budget route).
+# Every expected route must exist as a whole token in the router SKILL.md
+# (classification-table names; "direct" is the direct-budget route). A
+# word-boundary match, not a substring match — catches typo'd hyphenated
+# routes ("workflow-reviw"). Residual gap: a wrong route that is also a plain
+# English word in the doc ("review") passes this check; the eval itself
+# catches those as failures.
 ROUTE_ERRORS=0
 for route in "${EXPECTED[@]}"; do
-    if ! grep -Fq "${route}" "${SKILL}"; then
+    if ! grep -Eq "(^|[^a-z0-9-])${route}([^a-z0-9-]|\$)" "${SKILL}"; then
         echo "schema error: expected_route '${route}' not found in SKILL.md" >&2
         ROUTE_ERRORS=$((ROUTE_ERRORS + 1))
     fi
@@ -211,15 +265,6 @@ ${request}
 EOF
 }
 
-extract_route() {
-    # Last "Selected flow:" line, stripped of markdown formatting; first token.
-    local raw="$1" line=""
-    line="$(printf '%s\n' "${raw}" | grep -E 'Selected flow:' | tail -n 1 || true)"
-    printf '%s\n' "${line}" |
-        sed -E 's/.*Selected flow:[[:space:]]*//; s/[`*_]//g; s/^[[:space:]]*//' |
-        sed -E 's/^([a-z0-9-]+).*/\1/'
-}
-
 run_case() {
     # Prints the model's raw output on FD 3 when --case debugging is active.
     local idx="$1" prompt_text="" output="" status=0
@@ -264,6 +309,9 @@ if [ -n "${ONLY_CASE}" ]; then
             ;;
         *) ;;
     esac
+    # Force base-10: a leading zero ("09") would otherwise be read as octal
+    # and abort the arithmetic below, falling through into the full paid eval.
+    ONLY_CASE=$((10#${ONLY_CASE}))
     if [ "${ONLY_CASE}" -lt 1 ] || [ "${ONLY_CASE}" -gt "${TOTAL}" ]; then
         echo "Blocked: --case ${ONLY_CASE} out of range 1..${TOTAL}" >&2
         exit 1

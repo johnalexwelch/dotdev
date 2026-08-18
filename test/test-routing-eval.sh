@@ -81,6 +81,29 @@ run_case "rejects expected_route absent from SKILL.md" 1 \
     "${TMPDIR_BASE}/unknown-route.yaml" \
     "not found in SKILL.md"
 
+cat >"${TMPDIR_BASE}/typo-route.yaml" <<'EOF'
+cases:
+  - prompt: "Review this PR."
+    expected_route: workflow-reviw
+    source: synthetic
+    notes: "typo'd hyphenated route must not pass the word-boundary check"
+EOF
+run_case "rejects typo'd hyphenated route" 1 \
+    "${TMPDIR_BASE}/typo-route.yaml" \
+    "not found in SKILL.md"
+
+cat >"${TMPDIR_BASE}/dup-key.yaml" <<'EOF'
+cases:
+  - prompt: "Review this PR."
+    expected_route: workflow-review
+    expected_route: workflow-finalize
+    source: synthetic
+    notes: "duplicate key must fail, not last-wins"
+EOF
+run_case "rejects duplicate key within a case" 1 \
+    "${TMPDIR_BASE}/dup-key.yaml" \
+    "duplicate expected_route"
+
 cat >"${TMPDIR_BASE}/empty.yaml" <<'EOF'
 cases:
 EOF
@@ -99,6 +122,20 @@ EOF
 run_case "rejects unrecognized lines" 1 \
     "${TMPDIR_BASE}/stray-line.yaml" \
     "unrecognized line"
+
+# Judge self-test: canned model-output shapes for extract_route (offline).
+set +e
+selftest_out="$(bash "${SCRIPT}" --judge-self-test 2>&1)"
+selftest_status=$?
+set -e
+if [ "${selftest_status}" -eq 0 ] && grep -Fq "judge self-test: OK" <<<"${selftest_out}"; then
+    echo "  PASS: judge self-test (extract_route canned cases)"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: judge self-test"
+    echo "${selftest_out}"
+    FAIL=$((FAIL + 1))
+fi
 
 echo ""
 echo "routing-eval: ${PASS} passed, ${FAIL} failed"
