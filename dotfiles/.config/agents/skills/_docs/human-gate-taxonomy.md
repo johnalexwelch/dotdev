@@ -1,5 +1,7 @@
 # Human-Gate Taxonomy
 
+> Superseded by `workflow-ledger` (D-006); kept as a pointer until chain skills rewire (Phases 1–4).
+
 Classification of human-approval gates in AFK execution workflows. Distinguishes gates by their blocking power and satisfaction mechanism.
 
 ## Governing Principle
