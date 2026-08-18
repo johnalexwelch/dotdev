@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+# gh — deterministic account-routing shim for a two-account GitHub setup.
+#
+# Work account (alexwelch-dojo) is the gh default; personal repos route
+# through GH_TOKEN injection so the mutable "active account" never matters.
+# Routing map: ~/.config/gh-accounts.map (lines: "<owner-or-host> <account>").
+# Fail-open by design: any resolution/token failure degrades to a plain
+# passthrough of the real gh — this shim must never block a command.
+#
+# Known-unsupported target spellings: positional repo args (`gh repo view
+# OWNER/REPO`, `gh repo clone OWNER/REPO`, `gh pr view <url>`, `owner/repo#N`
+# issue refs) route on the cwd origin (or pass through outside a repo) instead.
+# Force a route with `-R OWNER/REPO`, `-R[=]OWNER/REPO`, or `--repo[=]OWNER/REPO`.
+set -uo pipefail
+
+warn() { printf 'gh-shim: %s\n' "$*" >&2; }
+
+# Resolve a path to its physical absolute form, following symlink chains.
+# Pure bash so it works identically under BSD/GNU userlands.
+resolve_path() {
+    local p="$1" target dir
+    local hops=0
+    while [ -L "$p" ] && [ "$hops" -lt 40 ]; do
+        target=$(readlink "$p") || break
+        case "$target" in
+        /*) p="$target" ;;
+        *) p="$(dirname "$p")/$target" ;;
+        esac
+        hops=$((hops + 1))
+    done
+    dir=$(cd "$(dirname "$p")" 2>/dev/null && pwd -P) || {
+        printf '%s' "$p"
+        return 0
+    }
+    printf '%s/%s' "$dir" "$(basename "$p")"
+}
+
+# --- Locate the real gh: first PATH entry that is not this shim ------------
+self_resolved=$(resolve_path "${BASH_SOURCE[0]}")
+real_gh=""
+while IFS= read -r cand; do
+    [ -n "$cand" ] || continue
+    [ "$(resolve_path "$cand")" = "$self_resolved" ] && continue
+    real_gh="$cand"
+    break
+done < <(type -pa gh 2>/dev/null)
+
+if [ -z "$real_gh" ]; then
+    warn "no real gh binary found on PATH (only this shim); install gh or fix PATH"
+    exit 127
+fi
+
+# --- Unconditional passthroughs --------------------------------------------
+# `gh auth ...` must see the genuine environment: injecting GH_TOKEN changes
+# auth semantics (status/switch/token would report the injected identity).
+if [ "${1:-}" = "auth" ]; then
+    exec "$real_gh" "$@"
+fi
+
+# Caller already pinned an identity — never second-guess it.
+if [ -n "${GH_TOKEN:-}" ] || [ -n "${GITHUB_TOKEN:-}" ]; then
+    exec "$real_gh" "$@"
+fi
+
+# --- Determine target host/owner -------------------------------------------
+target_host=""
+target_owner=""
+
+# Parse a repo spec into target_host/target_owner. Accepts:
+#   OWNER/REPO | HOST/OWNER/REPO | https://host/owner/repo(.git)
+#   git@host:owner/repo(.git)   | ssh://git@host/owner/repo(.git)
+parse_repo_spec() {
+    local spec="$1"
+    spec="${spec%.git}"
+    case "$spec" in
+    *://*)
+        spec="${spec#*://}" # drop scheme
+        spec="${spec#*@}"   # drop user@, if any
+        ;;
+    *@*:*)
+        spec="${spec#*@}" # drop user@
+        # scp-like host:owner/repo -> host/owner/repo
+        spec="${spec%%:*}/${spec#*:}"
+        ;;
+    esac
+    local IFS='/'
+    local -a parts=()
+    read -r -a parts <<<"$spec"
+    if [ "${#parts[@]}" -ge 3 ]; then
+        target_host="${parts[0]}"
+        target_owner="${parts[1]}"
+    elif [ "${#parts[@]}" -eq 2 ]; then
+        target_owner="${parts[0]}"
+    fi
+}
+
+# Explicit -R/--repo anywhere in argv wins over cwd.
+repo_arg=""
+expect_value=0
+for a in "$@"; do
+    if [ "$expect_value" -eq 1 ]; then
+        repo_arg="$a"
+        break
+    fi
+    case "$a" in
+    -R | --repo) expect_value=1 ;;
+    --repo=*)
+        repo_arg="${a#--repo=}"
+        break
+        ;;
+    -R?*)
+        # attached short-flag forms: -ROWNER/REPO and cobra's -R=OWNER/REPO
+        repo_arg="${a#-R}"
+        repo_arg="${repo_arg#=}"
+        break
+        ;;
+    esac
+done
+
+if [ -n "$repo_arg" ]; then
+    parse_repo_spec "$repo_arg"
+else
+    origin_url=$(git remote get-url origin 2>/dev/null) || origin_url=""
+    [ -n "$origin_url" ] && parse_repo_spec "$origin_url"
+fi
+
+# --- Map lookup: host key first, then owner key -----------------------------
+map_file="$HOME/.config/gh-accounts.map"
+
+lookup_account() {
+    local key="$1" k v extra
+    [ -n "$key" ] || return 1
+    [ -r "$map_file" ] || return 1 # missing map = passthrough, never an error
+    while read -r k v extra; do
+        case "$k" in '' | '#'*) continue ;; esac
+        if [ "$k" = "$key" ] && [ -n "$v" ]; then
+            printf '%s' "$v"
+            return 0
+        fi
+    done <"$map_file"
+    return 1
+}
+
+account=""
+if [ -n "$target_host" ]; then
+    account=$(lookup_account "$target_host") || account=""
+fi
+if [ -z "$account" ] && [ -n "$target_owner" ]; then
+    account=$(lookup_account "$target_owner") || account=""
+fi
+
+# Not personal-mapped: plain passthrough, argv untouched.
+if [ -z "$account" ]; then
+    exec "$real_gh" "$@"
+fi
+
+# --- Personal route: inject a per-invocation token ---------------------------
+# Token stays in a local variable and is never printed or logged.
+if ! token=$("$real_gh" auth token --user "$account" 2>/dev/null) || [ -z "$token" ]; then
+    warn "token fetch for account '$account' failed; running without injection (auth may target the active account)"
+    exec "$real_gh" "$@"
+fi
+
+GH_TOKEN="$token" exec "$real_gh" "$@"

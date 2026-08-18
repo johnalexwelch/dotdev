@@ -57,6 +57,9 @@ run_cmd mkdir -p "$HOME/.config"
 run_cmd mkdir -p "$HOME/.pi/agent"
 run_cmd mkdir -p "$HOME/.config/herdr"
 run_cmd mkdir -p "$HOME/.config/pi"
+# ~/.local/bin holds real binaries (uv tools, claude, ...) — pre-create so
+# Stow symlinks dotfiles/.local/bin/* per-item instead of tree-folding ~/.local
+run_cmd mkdir -p "$HOME/.local/bin"
 
 if [ "$DRY_RUN" = "1" ]; then
     stow -d "$DOTFILES" -nv -R -t "$HOME" dotfiles

@@ -1,0 +1,6 @@
+# gh account-routing map — consumed by the gh shim at ~/.local/bin/gh
+# (source: dotfiles/.local/bin/gh). Format, one entry per line:
+#   <owner-or-ssh-host-alias> <gh-account>
+# Owners/hosts not listed here route to the default (work) account untouched.
+johnalexwelch johnalexwelch
+github-personal johnalexwelch
