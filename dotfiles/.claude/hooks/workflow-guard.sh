@@ -49,12 +49,44 @@ is_merge_shape() {
 # commands on &&, ||, ;, | and evaluates each segment on its own).
 is_mutating_forge_segment() {
     local seg="$1"
-    grep -Eiq '\bgit[[:space:]]+(push|commit|merge|rebase)\b' <<<"$seg" ||
+    grep -Eiq '\bgit[[:space:]]+(push|commit|merge|rebase)($|[^[:alnum:]_-])' <<<"$seg" ||
         grep -Eiq '\bgh[[:space:]]+pr[[:space:]]+(create|edit|close|merge|ready)($|[^[:alnum:]_-])' <<<"$seg" ||
         grep -Eiq '\bgh[[:space:]]+issue[[:space:]]+edit\b' <<<"$seg" ||
         grep -Eiq '\bgh[[:space:]]+api\b[^|;&]*-X[[:space:]]+(POST|PATCH|DELETE)\b' <<<"$seg" ||
         grep -Eiq '\btea[[:space:]]+pr[[:space:]]+(create|edit|close|merge)($|[^[:alnum:]_-])' <<<"$seg" ||
-        grep -Eiq '\bgit-forge\b[^|;&]*\b(merge|create|edit|close)\b' <<<"$seg"
+        grep -Eiq '\bgit-forge\b[^|;&]*\b(merge|create|edit|close)($|[^[:alnum:]_-])' <<<"$seg"
+}
+
+# Neutralizes separators (| ; &) INSIDE quoted spans so lexical splitting
+# cannot file a suppression under a different segment than its mutation
+# (security-lane closure: quoted `|`/`;` in commit messages). Also unfolds
+# backslash-newline continuations first. Residual: a backslash-escaped quote
+# inside a double-quoted span toggles the tracker; rare, and the failure
+# mode collapses toward fewer splits (fail-closed).
+mask_quoted_separators() {
+    local unfolded="${1//\\$'\n'/ }"
+    awk '
+    BEGIN { q = "" }
+    {
+        line = $0
+        n = length(line)
+        out = ""
+        for (i = 1; i <= n; i++) {
+            c = substr(line, i, 1)
+            if (q != "") {
+                if (c == q) q = ""
+                else if (c == "|" || c == ";" || c == "&") c = " "
+            } else if (c == "\x27" || c == "\"") {
+                q = c
+            }
+            out = out c
+        }
+        print out
+    }' <<<"$unfolded"
+}
+
+seg_has_suppression() {
+    grep -Eq '2>[[:space:]]*/dev/null|&>[[:space:]]*/dev/null|2>&-' <<<"$1"
 }
 
 # Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
@@ -62,15 +94,24 @@ is_mutating_forge_segment() {
 # (R1/R2 batch #1 — segment scoping; bit us twice live). Split order
 # matters: && and || before single | so pipes split last; a lone & (job
 # control) is never split so &>/dev/null stays intact inside its segment.
+# Compound-redirection shapes — a suppression after `}`, `)`, `done`, or
+# `fi` redirects every segment inside the construct — fall back to
+# whole-command semantics (fail closed; the pre-segmentation behavior).
 has_suppressed_mutating_segment() {
-    local segs seg
-    segs="${cmd//"&&"/$'\n'}"
+    local masked segs seg whole=0
+    masked="$(mask_quoted_separators "$cmd")"
+    if grep -Eq '(\}|\)|\bdone\b|\bfi\b)[[:space:]]*(2>|&>)' <<<"$masked"; then
+        seg_has_suppression "$masked" && whole=1
+    fi
+    segs="${masked//"&&"/$'\n'}"
     segs="${segs//"||"/$'\n'}"
     segs="${segs//";"/$'\n'}"
     segs="${segs//"|"/$'\n'}"
     while IFS= read -r seg; do
         [ -n "$seg" ] || continue
-        grep -Eq '2>/dev/null|&>/dev/null' <<<"$seg" || continue
+        if [ "$whole" -eq 0 ]; then
+            seg_has_suppression "$seg" || continue
+        fi
         if is_mutating_forge_segment "$seg"; then
             return 0
         fi
@@ -175,7 +216,7 @@ if has '\bgh[[:space:]]+pr[[:space:]]+(create|ready)\b'; then
     printf '[WORKFLOW GUARD] Also verify WORKFLOW_REVIEW_GATE and WORKFLOW_FINALIZE_GATE before completion.\n'
 fi
 
-if has '\bgh[[:space:]]+pr[[:space:]]+(merge|close)\b'; then
+if has '\bgh[[:space:]]+pr[[:space:]]+(merge|close)($|[^[:alnum:]_-])'; then
     printf '\n[WORKFLOW GUARD] PR merge/close detected. Inventory cleanup before deleting anything:\n'
     git status --short 2>/dev/null || true
     git worktree list --porcelain 2>/dev/null | sed -n '1,40p' || true
