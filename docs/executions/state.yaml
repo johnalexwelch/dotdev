@@ -3,14 +3,18 @@ workflow: workflow-deliver
 kind: bug
 budget: one-reviewer
 status: active
-next: diagnose
-updated: '2026-08-18T22:53:39.165529+00:00'
+next: fix
+updated: '2026-08-18T22:59:14.212352+00:00'
 steps:
 - id: diagnose
   required: true
-  status: active
-  evidence: 'repro confirmed in scratch fixture: raw worktree add from stale branch
-    + hand-written sidecar (RESOLVED_BASE=stale) -> verify exit 0 despite is-ancestor(origin/main,HEAD)=false'
+  status: completed
+  evidence: "root cause + red repro stamped; scratch repro: raw worktree add from\
+    \ stale + forged sidecar -> verify exit 0 while is-ancestor(origin/main,HEAD)=false;\
+    \ fix direction: (a) recompute ground truth in verify + sidecar as loud cross-check\
+    \ AND (b) hook-block sidecar Edit/Write \u2014 (b) alone rejected: Bash heredoc\
+    \ bypasses Edit/Write hooks trivially, which is exactly how a forger writes the\
+    \ file"
 - id: fix
   required: true
   status: pending
@@ -26,12 +30,14 @@ steps:
     log)'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "AFK-safe: clear acceptance criteria encoded as red tests (9 baseline\
+    \ + 4 guard); fix direction locked in diagnose evidence \u2014 both (a) ground-truth\
+    \ recompute and (b) hook sidecar block"
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: editing worktree-baseline.sh cmd_verify + workflow-guard.sh rule 2
 - id: review
   required: true
   status: pending
@@ -67,5 +73,24 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  fix:
+    head_sha: cf71697913282f035e6c49289577abcbd5a7925b
+    timestamp: '2026-08-18T22:59:14.212191+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-worktree-baseline.sh
+    attested:
+      rationale: verify now derives ancestry from git itself (recomputed base per
+        base-branch-policy, or explicit --base); sidecar demoted to loud cross-check
+        (exit 11 on BRANCH/RESOLVED_BASE mismatch, strict KEY=VALUE parse instead
+        of sourcing kills the shell-injection vector); workflow-guard blocks Edit/Write
+        to sidecars as script-owned defense-in-depth
+      regression_test: test/test-worktree-baseline.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: 13e485076e44039f263df631a3c04dd3b4761d63
+last_seen_sha: b4bf69a791aabb8e4511a24121d0439427e22878
