@@ -1053,7 +1053,11 @@ checked_finalize() {
         ci="$(bash "$FORGE_SH" ci-status "$pr" 2>&1)" || ci="error: $ci"
         [ "$ci" = "green" ] || add_failure "forge CI not green for PR #$pr: $ci"
         prstate="$(bash "$FORGE_SH" pr-state "$pr" 2>&1)" || prstate="error: $prstate"
-        [ "$prstate" = "open" ] || add_failure "PR #$pr is not open: $prstate"
+        # Draft is a legitimate finalize state — human-only delivery policy
+        # keeps the PR draft through the stamp (Phase 3 review F3); the
+        # checked field below records the actual state.
+        [ "$prstate" = "open" ] || [ "$prstate" = "draft" ] ||
+            add_failure "PR #$pr is not open or draft: $prstate"
         threads="$(bash "$FORGE_SH" threads-resolved "$pr" 2>&1)" || threads="error: $threads"
         [ "$threads" = "yes" ] || add_failure "review threads not resolved on PR #$pr: $threads"
         CHECKED+=("ci=$ci" "pr_state=$prstate" "threads_resolved=$threads")
