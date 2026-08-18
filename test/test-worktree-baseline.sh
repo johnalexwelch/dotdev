@@ -486,6 +486,117 @@ assert_contains "offline verify warns about staleness" "$offline_output" "possib
 assert_contains "stacked verify PASS line is verbatim" "$stacked_verify_output" \
     "PASS: $child_wt is clean, descends from origin/main, and descends from parent parent/feature-a"
 
+# --- Review round-2 regression contracts ---
+
+# git never updates refs/remotes/origin/HEAD on fetch, so after a remote
+# default-branch rename the symref is stale as a matter of course. Detection
+# must fall through to `git remote show origin` when the symref's branch no
+# longer resolves — not only when the symref is absent.
+work=$(new_fixture renamed_default)
+origin="$TMPDIR_BASE/renamed_default/origin.git"
+git -C "$origin" branch trunk main
+git -C "$origin" symbolic-ref HEAD refs/heads/trunk
+git -C "$origin" branch -D main
+wt="$TMPDIR_BASE/renamed_default/wt1"
+set +e
+renamed_output=$(cd "$work" && bash "$SCRIPT" cut --branch feature/renamed --path "$wt" 2>&1)
+renamed_status=$?
+set -e
+assert_status "cut survives a renamed remote default branch" 0 "$renamed_status"
+assert_contains "renamed-default cut resolves the new default" "$renamed_output" "resolved_base: origin/trunk"
+
+# Offline with no origin/HEAD symref and no origin/staging must end in the
+# actionable die 7, not a raw set -e abort from the remote-show fallback.
+work=$(new_fixture offline_no_symref)
+wt="$TMPDIR_BASE/offline_no_symref/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/nosymref --path "$wt" >/dev/null)
+git -C "$work" symbolic-ref --delete refs/remotes/origin/HEAD
+git -C "$work" remote set-url origin /nonexistent/nope.git
+set +e
+no_symref_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+no_symref_status=$?
+set -e
+assert_status "offline verify without symref dies 7, not raw abort" 7 "$no_symref_status"
+assert_contains "offline no-symref failure is a Blocked message" "$no_symref_output" "Blocked:"
+
+# The key whitelist must be an exact match, not a substring match: a
+# compound key that is a space-joined run of whitelist names must die 11,
+# never reach printf -v (whose failure is swallowed by the if-guarded call).
+work=$(new_fixture compound_key)
+wt="$TMPDIR_BASE/compound_key/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/compound --path "$wt" >/dev/null)
+echo "BRANCH WT_PATH=x" >>"$TMPDIR_BASE/compound_key/.worktree-baseline.wt1.state"
+set +e
+compound_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+compound_status=$?
+set -e
+assert_status "verify rejects a compound whitelist-substring key" 11 "$compound_status"
+assert_contains "compound-key rejection says unrecognized" "$compound_output" "unrecognized"
+
+# A sidecar can't be transplanted between worktrees: WT_PATH must match the
+# worktree actually being verified (canonicalized — trailing slashes and
+# relative spellings of the same directory still pass).
+work=$(new_fixture swapped_sidecar)
+wt1="$TMPDIR_BASE/swapped_sidecar/wt1"
+wt2="$TMPDIR_BASE/swapped_sidecar/wt2"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/stackswap --path "$wt1" \
+    --parent-branch origin/main --parent-pr 7 >/dev/null)
+(cd "$work" && bash "$SCRIPT" cut --branch feature/plainswap --path "$wt2" >/dev/null)
+cat >"$TMPDIR_BASE/swapped_sidecar/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/stackswap
+WT_PATH=$wt2
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=origin/main
+FALLBACK_REASON=origin/staging_absent
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+swapped_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt1" 2>&1)
+swapped_status=$?
+set -e
+assert_status "verify rejects a sidecar transplanted from another worktree" 11 "$swapped_status"
+assert_contains "swap rejection names WT_PATH" "$swapped_output" "WT_PATH"
+
+# The origin/HEAD symref is a plain hand-settable pointer: when the network
+# works, the remote's own answer (remote show) must outrank it, so
+# retargeting the symref at another remote-tracking ref cannot steer the
+# recomputed base.
+work=$(new_fixture symref_retarget)
+git -C "$work" branch legacy
+git -C "$work" push -q origin legacy
+echo "advance" >>"$work/README.md"
+git -C "$work" commit -qam "advance main past legacy"
+git -C "$work" push -q origin main
+wt="$TMPDIR_BASE/symref_retarget/wt1"
+git -C "$work" worktree add -b feature/symref "$wt" origin/legacy >/dev/null 2>&1
+git -C "$work" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/legacy
+set +e
+symref_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+symref_status=$?
+set -e
+assert_status "verify ignores a retargeted origin/HEAD symref when online" 6 "$symref_status"
+assert_contains "symref-retarget rejection names the real base" "$symref_output" "not a descendant of origin/main"
+
+# The staleness marker must reach stdout evidence, not just stderr — callers
+# (ledger.sh) discard stderr on success, so a stale pass must be visibly
+# stale in the PASS line itself. Reuses the offline_verify fixture state.
+set +e
+offline_stdout=$(cd "$TMPDIR_BASE/offline_verify/work" && bash "$SCRIPT" verify --path "$TMPDIR_BASE/offline_verify/wt1" 2>/dev/null)
+set -e
+assert_contains "offline PASS line itself carries the staleness marker" "$offline_stdout" "possibly stale"
+
+# ...while an equivalent spelling of the same worktree still passes.
+work=$(new_fixture path_spelling)
+wt="$TMPDIR_BASE/path_spelling/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/spelling --path "$wt" >/dev/null)
+set +e
+spelling_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt/" 2>&1)
+spelling_status=$?
+set -e
+assert_status "verify accepts a trailing-slash spelling of the same path" 0 "$spelling_status"
+
 echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"
