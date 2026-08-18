@@ -36,20 +36,46 @@ existing_issue_text() {
     gh issue view "$issue" --json title,body --jq '.title + "\n" + (.body // "")' 2>/dev/null || true
 }
 
+# `merge` must be the whole token: `-` is a word boundary, so `merge\b`
+# alone false-positives on non-mutating `gh pr merge-queue status`.
 is_merge_shape() {
-    has '\bgh[[:space:]]+pr[[:space:]]+(merge|ready)\b' ||
-        has '\btea[[:space:]]+pr[[:space:]]+merge\b' ||
-        has '\bgit-forge\b[^|;&]*\bmerge\b' ||
+    has '\bgh[[:space:]]+pr[[:space:]]+(merge|ready)($|[^[:alnum:]_-])' ||
+        has '\btea[[:space:]]+pr[[:space:]]+merge($|[^[:alnum:]_-])' ||
+        has '\bgit-forge\b[^|;&]*\bmerge($|[^[:alnum:]_-])' ||
         has '\bcurl\b[^|;&]*/pulls/[^[:space:]]*/merge'
 }
 
-is_mutating_forge_cmd() {
-    has '\bgit[[:space:]]+(push|commit|merge|rebase)\b' ||
-        has '\bgh[[:space:]]+pr[[:space:]]+(create|edit|close|merge|ready)\b' ||
-        has '\bgh[[:space:]]+issue[[:space:]]+edit\b' ||
-        has '\bgh[[:space:]]+api\b[^|;&]*-X[[:space:]]+(POST|PATCH|DELETE)\b' ||
-        has '\btea[[:space:]]+pr[[:space:]]+(create|edit|close|merge)\b' ||
-        has '\bgit-forge\b[^|;&]*\b(merge|create|edit|close)\b'
+# Segment-scoped: takes one command segment as $1 (rule 3 splits compound
+# commands on &&, ||, ;, | and evaluates each segment on its own).
+is_mutating_forge_segment() {
+    local seg="$1"
+    grep -Eiq '\bgit[[:space:]]+(push|commit|merge|rebase)\b' <<<"$seg" ||
+        grep -Eiq '\bgh[[:space:]]+pr[[:space:]]+(create|edit|close|merge|ready)($|[^[:alnum:]_-])' <<<"$seg" ||
+        grep -Eiq '\bgh[[:space:]]+issue[[:space:]]+edit\b' <<<"$seg" ||
+        grep -Eiq '\bgh[[:space:]]+api\b[^|;&]*-X[[:space:]]+(POST|PATCH|DELETE)\b' <<<"$seg" ||
+        grep -Eiq '\btea[[:space:]]+pr[[:space:]]+(create|edit|close|merge)($|[^[:alnum:]_-])' <<<"$seg" ||
+        grep -Eiq '\bgit-forge\b[^|;&]*\b(merge|create|edit|close)\b' <<<"$seg"
+}
+
+# Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
+# Suppression on a test/lint segment chained before a push must not block
+# (R1/R2 batch #1 — segment scoping; bit us twice live). Split order
+# matters: && and || before single | so pipes split last; a lone & (job
+# control) is never split so &>/dev/null stays intact inside its segment.
+has_suppressed_mutating_segment() {
+    local segs seg
+    segs="${cmd//"&&"/$'\n'}"
+    segs="${segs//"||"/$'\n'}"
+    segs="${segs//";"/$'\n'}"
+    segs="${segs//"|"/$'\n'}"
+    while IFS= read -r seg; do
+        [ -n "$seg" ] || continue
+        grep -Eq '2>/dev/null|&>/dev/null' <<<"$seg" || continue
+        if is_mutating_forge_segment "$seg"; then
+            return 0
+        fi
+    done <<<"$segs"
+    return 1
 }
 
 # ---- Edit/Write rules (D-006 rules 2 and 4) ---------------------------------
@@ -94,7 +120,9 @@ if [ "$event" = "PreToolUse" ]; then
 
     # Rule 3: stderr suppression on mutating git/gh/tea/git-forge commands
     # hides failures the workflow depends on seeing (D-006, closes C36).
-    if has '2>/dev/null|&>/dev/null' && is_mutating_forge_cmd; then
+    # Evaluated per command segment: only a suppression attached to the
+    # MUTATING segment blocks.
+    if has_suppressed_mutating_segment; then
         printf 'Blocked: stderr suppression on a mutating git/gh/tea/git-forge command hides failures. Re-run it without 2>/dev/null (or &>/dev/null).\n' >&2
         exit 2
     fi
