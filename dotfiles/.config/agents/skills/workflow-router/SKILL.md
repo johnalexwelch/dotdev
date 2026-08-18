@@ -135,6 +135,11 @@ Rules:
 - If confidence is `low`, ask one clarifying question instead of asking the user to approve a route.
 - If confidence is `medium`, recommend the best route and include the closest alternative.
 - Do not perform target workflow preflight, create a worktree, scaffold a repo, write docs, create issues, or dispatch agents until the route is confirmed.
+- Schema validator: `scripts/validate-route-card.sh` reads a route card on stdin and asserts all 12 required fields plus legal `Confidence`/`Budget` values — pipe the emitted card through it when a workflow needs checked (not attested) route-card evidence.
+
+### Routing regression eval (D-006 Track B)
+
+Classification behavior is measured, not rules-engined: `references/golden-routes.yaml` holds the golden prompt→route set (log-harvested + synthetic adversarial; every future misroute adds a case), and `test/routing-eval.sh` runs it headless against this SKILL.md with a deterministic string-match judge (pass gate ≥95%). CI: `.github/workflows/routing-eval.yml`, path-filtered to this skill. Update the golden set whenever the classification table changes.
 
 ### Confirmation Language
 
@@ -230,7 +235,7 @@ Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, 
 
 **Knowledge/utility** (9) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `stage-v1-concept`, `wayfinder`, `zoom-out`
 
-**Retirement-leaning** (6, per skill-suite audit F-6 — self-declared superseded, not formally retired yet): `pr-responder` (restates `receive-review` Step 4), `pr-review` / `review` (superseded by `workflow-review`), `slop-cleaner` (`humanizer` owns the route), `v1-idea-grill` (superseded by `grill-with-docs`), `rowan` (binary tombstoned 2026-07-20; `brain-ops` owns the brain route). Do not route new requests here; if invoked by name, note the successor.
+**Retired** (2026-08-18, D-006 decision 14 — directories deleted, git history is the tombstone): `pr-responder` → `receive-review`, `pr-review` / `review` → `workflow-review`, `slop-cleaner` → `humanizer`, `v1-idea-grill` → `grill-with-docs`. If invoked by name, use the successor. `rowan` was excluded from this retirement: PR #149 (2026-08-14) revived it as the live knowledge-OS skill and deprecated `brain-ops` in its favor — the old "rowan → brain-ops" catalog rows were stale; direction flagged for Alex in `_docs/AUDIT_REPORT.md`.
 
 ## Human-Gate Taxonomy Preflight
 

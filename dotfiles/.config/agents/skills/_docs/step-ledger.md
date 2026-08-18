@@ -1,5 +1,7 @@
 # Step Ledger Protocol
 
+> Superseded by `workflow-ledger` (D-006); kept as a pointer until chain skills rewire (Phases 1–4).
+
 Canonical progress-reporting protocol for workflow skills. Skills reference this
 doc with `follow \`_docs/step-ledger.md\`` (D-003 library grammar) and keep only
 their own `WORKFLOW_STEPS` table rows and any skill-specific skip/gate rules.
