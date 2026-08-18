@@ -133,13 +133,15 @@ Applies only to **openwiki-enabled repos**. Detect via any of: an `openwiki/` di
 If the PR has been open >24 hours or has accumulated >5 review comments:
 
 - Triage all unresolved reviewer comments: blocker, non-blocker, nit, or stale.
-- Ground-truth PR state before pushing the sync; sync with base if conflicts exist (`git fetch origin && git rebase origin/<base>`, or merge per repo policy); fix any new CI issues introduced by the sync (re-review + re-stamp applies).
+- Ground-truth PR state before pushing the sync; sync with base if conflicts exist (`git fetch origin && git rebase origin/<base>`, or merge per repo policy); fix any new CI issues introduced by the sync. A sync moves HEAD, so re-review + re-stamp applies **and** `ledger.sh verify-local` must be re-run — the stamp requires its green record at the current HEAD.
 - Re-check all review threads after the sync push and reply to any that are now resolved.
 - Skipped for fresh PRs that go straight through.
 
 ### Step 8: Stamp, then Final PR Action (repo-policy-controlled)
 
-Gate: `ledger.sh stamp finalize --attest post_mortem=<...> describe_pr=<...> pr_number=<n>` — the kernel checks review-gate freshness, clean tree, a green `verify-local` record at HEAD, and (via `forge.sh`) CI green, PR open, and threads resolved; it resolves the PR itself and refuses a mismatched attested `pr_number`. A stamp that won't write means finalization isn't done — fix the reported failure, never hand-edit state.
+Gate: `ledger.sh stamp finalize --attest post_mortem=<...> describe_pr=<...> pr_number=<n>` — the kernel checks review-gate freshness, clean tree, a green `verify-local` record at HEAD, and (via `forge.sh`) CI green, PR state, and threads resolved; it resolves the PR itself and refuses a mismatched attested `pr_number`. A stamp that won't write means finalization isn't done — fix the reported failure, never hand-edit state.
+
+**Known collision — draft PRs (Phase 3 review F3):** the stamp's forge check currently requires `pr-state = open`; `draft`, `merged`, and `closed` all fail it. Under `human-only` policy the PR intentionally stays draft, so the documented default path cannot stamp as-is. Until the kernel accepts `draft` (queued follow-up), the routes are: create/keep the PR non-draft when the user has approved that for the run (prior stamped deliveries, e.g. PR #162, took this route), or — on explicit user instruction only — record the audited override (`--override --reason "human-only policy keeps PR draft"`). Do not silently mark a human-only PR ready just to make the stamp pass.
 
 Then act per policy:
 
