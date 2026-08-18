@@ -58,7 +58,7 @@ cases:
     source: log
     notes: "log 2026-07-30 16:06 workflow-review; review row, no artifact signal"
   - prompt: "Issue #12 is ready-for-agent with clear acceptance criteria — implement it end to end."
-    expected_route: workflow-build-one
+    expected_route: workflow-deliver
     source: log
     notes: "log 2026-07-28 06:49 workflow-build-one; ready issue row"
   - prompt: "Review this SQL query before it hits production."
@@ -87,11 +87,11 @@ cases:
     notes: "log 2026-07-29 14:57 prototype"
   # ---- Synthetic adversarial (23) -----------------------------------------
   - prompt: "The morning briefing script is broken — it throws a 401 from the calendar API since yesterday."
-    expected_route: workflow-debug
+    expected_route: workflow-deliver
     source: synthetic
     notes: "bug row; plain bug report"
   - prompt: "It's a one-line fix — the retry default is wrong, just flip it to true."
-    expected_route: workflow-debug
+    expected_route: workflow-deliver
     source: synthetic
     notes: "bug routing rule: obvious-fix trap, never workflow-build-one for bugs"
   - prompt: "What if we added retry logic to the sync job so transient failures recover on their own?"
