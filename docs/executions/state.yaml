@@ -3,20 +3,43 @@ workflow: workflow-build-one
 kind: skill
 budget: one-reviewer
 status: active
-next: implement
-updated: '2026-08-18T18:14:49.814688+00:00'
+next: review
+updated: '2026-08-18T18:52:54.553573+00:00'
 steps:
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: router hardening committed (91c5a6b + HEAD); eval 40/40 vs 36/40 baseline;
+    lints clean; suite 317 PASS
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: dispatching fast-profile workflow-review
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: f26c716f8f6289fc565246da59d1991fa7ce3c46
+    timestamp: '2026-08-18T18:52:54.553115+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: acc956012b8c3f9f6038bc14680b5504bfc60dafe74339dc2427ce02177bc286
+      lane_integrated_lines: '51'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: claude-fable-5
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: fast
+      lanes: integrated
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: c95938898b7089c148f9c4eb5570944decd9aeb0
