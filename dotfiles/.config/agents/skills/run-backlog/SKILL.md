@@ -1,5 +1,6 @@
 ---
 name: run-backlog
+layer: orchestrator
 model: sonnet
 reasoning: medium
 description: AFK backlog orchestrator — batch-process ready-for-agent issues via Codex (default) or Claude, with repo-policy-controlled draft vs auto-merge delivery
@@ -137,8 +138,8 @@ For each issue in queue order:
 4. Dispatch:
    - **Codex mode**: require `omc`; if unavailable, halt for user approval before switching modes. Do not silently downgrade AFK isolation to direct Claude execution.
    - **Claude mode**:
-      - bug/regression issue -> invoke `workflow-debug` with the generated prompt as context
-      - non-bug issue -> invoke `workflow-build-one` with the generated prompt as context
+      - bug/regression issue -> Load and run `workflow-debug/SKILL.md` with the generated prompt as context
+      - non-bug issue -> Load and run `workflow-build-one/SKILL.md` with the generated prompt as context
       - do not route bug work to `workflow-build-one`
 5. Each dispatch is independent — failure of one does not block others
 

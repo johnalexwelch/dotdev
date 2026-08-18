@@ -36,6 +36,7 @@ frontmatter_value() {
         /^---$/ { fm++; next }
         fm == 1 && $0 ~ "^" key ":" {
             sub("^" key ":[[:space:]]*", "")
+            sub("[[:space:]]+$", "")
             print
             exit
         }
@@ -108,6 +109,33 @@ while IFS= read -r -d '' file; do
 
     if grep -q 'Status: standalone use deprecated' "$file" && ! has_frontmatter_key "$file" disable-model-invocation; then
         fail "$skill is standalone-deprecated but lacks disable-model-invocation"
+    fi
+
+    # Three-layer corpus architecture (decision-log D-006 #12): warn-mode for
+    # untagged skills, error-mode for tagged-but-violating skills.
+    layer="$(frontmatter_value "$file" layer)"
+    if [ -z "$layer" ]; then
+        warn "$skill lacks layer frontmatter (kernel|orchestrator|judgment)"
+    else
+        case "$layer" in
+            judgment)
+                # Judgment skills get determinism from evals and report
+                # contracts, never from ledger stamps.
+                if grep -rqIE --include='*.md' 'ledger\.sh[[:space:]]+stamp' "$root/$skill"; then
+                    fail "$skill is layer: judgment but references ledger.sh stamp (judgment skills never stamp)"
+                fi
+                ;;
+            kernel)
+                # Kernel skills are deterministic scripts plus tests.
+                if [ ! -d "$root/$skill/scripts" ]; then
+                    fail "$skill is layer: kernel but has no scripts/ directory"
+                fi
+                ;;
+            orchestrator) ;;
+            *)
+                fail "$skill has unknown layer: $layer (expected kernel|orchestrator|judgment)"
+                ;;
+        esac
     fi
 
     if needs_ledger "$skill" && ! grep -q '^WORKFLOW_STEPS:' "$file"; then
