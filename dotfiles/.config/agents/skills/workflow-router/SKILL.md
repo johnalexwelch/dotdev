@@ -1,5 +1,6 @@
 ---
 name: workflow-router
+layer: orchestrator
 model: sonnet
 reasoning: high
 description: Use when a request may need routing to a project workflow, AFK execution path, planning/grill flow, review/finalize loop, or skill/workflow audit
@@ -38,7 +39,7 @@ Choose the smallest execution shape that preserves quality:
 
 | Budget | Use when | Default review profile |
 |--------|----------|------------------------|
-| `direct` | Trivial ops, single-command answers, simple docs/wording edits, or small local inspections with no delivery gate. **Never `direct` if the task will commit or push tracked code** — that is at least `one-reviewer` and must satisfy the worktree + `workflow-review` + `workflow-finalize` gates. | none |
+| `direct` | Only when **ALL** of these hold: (a) the action is read-only or produces only an immediate conversational answer; (b) no tracked file is mutated; (c) the deliverable is not a polish/rewrite/transform of text the user will use. **Never `direct` if the task will commit or push tracked code** — that is at least `one-reviewer` and must satisfy the worktree + `workflow-review` + `workflow-finalize` gates. | none |
 | `one-reviewer` | Normal single-issue work, narrow code edits, and most skill/config changes | `fast` or `standard` |
 | `multi-lane` | Auth, data, infra, migrations, public APIs, dependencies, broad refactors, concurrency/state, user-facing UX, or large diffs | `full` |
 | `team` | Two or more independent workstreams benefit from parallel execution more than coordination costs | per child workflow |
@@ -47,29 +48,39 @@ Independence matters more than agent count. Do not use multiple agents merely
 because a workflow says "review"; use `workflow-review`'s risk-sized
 `review_profile`.
 
+**Inline-doable is not a routing signal.** A request to transform, polish, or
+rewrite TEXT the user will actually use — "de-AI this paragraph", "humanize
+this draft", "rewrite this work-order so the AFK agent can execute it" —
+routes to the owning skill (`humanizer`, `prompt-builder`), never to `direct`,
+even though the model could plausibly produce the rewrite inline. The output
+is a deliverable with an owning skill, and the skill's method is the point of
+the route. Baseline evidence (2026-08-19 golden-eval failures, cases 2 and
+35): "De-AI this paragraph before I post it." and "Rewrite this work-order so
+the AFK agent can execute it — just give me the text back." both collapsed to
+`direct`; the correct routes are `humanizer` and `prompt-builder`. "Just give
+me the text back" scopes the *output format*, not the route.
+
 ## Resume Check (Step 0)
 
-Before classifying, check for an in-progress run in the state cockpit
-(`../_docs/state-cockpit.md` defines the schema; file lives at
-`docs/executions/state.yaml`). If it exists with `status: active|paused`:
+Before classifying, `Load and run` `workflow-ledger/SKILL.md`: run
+`workflow-ledger/scripts/ledger.sh reconcile` — it compares the live ledger
+against git ground truth and prints the true frontier (`--apply` updates
+`next`); never trust the raw state file's claim over its output.
 
-- Show its `steps` ledger and ask: `Resume "<run_id>" at <next>? (or start fresh)`
-- On **resume**: treat `done` steps as satisfied, skip re-classification and
-re-preflight for them, and dispatch straight to `next`. **First verify the
-ledger against ground truth**: run `git worktree list` and
-`git log --oneline <base>..<run-branch>` and confirm the `next` step is the
-actual frontier. `state.yaml` is a PROXY that can lag or be stale (concurrent
-agents, prior sessions) — if the branch already contains commits for `next`
-or later steps, reconcile the ledger and dispatch to the true frontier, not
-what the file claims.
-- On **start fresh**: if the user explicitly says "start fresh" for unrelated work, treat the active ledger as a conflict-check artifact only. Ask for confirmation only if a real **shared-resource conflict** exists (e.g., both runs target the same file, branch, or worktree; or both are AFK-dispatches to the same issue/PR). If no conflict: overwrite the file silently and proceed with normal classification. If conflict detected: report it, ask which run takes priority, and reconcile before proceeding.
+- If an `active|paused` run exists: show `ledger.sh show` and ask
+  `Resume "<run_id>" at <next>? (or start fresh)`; on resume, dispatch to the
+  reconciled frontier.
+- On **start fresh** for unrelated work: overwrite (`ledger.sh init --force`)
+  only after checking for a shared-resource conflict (same file, branch,
+  worktree, or AFK issue/PR target); on conflict, report it and ask which run
+  takes priority.
 
 Skip the resume check when there is no project repo (ephemeral session) — the
-cockpit is an optimization, never a gate.
+ledger is an optimization, never a gate.
 
 ## Workflow Progress Reporting
 
-Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
+Follow the step-ledger reporting protocol in `workflow-ledger/SKILL.md`: emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -84,15 +95,17 @@ WORKFLOW_STEPS:
 | Step 6: Learning Note | conditional | pending | Required for confirmed non-trivial routes, halts, or corrections |
 ```
 
-Skill-specific rules (extend `../_docs/step-ledger.md`):
+Skill-specific rules (extend the step-ledger protocol):
 
 - A conditional step may be `skipped` only when the route is direct/read-only and no dispatch occurs; record the reason.
 - Do not dispatch before the ledger shows route confirmation and target preflight complete or not applicable.
-- **Persist the ledger.** In a project repo, after route confirmation write this
-  ledger to `docs/executions/state.yaml` (`status: active`, `next` = first
-  dispatch target) and update `next` + `updated` at each dispatch. Schema and
-  protocol: `../_docs/state-cockpit.md`. Do not inject `state.yaml` into context
-  every turn — read it on demand.
+- **Persist the ledger via the kernel.** In a project repo, after route
+  confirmation run `workflow-ledger/scripts/ledger.sh init <run_id> --workflow
+  <target> --kind <k> --steps <csv>` and `ledger.sh set <step> <status>` at each
+  transition. Never hand-write `docs/executions/state.yaml` or the live state —
+  they are script-owned (a guard hook blocks direct Edit/Write). The
+  `WORKFLOW_STEPS` table above is a render of the ledger (`ledger.sh show`),
+  not the durable record.
 
 ## Route Confirmation Gate
 
@@ -161,7 +174,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 
 | Signal | Classification | Routes to |
 |--------|---------------|-----------|
-| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture" | **V1** | `v1-workflow` (full gated pipeline: idea grill via `grill-with-docs` → approval → decision-log → system design → roadmap → issues — do NOT route directly to `v1-system-design`, which skips the approval gates) |
+| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", loose product idea needing functionality details, "design the system for this V1", "turn this V1 brief into architecture", "design the architecture for this approved V1 brief" | **V1** | `v1-workflow` (full gated pipeline: idea grill via `grill-with-docs` → approval → decision-log → system design → roadmap → issues). Do NOT route directly to `v1-system-design` — **even when the brief is already approved**: `v1-workflow` resumes at the right stage, while `v1-system-design` alone skips the roadmap/issue gates that follow design |
 | "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | workflow-roadmap |
 | "turn this roadmap into PRDs/issues", "roadmap to backlog", "break milestones into PRDs", "break PRDs into issues", approved roadmap needing issue queue | **roadmap-to-backlog transition** | `workflow-roadmap` if no approved roadmap -> `to-prd` for spec parents -> `to-issues` with `references/issue-dependency-audit.md` -> `execute-prd` for parent/dependent trees or `run-backlog` only for independent ready issues |
 | "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
@@ -169,14 +182,16 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog workflow** | workflow-autonomous-backlog |
 | Bug report, error, "it's broken", regression | **bug** | workflow-debug |
 | Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature |
+| "improve the wording", "the error message is confusing", "reword this label/tooltip/notification", any change to user-facing product copy or UX text | **UX copy change (tracked code)** | workflow-feature — user-visible copy lives in tracked source, so a copy edit is a code commit carrying the full worktree/review/finalize gates; never `direct` even when nothing is "broken" (baseline case 21: bug-ish phrasing, feature-shaped change) |
 | Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-build-one |
 | Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
 | "execute phase N", "run phase", "land phase", phase execution after an approved design-plan | **phase execution** | execute-phase (only when a `design-plan` artifact exists and the user has approved it) |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
 | "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
 | Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` |
-| "Review this", "review my changes" | **review** | workflow-review — **exception:** if the review scope is SQL/dbt models, dashboards, metric trees, or executive-facing analyses (even inside a PR), route to the artifact-specific skill (`sql-review`, `dashboard-review`, `metric-tree-review`, `strategic-analysis-review`); ask which is intended when both PR and artifact signals are present |
-| "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step on a PR already past `workflow-review` (e.g. "just address the review comments on #42, don't finalize/merge yet"), dispatch `receive-review` directly per the owner-vs-sub-step rule below |
+| "Review this", "review my changes" | **review** | workflow-review — **exception:** if the review scope is SQL/dbt models, dashboards, metric trees, or executive-facing analyses (even inside a PR), route to the artifact-specific skill (`sql-review`, `dashboard-review`, `metric-tree-review`, `strategic-analysis-review`); ask which is intended when both PR and artifact signals are present. Per-model correctness/performance concerns on a SQL or dbt model — join fanout, NULL handling, window pitfalls — are `sql-review`, not `dbt-project-evaluator` (that is a whole-project structure/conventions audit, never a per-model review) |
+| "review this doc/email/Slack post/memo for clarity", "tighten this writing", "make this clearer", "proofread this", feedback wanted on HOW prose is written | **writing clarity review** | clarity-review — **carve-out vs `workflow-review`:** when the artifact is prose (doc, email, post, memo, spec text) and the concern is communication clarity rather than change correctness, route `clarity-review` even if the prose lives in a PR; `workflow-review` owns code/change correctness only |
+| "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step (e.g. "just address the review comments on #42, don't finalize/merge yet") **or names the skill imperatively** (e.g. "Run receive-review on PR #17"), dispatch `receive-review` directly per the owner-vs-sub-step rule below — an imperative verb+skill-name is the explicit scope, not an ambiguity |
 | "review diff against spec", "does the branch match the PRD", "standards conformance", "spec drift", "review since <ref>" | **spec/standards conformance** | spec-review (two-axis: repo coding-standards + spec/PRD conformance of a HEAD-to-ref diff; distinct from `workflow-review`, which checks correctness only) |
 | "ship this", "finalize this PR", "merge this", "close this out", "land this", ready-to-merge / delivery-closure request | **ship / finalize** | workflow-finalize |
 | "cleanup", "clean up tickets", "delete branches", "remove worktrees", "stale local branches", merged/closed/abandoned delivery residue | **delivery cleanup** | cleanup-delivery |
@@ -190,14 +205,17 @@ If the user corrects the route, treat that correction as fresh routing input and
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); creative/D&D skills (`dnd-workflow`, etc.) live in Wren's kit, not here |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
 | "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
+| "grill me", "stress test this", "poke holes in this plan", "challenge this design", design/plan interrogation outside the V1 pipeline | **plan grill** | grill-with-docs (standalone; the V1 row above owns idea grills only when they run inside the `v1-workflow` pipeline) |
 | "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape` (beats mode) → humanizer) lives in Wren's kit |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
-| "generate prompt for", "prep for codex", "prep for AFK" — a standalone prompt-text request, not a request to run the batch/dispatch; also "evaluate this prompt", "rewrite this work-order", "check this brief" — prompt or work-order evaluation/rewrite with **NO repo-artifact mutation** | **prompt generation or evaluation** | `direct` (if evaluation only, no rewrite needed) or `prompt-builder` (if rewrite is needed) — emit a full non-direct route card and dispatch only if the user asks to create/update project artifacts, issues, PRDs, roadmaps, or other repo-tracked deliverables; for prompt-only evaluation/revision, return the result as a conversational response or markdown block without a route card (legitimate standalone entry point per its own contract's "manual Codex task" use case) |
+| "generate prompt for", "prep for codex", "prep for AFK" — a standalone prompt-text request, not a request to run the batch/dispatch; also "evaluate this prompt", "rewrite this work-order", "check this brief" — prompt or work-order evaluation/rewrite with **NO repo-artifact mutation** | **prompt generation or evaluation** | `prompt-builder` whenever any generated or rewritten prompt/work-order text is returned — "just give me the text back" scopes output format, not the route (baseline case 35 collapsed exactly this to `direct`); `direct` **only** for pure evaluation that returns judgment with no rewritten text. Emit a full non-direct route card and dispatch only if the user asks to create/update project artifacts, issues, PRDs, roadmaps, or other repo-tracked deliverables; for prompt-only work, return the result as a conversational response or markdown block without a route card (legitimate standalone entry point per prompt-builder's own contract's "manual Codex task" use case) |
 
 ## Owner vs. sub-step routing rule (SB-021 / SB-022)
 
-**Routes-to names the owning orchestrator, not the first-mentioned or most-obviously-matching skill — unless the user explicitly asks for that sub-step alone.** A request that only superficially matches a mid-chain skill's own trigger wording (e.g. `receive-review`'s description literally says "address/respond to the review comments") still routes to the owner by default, because the owner's precondition and sequencing exist for a reason — `workflow-finalize` gates on a prior `workflow-review` APPROVE before its Step 2 runs `receive-review`. Route to the sub-step directly only when the user's own words scope the request to that step alone (explicit "just," "only," a bare skill name, or an unambiguous statement that the rest of the pipeline already ran or isn't wanted). When in doubt, prefer the owner and let its own gates decide whether the sub-step is reachable yet.
+**Routes-to names the owning orchestrator, not the first-mentioned or most-obviously-matching skill — unless the user explicitly asks for that sub-step alone.** A request that only superficially matches a mid-chain skill's own trigger wording (e.g. `receive-review`'s description literally says "address/respond to the review comments") still routes to the owner by default, because the owner's precondition and sequencing exist for a reason — `workflow-finalize` gates on a prior `workflow-review` APPROVE before its Step 2 runs `receive-review`. Route to the sub-step directly only when the user's own words scope the request to that step alone (explicit "just," "only," an imperative naming the skill, or an unambiguous statement that the rest of the pipeline already ran or isn't wanted).
+
+**The carve-out beats the owner-default when the user's verb+skill-name form is imperative.** An imperative that names a skill — "Run receive-review on PR #17", "run clarity-review on this doc" — IS the explicit sub-step scope: the user has already routed, and the router's job is dispatch, not second-guessing (baseline case 24: this exact form lost to the owner-default and misrouted to `workflow-finalize`). Ambiguity exists only when the skill name appears *descriptively* ("the receive-review step probably applies here", "this needs review-comment handling") — there, and only there, prefer the owner and let its own gates decide whether the sub-step is reachable yet.
 
 This is why `receive-review` and `prompt-builder` are handled differently above: `receive-review` has no independent use outside a review-gate context (default: route to the owner, `workflow-finalize`, with the explicit-sub-step carve-out); `prompt-builder`'s own contract documents standalone "manual Codex task" use as a first-class case (default: route directly, since the owner-vs-sub-step question is already answered in the skill's own contract).
 
@@ -254,17 +272,13 @@ Only the first three gate types block AFK execution by default. When a route car
 
 ## Preflight
 
-Before dispatching, check the target workflow's `Requires` field:
-
-1. Read the target skill's `## Contract` section
-2. For each tool in `Requires:`, verify availability:
-   - CLI tools: check via `which <tool>`
-   - MCP servers: check if configured
-   - Project tools: check if project has expected config (package.json, Makefile, etc.)
-3. If a required tool is missing:
-   - Report what's missing and why it's needed
-   - Suggest installation or alternative
-   - Do NOT proceed with the workflow
+Before dispatching, `Load and run` `workflow-ledger/SKILL.md`: run
+`workflow-ledger/scripts/ledger.sh preflight --skill <target>` — it parses the
+target's `Requires:` field and checks each CLI tool (exit 0 all present,
+exit 1 listing missing, exit 5 unknown skill; unparsed prose is reported, not
+dropped). MCP-server and project-config requirements it cannot check remain a
+manual verification. If anything required is missing: report what and why,
+suggest installation or an alternative, and do NOT proceed.
 
 ### Canonicality Gate (path/layout mutations)
 
@@ -401,25 +415,25 @@ halt, report the missing requirement, and do not proceed.
 ## Process
 
 ```
-0. Resume check: if an active/paused run exists in `docs/executions/state.yaml`, offer to resume at `next` before classifying
+0. Resume check: `ledger.sh reconcile`; if an active/paused run exists, offer to resume at the reconciled frontier before classifying
 1. Receive work description (user input, issue, or automated trigger)
 2. Classify using signal table above
 3. If ambiguous or confidence is low: ask ONE clarifying question (max 1 — don't interrogate)
 4. Select the smallest safe agent budget
 5. Emit ROUTE_CARD
 6. Wait for user confirmation unless the route qualifies for the direct/read-only skip
-7. After confirmation, run preflight on target workflow (incl. Prior-Art & Roadmap Gate for any build/implement/design/ADR route); persist the ledger to `docs/executions/state.yaml`
-8. If preflight passes: dispatch to target workflow (update `state.yaml.next` on dispatch)
+7. After confirmation, run `ledger.sh preflight --skill <target>` (plus manual MCP/project-config checks and the Prior-Art & Roadmap Gate for any build/implement/design/ADR route); persist the run via `ledger.sh init`
+8. If preflight passes: dispatch to target workflow (`ledger.sh set <step> active` on dispatch)
 9. If preflight fails: report missing requirements
 10. At completion, halt, or user correction: emit ROUTER_LEARNING_NOTE and run or recommend skill-system-audit when triggered
 ```
 
 ## Contract
 
-Consumes: work description (user input, issue body, automated trigger), existing `docs/executions/state.yaml` (resume)
-Produces: route card, confirmed workflow invocation, preflight report (if failed), router learning note, persisted run ledger in `docs/executions/state.yaml`
+Consumes: work description (user input, issue body, automated trigger), existing ledger run state via `workflow-ledger/scripts/ledger.sh reconcile|show` (resume)
+Produces: route card, confirmed workflow invocation, preflight report (if failed), router learning note, persisted run ledger via `ledger.sh init`/`set`
 Requires: git
-Side effects: writes/updates `docs/executions/state.yaml` in project repos (routing decision + run ledger); none otherwise
+Side effects: initializes/updates the workflow-ledger run state in project repos (via `ledger.sh`, which commits `chore(ledger):` snapshots); none otherwise
 Human gates: route confirmation before non-trivial dispatch; ambiguous classification asks one clarifying question; prior-art/roadmap scan before any build/implement/design/ADR dispatch (halt on conflict/duplicate)
 
 Runtime note: the router itself only needs git-aware workspace context; target workflows declare their own `Requires` fields.

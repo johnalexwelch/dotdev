@@ -1,0 +1,91 @@
+run_id: 2026-08-18-phase1-router
+workflow: workflow-build-one
+kind: skill
+budget: one-reviewer
+status: active
+next: finalize
+updated: '2026-08-18T19:13:36.724110+00:00'
+steps:
+- id: implement
+  required: true
+  status: completed
+  evidence: router hardening committed (91c5a6b + HEAD); eval 40/40 vs 36/40 baseline;
+    lints clean; suite 317 PASS
+- id: review
+  required: true
+  status: completed
+  evidence: fast-profile integrated lane APPROVE (claude-fable-5, subagent a142d1ebc0014d6e1);
+    stamp @ f26c716
+- id: finalize
+  required: true
+  status: active
+  evidence: review stamped @ f26c716, verify-local PASS @ cfc0947
+stamps:
+  review:
+    head_sha: 921df7360bbdc21de90e0b6178b3169fcb4a5e3f
+    timestamp: '2026-08-18T19:08:17.660508+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 4c5795169b04f383b1cbdd8acb2b69c0427a5f5166d3d00d96c48b8ac574cc03
+      lane_integrated_lines: '73'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: claude-fable-5
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: fast
+      lanes: integrated
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  finalize:
+    head_sha: c1d9d0a4de172450dc75f6596ebd2b67feae95aa
+    timestamp: '2026-08-18T19:13:36.723866+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked: {}
+    attested:
+      pr_number: '161'
+      describe_pr: 'D-006 Phase 1 router hardening: 4 baseline-failure fixes + 2 routing-gap
+        rows + kernel wiring; eval 90%->100%'
+      post_mortem: First ledger-stamped delivery; dogfood found yamlfmt/detect-secrets
+        vs script-owned snapshot conflicts (fixed via hook excludes, detect-secrets
+        half Alex-approved) and forge.sh SSH-alias misdetection
+    override:
+      active: true
+      reason: 'forge.sh detect misreads the github-personal SSH-alias origin as forgejo
+        (kernel bug found by this first dogfood run; FORGE_URL unset so the PR lookup
+        cannot execute). All finalize checked fields verified manually against ground
+        truth at head c1d9d0a: PR #161 OPEN, not draft; CI rollup all 7 checks SUCCESS
+        (Lint, Router golden eval, Shell syntax, Test suite, Stow dry run, Install
+        dry run, Secret scan); 0 unresolved review threads; git status clean; verify-local
+        PASSED at c1d9d0a; check review fresh at 921df73. Fix for forge.sh alias detection
+        queued as follow-up.'
+      timestamp: '2026-08-18T19:13:36.724103+00:00'
+overrides:
+- gate: finalize
+  reason: 'forge.sh detect misreads the github-personal SSH-alias origin as forgejo
+    (kernel bug found by this first dogfood run; FORGE_URL unset so the PR lookup
+    cannot execute). All finalize checked fields verified manually against ground
+    truth at head c1d9d0a: PR #161 OPEN, not draft; CI rollup all 7 checks SUCCESS
+    (Lint, Router golden eval, Shell syntax, Test suite, Stow dry run, Install dry
+    run, Secret scan); 0 unresolved review threads; git status clean; verify-local
+    PASSED at c1d9d0a; check review fresh at 921df73. Fix for forge.sh alias detection
+    queued as follow-up.'
+  timestamp: '2026-08-18T19:13:36.724108+00:00'
+  head_sha: c1d9d0a4de172450dc75f6596ebd2b67feae95aa
+last_seen_sha: c1d9d0a4de172450dc75f6596ebd2b67feae95aa
+verify_local:
+  head_sha: c1d9d0a4de172450dc75f6596ebd2b67feae95aa
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0

@@ -29,6 +29,9 @@ repos:
     rev: v0.11.0
     hooks:
       - id: yamlfmt
+        # Ledger snapshot is machine-written by workflow-ledger/scripts/ledger.sh
+        # (Edit/Write hook-blocked); do not reformat script-owned output.
+        exclude: ^docs/executions/state\.yaml$
   - repo: local
     hooks:
       - id: skill-suite-lint
@@ -56,3 +59,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
+        # Ledger snapshots are machine-written (hook-guarded) and every stamp
+        # embeds fresh commit SHAs, which false-positive as high-entropy
+        # strings — a per-finding baseline can never stay green (D-006).
+        exclude: ^docs/executions/state\.yaml$

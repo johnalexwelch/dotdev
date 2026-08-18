@@ -219,6 +219,8 @@ All rows below are `accepted` pending merge (Step 6: flip to `implemented` only 
 | SB-125 | 2026-08-18 | 1 | 2026-08-11-3mf-export-debugging | (none) | "No skill changes needed — domain-specific 3D geometry debugging" | low | rejected | reject | CZ | non-proposal |
 | SB-126 | 2026-08-18 | 1 | 2026-08-12-hermes-pilot-verdict | (none) | "Lead with recommendation" — author self-flagged as conversational, not skill-encodable | low | rejected | reject | CZ | non-proposal (author-rejected) |
 | SB-127 | 2026-08-18 | 1 | 2026-08-05-dbt-doc-skill-scope-creep | (none) | "No change to document-dbt-model — enforcement was correctly removed" | low | rejected | reject | CZ | non-proposal |
+| SB-128 | 2026-08-18 | 1 | PR #156 report (routing gaps) | workflow-router | clarity-review has 10+ real invocations but no classification row; needs prose-clarity carve-out vs workflow-review | med | implemented | implement | C7 | **Ground-truth 2026-08-18: PR #161 adds the clarity-review row + carve-out (D-006 Phase 1)** |
+| SB-129 | 2026-08-18 | 1 | PR #156 report (routing gaps) | workflow-router | Bare "grill me"/"stress test this" has no route outside the V1 pipeline | med | implemented | implement | C7 | **Ground-truth 2026-08-18: PR #161 adds the grill-with-docs standalone row (D-006 Phase 1)** |
 
 ## Out-of-pipeline (note only — workflow-skill cannot land these)
 
