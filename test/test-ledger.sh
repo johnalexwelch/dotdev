@@ -547,8 +547,11 @@ git -C "$repoE" tag t3
 mkdir -p "$repoE/auth"
 echo "token = 'x'" >"$repoE/auth/token.py"
 commit_all "$repoE" "feat: touch auth path"
+# Pattern hits are security-flagged (batch #7): the floor word carries a
+# +security suffix so the flag is recorded, not silently dropped.
 run_ledger "$repoE" review-floor --base t3
-assert_equal "review-floor auth path pattern prints standard" "standard" "$OUT"
+assert_equal "review-floor auth path pattern prints standard+security" \
+    "standard+security" "$OUT"
 
 echo "frobnicate" >"$repoE/docs/executions/review-patterns.txt"
 commit_all "$repoE" "chore: add repo review-pattern override"
@@ -557,7 +560,8 @@ mkdir -p "$repoE/frobnicate"
 echo "hit" >"$repoE/frobnicate/x.txt"
 commit_all "$repoE" "feat: touch override pattern path"
 run_ledger "$repoE" review-floor --base t4
-assert_equal "review-floor repo override pattern prints standard" "standard" "$OUT"
+assert_equal "review-floor repo override pattern prints standard+security" \
+    "standard+security" "$OUT"
 
 # --- review gate in a baseline-cut worktree ---
 wt1=$(new_wt_fixture review_gate)
@@ -703,13 +707,35 @@ echo "token = 'changed'" >"$wt2/auth/token.py"
 commit_all "$wt2" "feat: auth-path change"
 
 run_ledger "$wt2" review-floor --base origin/main
-assert_equal "auth diff floor is standard in worktree" "standard" "$OUT"
+assert_equal "auth diff floor is standard+security in worktree" \
+    "standard+security" "$OUT"
 
 run_ledger "$wt2" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$lane2" \
     --attest model_floor=sonnet
 assert_status "chosen profile below floor exits 2" 2 "$STATUS"
 assert_contains "below-floor failure names profile" "$OUT" "profile"
+
+# Security-flagged floor requires a security lane even when the profile's
+# base lane set does not include one (batch #7).
+lane2_logic="$lanes2/logic-review.md"
+lane2_tests="$lanes2/tests-review.md"
+lane2_sec="$lanes2/security-review.md"
+printf 'model: opus\nverdict: approve\n' >"$lane2_logic"
+printf 'model: opus\nverdict: approve\n' >"$lane2_tests"
+run_ledger "$wt2" stamp review --attest verdict=approve \
+    --attest review_profile=standard \
+    --attest "lanes=logic=$lane2_logic,tests=$lane2_tests"
+assert_status "security-flagged floor without security lane exits 2" 2 "$STATUS"
+assert_contains "missing security lane is named" "$OUT" "security"
+
+printf 'model: opus\nverdict: approve\n' >"$lane2_sec"
+run_ledger "$wt2" stamp review --attest verdict=approve \
+    --attest review_profile=standard \
+    --attest "lanes=logic=$lane2_logic,tests=$lane2_tests,security=$lane2_sec"
+assert_status "security lane present satisfies the flagged floor" 0 "$STATUS"
+assert_file_contains "checked review_floor records the security flag" \
+    "$wt2/docs/executions/state.yaml" "standard+security"
 
 echo ""
 echo "Passed: $PASS"
