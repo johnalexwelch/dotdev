@@ -59,3 +59,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
+        # Ledger snapshots are machine-written (hook-guarded) and every stamp
+        # embeds fresh commit SHAs, which false-positive as high-entropy
+        # strings — a per-finding baseline can never stay green (D-006).
+        exclude: ^docs/executions/state\.yaml$
