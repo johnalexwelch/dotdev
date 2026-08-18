@@ -1,93 +1,22 @@
-run_id: 2026-08-18-override-stale
-workflow: workflow-debug
-kind: bug
+run_id: 2026-08-18-corpus-sharpen-batch1
+workflow: workflow-deliver
+kind: skill
 budget: one-reviewer
 status: active
-next: finalize
-updated: '2026-08-18T20:23:45.656120+00:00'
+next: implement
+updated: '2026-08-18T22:00:51.278921+00:00'
 steps:
-- id: diagnose
+- id: implement
   required: true
-  status: completed
-  evidence: repro red pre-fix (OVERRIDE_STALE prefix+reason absent), kernel-verified
-    at diagnose stamp
-- id: fix
-  required: true
-  status: completed
-  evidence: repro green; test-ledger 108/0, test-guard-rules 39/0
+  status: pending
+  evidence: ''
 - id: review
   required: true
-  status: completed
-  evidence: fast profile, integrated lane approve (claude-fable-5), red/green independently
-    verified
+  status: pending
+  evidence: ''
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps:
-  diagnose:
-    head_sha: 8ba55d14e4b4e15794cf63f5fdee286fa37f5958
-    timestamp: '2026-08-18T19:30:14.079093+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      repro_exit: '1'
-      repro_tail: 'no OVERRIDE_STALE prefix on a stale override; output: STALE: non-ledger
-        commits exist after the ''finalize'' stamp (3ffd1ebd93b36ed9c354270cf8f6e227de7e2b0f)'
-    attested:
-      repro_cmd: bash /private/tmp/claude-501/-Users-alexwelch-dotdev--claude-worktrees-suspicious-cannon-32f671/94f9156c-ba33-4073-8be1-fabe428eea6a/scratchpad/repro-override-stale.sh
-      root_cause: check_gate collapses a stale override into the generic STALE line
-        and drops the recorded override reason; spec requires a distinct OVERRIDE_STALE
-        contract and no test locks override freshness
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  fix:
-    head_sha: 2f3948295f39a2c42eb8c06aa910a1ef7fbee0d9
-    timestamp: '2026-08-18T19:33:29.709451+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      repro_exit: '0'
-      regression_test: test/test-ledger.sh
-    attested:
-      regression_test: test/test-ledger.sh
-      rationale: stale-override branch in check_gate emits OVERRIDE_STALE with recorded
-        reason; 4 red assertions now green
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  review:
-    head_sha: 9dad02988c6bf9f3f2f540633a6f184f3c2f069d
-    timestamp: '2026-08-18T20:23:45.655962+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      lane_integrated_sha256: 1d849224788f7d43ce9759e8bc9b58ec724e1f6d1b544d90f1cf01fb5dff9f01
-      lane_integrated_lines: '18'
-      lane_integrated_verdict: approve
-      lane_integrated_model: claude-fable-5
-      review_floor: fast
-      worktree_verify: pass
-    attested:
-      review_profile: fast
-      lanes: integrated=/tmp/integrated-review.md
-      verdict: approve
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
+stamps: {}
 overrides: []
-last_seen_sha: 9639f5b99c7888e42f613311f5562941480c9370
-verify_local:
-  head_sha: 02214fc8ec7c5764e6811c0924ffd765b03edd10
-  passed: true
-  results:
-  - cmd: ./test/run-tests.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
-    exit: 0
