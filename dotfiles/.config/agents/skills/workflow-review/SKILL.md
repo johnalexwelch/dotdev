@@ -1,5 +1,6 @@
 ---
 name: workflow-review
+layer: judgment
 model: opus
 reasoning: high
 description: Run an auditable independent review gate with a risk-sized review profile. Use before merging, after implementation, at any explicit review gate, or whenever the user asks to review changes; green CI, GitHub reviews, Claude Code Review, and PR comments do not substitute for this workflow.
@@ -7,29 +8,19 @@ description: Run an auditable independent review gate with a risk-sized review p
 
 # Workflow Review
 
-## Model selection
-
-Dispatch reviewer lanes on **Opus** (`model: opus`) — review is judgment work where the strongest model pays off. The `fast` integrated reviewer may use Sonnet for low-risk changes.
-
-| Profile | Model floor |
-|---|---|
-| `fast` | claude-sonnet-4-5 or higher |
-| `standard` | claude-opus-4-5 |
-| `full` | claude-opus-4-5 |
-
-If `model_used` is below the profile's floor, set `verdict: NEEDS_HUMAN` (reason: `model_below_floor`) instead of self-certifying `APPROVE`. `model_used` is self-reported/best-effort attestation, not verified — the primary defense is the orchestrator pinning `model` at dispatch time; this field is a diagnostic backstop for catching accidental default-model dispatches, not a security control.
-
 ## Purpose
 
 Run an independent review sized to the change's risk, then synthesize findings into a prioritized verdict. This replaces ad-hoc "review this" with an auditable gate, without forcing every small change through a full council. A valid review needs a *fresh independent reviewer context* — the author approving their own work, green CI, GitHub/Claude/Bugbot/Codex reviews, or resolved PR comments do **not** satisfy it unless this skill is loaded, reviewer lanes are dispatched, and a synthesis verdict is produced.
 
-## Gate Invariant
+If a workflow says `workflow-review`, run this skill before proceeding to finalize/PR/CI/merge/handoff. For code changes the review must run against a branch/worktree cut from the resolved workflow base recorded in `WORKFLOW_BASE_GATE` (or a valid stacked worktree) — the kernel re-verifies the worktree at stamp time. Without that baseline evidence, return `NEEDS_HUMAN` rather than reviewing a local-main diff.
 
-If a workflow says `workflow-review`, run this skill before proceeding to finalize/PR/CI/merge/handoff. For code changes the review must run against a branch/worktree cut from the resolved workflow base recorded in `WORKFLOW_BASE_GATE` (or a valid stacked worktree). Without that baseline evidence, return `NEEDS HUMAN` rather than reviewing a local-main diff.
+## The seam — judgment here, gate in the orchestrator (D-006 #12)
+
+This skill is `layer: judgment`: it produces the review — dispatched lane files plus a synthesis verdict — and never writes the gate. The invoking orchestrator (workflow-deliver, execute-prd, a batch driver) records the gate with the kernel's review stamp (contract: `workflow-ledger/SKILL.md`), which re-verifies the worktree, checks the chosen profile against the computed floor, and ingests the lane files. This skill's output is that stamp's input; a review whose lane files cannot survive the stamp's checks did not happen.
 
 ## Workflow Progress Reporting
 
-Follow `../_docs/step-ledger.md` (step-ledger protocol): emit the `WORKFLOW_STEPS` ledger before executing or dispatching any step, update it at every status transition, and include the final ledger in every halt, handoff, and completion response.
+Follow the step-ledger reporting protocol in `workflow-ledger/SKILL.md`: the invoking run's `review` step is recorded durably via `ledger.sh set`; the table below tracks this skill's internal progress in-conversation, emitted at run start, on every transition, and in every halt/handoff/completion.
 
 ```markdown
 WORKFLOW_STEPS:
@@ -39,61 +30,58 @@ WORKFLOW_STEPS:
 | Step 1: Select Review Profile | required | pending | - |
 | Step 2: Dispatch Independent Review | required | pending | - |
 | Step 3: Synthesize Findings | required | pending | - |
-| Step 4: Emit Verdict Gate | required | pending | - |
+| Step 4: Emit Verdict | required | pending | - |
 ```
 
-Skill-specific rules (extend `../_docs/step-ledger.md`):
+Never mark a required review step skipped. If independent context is unavailable, mark Step 2 `blocked` and return `verdict: NEEDS_HUMAN`.
 
-- Update each step to `completed`, `blocked`, or `failed` as evidence is gathered.
-- Do not mark required review steps as skipped. If independent context is unavailable, mark Step 2 `blocked` and emit `WORKFLOW_REVIEW_GATE.verdict: NEEDS_HUMAN`.
+## Profile selection — the floor is computed, escalation is judgment
 
-## Required Gate Block
+Run `ledger.sh review-floor` (kernel; Load `workflow-ledger/SKILL.md` for the contract). It prints `fast|standard|full` — the minimum profile, computed deterministically from diff stats and per-repo path patterns (`docs/executions/review-patterns.txt` when present). Escalate above the floor when judgment sees risk the diff stats cannot — concurrency, public-API semantics, subtle state machines, security-adjacent logic under paths the patterns miss. Never run below the floor: the orchestrator's stamp refuses a chosen profile below the computed value, so an under-sized review is unrecordable, not merely discouraged. Do not escalate by reflex either — an unjustified `full` dispatches ~13 reviewer subagents for no added safety.
 
-Every valid run emits this block verbatim in the synthesis and any handoff that depends on it:
+| Profile | Required lanes (stamp-verified) | Judgment additions |
+|---------|--------------------------------|--------------------|
+| `fast` | one fresh **Integrated Reviewer** (security+logic+tests+style+acceptance checklist) | — |
+| `standard` | **Logic & Edge-Case** + **TDD/Test Coverage** | **Security** for auth/secrets/permissions/user-data/dep/injection surfaces; **Syntax/Style** when no linter ran |
+| `full` | Security, Logic, Tests, Syntax/Style | triggered conditional lanes from the roster |
+
+The full lane roster and subagent mapping live in `references/reviewer-roster.md` — load it when you need the catalog or are running `full`.
+
+## Lane-file contract (what the stamp ingests)
+
+Each dispatched lane writes its full review to `/tmp/<lane>-review.md` — the kernel default path; the orchestrator maps non-default paths via the stamp's `--attest lanes=<lane>=<path>,...`. Every lane file must contain a `model:` (or `model_used:`) line and a `verdict:` line; the stamp verifies each required lane file exists, has a verdict, and meets the model floor, then records per-lane sha256/line-count/verdict/model digests. Reviewer prompts must therefore default to "write your full review to the lane file and return only a one-line confirmation + verdict" — full inline returns routinely get mangled by output wrappers, forcing a re-run. Synthesize by reading the files, not the chat return.
+
+Dispatch reviewer lanes on **Opus** (`model: opus`) — review is judgment work where the strongest model pays off; the `fast` integrated reviewer may use Sonnet. Model floors are kernel-owned (fast → sonnet, standard/full → opus) and enforced at the stamp: a lane whose recorded model ranks below the floor fails it. The primary control is pinning `model` at dispatch time; the lane file's model line is the diagnostic record.
+
+## Dispatch — independent context required
+
+Use a fresh independent reviewer context, not an author-only checklist. Read the brief index `references/reviewer-briefs.md`, then read only the per-lane templates (`references/reviewer-briefs/<lane>.md`) for the *active* lanes; don't improvise prompts unless a template is missing (if an active lane's template is missing, halt `NEEDS_HUMAN` — the review wouldn't be reproducible). Prefer subagents, launched in one parallel batch. If the environment can't provide a fresh independent reviewer context, halt `NEEDS_HUMAN` — do not silently downgrade to author-only review.
+
+Lane independence for `standard`/`full` requires genuinely separate dispatched subagent calls, one per required lane. A single continuous reasoning pass covering multiple lanes' checklists satisfies `fast` only, even when run in a fresh context. If dispatch is unavailable and the floor (or your escalation) calls for `standard`/`full`: halt `NEEDS_HUMAN` (reason: `dispatch_unavailable_for_required_profile`). Do not self-downgrade to `fast` silently — downgrading below the floor is a human decision; present the option and require an explicit user waiver before treating fast-tier evidence as sufficient.
+
+## Process
+
+1. **Prepare context.** Gather the diff (staged/committed/PR), list changed files and types, run `ledger.sh review-floor`, pick the `review_profile` (≥ floor), record skipped conditional lanes with concrete reasons, and load the active per-lane templates. Prepare placeholders: `<diff_summary>`, `<diff>`, `<changed_files>`, `<context>`, `<acceptance_criteria>`, `<verification>`. **Graphify knowledge graph gate (conditional, for reviewer context):** if `graphify-out/graph.json` exists, note its availability to reviewers as an optional resource and record `graphify: available_for_reviewer_context`; else record `graphify: not_available_with_reason`. Do not rebuild the graph. Print the step ledger.
+2. **Dispatch reviewers** in fresh independent contexts using their per-lane templates. Each gets the diff + relevant file contents + CONTEXT.md if present, and returns findings with severity and confidence. If any required lane for the profile doesn't return, the verdict is `NEEDS_HUMAN`.
+3. **Synthesize.** Merge and dedupe findings into: a **Dispatch evidence** table (lane | subagent | status | summary), then **Must-fix (blocks merge)**, **Should-fix (follow-up)**, **Acceptable risks**, and **Human gate required**.
+4. **Verdict.** `APPROVE` (no must-fix, and all required lanes returned), `REQUEST_CHANGES` (has must-fix), or `NEEDS_HUMAN` (blocking human-gate items). The synthesis must end with the return block below.
+
+## Synthesis return block
+
+This block is the attestation payload the orchestrator feeds to the kernel's review stamp — the durable gate is the stamp record, and this markdown is its input, not a substitute for it:
 
 ```markdown
 WORKFLOW_REVIEW_GATE:
-  workflow_base: origin/staging|origin/<default-branch>
-  worktree_baseline: <workflow-base-ref> -> <branch> @ <worktree-path> OR stacked: <workflow-base-ref> -> <parent> -> <child> @ <path>
-  skill_loaded: true
   review_profile: fast|standard|full
+  computed_floor: <output of ledger.sh review-floor>
   independent_review: true
-  model_used: <actual model that ran the review, e.g. anthropic/claude-opus-4-5>
-  required_lanes:
-    <lane>: dispatched|returned|not_applicable_with_reason
+  lanes: <lane>=<path> for every dispatched lane
   conditional_lanes: <dispatched/skipped-with-reason list>
   dispatch_evidence: <concrete evidence per lane: subagent id/tool-call, files actually read, exact command output (e.g. real test-pass counts) — vague language is treated as unverified>
   verdict: APPROVE|REQUEST_CHANGES|NEEDS_HUMAN
 ```
 
-If this block is absent, incomplete, self-reported without an independent reviewer context, or says anything other than `verdict: APPROVE`, parent workflows must treat the review as not run.
-
-## Choose a profile (lightest that preserves independence; escalate when in doubt)
-
-**Default to `fast`.** Most changes are low-risk; run the single integrated reviewer and stop. Escalate to `standard`/`full` only when the change hits a trigger in the table below (auth/data/infra/migrations, public APIs, dependency changes, broad refactors, concurrency, or large diffs >15 files/500 LOC). Don't escalate by reflex — an unjustified `full` review dispatches ~13 reviewer subagents for no added safety.
-
-| Profile | Required lanes | Use when |
-|---------|----------------|----------|
-| `fast` | one fresh **Integrated Reviewer** (security+logic+tests+style+acceptance checklist) | small, low-risk: docs, tests, formatting, config-only, prompt/skill wording, narrow edits with deterministic tests and no public-behavior/data risk |
-| `standard` | **Logic & Edge-Case** + **TDD/Test Coverage** for behavior changes; add **Security** for auth/secrets/permissions/user-data/dep/injection surfaces; add **Syntax/Style** when no linter ran | normal issue work, most production code |
-| `full` | Security, Logic, Tests, Syntax/Style + triggered conditional lanes | auth/data/infra/migrations, public APIs, dep changes, broad refactors, concurrency, frontend UX, risky releases, large diffs (>15 files or >500 LOC) |
-
-The full lane roster, subagent mapping, and the progress-ledger format live in `references/reviewer-roster.md` — load it when you need the catalog or are running `full`.
-
-## Dispatch — independent context required
-
-Use a fresh independent reviewer context, not an author-only checklist. Read the brief index `references/reviewer-briefs.md`, then read only the per-lane templates (`references/reviewer-briefs/<lane>.md`) for the *active* lanes; don't improvise prompts unless a template is missing (if an active lane's template is missing, halt `NEEDS HUMAN` — the review wouldn't be reproducible). Prefer subagents, launched in one parallel batch. If the environment can't provide a fresh independent reviewer context, halt `NEEDS HUMAN` — do not silently downgrade to author-only review.
-
-Lane independence for `standard`/`full` requires genuinely separate dispatched subagent calls, one per required lane. A single continuous reasoning pass covering multiple lanes' checklists satisfies `fast` only, even when run in a fresh context. If dispatch is unavailable and the trigger table calls for `standard`/`full`: halt `NEEDS HUMAN` (reason: `dispatch_unavailable_for_required_profile`). Do not self-downgrade to `fast` silently — downgrading below what the trigger table calls for is a human decision; present the option and require an explicit user waiver before treating fast-tier evidence as sufficient for a standard/full-triggered change.
-
-**Reviewer prompts must default to "write your full review to `/tmp/<lane>-review.md` and return only a one-line confirmation + verdict."** Returning a full multi-section review inline routinely gets mangled by output wrappers (lost newlines, truncated tables), forcing a re-run. Synthesize by reading the files, not the chat return.
-
-## Process
-
-1. **Prepare context.** Gather the diff (staged/committed/PR), list changed files and types, pick the `review_profile`, record skipped conditional lanes with concrete reasons, and load the active per-lane templates. If a review round runs long or spans multiple sessions, `git fetch origin --prune` and re-diff against the workflow base before synthesizing — a stale base makes lanes review a diff that no longer matches HEAD. Prepare placeholders: `<diff_summary>`, `<diff>`, `<changed_files>`, `<context>`, `<acceptance_criteria>`, `<verification>`. **Graphify knowledge graph gate (conditional, for reviewer context):** If `graphify-out/graph.json` exists, note its availability to reviewers as an optional resource for understanding broader codebase context and architecture. Record `graphify: available_for_reviewer_context` in your step ledger. If no graph exists, record `graphify: not_available_with_reason`. Do not rebuild the graph. Print the step ledger (see roster reference).
-2. **Dispatch reviewers** in fresh independent contexts using their per-lane templates. Each gets the diff + relevant file contents + CONTEXT.md if present, and returns findings with severity and confidence. If any required lane for the profile doesn't return, the verdict is `NEEDS HUMAN`.
-3. **Synthesize.** Merge and dedupe findings into: a **Dispatch evidence** table (lane | subagent | status | summary), then **Must-fix (blocks merge)**, **Should-fix (follow-up)**, **Acceptable risks**, and **Human gate required**.
-4. **Verdict.** `APPROVE` (no must-fix, and all required lanes returned), `REQUEST CHANGES` (has must-fix), or `NEEDS HUMAN` (blocking human-gate items). The synthesis must include the `WORKFLOW_REVIEW_GATE` block.
+If the block is absent, incomplete, or says anything other than `verdict: APPROVE`, the orchestrator must treat the review as not run — and the stamp's checks refuse to record it regardless.
 
 ## Rules
 
@@ -102,7 +90,7 @@ Only report findings the author would agree need fixing. No style nits unless th
 ## Contract
 
 Consumes: diff/changeset, file contents, CONTEXT.md, ADRs
-Produces: review synthesis (markdown) with independent-review evidence and verdict
-Requires: git
-Side effects: none
-Human gates: `NEEDS HUMAN` halts until a human responds. If subagents are unavailable, use only a host-provided fresh independent reviewer context; otherwise halt `NEEDS HUMAN`.
+Produces: per-lane review files (`/tmp/<lane>-review.md`) and a review synthesis with verdict — the inputs to the invoking orchestrator's review stamp
+Requires: git; `ledger.sh` (workflow-ledger kernel) for `review-floor`
+Side effects: writes lane review files to /tmp
+Human gates: `NEEDS_HUMAN` halts until a human responds. If subagents are unavailable, use only a host-provided fresh independent reviewer context; otherwise halt `NEEDS_HUMAN`.
