@@ -60,9 +60,9 @@ is_mutating_forge_segment() {
 # Neutralizes separators (| ; &) INSIDE quoted spans so lexical splitting
 # cannot file a suppression under a different segment than its mutation
 # (security-lane closure: quoted `|`/`;` in commit messages). Also unfolds
-# backslash-newline continuations first. Residual: a backslash-escaped quote
-# inside a double-quoted span toggles the tracker; rare, and the failure
-# mode collapses toward fewer splits (fail-closed).
+# backslash-newline continuations first, and honors backslash escapes inside
+# double-quoted spans so an escaped quote does not desynchronize the tracker
+# and leave a real separator unmasked (security lane R2).
 mask_quoted_separators() {
     local unfolded="${1//\\$'\n'/ }"
     awk '
@@ -73,6 +73,13 @@ mask_quoted_separators() {
         out = ""
         for (i = 1; i <= n; i++) {
             c = substr(line, i, 1)
+            # Inside a double-quoted span a backslash escapes the next
+            # character (including a quote); single quotes take no escapes.
+            if (q == "\"" && c == "\\" && i < n) {
+                out = out c substr(line, i + 1, 1)
+                i++
+                continue
+            }
             if (q != "") {
                 if (c == q) q = ""
                 else if (c == "|" || c == ";" || c == "&") c = " "
@@ -85,8 +92,31 @@ mask_quoted_separators() {
     }' <<<"$unfolded"
 }
 
+# Suppression spellings that hide stderr from the caller:
+#   2>/dev/null, 2>>/dev/null, &>/dev/null (spaces and quotes tolerated),
+#   2>&- (close), and `>/dev/null … 2>&1` — the most common idiom of all,
+#   which matched on neither this branch nor main until the security lane's
+#   R2 pass. A bare 2>&1 is NOT suppression: it merges stderr into a stream
+#   the caller still sees, so it counts only alongside a /dev/null stdout.
 seg_has_suppression() {
-    grep -Eq '2>[[:space:]]*/dev/null|&>[[:space:]]*/dev/null|2>&-' <<<"$1"
+    local seg="$1"
+    grep -Eq "2>>?[[:space:]]*['\"]?/dev/null|&>[[:space:]]*['\"]?/dev/null|2>&-" <<<"$seg" && return 0
+    grep -Eq '2>&1' <<<"$seg" &&
+        grep -Eq "(^|[[:space:]])[0-9]*>>?[[:space:]]*['\"]?/dev/null" <<<"$seg"
+}
+
+# Blanks out command substitutions (`$( … )`, innermost-first so nesting
+# collapses, plus backticks) so their closing paren is not mistaken for a
+# subshell/group terminator (tests lane R2). Used ONLY for terminator
+# detection — segment mutation matching always runs on the unmasked text, so
+# a mutation inside a substitution is still caught in its own segment.
+mask_command_substitutions() {
+    local s="$1" prev=""
+    while [ "$s" != "$prev" ]; do
+        prev="$s"
+        s="$(sed -E 's/\$\([^()]*\)/__SUBST__/g' <<<"$s")"
+    done
+    printf '%s' "${s//\`/ }"
 }
 
 # Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
@@ -98,15 +128,23 @@ seg_has_suppression() {
 # `fi` redirects every segment inside the construct — fall back to
 # whole-command semantics (fail closed; the pre-segmentation behavior).
 has_suppressed_mutating_segment() {
-    local masked segs seg whole=0
+    local masked terminator_view segs seg whole=0
     masked="$(mask_quoted_separators "$cmd")"
-    # `}`/`)` are unambiguous terminators. `done`/`fi` are ordinary words, so
-    # they only count as terminators when separator-preceded (`; done`, or at
-    # line start) — otherwise `echo done <suppression> && git push` would trip
-    # the fallback, which is the very false-positive class batch #1 removed
-    # (logic lane R2).
-    if grep -Eq '(\}|\))[[:space:]]*(2>|&>)' <<<"$masked" ||
-        grep -Eq '(^|[;&|])[[:space:]]*(done|fi)[[:space:]]*(2>|&>)' <<<"$masked"; then
+    # Fail CLOSED if a masking helper breaks: an empty mask would empty every
+    # segment and permit the command outright (security lane R2 note).
+    [ -n "$masked" ] || masked="$cmd"
+    # Terminator detection runs on a substitution-masked view so a `$( … )`
+    # close-paren is not read as a subshell terminator (tests lane R2).
+    # Mutation matching below always uses the unmasked segments.
+    terminator_view="$(mask_command_substitutions "$masked")"
+    [ -n "$terminator_view" ] || terminator_view="$masked"
+    # `}`/`)` are unambiguous terminators once substitutions are masked.
+    # `done`/`fi` are ordinary words, so they only count when
+    # separator-preceded (`; done`, or at line start) — otherwise
+    # `echo done <suppression> && git push` would trip the fallback, the very
+    # false-positive class batch #1 removed (logic lane R2).
+    if grep -Eq '(\}|\))[[:space:]]*(2>|&>)' <<<"$terminator_view" ||
+        grep -Eq '(^|[;&|])[[:space:]]*(done|fi)[[:space:]]*(2>|&>)' <<<"$terminator_view"; then
         seg_has_suppression "$masked" && whole=1
     fi
     segs="${masked//"&&"/$'\n'}"
