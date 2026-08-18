@@ -131,6 +131,7 @@ After the 2026-08-18 D-006 d14 retirement (6 stubs already deleted), the corpus 
 **Recommendation: leave (no merge); sharpen decision-log's description only.**
 
 Grill questions for Alex:
+
 - decision-log: *"Now that D-006 gives the ledger checked evidence fields, should decision-log stay prose-library or grow a `ledger.sh`-checked 'decision recorded' field on grill stamps?"* (SB-101 is the deferred kin.)
 - decision-memo: *"Has decision-memo ever run outside the analysis-design/analysis-council chain — if not, should it drop to `user-invocable: false` chain-internal like council-scaffolding?"*
 - design-plan: *"Does anything still arrive via the `brief` (non-audit) entry, or is repo-audit the only real feeder — and if so should the brief-mode input be cut?"*
@@ -150,6 +151,7 @@ Grill questions for Alex:
 **Recommendation: leave (no merge); optional micro-sharpen of router row 191** (one clause: state-question → repo-audit, opportunity-question → ICA) + add one ICA-side golden case.
 
 Grill questions for Alex:
+
 - deep-dive-review: *"It has run exactly once by ledger evidence (`~/.deep-dive/iris.md`) — is the 'daily' loop actually scheduled anywhere, and if not, does it stay a skill or shrink to an ICA invocation mode?"*
 - ICA: *"When deep-dive-review is the intended daily driver, should ICA's standalone triggers ('clean up tech debt' adjacency) narrow to deepening-only, ceding sweep language entirely?"*
 - repo-audit: *"Its FIND-NN consumers are all planning skills — should repo-audit refuse (or warn on) invocations that don't name a downstream consumer, to stop audit-as-procrastination runs?"*
