@@ -43,3 +43,12 @@ export CHORUS_REGISTRY="$HOME/projects/chorus/registry.yaml"
 
 # Rowan brain (Obsidian knowledge system)
 export BRAIN_VAULT="$HOME/Documents/Home"
+
+# Stream Deck scripts (dotfiles/.local/bin — see dotfiles/.config/streamdeck/README.md)
+export DOJO_REPO_DIR="$HOME/dojo"
+export DOJO_NOTES_DIR="$HOME/Documents/Home"
+# Calendar names for icalBuddy. Fill after enabling the Google calendar mirror
+# (System Settings → Internet Accounts → Google → Calendars), then run:
+#   icalBuddy calendars
+# export CAL_WORK=""
+# export CAL_PERSONAL=""
