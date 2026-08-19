@@ -1,69 +1,152 @@
-run_id: 2026-08-18-phase3
+run_id: 2026-08-18-draft-stamp
 workflow: workflow-deliver
-kind: skill
+kind: bug
 budget: one-reviewer
 status: done
 next: ''
-updated: '2026-08-18T22:59:18.509545+00:00'
+updated: '2026-08-18T23:31:18.845110+00:00'
 steps:
+- id: diagnose
+  required: true
+  status: pending
+  evidence: ''
+- id: fix
+  required: true
+  status: pending
+  evidence: ''
+- id: preflight
+  required: true
+  status: completed
+  evidence: 'stacked worktree cut (origin/main -> feat/phase3-review-finalize -> fix/ledger-draft-pr-stamp,
+    parent PR #169, parent_gates complete); preflight OK (gh, git); graphify: not_available_with_reason:
+    no graphify-out/graph.json in repo'
+- id: triage
+  required: true
+  status: completed
+  evidence: 'well-formed: 3 coupled items with explicit acceptance criteria from D-006
+    Phase 3 review (F3 kernel draft acceptance + red/green tests; NEW-1 11 spaced
+    verdict tokens; NEW-2 Step 8 paragraph softening); AFK-safe, no human-only decisions'
 - id: implement
   required: true
   status: completed
-  evidence: review 108->96, finalize 277->196 lines; kernel refs in place; lints clean,
-    run-tests all green (322 pass/0 fail across suites)
+  evidence: '4 commits at rebased base: red tests 617a85a; ledger.sh open|draft c8f15e0;
+    11 canonical token edits + Step 8 note a303da4; 10 pi mirror token edits bea36c3
+    (R1 finding, mirrors byte-identical again); tdd: ran (red 2 failing assertions,
+    green 114/114, tests untouched after red)'
 - id: review
   required: true
   status: completed
-  evidence: fast profile (floor=fast), integrated lane opus (claude-opus-5[1m]); R1
-    REQUEST_CHANGES (7 findings) -> fixes -> R2 APPROVE; R3-R7 re-attestations across
-    3 rebase races + NEW-2/NEW-3 fixes; lane reviewed_sha=d2c3c24 == HEAD
+  evidence: 'full profile (floor=full: 25 files > 15), 4 opus lanes all APPROVE at
+    a93c628; earlier integrated lane R1 REQUEST_CHANGES (pi mirror drift + stale base,
+    both fixed) R2 APPROVE; 6 non-blocking follow-ups recorded for PR body'
+- id: qa
+  required: true
+  status: completed
+  evidence: 'user-journey-qa not applicable: no frontend/user-facing surface (kernel
+    gate script, test suite, skill docs); verification is test/test-ledger.sh 114/114
+    + skill lints'
 - id: finalize
   required: true
   status: completed
-  evidence: 'PR #169 open non-draft (F3 route a); CI 6/6 green at d2c3c24; verify-local
-    PASS; finalize stamp clean at 905dbd3 (checked: ci=green pr_state=open threads=yes)'
+  evidence: 'PR #170 draft (human-only default policy, left draft); verify-local green
+    at be81612; forge checks: ci=green (no checks configured for stacked base), pr_state=draft
+    (fixed kernel accepted it live), threads=yes (0 threads); finalize stamped at
+    253b8f6'
 stamps:
-  review:
-    head_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
-    timestamp: '2026-08-18T22:58:42.578887+00:00'
+  diagnose:
+    head_sha: b4f60131f3d69e2a38f02735a955aa80c30407e5
+    timestamp: '2026-08-18T22:53:27.551658+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 5e70bf6af552f9ea54d3b7f63c7d7e5d2ff536540fa942735119c7b9bdd91301
-      lane_integrated_lines: '110'
-      lane_integrated_verdict: APPROVE
-      lane_integrated_model: claude-opus-5[1m]
-      review_floor: fast
+      repro_exit: '1'
+      repro_tail: 'u appear to have cloned an empty repository.   PASS: auth diff
+        floor is standard in worktree   PASS: chosen profile below floor exits 2   PASS:
+        below-floor failure names profile  Passed: 112 Failed: 2'
+    attested:
+      root_cause: "checked_finalize in ledger.sh requires pr-state = open exactly,\
+        \ while forge.sh maps isDraft PRs to 'draft' \u2014 so the default human-only\
+        \ REPO_DELIVERY_POLICY path (PR intentionally kept draft) can never stamp\
+        \ finalize"
+      repro_cmd: bash test/test-ledger.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  fix:
+    head_sha: bea36c39c2160ca14807ecb55e46f1e554c69565
+    timestamp: '2026-08-18T23:07:53.550846+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-ledger.sh
+    attested:
+      rationale: 'checked_finalize accepts pr-state open|draft (actual state in checked
+        fields); merged/closed still refuse. Re-stamped after R1 fixes: rebased onto
+        current feat/phase3-review-finalize tip (5e119e2) and synced pi reviewer-brief
+        mirrors'
+      regression_test: test/test-ledger.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  review:
+    head_sha: be81612c9a63f04dd7b6cc6707cba90c1f243683
+    timestamp: '2026-08-18T23:30:39.323535+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 1ffc558a930c594eba6a61aca38c9a814534ba02b4290ab13d8fe88313ee819d
+      lane_security_lines: '50'
+      lane_security_verdict: APPROVE
+      lane_security_model: opus
+      lane_logic_sha256: f9affcc74aed137a13aa5cb26626a0af757d0749f8667ab731158b864e5107aa
+      lane_logic_lines: '42'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: opus
+      lane_tests_sha256: 7d1ebe3e04c0bd60a528a2b161d8f5f88ec2e8b3111be5185a5ae62302c208c3
+      lane_tests_lines: '106'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: opus
+      lane_style_sha256: 1b6f19ce2c6cedc1b7f567809e7f64f34777413a42989733ee90169cf23c54d8
+      lane_style_lines: '42'
+      lane_style_verdict: APPROVE
+      lane_style_model: opus
+      review_floor: full
       worktree_verify: pass
     attested:
-      review_profile: fast
-      verdict: APPROVE
-      lanes: integrated=/tmp/2026-08-18-phase3-integrated-review.md
+      verdict: approve
+      review_profile: full
+      lanes: security=/tmp/2026-08-18-draft-stamp-security-review.md,logic=/tmp/2026-08-18-draft-stamp-logic-review.md,tests=/tmp/2026-08-18-draft-stamp-tests-review.md,style=/tmp/2026-08-18-draft-stamp-style-review.md
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 905dbd3dd8da54d0ef265a1f39cccaa277f1a20b
-    timestamp: '2026-08-18T22:59:04.647908+00:00'
+    head_sha: 253b8f69243fecd9208a5747ca999184d5a5b488
+    timestamp: '2026-08-18T23:30:59.452292+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
       ci: green
-      pr_state: open
+      pr_state: draft
       threads_resolved: 'yes'
     attested:
-      pr_number: '169'
-      post_mortem: not_applicable_with_reason_single_slice_no_drift
-      describe_pr: in_pr_body; mode=plan_backed(phase3 spec); issues=none; applied_to_pr=true
+      post_mortem: 'not_applicable_with_reason: routine single-run bug delivery, no
+        design-plan/phase work; review follow-ups recorded in PR body'
+      describe_pr: 'body_file=docs/executions/.pr-bodies/2026-08-18-pr-ledger-draft-stamp.md;
+        mode=issue_only; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason:
+        no graphify-out/graph.json; applied_to_pr=true'
+      pr_number: '170'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 1d27cfb0fd7a1d7cf9f0341b5dcc2cffaed6b310
+last_seen_sha: 494f44f70cc789897b6e12bde5622535fc0a9363
 verify_local:
-  head_sha: d2c3c243446057596bff6d4ad201192a78c16cf8
+  head_sha: be81612c9a63f04dd7b6cc6707cba90c1f243683
   passed: true
   results:
   - cmd: ./test/run-tests.sh

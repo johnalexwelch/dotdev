@@ -31,4 +31,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` when required behavior lacks meaningful coverage.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` when required behavior lacks meaningful coverage.
