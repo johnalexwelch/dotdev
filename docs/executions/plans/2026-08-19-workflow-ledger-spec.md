@@ -126,7 +126,9 @@ Lane files: `/tmp/<lane>-review.md`, required lanes derived from profile (`fast`
 
 **Visibility boundary — an accepted fail-open regression, declared deliberately.** Rule 3 is a lexical tripwire, not a sandbox. Stated as a principle rather than a list of mechanisms, because an open set written as a closed list is the documentation-layer version of the carrier model's mistake:
 
-> Rule 3 sees a mutation only when its text sits **unquoted, as a command, in the same segment as the suppression**. Any mechanism that carries command text across that boundary — name binding (`./deploy.sh`, aliases, functions), parameter expansion, `eval`, a here-document, a file read at runtime — is **out of scope and fails open**.
+> Rule 3 sees a mutation only when its **text appears in the same segment as the suppression** — quoted or not, as a command or as an argument. Anything that keeps the text out of that segment is **out of scope and fails open**: name binding, expansion from a variable, a here-document, a file read at runtime.
+
+The mechanism is not what decides it: `eval "$CMD" 2>/dev/null` fails open while `eval "git push …" 2>/dev/null` blocks — same mechanism, opposite outcome, separated only by text presence. The rule also surfaces the over-block direction: a mere *mention* of a mutating command in a suppressed segment blocks, so `echo "git push origin main" 2>/dev/null` is refused.
 
 `origin/main` blocked several of these under whole-command semantics, so this is a **regression**, not a never-covered gap; it is named as one because this branch's rule is that a fail-open regression gets fixed. The exception is taken because the class is unreachable lexically, not because it is cheap.
 

@@ -167,11 +167,18 @@ substitution_spans() {
 # written as a closed list is the documentation-layer version of the mistake
 # the carrier model made in code (security lane R10):
 #
-#   Rule 3 sees a mutation only when its text sits UNQUOTED, AS A COMMAND, in
-#   the same segment as the suppression. Any mechanism that carries command
-#   text across that boundary — name binding (`./deploy.sh`, aliases,
-#   functions), parameter expansion, `eval`, a here-document, a file read at
-#   runtime — is OUT OF SCOPE and FAILS OPEN.
+#   Rule 3 sees a mutation only when its TEXT APPEARS IN THE SAME SEGMENT as
+#   the suppression — quoted or not, as a command or as an argument. Anything
+#   that keeps the text out of that segment is out of scope and FAILS OPEN:
+#   name binding, expansion from a variable, a here-document, a file read at
+#   runtime.
+#
+# Stated that way because the mechanism is not what decides it (style lane
+# R9): `eval "$CMD" 2>/dev/null` fails open while `eval "git push …"
+# 2>/dev/null` blocks — same mechanism, opposite outcome, and only text
+# presence separates them. It also surfaces the over-block direction a
+# maintainer should know: a mere MENTION of a mutating command in a suppressed
+# segment blocks, so `echo "git push origin main" 2>/dev/null` is refused.
 #
 # main blocked several of these under whole-command semantics, so giving them
 # up IS a regression — named as such because this branch's own rule is that a
@@ -181,16 +188,19 @@ substitution_spans() {
 # Why unreachable: the suppressed segment and the mutating one are not
 # distinguishable BY SEGMENTATION —
 #
-#     ./deploy.sh 2>/dev/null                           must BLOCK
-#     bash test.sh 2>/dev/null && git push origin main  must PERMIT (batch #1)
+#     f() { git push origin main; }; f 2>/dev/null      must BLOCK  (main: 2)
+#     bash test.sh 2>/dev/null && git push origin main  must PERMIT (main: 2)
 #
-# Both are a suppressed non-mutating-looking segment; whether the suppressed
-# command is bound to a mutation lives outside the command text entirely, in
-# a file or a previously-defined alias. No predicate over this text can see
-# it. (Narrower shapes ARE separable — a function defined and invoked in the
-# same command can be caught by a scoped carrier, verified by the style lane
-# — but that is carrier #11 with the usual costs, and it leaves the general
-# class open.) Closing this properly needs a tokenizer that tracks
+# Measured across main and HEAD, these two did not merely fail to separate —
+# they moved BLOCKED -> PERMITTED together. The fail-open and the batch-#1
+# permit are one change seen from two sides, so item #1 cannot be delivered
+# while that class stays closed. (`./deploy.sh 2>/dev/null` is NOT the example
+# to use here: main permits it too, since it carries no mutation text — it is
+# a never-covered gap, not the accepted regression this section is about.
+# Logic lane R5.) Narrower shapes ARE separable — a function defined and
+# invoked in the same command can be caught by a scoped carrier, verified by
+# the style lane — but that is carrier #11 with the usual costs and it leaves
+# the general class open. Closing this properly needs a tokenizer that tracks
 # redirection scope. The load-bearing controls are the stamps and freshness
 # rules, which do not depend on rule 3.
 #
@@ -265,9 +275,17 @@ has_suppressed_mutating_segment() {
     # common as delivery commands get (style and tests lanes, R8, converging
     # on the same one-line remedy). With it, the retained over-blocks are
     # `echo exec 2>/dev/null` and `bash -c "exec 2>/dev/null"` — both of which
-    # main blocked too. Shapes NOT retained, all of which main permits:
-    # docker/kubectl exec chains, `exec` in a commit message or comment, and
-    # an exec redirecting to a real file.
+    # main blocked too — and the retained set is WIDER than those two, because
+    # `-`, `/` and `.` are word boundaries: a suppressed `docker exec` or
+    # `kubectl exec` chain, `pytest --exec-mode`, `ls /usr/lib/exec/`, and
+    # `cat notes-exec.txt` all block when chained with a mutation. Every one
+    # of those blocked on main too, so each is fail-closed and a "record"
+    # under this branch's rule, not a regression (logic lane R5).
+    #
+    # What the conjunct actually removed is the SUPPRESSION-FREE over-block:
+    # `docker exec … && git push` with no suppression anywhere, `exec` in a
+    # commit message or comment, and an exec redirecting to a real file — all
+    # of which main permits. It does not touch the suppressed variants.
     if grep -Eqw 'exec' <<<"$masked" && seg_has_suppression "$masked"; then
         whole=1
     fi
