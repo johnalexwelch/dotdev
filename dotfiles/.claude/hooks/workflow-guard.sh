@@ -230,10 +230,14 @@ has_suppressed_mutating_segment() {
     # quoted text — is the same open-ended enumeration that produced three
     # fail-opens across rounds R3–R7 (bare, then opener-prefixed, then
     # assignment-prefixed). Under the inverted burden any `exec` token is a
-    # carrier and the command blocks. That over-blocks `echo exec …` and
-    # `bash -c "exec …"`, both of which main blocked too, so the over-block
-    # costs nothing against main and the misses land fail-closed.
-    if grep -Eqw 'exec' <<<"$masked"; then
+    # carrier and the command blocks — but only when suppression is actually
+    # present somewhere. Without that conjunct an `exec` token alone blocks a
+    # mutation, and the emitted message tells the operator to remove a
+    # suppression that isn't there: unactionable, and `docker exec` is as
+    # common as delivery commands get (style lane R8). With it, the retained
+    # over-blocks are `echo exec 2>/dev/null` and `bash -c "exec 2>/dev/null"`
+    # — both of which main blocked too — and misses land fail-closed.
+    if grep -Eqw 'exec' <<<"$masked" && seg_has_suppression "$masked"; then
         whole=1
     fi
 
