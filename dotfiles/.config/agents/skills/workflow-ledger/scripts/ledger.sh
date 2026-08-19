@@ -360,7 +360,10 @@ def op_check_info(argv):
     print("exists=1")
     print("head_sha=" + str(stamp.get("head_sha", "")))
     print("override=" + ("1" if override.get("active") else "0"))
-    print("reason=" + str(override.get("reason", "")))
+    # The reason is untrusted snapshot text: escape newlines so it can never
+    # emit extra key=value lines or a second verdict-shaped output line
+    # (Phase 5a review R2, security M2 defence-in-depth).
+    print("reason=" + str(override.get("reason", "")).replace("\n", "\\n"))
 
 
 def op_diagnose_repro(argv):
@@ -618,7 +621,8 @@ fresh_since() {
 # input — same schema validation, malformed = exit 6) and skips the
 # live-vs-snapshot drift compare, which needs live state that CI lacks.
 gate_verdict() {
-    local gate="$1" mode="$2" info status c_exists c_sha c_override c_reason snap_ok
+    local gate="$1" mode="$2" info status c_exists c_sha c_override c_reason snap_ok missing_sha
+    local LIVE="$LIVE"
     if [ "$mode" = "snapshot" ]; then
         if [ ! -f "$SNAPSHOT" ]; then
             echo "MISSING: no committed snapshot at $SNAPSHOT_REL"
@@ -637,20 +641,32 @@ gate_verdict() {
     c_override="$(sed -n 's/^override=//p' <<<"$info")"
     c_reason="$(sed -n 's/^reason=//p' <<<"$info")"
     if [ "$c_exists" != "1" ]; then
-        echo "MISSING: no '$gate' stamp"
+        if [ "$mode" = "snapshot" ]; then
+            echo "MISSING: no '$gate' stamp in committed snapshot"
+        else
+            echo "MISSING: no '$gate' stamp"
+        fi
         return 1
     fi
     if ! fresh_since "$c_sha"; then
+        # Distinguish a sha absent from history (forged/foreign snapshot,
+        # rewritten branch) from real post-stamp commits — "commits exist
+        # after" would be a false diagnostic in a CI step summary. Checked
+        # before rendering so the override path gets the honest wording too
+        # (Phase 5a review R2, logic NSF1).
+        missing_sha=0
+        git -C "$TOP" cat-file -e "${c_sha}^{commit}" 2>/dev/null || missing_sha=1
         # A stale override is an expired authorization, not a gate that never
         # passed — say so, and carry the audited reason to the operator.
         if [ "$c_override" = "1" ]; then
-            echo "OVERRIDE_STALE: override on '$gate' expired — non-ledger commits exist after its stamp ($c_sha); recorded reason: $c_reason"
+            if [ "$missing_sha" = "1" ]; then
+                echo "OVERRIDE_STALE: override on '$gate' expired — its stamp sha ($c_sha) not found in history; recorded reason: $c_reason"
+            else
+                echo "OVERRIDE_STALE: override on '$gate' expired — non-ledger commits exist after its stamp ($c_sha); recorded reason: $c_reason"
+            fi
             return 1
         fi
-        # Distinguish a sha absent from history (forged/foreign snapshot,
-        # rewritten branch) from real post-stamp commits — "commits exist
-        # after" would be a false diagnostic in a CI step summary.
-        if ! git -C "$TOP" cat-file -e "${c_sha}^{commit}" 2>/dev/null; then
+        if [ "$missing_sha" = "1" ]; then
             echo "STALE: '$gate' stamp sha ($c_sha) not found in history"
             return 1
         fi
@@ -673,7 +689,11 @@ gate_verdict() {
         echo "OVERRIDDEN: $c_reason"
         return 0
     fi
-    echo "OK: '$gate' stamp fresh at $c_sha"
+    if [ "$mode" = "snapshot" ]; then
+        echo "OK: '$gate' snapshot stamp fresh at $c_sha"
+    else
+        echo "OK: '$gate' stamp fresh at $c_sha"
+    fi
     return 0
 }
 

@@ -132,7 +132,7 @@ gh pr list --state merged --search "merged:>=$SINCE" --json number,headRefName \
             continue
         }
         git show "$(git rev-parse FETCH_HEAD):docs/executions/state.yaml" 2>/dev/null |
-            python3 -c '
+            "${LEDGER_PYTHON:-python3}" -c '
 import sys, yaml
 pr = sys.argv[1]
 doc = yaml.safe_load(sys.stdin) or {}

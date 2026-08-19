@@ -156,22 +156,31 @@ status=$?
 # The kernel's verdict is the LAST line — stderr noise (python warnings,
 # resolver chatter) merged into $out must not break the match (security S2).
 verdict_line="$(printf '%s\n' "$out" | tail -n 1)"
-
-case "$verdict_line" in
-    OVERRIDDEN:*)
-        reason="${verdict_line#OVERRIDDEN: }"
-        reason="${reason//$'\r'/}"
-        verdict "FINALIZE_STAMP_CHECK: PASS (OVERRIDDEN) — finalize stamp carries an audited override"
-        verdict "override reason: $reason"
-        summary ""
-        summary "> **Audited override.** This PR's finalize gate was overridden, not passed. Reason: \`$reason\`"
-        echo "::warning::finalize-stamp gate passed via audited override: $reason"
-        exit 0
-        ;;
-esac
+# $out is kernel output that interpolates untrusted snapshot text; collapse
+# newlines before any log/annotation write so it can never smuggle a forged
+# verdict line or a GitHub workflow command (::stop-commands::) into the
+# audit surface (security S6).
+out_1line="$(printf '%s' "$out" | tr '\n' ' ')"
 
 if [ "$status" -eq 0 ]; then
-    verdict "FINALIZE_STAMP_CHECK: PASS — $out"
+    # Kernel PASS only: the OVERRIDDEN render must never be reachable on a
+    # non-zero kernel status — a crafted multi-line override reason could
+    # otherwise place an OVERRIDDEN-shaped last line under a kernel FAIL and
+    # flip the script verdict (security M2).
+    case "$verdict_line" in
+        OVERRIDDEN:*)
+            reason="${verdict_line#OVERRIDDEN: }"
+            reason="${reason//$'\r'/}"
+            reason="${reason//\`/}"
+            verdict "FINALIZE_STAMP_CHECK: PASS (OVERRIDDEN) — finalize stamp carries an audited override"
+            verdict "override reason: $reason"
+            summary ""
+            summary "> **Audited override.** This PR's finalize gate was overridden, not passed. Reason: \`$reason\`"
+            echo "::warning::finalize-stamp gate passed via audited override: $reason"
+            exit 0
+            ;;
+    esac
+    verdict "FINALIZE_STAMP_CHECK: PASS — $out_1line"
     exit 0
 fi
 
@@ -179,15 +188,15 @@ fi
 # own API separates it from gate-unmet 1 precisely so gates can warn-permit
 # (mirrors the local merge-gate hook's posture on kernel breakage, D-006 #5).
 if [ "$status" -eq 10 ]; then
-    verdict "FINALIZE_STAMP_CHECK: ERROR — kernel environment breakage (exit 10), not a stamp verdict: $out"
+    verdict "FINALIZE_STAMP_CHECK: ERROR — kernel environment breakage (exit 10), not a stamp verdict: $out_1line"
     summary ""
     summary "> **Infra, not governance.** The ledger kernel could not run (missing python3/PyYAML or similar). Warn-permitting per D-006 #5; fix the runner environment."
-    echo "::warning::finalize-stamp check could not run (kernel exit 10): $out"
+    echo "::warning::finalize-stamp check could not run (kernel exit 10): $out_1line"
     exit 0
 fi
 
-verdict "FINALIZE_STAMP_CHECK: FAIL — $out"
-echo "::error::finalize-stamp gate failed: $verdict_line"
+verdict "FINALIZE_STAMP_CHECK: FAIL — $out_1line"
+echo "::error::finalize-stamp gate failed: $out_1line"
 summary ""
 summary "> **This PR has no fresh finalize stamp.** Run the delivery workflow's"
 summary "> finalize gate (\`ledger.sh stamp finalize\`) and push the snapshot"

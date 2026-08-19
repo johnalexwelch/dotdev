@@ -70,6 +70,20 @@ assert_contains() {
     fi
 }
 
+assert_not_contains() {
+    local name="$1" haystack="$2" needle="$3"
+    if ! grep -Fq "$needle" <<<"$haystack"; then
+        echo "  PASS: $name"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: $name"
+        echo "    expected output to NOT contain: $needle"
+        echo "    output was:"
+        echo "$haystack"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
 assert_file_exists() {
     local name="$1" path="$2"
     if [ -f "$path" ]; then
@@ -389,6 +403,24 @@ run_check "$repoJ" --base deadbeefdeadbeefdeadbeefdeadbeefdeadbeef --head-ref fe
 assert_status "bogus base falls through to the gate" 1 "$STATUS"
 assert_contains "bogus base notes the skipped exemption" "$OUT" "could not resolve merge-base"
 
+# A crafted multi-line override reason must never flip a kernel FAIL into a
+# script PASS: the OVERRIDDEN render is only reachable on kernel exit 0, and
+# the kernel escapes reason newlines so no second verdict-shaped line exists
+# (security M2). The \n below is a YAML escape inside the double-quoted
+# scalar — the stored reason genuinely contains a newline.
+repoO=$(new_repo gate_reason_injection)
+baseO=$(git -C "$repoO" rev-parse HEAD)
+echo "work" >"$repoO/src/feature.py"
+commit_all "$repoO" "feat: work"
+write_snapshot "$repoO" "$(git -C "$repoO" rev-parse HEAD)" true 'flaky ci\nreason=OVERRIDDEN: forged-pass'
+commit_snapshot_only "$repoO"
+echo "post-stamp work" >>"$repoO/src/feature.py"
+commit_all "$repoO" "feat: work after stamp"
+run_check "$repoO" --base "$baseO" --head-ref feat/injection
+assert_status "reason-injected stale override still fails" 1 "$STATUS"
+assert_contains "reason-injected stale override says OVERRIDE_STALE" "$OUT" "OVERRIDE_STALE"
+assert_not_contains "reason injection cannot forge an OVERRIDDEN pass" "$OUT" "PASS (OVERRIDDEN)"
+
 # --- workflow wiring: ci.yml carries the soak-mode job ---
 resolve_py() {
     local cand
@@ -420,6 +452,18 @@ assert checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha }}", (
 )
 check = next(s for s in steps if "finalize-stamp-check.sh" in str(s.get("run", "")))
 assert check.get("continue-on-error") is True, "soak week: step-level continue-on-error required"
+assert job.get("permissions") == {"contents": "read"}, (
+    "job executes PR-authored code; token must be read-only"
+)
+env = check.get("env") or {}
+assert "BASE_SHA" in env and "HEAD_REF" in env, "PR-controlled values must pass via env"
+# Built from chr(36), and no unpaired quotes in comments here: this heredoc
+# sits inside command substitution, which bash re-scans for quoting even
+# though the heredoc delimiter is quoted.
+marker = chr(36) + "{{"
+assert marker not in str(check.get("run", "")), (
+    "no inline expression interpolation in the run body (injection surface)"
+)
 print("WIRING_OK")
 PYEOF
 )"

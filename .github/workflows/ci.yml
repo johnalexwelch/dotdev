@@ -82,6 +82,17 @@ jobs:
     # brick PRs. Planned flip (recorded follow-up, same pattern as
     # routing-eval.yml): drop continue-on-error and mark the job required in
     # branch protection after the soak week.
+    # FLIP PRECONDITIONS (must be addressed in the flip PR, not after):
+    #   1. Env breakage reads green: kernel exit 10 warn-permits with a
+    #      ::warning — once required, a broken runner (or a PR setting
+    #      LEDGER_PYTHON) shows a passing check. The flip must either assert
+    #      python3+PyYAML in a prior step (making exit 10 an infra alarm) and
+    #      refuse the warn-permit when LEDGER_PYTHON is set, or accept
+    #      annotated-green explicitly.
+    #   2. Self-graded gate: checker, kernel, AND this workflow file all come
+    #      from the PR head. Pin them outside PR control (base-ref script via
+    #      FINALIZE_CHECK_LEDGER_SH, reusable workflow or CODEOWNERS on
+    #      .github/workflows/**) before the check is load-bearing.
     name: Finalize stamp
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
