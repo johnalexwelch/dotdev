@@ -1,53 +1,61 @@
-run_id: 2026-08-19-grill-wayfinder-escalation
-workflow: workflow-skill
+run_id: 2026-08-19-golden-case-45
+workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
-initialized_epoch: 1787152044
-status: active
+initialized_epoch: 1787151724
+status: done
 next: ''
-updated: '2026-08-19T15:41:18.434524+00:00'
+updated: '2026-08-19T15:45:10.848491+00:00'
 steps:
-- id: baseline
+- id: preflight
   required: true
   status: completed
-  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> feat/grill-wayfinder-escalation @ .claude/worktrees/grill-wayfinder-escalation'
+  evidence: 'worktree cut via worktree-baseline.sh (WORKTREE_BASELINE_GATE: origin/main -> test/golden-case-45-ml-cookiecutter); ledger init 2026-08-19-golden-case-45 kind=skill; graphify: not_available_with_reason: no graphify-out/graph.json in repo; context: golden-routes.yaml (44 cases), router SKILL.md classification table read directly'
+- id: triage
+  required: true
+  status: completed
+  evidence: 'task well-formed: add exactly one golden case (45) to golden-routes.yaml; expected_route corrected to workflow-feature per live table (wayfinder has no classification-table row, explicit-invocation only) and coordinator-relayed real ROUTE_CARD rerun; eval-set-only PR, no router edits; AFK-safe'
 - id: implement
   required: true
   status: completed
-  evidence: 3 SKILL.md edits committed 73fa139; lints 0 failures; tests 65/65
+  evidence: "appended case 45 to golden-routes.yaml (commit ed28f5d, +5 lines, eval-set only); dry-run gate PASS: 'schema OK \u2014 45 cases (18 log, 27 synthetic); all expected routes present in SKILL.md'; full eval running in background; tdd: not_applicable_with_reason: eval-set data addition validated by existing deterministic routing-eval.sh harness (dry-run schema gate + full eval), no new code paths"
 - id: review
   required: true
   status: completed
-  evidence: integrated lane APPROVE (sonnet, fast floor); stamp review recorded
+  evidence: 'workflow-review fast profile: integrated lane (sonnet) APPROVE at ed28f5d, lane file /tmp/ledger-lanes-2026-08-19-golden-case-45/integrated-review.md; review stamp written'
+- id: qa
+  required: true
+  status: completed
+  evidence: "full routing eval run (sonnet judge): total 45 pass 43 fail 2 pass-rate 95% RESULT: PASS (>=95%). Case 45 FAIL expected=workflow-feature got=v1-workflow \u2014 recorded as Phase-next router-confusability signal per dispatch instructions, not a reason to change expected_route. Other fail: case 4 handoff->direct, pre-existing, untouched by this change. Dry-run schema gate PASS (45 cases)."
 - id: finalize
   required: true
   status: completed
-  evidence: 'finalize stamped; PR #180 open non-draft, CI green, threads resolved, verify-local green'
+  evidence: 'PR #181 open, non-draft (pre-authorized route for the draft-PR stamp collision; policy human-only, NOT merged); CI 8/8 green incl. Router golden eval; verify-local PASSED at 51cfee8; finalize stamp written at 51cfee8'
 stamps:
   review:
-    head_sha: b1b74898be4588a17ad5f6b031931909ee4c6d02
-    timestamp: '2026-08-19T15:39:45.465260+00:00'
+    head_sha: 89f77048ac2f4e671ba6d65252ef09516451155f
+    timestamp: '2026-08-19T15:43:32.679921+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 692d1adbfc6d96136948bd30b488cc9465be8a842358eaaa44cfd888d3ef18ef
-      lane_integrated_lines: '39'
+      lane_integrated_sha256: a19a9fde15cab4411fc9217e15b9a667d60ef72f68077c27fd1ea8fce6102a34
+      lane_integrated_lines: '96'
       lane_integrated_verdict: APPROVE
-      lane_integrated_model: sonnet
+      lane_integrated_model: claude-sonnet-5
       review_floor: fast
       worktree_verify: pass
     attested:
       verdict: approve
       review_profile: fast
-      lanes: integrated=/tmp/ledger-lanes-2026-08-19-grill-wayfinder-escalation/integrated-review.md
-      reviewed_sha: '73fa139 transferred: post-merge three-dot scope unchanged (11 insertions, same 3 files + snapshot), merge brought only disjoint main content'
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-golden-case-45/integrated-review.md
+      reviewed_sha: 'ed28f5d transferred: eval-only payload unchanged post-merge (three-dot = golden-routes.yaml + snapshot only); merge disjoint'
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
-    timestamp: '2026-08-19T15:41:18.434335+00:00'
+    head_sha: 3992ccb60c5623f739f2670cf99f32128fcf3133
+    timestamp: '2026-08-19T15:45:10.848353+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -58,17 +66,17 @@ stamps:
     attested:
       post_mortem: not_applicable
       describe_pr: in_pr_body
-      pr_number: '180'
+      pr_number: '181'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-branch: feat/grill-wayfinder-escalation
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/grill-wayfinder-escalation
-last_seen_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
+branch: test/golden-case-45-ml-cookiecutter
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/golden-case-45-ml-cookiecutter
+last_seen_sha: 3992ccb60c5623f739f2670cf99f32128fcf3133
 verify_local:
-  head_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
+  head_sha: 3992ccb60c5623f739f2670cf99f32128fcf3133
   passed: true
   results:
   - cmd: ./test/run-tests.sh
