@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152956
 status: active
-next: finalize
-updated: '2026-08-19T15:35:52.203358+00:00'
+next: ''
+updated: '2026-08-19T15:55:49.967186+00:00'
 steps:
 - id: preflight
   required: true
@@ -25,12 +25,12 @@ steps:
   evidence: 'review stamp: fast profile, integrated lane APPROVE (/tmp/integrated-review-v1seam.md, model sonnet)'
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'finalize stamped at 02eb394; PR #183 open non-draft, CI all green, verify-local PASS; NOT merged per work order'
 stamps:
   review:
-    head_sha: 0dca090de1e6bbdaa37627bd8f304109ffa2947d
-    timestamp: '2026-08-19T15:33:41.519610+00:00'
+    head_sha: 66596c121373c4cb97143f336f73fb020367098f
+    timestamp: '2026-08-19T15:55:49.966999+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -41,10 +41,10 @@ stamps:
       review_floor: fast
       worktree_verify: pass
     attested:
-      verdict: APPROVE
+      verdict: approve
       review_profile: fast
       lanes: integrated=/tmp/integrated-review-v1seam.md
-      model_floor: sonnet
+      reviewed_sha: '0dca090 transferred: post-merge combined row re-evaluated, full eval 45/45=100% at merged wording; conflict resolution preserved both #180 escalation sentence and #183 signals'
     override:
       active: false
       reason: ''
@@ -70,7 +70,7 @@ stamps:
 overrides: []
 branch: fix/router-v1-vs-feature-seam
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
-last_seen_sha: 02eb3949de7189aaf16321799dbd3e00299b68d4
+last_seen_sha: 419c206eb53efbce0a1a93e6a9cef1691c157ad1
 verify_local:
   head_sha: 02eb3949de7189aaf16321799dbd3e00299b68d4
   passed: true
