@@ -102,6 +102,10 @@ Before building anything custom — integration, plugin, wrapper, helper, script
 
 Example failure to avoid: hand-rolling Pi↔Headroom glue when `pi-extension-headroom` already exists. Always check `pi-extension-*` namespace before custom Pi integrations.
 
+# Communication contract (every user-facing reply)
+
+The reader has ADHD. Full rule set: `~/.claude/output-styles/adhd.md` (Claude Code applies it automatically as the default output style; other runtimes read it, or the canonical `~/.claude/skills/i-have-adhd/SKILL.md`). The three highest-value rules, always: lead with the next action (first line is something the reader can do, not context); number multi-step work (one bounded action per step); end with one concrete next action doable in under two minutes. Machine-facing artifacts (PR bodies, lane reviews, ledger evidence, agent-targeted handoffs) keep their own contracts.
+
 # Delivery routing (apply before any code edit)
 
 Any request that will result in a commit or push to tracked code must be routed through `workflow-router` before the first code edit. Do not start delivery work in the primary checkout or on `main` — cut a worktree from the workflow base and land via a PR, even when CI is disabled/manual-only (the PR is the review/merge boundary regardless of automated checks). A code-delivery task is never the `direct` budget.

@@ -192,5 +192,6 @@
   "inputNeededNotifEnabled": true,
   "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true,
-  "model": "opus"
+  "model": "opus",
+  "outputStyle": "adhd"
 }
