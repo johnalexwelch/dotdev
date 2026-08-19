@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787174526
 status: active
 next: review
-updated: '2026-08-19T22:23:31.704294+00:00'
+updated: '2026-08-19T22:27:46.843010+00:00'
 steps:
 - id: preflight
   required: true
@@ -49,13 +49,31 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: ce2e8b5836fc9472901d522f08741200991616c7
+    timestamp: '2026-08-19T22:27:46.842837+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '194'
+      describe_pr: in_pr_body
+      post_mortem: 'not_applicable_with_reason: docs/skill change; the 8-door and 12-claim narrative is in the PR body and the run evidence'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: measurement-definition fix|workflow-deliver|confirmed
 branch: fix/audit-activity-metric
 worktree: /Users/alexwelch/wt/dotdev/audit-activity-metric
-last_seen_sha: da43844fda12965221344ca8b959bd8669df32f9
+last_seen_sha: ce2e8b5836fc9472901d522f08741200991616c7
 verify_local:
-  head_sha: 61402c2cc09573cda390375d465c6022b0e49056
+  head_sha: ce2e8b5836fc9472901d522f08741200991616c7
   passed: true
   results:
   - cmd: ./test/run-tests.sh
