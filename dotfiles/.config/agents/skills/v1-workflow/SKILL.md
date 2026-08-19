@@ -100,7 +100,7 @@ For scratch/ephemeral grills (no repo yet), do not write a log file here: the ac
 
 **Invoke:** inline (no sub-skill — the staging discipline is below)
 
-**Trigger when:** the grill ran in scratch or ephemeral state, so its output lives only in conversation as `pending_context_entries`, `pending_decision_log_entries`, `pending_adr_entries`, and/or an approved `V1_IDEA_BRIEF` — and the user wants the concept real ("make this real", "stage this", "create the project"). Skip when the grill already wrote to a repo's durable docs.
+**Trigger when:** the grill ran in scratch or ephemeral state, so its output lives only in conversation as `pending_context_entries`, `pending_decision_log_entries`, `pending_adr_entries`, and/or an approved `V1_IDEA_BRIEF` — and the user wants the concept real ("make this real", "stage this", "create the project"). Skip when the grill already wrote to a repo's durable docs. This step is class-agnostic — a `workflow-feature`-classified grill (internal tooling, capability work) may borrow it to get its decisions onto disk, then continue under `workflow-feature` rather than the rest of this pipeline; entering here does not reclassify the work as a V1 product.
 
 Staging discipline (promotion from ephemeral to disk):
 

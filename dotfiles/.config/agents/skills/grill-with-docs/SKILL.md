@@ -260,7 +260,10 @@ first, then lock and capture.
 building, do not create a repo yourself unless the user explicitly asks. Hand
 off the product/context summary, pending decision entries, pending context
 entries, name/slug if known, and restart prompt to `v1-workflow` Step 2.25
-(Stage the Concept) or the project-staging workflow.
+(Stage the Concept). Staging is class-agnostic, the V1 pipeline is not: for
+internal tooling or capability work with no repo yet, apply Step 2.25's
+promotion discipline and then continue under `workflow-feature` — the router's
+V1-vs-feature reservation governs entry classification, not doc promotion.
 
 ## Context-Rich Question Template
 
