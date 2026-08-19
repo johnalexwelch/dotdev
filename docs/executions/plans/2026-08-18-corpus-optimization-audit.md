@@ -199,7 +199,7 @@ Ordered so mechanical wins land first and every judgment change gets its grill. 
 
 | # | batch | contents | tag | gate evidence |
 |---|---|---|---|---|
-| 1 | **brain-ops formal retirement** | delete dir; atomic catalog updates (router:254 Knowledge/utility list + `/brain-ops` example, skills-index, SKILL-MANIFEST, AUDIT_REPORT row); lint; Codex mirror; pre-delete grep that rowan covers brain-ops's archived CLI surface | **grill-needed** (explicit approval per corrected rule; 60-day log grep attached: zero hits) | §2.1 |
+| 1 | **brain-ops formal retirement** | delete dir; atomic catalog updates (router:254 Knowledge/utility list + `/brain-ops` example, skills-index, SKILL-MANIFEST, AUDIT_REPORT row); lint; Codex mirror; pre-delete grep that rowan covers brain-ops's archived CLI surface | **EXECUTED 2026-08-18** (Alex explicit approval 2026-08-18; landed via `chore/retire-brain-ops`; full-span log grep: zero hits; coverage check: brain-ops's four archived-only commands no longer exist in the live `brain` CLI — rowan documents the live surface) | §2.1 |
 | 2 | **Description sharpen, 5 offenders** | the §5 rewrites; +1 golden case per touched trigger seam (ICA research-side case; v1-workflow approved-brief case) — eval-set additions only, never edits to existing cases | mechanical (wording-only, eval-gated — same shape as PR #161) | §5 |
 | 3 | **Router row 191 micro-sharpen** | state-vs-opportunity clause for repo-audit/ICA dual-target row | mechanical | §3(b) |
 | 4 | **Decision-trio boundary grill** | the three §3(a) grill questions; likely outcome is decision-memo visibility flag + design-plan brief-mode verdict, no merges | **grill-needed** | §3(a) |
