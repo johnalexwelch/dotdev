@@ -10,7 +10,7 @@
 STATUS_FILE="/tmp/streamdeck-agent-status"
 
 if [[ "${1:-}" == "--clear" ]]; then
-	echo "idle" >"$STATUS_FILE"
+    echo "idle" >"$STATUS_FILE"
 fi
 
 cat "$STATUS_FILE" 2>/dev/null || echo "idle"

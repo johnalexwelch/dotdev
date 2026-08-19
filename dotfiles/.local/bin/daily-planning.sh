@@ -24,27 +24,27 @@ notify() { osascript -e "display notification \"$1\" with title \"Daily planning
 # NOTE: no --bare. Bare mode skips skill/plugin discovery, which would make
 # /morning-triage unavailable. Slower startup is the price of your skills.
 (
-	echo "running" >"$STATUS_FILE"
-	if cd "$REPO_DIR" 2>/dev/null && command -v claude >/dev/null 2>&1; then
-		claude -p "/morning-triage" \
-			--permission-mode dontAsk \
-			--output-format json \
-			--max-turns 40 \
-			--max-budget-usd 2.00 \
-			2>/dev/null |
-			/usr/bin/python3 -c 'import sys,json; print(json.load(sys.stdin).get("result",""))' \
-				>"$OUT_FILE" 2>/dev/null
-		if [[ -s "$OUT_FILE" ]]; then
-			echo "done" >"$STATUS_FILE"
-			notify "Triage digest ready"
-		else
-			echo "failed" >"$STATUS_FILE"
-			notify "Triage produced no output"
-		fi
-	else
-		echo "failed" >"$STATUS_FILE"
-		notify "Could not run claude in $REPO_DIR"
-	fi
+    echo "running" >"$STATUS_FILE"
+    if cd "$REPO_DIR" 2>/dev/null && command -v claude >/dev/null 2>&1; then
+        claude -p "/morning-triage" \
+            --permission-mode dontAsk \
+            --output-format json \
+            --max-turns 40 \
+            --max-budget-usd 2.00 \
+            2>/dev/null |
+            /usr/bin/python3 -c 'import sys,json; print(json.load(sys.stdin).get("result",""))' \
+                >"$OUT_FILE" 2>/dev/null
+        if [[ -s "$OUT_FILE" ]]; then
+            echo "done" >"$STATUS_FILE"
+            notify "Triage digest ready"
+        else
+            echo "failed" >"$STATUS_FILE"
+            notify "Triage produced no output"
+        fi
+    else
+        echo "failed" >"$STATUS_FILE"
+        notify "Could not run claude in $REPO_DIR"
+    fi
 ) >/dev/null 2>&1 &
 
 # --- 2. Put you in Sunsama's daily planning view --------------------------
