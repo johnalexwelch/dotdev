@@ -450,6 +450,19 @@ assert_status "exec in a trailing comment permits" 0 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "ssh host 'exec bash' && git push origin main")"
 assert_status "exec in a quoted ssh payload with no suppression permits" 0 "$STATUS"
 
+# An exec redirecting to a REAL FILE preserves the output, so it is not
+# suppression and must not arm (tests lane R8).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 2>errors.log; git push origin main')"
+assert_status "exec redirecting to a real file permits" 0 "$STATUS"
+
+# An exec replacing the shell with no redirect at all carries no suppression.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec git push origin main')"
+assert_status "exec with a command word and no redirect permits" 0 "$STATUS"
+
+# Word-boundary control: a longer word containing exec is not a carrier.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "refactor execution path"')"
+assert_status "execution is not the exec token" 0 "$STATUS"
+
 # Under the inverted burden, ANY exec token is a carrier — distinguishing
 # command-word from argument is the enumeration problem that produced three
 # fail-opens, so these over-block instead. Both match main, which blocked
