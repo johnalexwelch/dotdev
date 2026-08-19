@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152244
 status: active
 next: finalize
-updated: '2026-08-19T16:43:40.271657+00:00'
+updated: '2026-08-19T16:47:12.127845+00:00'
 steps:
 - id: preflight
   required: true
@@ -65,12 +65,30 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 4ba3e7d2f4e8d072cc71536b735563b836a02ccb
+    timestamp: '2026-08-19T16:47:12.127679+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '187'
+      describe_pr: 'handoff relay runner: relay.sh chains headless claude -p legs through a handoff file with gate-honoring stops (exit 0/1/2/3/4/5/6), fail-safe template default, workdir hygiene, argv audit; handoff Relay section + unified exit_reason vocabulary; ledger CLI listing; D-006 relay addendum in decision log; 80-assert red-first suite, zero real API calls'
+      post_mortem: "five review rounds (R1 all four lanes REQUEST_CHANGES -> final all APPROVE); two regressions caught by reviewers mid-delivery (latched ledger baseline deadening a test; template default briefly flipping fail-unsafe) \u2014 both fixed at root with discriminating guards, mutation-verified; four queue merges from origin/main during delivery (PRs 176-188 window) forced three review re-stamps; detect-secrets false positives allowlisted; live 1-leg smoke passed pre-review"
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/relay-runner
 worktree: /Users/alexwelch/wt/dotdev/relay-runner
-last_seen_sha: 64b969a472bef46e59035735da19f5ae3e5ced8a
+last_seen_sha: 4ba3e7d2f4e8d072cc71536b735563b836a02ccb
 verify_local:
-  head_sha: 924bfcd5be257c0677e9928ed7d023cadbb6c069
+  head_sha: 4ba3e7d2f4e8d072cc71536b735563b836a02ccb
   passed: true
   results:
   - cmd: ./test/run-tests.sh
