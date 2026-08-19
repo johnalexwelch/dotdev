@@ -4,24 +4,24 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787149939
 status: active
-next: preflight
-updated: '2026-08-19T14:32:19.934862+00:00'
+next: review
+updated: '2026-08-19T14:41:08.686364+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'worktree cut via worktree-baseline.sh: WORKTREE_BASELINE_GATE: origin/main -> feat/adhd-output-style @ /Users/alexwelch/wt/dotdev/adhd-output-style; graphify: not_available_with_reason: no graphify-out/graph.json in repo; context: spec provided directly by user (Alex-approved), output-style mechanism ground-truthed against claude 2.1.235 binary strings'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'well-formed: 5 concrete file changes, exact settings key confirmed (outputStyle), no human-only decisions; AFK-safe'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'commit 2023626: 6 files (output-styles/adhd.md new, settings.json outputStyle=adhd, install.sh mkdir, CLAUDE.md contract para, write-a-skill checklist line, CONVENTIONS.md Output contract); port fidelity: body diff vs i-have-adhd SKILL.md = 1 deliberate word (skill->style); YAML frontmatter + settings JSON validated; tdd: not_applicable_with_reason: prose/config port with no executable behavior - validated by parse checks and body diff'
 - id: review
   required: true
-  status: pending
+  status: active
   evidence: ''
 - id: qa
   required: true
@@ -31,7 +31,29 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 20236269ce4da4a4bb3c99438d5550e8a4619524
+    timestamp: '2026-08-19T14:41:08.686158+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: aed7be934bcd3c61d2487b19683500f1a1e24f46991a2159e5f595737b982f05
+      lane_integrated_lines: '36'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: claude-sonnet-4-5
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      review_profile: fast
+      verdict: APPROVE
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-adhd-output-style/integrated-review.md
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/adhd-output-style
 worktree: /Users/alexwelch/wt/dotdev/adhd-output-style
+last_seen_sha: 60e8ece1579a90f4053a4738540d49939360b2c3
