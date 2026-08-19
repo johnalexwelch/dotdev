@@ -2,7 +2,7 @@
 name: workflow-executive-doc
 model: opus
 reasoning: high
-description: "Orchestrates executive-doc creation and review across research, domain analysis, drafting, adversarial critique, revision, and polish. Use for executive memos, board updates, strategy docs, org/product analyses, or any decision document needing multiple expert perspectives."
+description: "Orchestrates executive-doc creation and review across research, domain analysis, drafting, adversarial critique, revision, and polish. Use for executive memos, board updates, strategy docs, org/product analyses, or any decision document needing multiple expert perspectives. Full memos/board docs live here; for a single decision → exec one-pager use decision-memo."
 ---
 
 # Workflow Executive Doc
@@ -24,10 +24,10 @@ Create or review executive-facing documents through a sequenced multi-expert wor
 ```
 intake -> [research-synthesizer role] -> [iris numeric check] -> domain experts
           -> [executive-memo-architect role] -> numeric claims audit
-          -> [strategic-reviewer role] -> revision -> [humanizer-exec]
+          -> [strategic-reviewer role] -> revision -> [humanizer exec mode]
 ```
 
-`[... role]` = a role performed inline unless a same-named skill exists (see Steps 2, 5, 7); `iris` is an optional numeric-check tool. `humanizer-exec` is a real skill.
+`[... role]` = a role performed inline unless a same-named skill exists (see Steps 2, 5, 7); `iris` is an optional numeric-check tool. `humanizer` is a real skill, run in its exec mode.
 
 ## Workflow Progress Reporting
 
@@ -91,6 +91,12 @@ Load `references/memo-template-quality-bar.md` and use its required
 draft structure. Lead with the answer. Put supporting detail after the
 recommendation, not before it.
 
+Where the document's decision sections reduce to a single decision
+recommendation, compose `decision-memo` (Load and run
+`decision-memo/SKILL.md`) for those sections — its Pyramid/SCQA shaping
+is the canonical single-decision structure — rather than restating that
+discipline inline.
+
 ### 6. Numeric claims audit
 
 After drafting, load `references/numeric-claims-ledger.md` again and
@@ -129,7 +135,7 @@ Do not hide uncertainty with smoother prose.
 
 ### 9. Final polish
 
-Use `humanizer-exec` only after the reasoning loop is complete — it is the executive-tuned polish for board/ELT/CEO drafts. Polish for clarity, brevity, executive tone, and non-AI texture, but preserve the claims, tradeoffs, and caveats produced by the workflow.
+Load and run `humanizer/SKILL.md` in **exec mode** — only after the reasoning loop is complete; it is the executive-tuned polish for board/ELT/CEO drafts. Polish for clarity, brevity, executive tone, and non-AI texture, but preserve the claims, tradeoffs, and caveats produced by the workflow.
 
 ## Quality bar
 
@@ -151,4 +157,4 @@ Human gates: intake ambiguity; unresolved strategic or political decisions; fina
 ## Context
 
 Typical workflows: standalone executive writing, leadership strategy work, board/ELT memo prep, multi-source synthesis
-Pairs well with: humanizer-exec, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research/documentation skills, meeting-intelligence (not in this corpus)
+Pairs well with: humanizer (exec mode), decision-memo, write-to-obsidian (in the `core` plugin namespace — plugin-only, not in this corpus), Notion research/documentation skills, meeting-intelligence (not in this corpus)

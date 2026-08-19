@@ -259,8 +259,8 @@ first, then lock and capture.
 **Promotion/staging handoff:** If a scratch/ephemeral grill becomes worth
 building, do not create a repo yourself unless the user explicitly asks. Hand
 off the product/context summary, pending decision entries, pending context
-entries, name/slug if known, and restart prompt to `stage-v1-concept` or the
-project-staging workflow.
+entries, name/slug if known, and restart prompt to `v1-workflow` Step 2.25
+(Stage the Concept) or the project-staging workflow.
 
 ## Context-Rich Question Template
 

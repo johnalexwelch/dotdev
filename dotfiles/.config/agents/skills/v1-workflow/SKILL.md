@@ -36,6 +36,8 @@ grill-with-docs V1 mode (Step 1)
   ↓ [approval gate]
 decision-log (Step 2)
   ↓
+[stage the concept] (Step 2.25 — scratch/ephemeral grills only)
+  ↓
 [prototype] (Step 2.5 — optional)
   ↓
 v1-system-design (Step 3)
@@ -91,6 +93,20 @@ For every significant decision accepted during the idea grill, create a decision
 This log becomes the context for system design and downstream PRDs.
 
 **Evidence:** decision-log.md with entries for all grill decisions.
+
+### Step 2.25: Stage the Concept (Conditional — scratch/ephemeral grills)
+
+**Trigger when:** the grill ran in scratch or ephemeral state, so its output lives only in conversation as `pending_context_entries`, `pending_decision_log_entries`, `pending_adr_entries`, and/or an approved `V1_IDEA_BRIEF` — and the user wants the concept real ("make this real", "stage this", "create the project"). Skip when the grill already wrote to a repo's durable docs.
+
+Staging discipline (promotion from ephemeral to disk):
+
+1. **Gather inputs from context:** the pending entries, the approved brief, and a product name/slug (from the brief, or ask). If required inputs are absent, halt and say what's missing; if no grill output exists at all, run Step 1 first.
+2. **Confirm location before writing** (human gate): ask where to create the project (e.g. `~/projects/<slug>`) and whether to `git init`. Write nothing before confirmation; if the directory exists, confirm before writing into it.
+3. **Write the project skeleton:** `CONTEXT.md` (one `## <term>` section per pending context entry; minimal stub if none), `docs/decision-log.md` (question / decision / considered / trade-off per pending entry; stub if none), `docs/adr/NNNN-<slug>.md` per pending ADR, and `docs/v1-idea-brief.md` — the approved `V1_IDEA_BRIEF` verbatim; it becomes the canonical reference for system design.
+4. **Git init if confirmed**, with an initial `chore: stage V1 concept from grill session` commit.
+5. **Emit a summary + restart brief:** what was written (counts per artifact) and the next step — continue at Step 3 in the new project directory, or hand a restart prompt to a fresh session pointed at it.
+
+**Evidence:** staged project directory with CONTEXT.md, docs/decision-log.md, and the brief on disk.
 
 ### Step 2.5: Prototype (Conditional)
 
