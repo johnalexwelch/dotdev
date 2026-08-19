@@ -104,7 +104,60 @@ Use a simple rating:
 
 Load `references/gap-patterns.md` and always check for every numbered pattern in that checklist.
 
-### 5. Output
+### 5. D-006 scoreboard (metrics)
+
+Compute and report all four metrics every run (D-006 #15). Recipes are commands, run from the repo root of the opted-in repo (dotdev unless the audit is scoped elsewhere).
+
+**Golden-eval pass rate** — bar: >= 95%. Compare against the baseline history in `docs/executions/plans/` (`2026-08-19-router-eval-baseline.md`) and report the delta.
+
+```bash
+./test/routing-eval.sh --model sonnet   # --dry-run for schema-only when no API key
+```
+
+**Gate coverage + override rate** — one loop over merged PR heads computes both. Gate coverage: % of merged PRs since the last audit whose head snapshot carries a `stamps.finalize` entry; target 100%. Deps PRs are filtered in the loop; docs-only PRs (same classification as `scripts/finalize-stamp-check.sh`) must be excluded by hand before comparing to the 100% bar. Override rate: `overrides[]` entries plus active stamp overrides across the same heads, reasons verbatim; healthy ~0-2/month with real reasons — a spike means fix the gate, not the metric.
+
+```bash
+SINCE=<last-audit-date>   # YYYY-MM-DD
+gh pr list --state merged --search "merged:>=$SINCE" --json number,headRefName \
+    --jq '.[] | "\(.number) \(.headRefName)"' |
+    while read -r pr ref; do
+        case "$ref" in
+            renovate/* | dependabot/*)
+                echo "PR #$pr: exempt (deps branch $ref)"
+                continue
+                ;;
+        esac
+        git fetch -q origin "pull/$pr/head" || {
+            echo "PR #$pr: head unfetchable"
+            continue
+        }
+        git show "$(git rev-parse FETCH_HEAD):docs/executions/state.yaml" 2>/dev/null |
+            "${LEDGER_PYTHON:-python3}" -c '
+import sys, yaml
+pr = sys.argv[1]
+doc = yaml.safe_load(sys.stdin) or {}
+stamps = doc.get("stamps") or {}
+print(f"PR #{pr}:", "stamped" if "finalize" in stamps else "UNSTAMPED")
+for e in doc.get("overrides") or []:
+    print(f"PR #{pr} overrides[]:", e)
+for gate, s in stamps.items():
+    o = (s or {}).get("override") or {}
+    if o.get("active"):
+        print(f"PR #{pr} {gate} override:", o.get("reason", ""))
+' "$pr"
+    done
+```
+
+**Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
+
+```bash
+./dotfiles/.config/agents/skills/lint-skill-refs.sh
+./dotfiles/.config/agents/skills/lint-skill-suite.sh   # count warn lines for the layer trend
+```
+
+Report raw numbers, the bar, and the delta vs the previous audit in the scorecard.
+
+### 6. Output
 
 Return:
 
@@ -119,6 +172,14 @@ Return:
 ## Scorecard
 | Dimension | Rating | Evidence | Recommended fix |
 |-----------|--------|----------|-----------------|
+
+## D-006 Scoreboard
+| Metric | Value | Bar | Delta vs last audit |
+|--------|-------|-----|---------------------|
+| Golden-eval pass rate | | >= 95% | |
+| Gate coverage | | 100% (exempt-adjusted) | |
+| Override rate | | ~0-2/month, real reasons | |
+| Corpus lint | | failures=0; warn-count trend | |
 
 ## Findings
 ### RED

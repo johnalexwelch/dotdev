@@ -26,3 +26,13 @@ Do **not** rely on flow-arrow prose (`grill-with-docs → to-prd → to-issues`)
 `lint-skill-refs.sh [root]` checks every active skill's explicit refs resolve to other active skills, and exits non-zero on a dangling ref. Run it after adding a cross-skill reference or changing which skills are linked. It catches the failure class where a linked orchestrator references an unlinked sub-skill.
 
 **Current coverage:** the lint only sees the explicit form (rule 1). Orchestrators still using arrow-only references are not yet checked — converting them to explicit refs (and linking their targets) is incremental cleanup the lint will drive.
+
+## Run-scoped artifact paths (D-006 Phase 5a)
+
+Multi-agent runs MUST use run-scoped paths for shared artifacts — lane review files, probe scripts, PR-body drafts, anything one agent writes for another to read. Canonical shape (or a scratchpad subdirectory keyed by run id):
+
+```text
+/tmp/ledger-lanes-<run-id>/<artifact>
+```
+
+Never use bare shared paths like `/tmp/logic-review.md`: with parallel runs live, a bare path is cross-run bleed — a stale artifact from another run satisfies existence and content checks it was never part of (4 observed collisions on 2026-08-18). The kernel's review stamp accepts explicit lane paths via `--attest lanes=`; always pass run-scoped ones.

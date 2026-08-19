@@ -1,60 +1,73 @@
-run_id: 2026-08-18-kernel-shouldfix-batch
+run_id: 2026-08-18-phase5a-closeout
 workflow: workflow-deliver
 kind: skill
 budget: multi-lane
+initialized_epoch: 1787103716
 status: active
 next: ''
-updated: '2026-08-19T01:28:24.631752+00:00'
+updated: '2026-08-19T03:13:40.831000+00:00'
 steps:
+- id: preflight
+  required: true
+  status: completed
+  evidence: worktree cut via worktree-baseline.sh (origin/main -> feat/phase5a-closeout); D-006 log + addenda read; kernel/SKILL.md, ci.yml, routing-eval.yml, skill-system-audit, workflow-review/deliver, CONVENTIONS.md surveyed
+- id: triage
+  required: true
+  status: completed
+  evidence: '3 scoped items from Phase 5a brief: finalize-stamp CI check (soak non-blocking), audit scoreboard (D-006 #15), run-scoped artifact-path convention; all AFK-safe, one PR'
 - id: implement
   required: true
   status: completed
-  evidence: '8 items landed red-first: 16 commits (8 red + 8 fix); run-tests exit 0 (141 ledger/47 forge/48 guard asserts); shellcheck clean'
+  evidence: 'red-first: red suite 3bfa47d -> green b22f942 (check-snapshot subcommand, scripts/finalize-stamp-check.sh, ci.yml soak job; 36/36 asserts, full run-tests exit 0); scoreboard+convention 21d6f50; lints failures=0; tdd: ran'
 - id: review
   required: true
   status: completed
-  evidence: 4 opus lanes, 11 rounds, all approve; artifacts in /tmp/ledger-lanes-kernel-shouldfix-batch
+  evidence: '4 opus lanes (security/logic/tests/style), 3 rounds + 2 delta confirms, all APPROVE at 90a1341; artifacts /tmp/ledger-lanes-2026-08-18-phase5a-closeout; R1 must-fixes: docs-only narrowing, scoreboard loop; R2 must-fix: OVERRIDDEN status guard; suites 52/0 + 153/0'
+- id: qa
+  required: true
+  status: completed
+  evidence: "user-journey-qa not triggered: CI/tooling/skill-doc change only (workflow job, kernel subcommand, test suite, skill markdown) \u2014 no frontend, user-facing behavior, auth/navigation/payment flow, or UX acceptance criteria; conditional gate skipped-with-reason per workflow-deliver Step 5"
 - id: finalize
   required: true
   status: completed
-  evidence: 'PR #174 open, CI green, review stamped'
+  evidence: 'PR #175 open, CI green (7/7 checks incl. new finalize-stamp job), review stamped fresh at c42ae6f, verify-local PASSED at dc0e5c8'
 stamps:
   review:
-    head_sha: dbf3e68ebe380425c550288d916de836c1558d50
-    timestamp: '2026-08-19T01:25:46.821398+00:00'
+    head_sha: c42ae6fc367209a7f89d739b5ffff97b43fffd44
+    timestamp: '2026-08-19T03:09:45.885412+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: b4dbb44c3427bba6c0e1a087c7bd010f8074ea5b9b63ed467d71107a01fee723
-      lane_security_lines: '299'
-      lane_security_verdict: approve
-      lane_security_model: claude-opus-5[1m]
-      lane_logic_sha256: 2b177906c6826b83f43ae60ee430951c5edf4843de8bf988bb5c1c71d336a4f6
-      lane_logic_lines: '124'
-      lane_logic_verdict: approve
+      lane_security_sha256: 3f12e24963acd123952b119a22fe250f17e12e70ad013bc3937680c238e7dde7
+      lane_security_lines: '124'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5
+      lane_logic_sha256: 62e277439acfe5dd20a66276a26f69f21b1e41db49c5c8c7d194b9179788f75c
+      lane_logic_lines: '369'
+      lane_logic_verdict: APPROVE
       lane_logic_model: claude-opus-5
-      lane_tests_sha256: 9dd4d27608d5503496b6f0ee25fbfadb141c8460d75ad9a820cff2f5d358f255
-      lane_tests_lines: '849'
-      lane_tests_verdict: approve
-      lane_tests_model: claude-opus-5[1m]
-      lane_style_sha256: c25da61bb7c3ac2afd9ed3cf009d1eb43fe1c0b0041fe10c119d26d69b68e644
-      lane_style_lines: '179'
-      lane_style_verdict: approve
-      lane_style_model: claude-opus-5[1m]
-      review_floor: full
+      lane_tests_sha256: 5b4843608c58c0c7958fab57430e1be215f3b4dbbe8a3f79c001fe072b295f8b
+      lane_tests_lines: '209'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-5
+      lane_style_sha256: 59cd7f4c44945551ff983dd1e664d3cba9b143a7c007cfce06fc73ceea059a6b
+      lane_style_lines: '136'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5
+      review_floor: full+security
       worktree_verify: pass
     attested:
-      verdict: approve
       review_profile: full
-      lanes: security=/tmp/ledger-lanes-kernel-shouldfix-batch/security-review.md,logic=/tmp/ledger-lanes-kernel-shouldfix-batch/logic-review.md,tests=/tmp/ledger-lanes-kernel-shouldfix-batch/tests-review.md,style=/tmp/ledger-lanes-kernel-shouldfix-batch/style-review.md
+      verdict: APPROVE
       model_floor: opus
+      lanes: security=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/security-review.md,logic=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/logic-review.md,tests=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/tests-review.md,style=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/style-review.md
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
-    timestamp: '2026-08-19T01:28:24.631540+00:00'
+    head_sha: dc0e5c87a203b886cffeeecad371b6757e498890
+    timestamp: '2026-08-19T03:13:40.830776+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -63,7 +76,7 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
-      pr_number: '174'
+      pr_number: '175'
       describe_pr: done
       post_mortem: none
     override:
@@ -71,9 +84,11 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
+branch: feat/phase5a-closeout
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/phase5a-closeout
+last_seen_sha: dc0e5c87a203b886cffeeecad371b6757e498890
 verify_local:
-  head_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
+  head_sha: dc0e5c87a203b886cffeeecad371b6757e498890
   passed: true
   results:
   - cmd: ./test/run-tests.sh

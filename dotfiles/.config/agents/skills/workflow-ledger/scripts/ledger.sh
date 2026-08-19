@@ -14,6 +14,7 @@
 #   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 #   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 #   ledger.sh check <gate>
+#   ledger.sh check-snapshot <gate>   (CI mode: committed snapshot, no live state)
 #   ledger.sh reconcile [--apply]
 #   ledger.sh preflight --skill <name>
 #   ledger.sh review-floor [--base <ref>]
@@ -357,9 +358,15 @@ def op_check_info(argv):
         return
     override = stamp.get("override") or {}
     print("exists=1")
-    print("head_sha=" + str(stamp.get("head_sha", "")))
+    # head_sha is untrusted snapshot text too — same newline escape as the
+    # reason below (an escaped multi-line sha then fails cat-file, rendering
+    # STALE or OVERRIDE_STALE, without emitting extra key=value lines).
+    print("head_sha=" + str(stamp.get("head_sha", "")).replace("\n", "\\n"))
     print("override=" + ("1" if override.get("active") else "0"))
-    print("reason=" + str(override.get("reason", "")))
+    # The reason is untrusted snapshot text: escape newlines so it can never
+    # emit extra key=value lines or a second verdict-shaped output line
+    # (Phase 5a review R2, security M2 defence-in-depth).
+    print("reason=" + str(override.get("reason", "")).replace("\n", "\\n"))
 
 
 def op_diagnose_repro(argv):
@@ -609,9 +616,23 @@ fresh_since() {
     return 0
 }
 
-check_gate() {
-    local gate="$1" info status c_exists c_sha c_override c_reason snap_ok
-    if [ ! -f "$LIVE" ]; then
+# Shared verdict shell for `check` (live state) and `check-snapshot`
+# (committed snapshot, CI mode). One implementation of the MISSING/STALE/
+# OVERRIDE_STALE/OVERRIDDEN/OK rendering so gate wording and logic cannot
+# drift between the local and CI checks (Phase 5a review, style S3).
+# mode=snapshot points the state engine at the committed snapshot (untrusted
+# input — same schema validation, malformed = exit 6) and skips the
+# live-vs-snapshot drift compare, which needs live state that CI lacks.
+gate_verdict() {
+    local gate="$1" mode="$2" info status c_exists c_sha c_override c_reason snap_ok missing_sha
+    local LIVE="$LIVE"
+    if [ "$mode" = "snapshot" ]; then
+        if [ ! -f "$SNAPSHOT" ]; then
+            echo "MISSING: no committed snapshot at $SNAPSHOT_REL"
+            return 1
+        fi
+        LIVE="$SNAPSHOT"
+    elif [ ! -f "$LIVE" ]; then
         echo "MISSING: no live ledger state (run ledger.sh init)"
         return 1
     fi
@@ -623,14 +644,33 @@ check_gate() {
     c_override="$(sed -n 's/^override=//p' <<<"$info")"
     c_reason="$(sed -n 's/^reason=//p' <<<"$info")"
     if [ "$c_exists" != "1" ]; then
-        echo "MISSING: no '$gate' stamp"
+        if [ "$mode" = "snapshot" ]; then
+            echo "MISSING: no '$gate' stamp in committed snapshot"
+        else
+            echo "MISSING: no '$gate' stamp"
+        fi
         return 1
     fi
     if ! fresh_since "$c_sha"; then
+        # Distinguish a sha absent from history (forged/foreign snapshot,
+        # rewritten branch) from real post-stamp commits — "commits exist
+        # after" would be a false diagnostic in a CI step summary. Checked
+        # before rendering so the override path gets the honest wording too
+        # (Phase 5a review R2, logic NSF1).
+        missing_sha=0
+        git -C "$TOP" cat-file -e "${c_sha}^{commit}" 2>/dev/null || missing_sha=1
         # A stale override is an expired authorization, not a gate that never
         # passed — say so, and carry the audited reason to the operator.
         if [ "$c_override" = "1" ]; then
-            echo "OVERRIDE_STALE: override on '$gate' expired — non-ledger commits exist after its stamp ($c_sha); recorded reason: $c_reason"
+            if [ "$missing_sha" = "1" ]; then
+                echo "OVERRIDE_STALE: override on '$gate' expired — its stamp sha ($c_sha) not found in history; recorded reason: $c_reason"
+            else
+                echo "OVERRIDE_STALE: override on '$gate' expired — non-ledger commits exist after its stamp ($c_sha); recorded reason: $c_reason"
+            fi
+            return 1
+        fi
+        if [ "$missing_sha" = "1" ]; then
+            echo "STALE: '$gate' stamp sha ($c_sha) not found in history"
             return 1
         fi
         echo "STALE: non-ledger commits exist after the '$gate' stamp ($c_sha)"
@@ -639,8 +679,9 @@ check_gate() {
     # A snapshot-only tamper commit AFTER the stamp is freshness-exempt by
     # design, so the finalize check re-compares the committed snapshot's
     # durable content here (security lane: the stamp-time check alone left
-    # post-stamp rewrites invisible to the merge gate).
-    if [ "$gate" = "finalize" ]; then
+    # post-stamp rewrites invisible to the merge gate). Live mode only — on a
+    # CI checkout there is no live ledger to drift against.
+    if [ "$gate" = "finalize" ] && [ "$mode" = "live" ]; then
         snap_ok="$(py snapshot_match "$SNAPSHOT")" || snap_ok=""
         if [ "$snap_ok" != "1" ]; then
             echo "SNAPSHOT_DRIFT: committed $SNAPSHOT_REL no longer matches the live ledger (durable identity, stamps, overrides) — rewritten out-of-band after the stamp"
@@ -651,8 +692,16 @@ check_gate() {
         echo "OVERRIDDEN: $c_reason"
         return 0
     fi
-    echo "OK: '$gate' stamp fresh at $c_sha"
+    if [ "$mode" = "snapshot" ]; then
+        echo "OK: '$gate' snapshot stamp fresh at $c_sha"
+    else
+        echo "OK: '$gate' stamp fresh at $c_sha"
+    fi
     return 0
+}
+
+check_gate() {
+    gate_verdict "$1" live
 }
 
 attest_get() {
@@ -1164,6 +1213,22 @@ cmd_check() {
     exit "$status"
 }
 
+# CI-side gate check against the COMMITTED snapshot — no live state required
+# (D-006 Phase 5a: server-side merge gates run on a fresh checkout where the
+# git-dir ledger does not exist). Shares the whole verdict shell with `check`
+# via gate_verdict (snapshot mode): same schema validation on the untrusted
+# snapshot (malformed = exit 6), same content-verified fresh_since, same
+# message strings — minus the live-vs-snapshot drift compare, which needs
+# live state that CI lacks.
+cmd_check_snapshot() {
+    [ $# -ge 1 ] || usage
+    local out status
+    out="$(gate_verdict "$1" snapshot)"
+    status=$?
+    printf '%s\n' "$out"
+    exit "$status"
+}
+
 cmd_reconcile() {
     local apply=0
     while [ $# -gt 0 ]; do
@@ -1351,6 +1416,7 @@ main() {
         set) cmd_set "$@" ;;
         stamp) cmd_stamp "$@" ;;
         check) cmd_check "$@" ;;
+        check-snapshot) cmd_check_snapshot "$@" ;;
         reconcile) cmd_reconcile "$@" ;;
         preflight) cmd_preflight "$@" ;;
         review-floor) cmd_review_floor "$@" ;;
