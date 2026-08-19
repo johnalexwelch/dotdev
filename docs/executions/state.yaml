@@ -4,24 +4,24 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152878
 status: active
-next: preflight
-updated: '2026-08-19T15:21:18.437590+00:00'
+next: review
+updated: '2026-08-19T16:24:46.499991+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'worktree cut from origin/main (WORKTREE_BASELINE_GATE: origin/main -> feat/skills-consolidation-batch2); required tools gh/git present; brief is the Alex-approved batch-2 list'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "5 items well-formed, Alex-approved per-item; conflict lane checked: planning-lane owns design-plan/execute-phase/to-prd/execute-prd/router refactor rows/reference-workflows.md \u2014 none touched by this batch"
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "commit b77cc54: 16 files, +168/-819; herdr 673->162 total, humanizer exec-mode section, 3 tombstones (#164 pattern), callers rewired (workflow-executive-doc, grill-with-docs), catalog+decision-log updated; lint-skill-refs 0 dangling, lint-skill-suite failures=0, skills-index regenerated; tdd: not_applicable_with_reason: prose skill/docs change, no executable behavior \u2014 lints are the verification"
 - id: review
   required: true
-  status: pending
+  status: active
   evidence: ''
 - id: qa
   required: true
@@ -31,7 +31,41 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: a1171f0de3d1c3c89f1b2f23ada35c2359c1d8c6
+    timestamp: '2026-08-19T16:24:46.499753+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 2d6c54b3d89c432f4267490b91437ed6814f2fed3b40662de8e1caf5b0ce55ea
+      lane_security_lines: '225'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5[1m]
+      lane_logic_sha256: aba8c6657456a86a3bf24aefd4c44d48c9216a51c52defdc362205e4c587db08
+      lane_logic_lines: '115'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-opus-5[1m]
+      lane_tests_sha256: f76b784d1e01e2cf467ac926047947a9f8d8bf902d95be33009114f595c7626f
+      lane_tests_lines: '52'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-5[1m]
+      lane_style_sha256: 9581edfaa5813fa75facf855148fd549f6bb615d8a07e3ce2b90d465ea10ab40
+      lane_style_lines: '85'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5[1m]
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      review_profile: full
+      verdict: APPROVE
+      model_floor: opus
+      lanes: security=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/style-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/skills-consolidation-batch2
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/skills-consolidation-batch2
+last_seen_sha: 3611202abb729bd3d2fb161bac7d074c8d8b126c
