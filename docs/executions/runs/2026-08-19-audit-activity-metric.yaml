@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 initialized_epoch: 1787174526
-status: active
-next: review
-updated: '2026-08-19T22:27:46.843010+00:00'
+status: done
+next: ''
+updated: '2026-08-19T22:27:54.677797+00:00'
 steps:
 - id: preflight
   required: true
@@ -71,7 +71,7 @@ overrides: []
 route: measurement-definition fix|workflow-deliver|confirmed
 branch: fix/audit-activity-metric
 worktree: /Users/alexwelch/wt/dotdev/audit-activity-metric
-last_seen_sha: ce2e8b5836fc9472901d522f08741200991616c7
+last_seen_sha: 894e7e50854676ff8d038beb7b73cf81d2c9cf09
 verify_local:
   head_sha: ce2e8b5836fc9472901d522f08741200991616c7
   passed: true
