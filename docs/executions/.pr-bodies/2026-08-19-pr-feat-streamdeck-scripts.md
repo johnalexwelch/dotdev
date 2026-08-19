@@ -25,7 +25,7 @@ Started from the handoff scripts, then reworked them through two review rounds (
 
 ## How to verify
 
-- `bash test/run-tests.sh` → all suites green, including the 8 `test-next-meeting.sh` cases (pick ordering both list orders, `CONF_RE`/`DOC_RE` anchoring incl. suffix attacks, map collision `"<> tom"` vs `"Custom Report Review"`, personal-title masking, title-time and notes-time not becoming starts, `~/.streamdeck` loader incl. trailing comments)
+- `bash test/run-tests.sh` → all suites green, including the 9 `test-next-meeting.sh` cases (pick ordering both list orders, `CONF_RE`/`DOC_RE` anchoring incl. suffix attacks, map collision `"<> tom"` vs `"Custom Report Review"`, personal-title masking, title-time and notes-time not becoming starts, the `notify()` RCE argv pin, `~/.streamdeck` loader incl. trailing comments)
 - `pre-commit run --from-ref origin/main --to-ref HEAD` → clean (shellcheck, repo-args shfmt, markdownlint, secret scanners)
 - `python3 -m py_compile dotfiles/.local/bin/next-meeting.py` → clean
 - Smoke: `agent-status.sh` → `idle`; `pr-review-count.sh` → live count (routing fix took it from a false 0 to the real number); `next-meeting.py debug` → runs end-to-end, icalBuddy sections empty until the calendar mirror is enabled — the real-output parse path remains unexercised until that human step, stated in the README
