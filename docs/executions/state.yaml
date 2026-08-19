@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151568
 status: active
 next: review
-updated: '2026-08-19T15:53:44.694419+00:00'
+updated: '2026-08-19T15:53:58.479341+00:00'
 steps:
 - id: preflight
   required: true
@@ -25,7 +25,7 @@ steps:
   evidence: ''
 - id: finalize
   required: true
-  status: pending
+  status: active
   evidence: ''
 stamps:
   review:
@@ -61,10 +61,28 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: da73c57340a01da38a93ebad4fa8f120106aad60
+    timestamp: '2026-08-19T15:53:58.479146+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      post_mortem: 'not_applicable_with_reason: routine single-slice config/docs delivery, no design plan or phase runs'
+      describe_pr: body_file=docs/executions/.pr-bodies/2026-08-19-pr-178.md; mode=issue_only; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason(no graphify-out in repo); applied_to_pr=true
+      pr_number: '178'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: claude/stream-deck-dotdev-integration-7f788b
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/stream-deck-dotdev-integration-7f788b
-last_seen_sha: cc15b866cf50c1e2a4f1383a3a4c941f8e218e23
+last_seen_sha: da73c57340a01da38a93ebad4fa8f120106aad60
 verify_local:
   head_sha: c4d2821459df8e5e6b923b0bfb7686c15fb62297
   passed: true
