@@ -514,7 +514,7 @@ def op_snapshot_match(argv):
     # ops that immediately re-commit the snapshot, so a mismatch means the
     # tracked file was rewritten out-of-band (a snapshot-only tamper commit is
     # freshness-exempt by design — this closes that hole). Prints 1 or 0.
-    keys = ("run_id", "workflow", "kind", "budget", "stamps", "overrides")
+    keys = ("run_id", "workflow", "kind", "budget", "route", "stamps", "overrides")
     live = cap_tails(load())
     try:
         with open(argv[0]) as fh:

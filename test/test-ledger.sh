@@ -861,6 +861,16 @@ run_ledger "$wt3" check finalize
 assert_status "post-stamp overrides tamper fails check finalize" 1 "$STATUS"
 assert_contains "overrides tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
 
+# Route is a durable snapshot key: forging one into the tracked snapshot
+# (live state has none) is tampering (D-006 Phase 5b).
+cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
+printf 'route: forged|other-flow|confirmed\n' >>"$wt3/docs/executions/state.yaml"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "forged snapshot route fails check finalize" 1 "$STATUS"
+assert_contains "forged snapshot route reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
+
 # --- init --route: route evidence (D-006 Phase 5b) ------------------------
 # Contract: `init --route "<classification>|<selected-flow>|confirmed"` records
 # a top-level `route:` field. Absent route: init succeeds but WARNs (default),
@@ -927,6 +937,7 @@ assert_file_contains "malformed route writes nothing (prior run intact)" "$state
 printf 'route: tampered-no-pipes\n' >>"$stateR"
 run_ledger "$repoR" show
 assert_status "schema rejects malformed route on load with exit 6" 6 "$STATUS"
+assert_contains "load rejection names the bad route" "$OUT" "bad route"
 
 echo ""
 echo "Passed: $PASS"
