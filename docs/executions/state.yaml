@@ -4,26 +4,46 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152044
 status: active
-next: baseline
-updated: '2026-08-19T15:07:24.334510+00:00'
+next: review
+updated: '2026-08-19T15:13:24.792325+00:00'
 steps:
 - id: baseline
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> feat/grill-wayfinder-escalation @ .claude/worktrees/grill-wayfinder-escalation'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 3 SKILL.md edits committed 73fa139; lints 0 failures; tests 65/65
 - id: review
   required: true
-  status: pending
+  status: active
   evidence: ''
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 73fa13921aaebc71a83d62f8003ff2e0ee772402
+    timestamp: '2026-08-19T15:13:24.792143+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 692d1adbfc6d96136948bd30b488cc9465be8a842358eaaa44cfd888d3ef18ef
+      lane_integrated_lines: '39'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: sonnet
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      review_profile: fast
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-grill-wayfinder-escalation/integrated-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/grill-wayfinder-escalation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/grill-wayfinder-escalation
+last_seen_sha: 2cc15b602408d3915f2e63c27e4111dfa6f7f6a7
