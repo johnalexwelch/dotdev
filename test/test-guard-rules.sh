@@ -630,11 +630,13 @@ assert_status "case statement suppressed as a whole blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } 2>&-')"
 assert_status "fd-close on a construct blocks" 2 "$STATUS"
 
-# A compound construct wrapped in a substitution must not lose its terminator
-# to the masker (security lane R5 — fail-open vs both main and 82b6249).
-# Terminator detection falls back to the unmasked view when a substitution
-# span is itself mutating; a benign span (see the $(date) pin above) does not
-# trigger that, so the batch #1 permits are untouched.
+# A compound construct wrapped in a substitution must still be seen
+# (security lane R5 — this shape failed open on both main and 82b6249 under
+# the retired masker, which swallowed the construct's terminator along with
+# the substitution). The tokenizer parses substitution contents as real
+# grammar and walks them in the enclosing scope, so the construct's own
+# suppression blocks — while benign spans (see the $(date) pin above) stay
+# permitted, preserving the batch #1 permits.
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(true; { git push origin main; } 2>/dev/null)')"
 assert_status "mutating brace group inside a substitution blocks" 2 "$STATUS"
@@ -650,13 +652,17 @@ assert_status "mutating loop inside a substitution blocks" 2 "$STATUS"
 # substitution, arithmetic, process substitution, heredocs (bodies = data),
 # `exec` fd persistence, newlines as statement separators, and bounded
 # recursion into `eval "<literal>"` (current-shell scope) and
-# `bash|sh|zsh -c "<literal>"` (isolated scope). Declared boundary
-# (unchanged): name-binding indirection (functions, aliases, `./script.sh`,
-# `eval "$VAR"`, variable expansion carrying command text) stays OUT OF
-# SCOPE and fails open. Tokenizer errors and missing python3 fail CLOSED for
-# any command whose text could possibly match rule 3; a conservative
-# prefilter permits commands that provably cannot match without invoking
-# python3 at all.
+# `bash|sh|zsh -c "<literal>"` (isolated scope). Declared boundary (refined
+# in round 1 — matches the hook header and tokenizer docstring): a mutation
+# is detected when its text is LITERAL (expansion-free) in command position,
+# judged by the quote-removed value with basename comparison — so
+# value-preserving quoting (`\git`, `git "push"`) and path prefixes
+# (`/usr/bin/git`) no longer hide it. What stays OUT OF SCOPE and fails
+# open: name-binding indirection where the text is absent or
+# runtime-determined (functions, aliases, `eval "$VAR"`, variable expansion
+# carrying command text). Tokenizer errors and missing python3 fail CLOSED
+# for rule 3 candidates; a conservative prefilter HEURISTIC (not a proof —
+# see N19 below) skips python3 for commands it can cheaply rule out.
 
 # N1: a quoted redirect-lookalike is a word, not redirect syntax (S9
 # quoted-literal residual); a bare 2>&1 alone is not suppression.
@@ -766,8 +772,8 @@ assert_status "real-file redirect target permits" 0 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '(( 1 > 0 )) 2>/dev/null && git push origin main')"
 assert_status "bare arithmetic command statement does not arm anything" 0 "$STATUS"
 
-# Fail-closed-on-tokenizer-error probes (mirror the broken-awk stub pattern
-# above, but for the python3 dependency the tokenizer introduces).
+# Fail-closed-on-tokenizer-error probes: a broken python3 stub prepended to
+# PATH simulates a missing/broken interpreter for the tokenizer dependency.
 mkdir -p "$TMPDIR_BASE/broken-python-bin"
 printf '#!/usr/bin/env bash\nexit 127\n' >"$TMPDIR_BASE/broken-python-bin/python3"
 chmod +x "$TMPDIR_BASE/broken-python-bin/python3"
@@ -991,6 +997,75 @@ assert_tokenizer "tokenizer: variable redirect target permits" 0 \
     'git push origin main 2>"$LOGFILE"'
 assert_tokenizer "tokenizer: real-file stdout-dup permits" 0 \
     'git push origin main >push.log 2>&1'
+
+# --- Round-2 review closure (4-lane review of 3ed0755) ---
+# Security R2-1 (High): bash backtracks a failed `$((…))` arithmetic parse
+# to `$( (subshell) )` and RUNS it (re-probed: ran=yes, stderr hidden, bash
+# 3.2 + zsh). The round-1 fix covered command-position `((…))`; the
+# `$((`-span lexer path strips a fixed two trailing characters, which is
+# only correct when the closers are adjacent — a backtracked span gets
+# truncated mid-token, severing the redirect, so the additive re-read sees
+# a mutation with no suppression. These pins cover the MECHANISM's three
+# positions (word, assignment, bare statement) plus the inner-suppression
+# and exec variants — NOT an exhaustive shape list: some siblings (e.g. a
+# doubled-paren form) already block because the fixed strip happens to land
+# correctly there, so shape-by-shape pinning cannot witness this class.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((git push origin main) 2>/dev/null)')"
+assert_status "dollar-arith backtracked subshell in word position blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'x=$((git push origin main) 2>/dev/null)')"
+assert_status "dollar-arith backtracked subshell in an assignment blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '$((git push origin main) 2>/dev/null)')"
+assert_status "dollar-arith backtracked subshell at statement position blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((git push origin main 2>/dev/null) )')"
+assert_status "dollar-arith backtrack with inner suppression blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((exec 2>/dev/null; git push origin main) )')"
+assert_status "dollar-arith backtrack with exec suppression blocks" 2 "$STATUS"
+
+# ...controls: genuine dollar-arithmetic stays arithmetic (the additive
+# re-read must only ever add blocks, never permits), and the plain-`$(`
+# twin — already correct, its depth-1 strip is always right — is pinned so
+# fixing the `$((` sibling cannot regress it.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(( (1+2)*3 )) && git status')"
+assert_status "genuine nested-paren dollar-arithmetic permits" 0 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $( (git push origin main) 2>/dev/null )')"
+assert_status "explicit subshell in a plain substitution blocks (twin pin)" 2 "$STATUS"
+
+# Security R2-2 (Medium; logic + style concur): the tokenizer folds ANSI-C
+# ($'…') and locale ($"…") quoting into a word's literal value exactly like
+# ordinary quotes, but the prefilter's normalizer deletes quote characters
+# and NOT `$` — so a quote-split verb or operand skips python3 and the hook
+# permits what the tokenizer itself blocks. The prefilter comment's "Known
+# residual: none identified" is thereby falsified. All four re-probed as
+# genuine suppressed executions (ran=yes, stderr hidden).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git p\$'ush' origin main 2>/dev/null")"
+assert_status "ANSI-C-split mutation verb still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git push origin main 2>&\$'-'")"
+assert_status "ANSI-C-quoted fd-close operand still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git push origin main 2>/dev/\$'null'")"
+assert_status "ANSI-C-split null target still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "\$'git' p\$'ush' origin main 2>/dev/null")"
+assert_status "fully ANSI-C-split command and verb still block" 2 "$STATUS"
+
+# ...and the UNSPLIT ANSI-C verb already blocks: the raw verb text survives
+# the prefilter grep and the tokenizer folds the wrapper. Green pin so its
+# handling cannot drift while the split forms are fixed.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git \$'push' origin main 2>/dev/null")"
+assert_status "unsplit ANSI-C verb blocks (drift pin)" 2 "$STATUS"
 
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
