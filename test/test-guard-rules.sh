@@ -214,6 +214,28 @@ run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/conf
 assert_status "unrelated state.yaml not blocked" 0 "$STATUS"
 assert_not_contains "unrelated state.yaml carries no block message" "$OUT" "script-owned"
 
+# Per-run committed snapshots (docs/executions/runs/<run_id>.yaml) are
+# script-owned exactly like the legacy shared path.
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/2026-08-19-x.yaml")"
+assert_status "Edit of per-run snapshot blocked" 2 "$STATUS"
+assert_contains "per-run snapshot block says script-owned" "$OUT" "script-owned"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/2026-08-19-x.yaml")"
+assert_status "Write of per-run snapshot blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/2026-08-19-x.yml")"
+assert_status "per-run snapshot .yml spelling blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/RUNS/2026-08-19-X.YAML")"
+assert_status "case-variant per-run snapshot blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/README.md")"
+assert_status "runs/README.md (migration note) not blocked" 0 "$STATUS"
+assert_not_contains "runs/README.md carries no block message" "$OUT" "script-owned"
+
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/other/runs/2026-08-19-x.yaml")"
+assert_status "runs/*.yaml outside docs/executions not blocked" 0 "$STATUS"
+
 # Worktree-baseline sidecars are script-owned too (D-006 hardening; PR #166
 # post_mortem forged-baseline pattern). They live OUTSIDE the repo as siblings
 # of the worktree path, so the block matches the filename pattern anywhere.

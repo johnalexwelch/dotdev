@@ -136,6 +136,40 @@ assert_status "cut halts when base ref cannot be resolved" 7 "$missing_status"
 assert_contains "missing base ref message names the blocker" "$missing_output" \
     "neither origin/staging nor a valid remote default branch ref could be resolved"
 
+# --- cut absolutizes a relative --path ---
+# A relative --path used to be recorded verbatim in the sidecar (WT_PATH and
+# the gate lines), which broke verify from any other cwd and pushed agents
+# toward hand-patching sidecars (the forged-baseline-adjacent pattern; #171
+# made verify recompute ground truth, so cut should just absolutize).
+work=$(new_fixture relative_path)
+abs_wt="$TMPDIR_BASE/relative_path/wt-rel"
+
+set +e
+rel_output=$(cd "$work" && bash "$SCRIPT" cut --branch feature/relpath --path ../wt-rel 2>&1)
+rel_status=$?
+set -e
+assert_status "cut with a relative --path exits 0" 0 "$rel_status"
+assert_contains "cut gate line names the absolute path" "$rel_output" "@ $abs_wt"
+
+rel_sidecar="$TMPDIR_BASE/relative_path/.worktree-baseline.wt-rel.state"
+if [ -f "$rel_sidecar" ]; then
+    echo "  PASS: relative cut writes the sidecar next to the worktree"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: relative cut writes the sidecar next to the worktree"
+    FAIL=$((FAIL + 1))
+fi
+assert_contains "sidecar WT_PATH is the absolute path" "$(cat "$rel_sidecar" 2>/dev/null)" \
+    "WT_PATH=$abs_wt"
+
+# verify must pass from an unrelated cwd — the whole point of absolutizing.
+set +e
+rel_verify=$(cd "$TMPDIR_BASE" && bash "$SCRIPT" verify --path "$abs_wt" 2>&1)
+rel_verify_status=$?
+set -e
+assert_status "verify passes from an unrelated cwd after relative cut" 0 "$rel_verify_status"
+assert_contains "relative-cut verify reports PASS" "$rel_verify" "PASS:"
+
 # --- Dirty existing worktree ---
 work=$(new_fixture dirty_worktree)
 wt="$TMPDIR_BASE/dirty_worktree/wt1"
