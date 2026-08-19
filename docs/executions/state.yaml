@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: feature
 budget: one-reviewer
 initialized_epoch: 1787150233
-status: active
-next: review
-updated: '2026-08-19T18:00:51.518774+00:00'
+status: done
+next: ''
+updated: '2026-08-19T18:02:08.079494+00:00'
 steps:
 - id: preflight
   required: true
@@ -25,12 +25,12 @@ steps:
   evidence: ''
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'user-journey-qa not applicable: backend hook tooling (PreToolUse guard + tokenizer), no frontend or user-facing journey; decision recorded per workflow-deliver Step 5'
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'PR #192 draft (human-only default policy; no REPO_DELIVERY_POLICY file; no CODEOWNERS); describe-pr body applied; CI 7/7 green at 59c4e0c; verify-local PASSED at 85a9c69 (manifest extended with pre-commit after CI/manifest drift caught); finalize stamp at 85a9c69; review threads none; reconcile: no issues referenced'
 stamps:
   review:
     head_sha: 59c4e0c7d09cf3d4782f86c02cd62139e78a6810
@@ -88,7 +88,7 @@ overrides:
   timestamp: '2026-08-19T14:37:13.253891+00:00'
 branch: feat/guard-rule3-tokenizer
 worktree: /Users/alexwelch/dotdev-worktrees/guard-rule3-tokenizer
-last_seen_sha: 85a9c69ca77b9fb6fe14f26eab552cdf06a9deeb
+last_seen_sha: 30f7c8a3c32f4559abecfedc8e20548d3e4cc08c
 verify_local:
   head_sha: 85a9c69ca77b9fb6fe14f26eab552cdf06a9deeb
   passed: true
