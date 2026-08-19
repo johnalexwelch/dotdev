@@ -174,28 +174,38 @@ for gate, s in stamps.items():
     done
 ```
 
-**Repo activity — count the remote-tracking default branch, after a fetch, over an absolute window.** Activity figures decide which repo an audit prioritises, so the method has to be pinned or the priority order is an artefact of the command. Four ways to get this wrong, all observed in the 2026-08-19 cross-repo audit, each one silent:
+**Repo activity — count the remote-tracking default branch, after a fetch, over an absolute window.** Activity figures decide which repo an audit prioritises, so the method has to be pinned or the priority order is an artefact of the command. Five ways to get this wrong, all observed in the 2026-08-19 cross-repo audit, each one silent:
 
 - **Local branch instead of remote-tracking ref.** `git log main` counts the checkout, not what landed. chorus's local `main` was 102 commits behind `origin/main`; the local count read 7 against a true 13. Never strip the `origin/` prefix off the resolved ref.
 - **No fetch.** A remote-tracking ref last updated days ago under-counts by however much has landed since, and reports it as fact.
 - **Assuming the default branch is `main`.** `taro`'s `origin/HEAD` is `origin/staging`; counting `main` gave 2 where the gated branch had 30. Treat `origin/HEAD` as the suggestion and confirm it against the repo's actual convention.
-- **`--all` when the claim is about gates.** All-refs counts bot branches and every local worktree: dotdev reads 38 on its default branch and 449 across all refs. Use `--all` only for "how much agent activity happened", and label it that way.
+- **`--all` when the claim is about gates.** All-refs counts bot branches and every local worktree: dotdev read 38 on its default branch and 449 across all refs as of 2026-08-19 17:00 (all-refs drifts every time any worktree commits — 451 within the hour, which is why an all-refs figure needs an as-of stamp to mean anything). Use `--all` only for "how much agent activity happened", and label it that way.
 - **Relative windows.** `--since="7 days ago"` is unreproducible; a later re-run cannot tell drift from error. Record an absolute boundary.
 
 Getting this wrong is not a rounding error. The same audit, same window, ranked its repos ml-models 20 / delphi 9 / chorus 7 / taro 2 on local branches — and taro 30 / ml-models 20 / chorus 13 / delphi 10 once the refs were fetched and resolved correctly. The leader changed, and the repo the audit had dismissed as negligible was the most active one. Report every figure as `N commits on <ref> since <absolute timestamp>`, naming the ref.
 
 ```bash
-SINCE="2026-08-12 17:00"        # absolute; never "7 days ago"
-git -C "$repo" fetch -q --all   # stale tracking refs under-count silently
-ref="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
-ref="${ref:-origin/main}"       # assign-then-default: `| sed ... || echo main`
-                                # never fires, because sed exits 0 regardless
-# A resolved ref can still be absent (origin/HEAD -> origin/develop, ref gone):
-# git log then prints nothing and wc -l reports a plausible 0.
-git -C "$repo" rev-parse --verify --quiet "$ref" >/dev/null ||
-    { echo "$repo: default ref $ref does not resolve — figure withheld"; exit 1; }
-echo "$repo: $(git -C "$repo" log "$ref" --since="$SINCE" --oneline | wc -l | tr -d ' ') commits on $ref since $SINCE"
+SINCE="2026-08-12 17:00"   # absolute window open; never "7 days ago"
+AS_OF="2026-08-19 17:00"   # when refs were fetched; report it with every figure
+for repo in "$@"; do
+    git -C "$repo" fetch -q --prune --all   # stale tracking refs under-count silently
+    ref="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
+    ref="${ref:-origin/main}"  # assign-then-default: `| sed … || echo main` never
+                               # fires, because sed exits 0 whatever git returned
+    # Every remaining silent-zero door is the same shape: a ref name that looks
+    # fine and resolves to nothing. `git log` prints nothing, `wc -l` prints 0.
+    # `continue`, never `exit` — an abort here drops every later repo from the
+    # sweep while printing one line that looks like a handled edge case.
+    git -C "$repo" rev-parse --verify --quiet "$ref" >/dev/null || {
+        echo "$repo: default ref $ref does not resolve — figure withheld"
+        continue
+    }
+    n="$(git -C "$repo" log "$ref" --since="$SINCE" --oneline | wc -l | tr -d ' ')"
+    echo "$repo: $n commits on $ref since $SINCE (refs as of $AS_OF)"
+done
 ```
+
+Confirm the withheld repos are a short, explained list before reporting coverage — a sweep that silently measured 2 of 14 reads exactly like one that measured 14.
 
 **Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
 
