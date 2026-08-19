@@ -3,8 +3,8 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 status: active
-next: review
-updated: '2026-08-19T00:09:26.940868+00:00'
+next: finalize
+updated: '2026-08-19T00:11:54.168479+00:00'
 steps:
 - id: preflight
   required: true
@@ -24,12 +24,16 @@ steps:
     dangling=0; lint-skill-suite failures=0; run-tests.sh exit=0 all sub-suites Failed:0'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: workflow-review fast profile (floor=fast per review-floor); integrated
+    lane dispatched to fresh subagent (sonnet), lane file /tmp/2026-08-18-retire-brain-ops-integrated-review.md,
+    verdict APPROVE, reviewed_sha=be31056 matches HEAD; review stamp recorded
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: ./test/run-tests.sh exit=0 (all sub-suites Failed:0 incl ledger 108, guard
+    39, gh-shim 38); lint-skill-refs dangling=0; lint-skill-suite failures=0 warnings=93
+    pre-existing
 - id: finalize
   required: true
   status: pending
@@ -56,5 +60,36 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 3e0ae1427f845f79b5cbfc939683eb0a91b5792d
+    timestamp: '2026-08-19T00:11:54.168225+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '172'
+      describe_pr: "chore(skills): retire brain-ops (corpus audit batch 1, Alex-approved)\
+        \ \u2014 delete deprecated skill dir, atomic catalog updates, rowan is live\
+        \ successor"
+      post_mortem: 'clean single-commit retirement; coverage check upgraded the evidence:
+        brain-ops''s archived-only CLI commands are dead in the live CLI, so no capability
+        lost; skills-index regen also reconciled #166/#167 drift'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: 7a014824bef286cf2d19aa5d3a26909db948b9a9
+last_seen_sha: 3e0ae1427f845f79b5cbfc939683eb0a91b5792d
+verify_local:
+  head_sha: 3e0ae1427f845f79b5cbfc939683eb0a91b5792d
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
