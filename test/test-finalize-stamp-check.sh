@@ -15,13 +15,19 @@ set -uo pipefail
 #   - `scripts/finalize-stamp-check.sh`: the local script the CI job calls.
 #     Exemptions (pass-with-note): repo not opted in (no docs/executions/),
 #     head refs matching renovate/* or dependabot/*, docs-only diffs vs --base
-#     (every changed path matches ^docs/ or \.md$), empty diffs. Overridden
-#     stamps PASS but the override reason is annotated into the summary.
-#     Everything else requires a fresh finalize stamp (exit 1 otherwise).
+#     (docs/* minus docs/executions/*, plus root-level *.md — nested *.md
+#     outside docs/ is the skills corpus and stays gated), empty diffs.
+#     Overridden stamps PASS but the override reason is annotated into the
+#     summary. Kernel environment breakage (ledger exit 10) warn-permits with
+#     an ERROR note. Everything else requires a fresh finalize stamp (exit 1).
 #   - Workflow wiring: .github/workflows/ci.yml parses as YAML and carries a
 #     `finalize-stamp` job that checks out the PR head with full history and
-#     calls the script from a step with continue-on-error (soak week —
-#     REQUIRED-shaped but non-blocking, same pattern as routing-eval.yml).
+#     calls the script from a step with step-level continue-on-error (soak
+#     week — REQUIRED-shaped but non-blocking; the flip plan mirrors
+#     routing-eval.yml, whose continue-on-error sits at job level instead).
+#     NOTE for the post-soak flip: the wiring test asserts continue-on-error
+#     is True, so dropping it will red this suite until that assertion is
+#     inverted — deliberate, so the flip cannot happen silently.
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LEDGER="$ROOT/dotfiles/.config/agents/skills/workflow-ledger/scripts/ledger.sh"
@@ -159,7 +165,7 @@ stamps:
       pr_number: '999'
     override:
       active: $override_active
-      reason: '$reason'
+      reason: "$reason"
       timestamp: ''
 overrides: []
 EOF
@@ -221,6 +227,7 @@ write_snapshot "$repoD" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 commit_snapshot_only "$repoD"
 run_ledger "$repoD" check-snapshot finalize
 assert_status "stamp sha not in history exits 1" 1 "$STATUS"
+assert_contains "sha not in history gets the distinct diagnostic" "$OUT" "not found in history"
 
 repoE=$(new_repo cs_malformed)
 write_snapshot "$repoE" "$(git -C "$repoE" rev-parse HEAD)"
@@ -266,6 +273,27 @@ commit_all "$repoH" "docs: update notes"
 run_check "$repoH" --base "$baseH" --head-ref docs/update-notes
 assert_status "docs-only diff passes without a stamp" 0 "$STATUS"
 assert_contains "docs-only diff notes the exemption" "$OUT" "docs-only"
+
+# Narrowed classifier (security M1 / logic MF1): nested *.md outside docs/
+# is the skills corpus — the delivered product — and stays gated.
+repoH2=$(new_repo gated_skill_md)
+baseH2=$(git -C "$repoH2" rev-parse HEAD)
+mkdir -p "$repoH2/dotfiles/.config/agents/skills/foo"
+echo "skill change" >"$repoH2/dotfiles/.config/agents/skills/foo/SKILL.md"
+commit_all "$repoH2" "feat(skills): edit skill"
+run_check "$repoH2" --base "$baseH2" --head-ref feat/skill-only
+assert_status "SKILL.md-only diff is gated, not docs-exempt" 1 "$STATUS"
+assert_contains "SKILL.md-only diff reports FAIL" "$OUT" "FAIL"
+
+# docs/executions/* is the gate's own evidence file and never exempts itself:
+# a snapshot-only diff still runs the gate (and here fails on a forged sha).
+repoH3=$(new_repo gated_ledger_evidence)
+baseH3=$(git -C "$repoH3" rev-parse HEAD)
+write_snapshot "$repoH3" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
+commit_snapshot_only "$repoH3"
+run_check "$repoH3" --base "$baseH3" --head-ref feat/snapshot-only
+assert_status "docs/executions-only diff is gated, not docs-exempt" 1 "$STATUS"
+assert_contains "snapshot-only diff actually runs the gate" "$OUT" "not found in history"
 
 repoI=$(new_repo exempt_empty_diff)
 baseI=$(git -C "$repoI" rev-parse HEAD)
@@ -321,6 +349,46 @@ assert_file_contains "failure lands loudly in the step summary" "$sumfileJ" "FAI
 run_check "$repoJ" --head-ref feat/unstamped
 assert_status "missing --base is a usage error" 2 "$STATUS"
 
+# OVERRIDE_STALE must pass through as FAIL — it must never match the
+# OVERRIDDEN branch and silently turn a failing gate into a pass.
+echo "post-override work" >>"$repoL/src/feature.py"
+commit_all "$repoL" "feat: work after override"
+run_check "$repoL" --base "$baseL" --head-ref feat/override
+assert_status "stale override fails through the script" 1 "$STATUS"
+assert_contains "stale-override pass-through says OVERRIDE_STALE" "$OUT" "OVERRIDE_STALE"
+
+# Kernel exit 6 (malformed snapshot) collapses to script exit 1 (gate FAIL).
+repoM=$(new_repo gate_malformed)
+baseM=$(git -C "$repoM" rev-parse HEAD)
+echo "work" >"$repoM/src/feature.py"
+commit_all "$repoM" "feat: work"
+write_snapshot "$repoM" "$(git -C "$repoM" rev-parse HEAD)"
+sed -i.bak 's/^kind: skill/kind: bogus-kind/' "$repoM/docs/executions/state.yaml"
+rm -f "$repoM/docs/executions/state.yaml.bak"
+commit_snapshot_only "$repoM"
+run_check "$repoM" --base "$baseM" --head-ref feat/malformed
+assert_status "malformed snapshot fails the gate through the script" 1 "$STATUS"
+assert_contains "malformed snapshot reports FAIL" "$OUT" "FAIL"
+
+# Kernel exit 10 (environment breakage) warn-permits — infra is not a
+# verdict; mirrors the local merge-gate hook posture (D-006 #5).
+repoN=$(new_repo gate_env_breakage)
+baseN=$(git -C "$repoN" rev-parse HEAD)
+echo "work" >"$repoN/src/feature.py"
+commit_all "$repoN" "feat: work"
+write_snapshot "$repoN" "$(git -C "$repoN" rev-parse HEAD)"
+commit_snapshot_only "$repoN"
+OUT="$(cd "$repoN" && LEDGER_PYTHON=/bin/false bash "$CHECK" --base "$baseN" --head-ref feat/env 2>&1)"
+STATUS=$?
+assert_status "kernel env breakage warn-permits (exit 0)" 0 "$STATUS"
+assert_contains "kernel env breakage reports ERROR, not a stamp verdict" "$OUT" "ERROR"
+
+# Unresolvable --base: exemption skipped with a note, gate still runs —
+# never exempt on a guess.
+run_check "$repoJ" --base deadbeefdeadbeefdeadbeefdeadbeefdeadbeef --head-ref feat/unstamped
+assert_status "bogus base falls through to the gate" 1 "$STATUS"
+assert_contains "bogus base notes the skipped exemption" "$OUT" "could not resolve merge-base"
+
 # --- workflow wiring: ci.yml carries the soak-mode job ---
 resolve_py() {
     local cand
@@ -347,6 +415,9 @@ assert job is not None, "no finalize-stamp job in ci.yml"
 steps = job["steps"]
 checkout = next(s for s in steps if str(s.get("uses", "")).startswith("actions/checkout"))
 assert checkout["with"]["fetch-depth"] == 0, "checkout must fetch full history"
+assert checkout["with"]["ref"] == "${{ github.event.pull_request.head.sha }}", (
+    "freshness is defined against the PR head, not the merge ref"
+)
 check = next(s for s in steps if "finalize-stamp-check.sh" in str(s.get("run", "")))
 assert check.get("continue-on-error") is True, "soak week: step-level continue-on-error required"
 print("WIRING_OK")
@@ -355,6 +426,11 @@ PYEOF
     STATUS=$?
     assert_status "ci.yml parses and wires the finalize-stamp job" 0 "$STATUS"
     assert_contains "ci.yml wiring assertions all hold" "$OUT" "WIRING_OK"
+elif [ -n "${CI:-}" ]; then
+    # The wiring assertions are the only coverage of the CI job itself —
+    # in CI they must run, never skip silently (tests-lane S2).
+    echo "  FAIL: no python3 with PyYAML in CI — ci.yml wiring checks did not run"
+    FAIL=$((FAIL + 1))
 else
     echo "  SKIP: no python3 with PyYAML for ci.yml wiring checks"
 fi

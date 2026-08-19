@@ -85,6 +85,10 @@ jobs:
     name: Finalize stamp
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    # This job checks out and executes PR-authored code; pin the token to
+    # read-only so a hostile PR cannot leverage the job's credentials.
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
         with:

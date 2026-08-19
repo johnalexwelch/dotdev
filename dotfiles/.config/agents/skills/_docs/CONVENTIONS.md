@@ -29,4 +29,10 @@ Do **not** rely on flow-arrow prose (`grill-with-docs → to-prd → to-issues`)
 
 ## Run-scoped artifact paths (D-006 Phase 5a)
 
-Multi-agent runs MUST use run-scoped paths for shared artifacts — lane review files, probe scripts, PR-body drafts, anything one agent writes for another to read. Pattern: `/tmp/ledger-lanes-<run-id>/<artifact>` (or a scratchpad subdirectory keyed by run id). Never use bare shared paths like `/tmp/logic-review.md`: with parallel runs live, a bare path is cross-run bleed — a stale artifact from another run satisfies existence and content checks it was never part of (4 observed collisions on 2026-08-18). The kernel's review stamp accepts explicit lane paths via `--attest lanes=`; always pass run-scoped ones.
+Multi-agent runs MUST use run-scoped paths for shared artifacts — lane review files, probe scripts, PR-body drafts, anything one agent writes for another to read. Canonical shape (or a scratchpad subdirectory keyed by run id):
+
+```text
+/tmp/ledger-lanes-<run-id>/<artifact>
+```
+
+Never use bare shared paths like `/tmp/logic-review.md`: with parallel runs live, a bare path is cross-run bleed — a stale artifact from another run satisfies existence and content checks it was never part of (4 observed collisions on 2026-08-18). The kernel's review stamp accepts explicit lane paths via `--attest lanes=`; always pass run-scoped ones.
