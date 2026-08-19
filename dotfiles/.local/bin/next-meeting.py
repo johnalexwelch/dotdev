@@ -52,7 +52,13 @@ from pathlib import Path
 
 LOOKAHEAD_MIN = 20
 
-_ENV_RE = re.compile(r'^(?:export\s+)?([A-Z_][A-Z0-9_]*)=([\'"]?)(.*)\2\s*$')
+# Quoted values take everything inside the quotes; bare values stop at
+# whitespace or a trailing "# comment" — an optional-quote backreference
+# would silently swallow quotes and comments into the value.
+_ENV_RE = re.compile(
+    r'^(?:export\s+)?([A-Z_][A-Z0-9_]*)='
+    r'(?:"([^"]*)"|\'([^\']*)\'|([^#\s]*))\s*(?:#.*)?$'
+)
 
 
 def _load_streamdeck_env() -> None:
@@ -70,10 +76,17 @@ def _load_streamdeck_env() -> None:
     for line in lines:
         m = _ENV_RE.match(line.strip())
         if m and m.group(1) in {"CAL_WORK", "CAL_PERSONAL", "MEETING_DOCS", "ICALBUDDY"}:
-            os.environ.setdefault(m.group(1), m.group(3))
+            value = next(g for g in m.groups()[1:] if g is not None)
+            os.environ.setdefault(m.group(1), value)
 
 
 _load_streamdeck_env()
+
+# Deck presses inherit a minimal PATH — pin it like the sibling scripts so
+# the bare-name icalBuddy fallback and subprocess calls resolve.
+os.environ["PATH"] = (
+    f"{Path.home()}/.local/bin:/opt/homebrew/bin:" + os.environ.get("PATH", "")
+)
 
 # The title→doc map holds internal meeting names and URLs, so it lives
 # outside the (public) dotfiles repo — see ~/.config/streamdeck/README.md.
@@ -176,18 +189,21 @@ def parse_events(raw, label):
             continue
         title = lines[0]
 
-        # Take the start from the first non-title line that carries a time,
-        # pairing it with a date on that same line — scanning the whole blob
-        # lets a "09:30" in the title or notes beat the real start time.
+        # Take the start from the first non-title line carrying BOTH a date
+        # and a time (with -df/-tf that is the datetime property line).
+        # Scanning the whole blob lets a "09:30" in the title beat the real
+        # start; accepting a date-less time line lets an all-day event's
+        # notes ("agenda 09:00 intro") fabricate a start — which would slip
+        # it past the all-day filter in all_events().
         start = None
         for ln in lines[1:]:
             t = TIME_RE.search(ln)
-            if not t:
-                continue
             d = DATE_RE.search(ln)
-            day = d.group(1) if d else datetime.now().strftime("%Y-%m-%d")
+            if not (t and d):
+                continue
             try:
-                start = datetime.strptime(f"{day} {t.group(1)}", "%Y-%m-%d %H:%M")
+                start = datetime.strptime(
+                    f"{d.group(1)} {t.group(1)}", "%Y-%m-%d %H:%M")
             except ValueError:
                 start = None
             break

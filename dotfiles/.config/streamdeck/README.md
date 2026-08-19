@@ -58,9 +58,10 @@ untracked. Place it at `~/.config/streamdeck/meeting-docs.tsv` (a
 ## Environment variables
 
 Stream Deck invokes scripts **without an interactive shell**, so `~/.zshrc`
-exports never reach them. Every deck script therefore loads untracked
-`~/.streamdeck` itself and pins its own `PATH`; env.zsh also sources
-`~/.streamdeck` so interactive shells agree.
+exports never reach them. Each deck script that needs config therefore loads
+untracked `~/.streamdeck` itself and pins its own `PATH`
+(`agent-status.sh` needs neither — it only reads the status file); env.zsh
+also sources `~/.streamdeck` so interactive shells agree.
 
 Set in `~/.streamdeck` (host-specific, may reveal account addresses — never
 commit; this repo is public):
@@ -71,6 +72,13 @@ commit; this repo is public):
 - `MEETING_DOCS` — optional override for the title→doc map path (defaults to
   `~/.config/streamdeck/meeting-docs.tsv`).
 - `ICALBUDDY` — optional override for the icalBuddy binary path.
+
+The agent scripts run `claude` with `--strict-mcp-config`, so user-scope MCP
+servers (which include senders and code executors) never load under a deck
+press. To give the triage digest its readers, create
+`~/.config/streamdeck/triage-mcp.json` naming ONLY read-oriented MCP
+servers — absent the file, the digest runs without MCP and degrades rather
+than gaining tools.
 
 ## Calendar source
 
