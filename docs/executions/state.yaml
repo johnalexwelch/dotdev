@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: done
 next: ''
-updated: '2026-08-19T16:05:43.329808+00:00'
+updated: '2026-08-19T16:57:42.803041+00:00'
 steps:
 - id: diagnose
   required: true
@@ -71,33 +71,33 @@ stamps:
       reason: ''
       timestamp: ''
   review:
-    head_sha: 6ead0749841de1ca516c741f054bd2da5e311ae1
-    timestamp: '2026-08-19T16:03:39.813557+00:00'
+    head_sha: 88d8d2a3fed3db3d1e2dc0c32c24b433e1e26cef
+    timestamp: '2026-08-19T16:57:42.802826+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: 2dd6da3d7826b31cf8a5f29daf461c4aba0adfc73c31d24beb9bf8b11b11ab65
-      lane_security_lines: '50'
+      lane_security_sha256: ccd04fe2cf10090d94ad30b5a1949b4ae2d56ef7e31fb6e591636270aabef068
+      lane_security_lines: '56'
       lane_security_verdict: APPROVE
       lane_security_model: claude-opus-5
-      lane_logic_sha256: 54171f1fc33e9b30edfc0d5b52606a06bb3bac4295df29cd9789c2979da4e5fc
-      lane_logic_lines: '55'
+      lane_logic_sha256: c30e07d747b40cdec3de78fad0f4e297a858038ac0ab1f46f85fcf7817421e59
+      lane_logic_lines: '61'
       lane_logic_verdict: APPROVE
       lane_logic_model: claude-opus-5
-      lane_tests_sha256: 63e925ce2c1be5f5319d381216ae5f6ecc158cdd5394b4adbe50f9af4e8a95a0
-      lane_tests_lines: '69'
+      lane_tests_sha256: 534e3affbc64ceb230bd2953022947fc85c9fe9f12092b18259a9e17038d72b4
+      lane_tests_lines: '75'
       lane_tests_verdict: APPROVE
       lane_tests_model: claude-opus-5
-      lane_style_sha256: cea18551de6f56286600298f6be33733e31eb837795ed93bba5408c8ea0f158b
-      lane_style_lines: '199'
+      lane_style_sha256: 0f1520ba801c9f3806134a9b9e7d57ce39fdb2cd5498521d3bad436ad89ed836
+      lane_style_lines: '205'
       lane_style_verdict: APPROVE
       lane_style_model: claude-opus-5
       review_floor: full
       worktree_verify: pass
     attested:
-      verdict: APPROVE
+      verdict: approve
       review_profile: full
-      lanes: security=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/style-review.md
+      lanes: logic=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/logic-review.md,security=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/security-review.md,style=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/style-review.md,tests=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/tests-review.md,documentation=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/documentation-review.md
     override:
       active: false
       reason: ''
@@ -123,7 +123,7 @@ stamps:
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: 91c97e773dbf26008960e4ffb581e8582d7587fa
+last_seen_sha: f0a92885e5a39c77d6a577d4a53dbdef621429be
 verify_local:
   head_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
   passed: true
