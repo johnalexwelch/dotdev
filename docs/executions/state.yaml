@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: done
 next: ''
-updated: '2026-08-19T17:15:21.817051+00:00'
+updated: '2026-08-19T17:17:08.207438+00:00'
 steps:
 - id: diagnose
   required: true
@@ -103,8 +103,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: b4d18c259a16c1cd76f7753964438799bd90b1ad
-    timestamp: '2026-08-19T16:59:34.588353+00:00'
+    head_sha: 7dadcea93e22e427e3194599b9db5374bf7303f1
+    timestamp: '2026-08-19T17:17:08.207276+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -123,9 +123,9 @@ stamps:
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: 5b8fd1c608f3c977d1dd935f9d916b00d5de958e
+last_seen_sha: 7dadcea93e22e427e3194599b9db5374bf7303f1
 verify_local:
-  head_sha: b4d18c259a16c1cd76f7753964438799bd90b1ad
+  head_sha: 7dadcea93e22e427e3194599b9db5374bf7303f1
   passed: true
   results:
   - cmd: ./test/run-tests.sh
