@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: docs
 budget: one-reviewer
 initialized_epoch: 1787151917
-status: active
-next: finalize
-updated: '2026-08-19T15:11:55.597514+00:00'
+status: done
+next: ''
+updated: '2026-08-19T15:12:06.638546+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: 'not triggered: docs-only change to a reference markdown file; no frontend, user journey, or runtime behavior to QA'
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'draft PR #179 opened; finalize stamped with audited override per documented draft-PR collision (only failing checked field was pr-state=draft; CI green, verify-local PASS, review fresh); no merge per instruction'
 stamps:
   review:
     head_sha: 46c23ccc056bf0777545674b649ecf0ea2d7993a
@@ -73,7 +73,7 @@ overrides:
   head_sha: 13d7f0817576f7d8d3c78294468003b372eb302c
 branch: docs/workflows-route-map
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/workflows-route-map
-last_seen_sha: 13d7f0817576f7d8d3c78294468003b372eb302c
+last_seen_sha: 34cc1411be7382e7eb59e42453569a46f5e18a08
 verify_local:
   head_sha: 46c23ccc056bf0777545674b649ecf0ea2d7993a
   passed: true
