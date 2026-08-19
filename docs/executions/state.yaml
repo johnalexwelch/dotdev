@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151724
 status: done
 next: ''
-updated: '2026-08-19T15:43:32.680096+00:00'
+updated: '2026-08-19T15:45:10.848491+00:00'
 steps:
 - id: preflight
   required: true
@@ -54,8 +54,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 51cfee8fbb14503638d5e4a54838a25b19e96113
-    timestamp: '2026-08-19T15:17:29.616870+00:00'
+    head_sha: 3992ccb60c5623f739f2670cf99f32128fcf3133
+    timestamp: '2026-08-19T15:45:10.848353+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -64,9 +64,9 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
       pr_number: '181'
-      describe_pr: 'PR body from describe step: summary, misroute provenance, expected-route justification, dry-run + full-eval verbatim results, Phase-next router note'
-      post_mortem: 'not_required: eval-set-only data addition, no incident/bug; case-45 eval failure recorded in PR body as Phase-next router work'
     override:
       active: false
       reason: ''
@@ -74,9 +74,9 @@ stamps:
 overrides: []
 branch: test/golden-case-45-ml-cookiecutter
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/golden-case-45-ml-cookiecutter
-last_seen_sha: 5e22106a4785176b3babfb0ce9206ace071da14f
+last_seen_sha: 3992ccb60c5623f739f2670cf99f32128fcf3133
 verify_local:
-  head_sha: 51cfee8fbb14503638d5e4a54838a25b19e96113
+  head_sha: 3992ccb60c5623f739f2670cf99f32128fcf3133
   passed: true
   results:
   - cmd: ./test/run-tests.sh
