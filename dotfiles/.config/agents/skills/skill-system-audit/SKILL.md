@@ -174,6 +174,64 @@ for gate, s in stamps.items():
     done
 ```
 
+**Repo activity — count the remote-tracking default branch, after a fetch, over an absolute window.** Activity figures decide which repo an audit prioritises, so the method has to be pinned or the priority order is an artefact of the command. Five ways to get this wrong, all observed in the 2026-08-19 cross-repo audit, each one silent:
+
+- **Local branch instead of remote-tracking ref.** `git log main` counts the checkout, not what landed. chorus's local `main` was 102 commits behind `origin/main`; the local count read 7 against a true 13. Never strip the `origin/` prefix off the resolved ref.
+- **No fetch.** A remote-tracking ref last updated days ago under-counts by however much has landed since, and reports it as fact.
+- **Assuming the default branch is `main`.** `taro`'s `origin/HEAD` is `origin/staging`; counting `main` gave 2 where the gated branch had 30. Treat `origin/HEAD` as the suggestion and confirm it against the repo's actual convention — it is a clone-time cache, so it can also name a branch the remote has since stopped defaulting to, which is the last silent door in this class and the one no guard closes.
+- **`--all` when the claim is about gates.** All-refs counts bot branches and every local worktree: dotdev read 38 on its default branch and 449 across all refs as of 2026-08-19 17:00 (all-refs drifts every time any worktree commits — 451 within the hour, which is why an all-refs figure needs an as-of stamp to mean anything). Use `--all` only for "how much agent activity happened", and label it that way.
+- **Relative windows.** `--since="7 days ago"` is unreproducible; a later re-run cannot tell drift from error. Record an absolute boundary.
+
+Report every figure as `N commits on <ref> since <absolute timestamp>`, naming the ref.
+
+```bash
+SINCE="2026-08-12 17:00"   # absolute window open; never "7 days ago"
+for repo in "$@"; do
+    git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || continue   # skip non-repos
+    # Guard the fetch. An unreachable remote (VPN down, SSO expired, remote
+    # renamed) exits non-zero and leaves the tracking refs at whatever they
+    # held — the exact under-count the fetch exists to prevent, and the as-of
+    # stamp below would then assert a freshness the fetch did not deliver.
+    # `origin`, not `--all`: the metric only ever reads origin/*, and --all fails
+    # the whole fetch when ANY unrelated remote is unreachable, withholding a
+    # figure whose origin refs are current (chorus has 2 remotes, pergamon 3).
+    git -C "$repo" fetch -q --prune origin || {
+        echo "$repo: fetch failed — figure withheld"
+        continue
+    }
+    as_of="$(date '+%Y-%m-%d %H:%M %Z')"   # measured, not asserted: reachable
+                                           # only after a fetch that succeeded
+                                           # (%Z matters — audit windows straddle
+                                           # DST boundaries)
+    # Ask the remote, never the local cache. refs/remotes/origin/HEAD is set at
+    # CLONE time and no fetch refreshes it, so an upstream that migrated
+    # master->main AND kept the old branch alive leaves a stale-but-resolvable
+    # ref: no fatal, no withhold, a silently wrong count. (If the old branch was
+    # deleted, --prune above makes it unresolvable and the guard below withholds
+    # loudly — so this only bites repos that keep the retired branch.)
+    # `remote set-head --auto` would repair the cache, but it writes a
+    # user-visible ref in a repo the audit does not own, and on failure it
+    # leaves the stale cache in the measurement path. Reading ls-remote costs
+    # nothing extra (set-head does the same call, then writes) and closes the
+    # door by construction: an unreachable or headless remote yields an empty
+    # ref, which the guard below turns into an explicit withhold.
+    ref="$(git -C "$repo" ls-remote --symref origin HEAD 2>/dev/null |
+        sed -n 's|^ref: refs/heads/\(.*\)\tHEAD$|origin/\1|p')"
+    # Every remaining silent-zero door is the same shape: a ref name that looks
+    # fine and resolves to nothing. `git log` prints nothing, `wc -l` prints 0.
+    # `continue`, never `exit` — an abort here drops every later repo from the
+    # sweep while printing one line that looks like a handled edge case.
+    git -C "$repo" rev-parse --verify --quiet "$ref" >/dev/null || {
+        echo "$repo: default ref $ref does not resolve — figure withheld"
+        continue
+    }
+    n="$(git -C "$repo" log "$ref" --since="$SINCE" --oneline | wc -l | tr -d ' ')"
+    echo "$repo: $n commits on $ref since $SINCE (refs as of $as_of)"
+done
+```
+
+Confirm the withheld repos are a short, explained list before reporting coverage — a sweep that silently measured 2 of 14 reads exactly like one that measured 14. One residual with no guard: a **shallow** clone under-counts silently because the history simply is not there (the size of the miss is whatever was truncated — no figure to quote). None of the audited repos is shallow today; check `git rev-parse --is-shallow-repository` before trusting a figure from an unfamiliar checkout.
+
 **Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
 
 ```bash

@@ -1,0 +1,86 @@
+run_id: 2026-08-19-audit-activity-metric
+workflow: workflow-deliver
+kind: skill
+budget: one-reviewer
+initialized_epoch: 1787174526
+status: done
+next: ''
+updated: '2026-08-19T22:27:54.677797+00:00'
+steps:
+- id: preflight
+  required: true
+  status: completed
+  evidence: 'worktree-baseline.sh cut: origin/main -> fix/audit-activity-metric @ absolute path; motivating measurement run pre-recorded (HEAD-only/default-branch/all-refs spread across 5 repos)'
+- id: triage
+  required: true
+  status: completed
+  evidence: 'two-part fix from the #193 review''s R3-4 NIT, escalated after measurement: (a) correct taro/delphi figures in the merged entry to default-branch counts + state the method, (b) add an activity-metric recipe to skill-system-audit step 5 so the next audit cannot drift; AFK-safe, no human-only gates'
+- id: implement
+  required: true
+  status: completed
+  evidence: "Two-file change: skill-system-audit step 5 gains a pinned repo-activity metric (five failure modes; recipe fetches origin only, resolves the default branch from ls-remote --symref rather than the clone-time cache or a mutating set-head, guards fetch and ref resolution with continue-not-exit, absolute window, derived as-of stamp; no synthetic magnitudes quoted); decision-log corrections to PR #193's figures. Corrected: taro 30 on origin/staging (published 21 'on main'; main reads 2), ml-models 20, chorus 13 (no figure published), delphi 10 (published 22). #193 published no ranking and never dismissed taro; nothing was reversed and the conclusion is strengthened. #193's no-merge-commits closer STANDS (chorus 0 / delphi 0 since go-live 2026-08-18) and is preserved verbatim in the rewritten paragraph with its hedge. chorus is a local Forgejo remote, not ClassDojo \u2014 counted among the seven mis-shaped repos, not the shared-remote three. Every figure derived independently more than once; the provenance errors were caught only by lanes reading the prior text, three times on one paragraph. Eight silent-failure doors closed, each empirically tested"
+- id: review
+  required: true
+  status: pending
+  evidence: "UNWOUND (2nd time this run): stamp at 59490a7 succeeded while the lane file said verdict REQUEST_CHANGES. Kernel recorded checked.lane_integrated_verdict=REQUEST_CHANGES alongside attested verdict=approve and did NOT refuse \u2014 a checked field captured a failing value without failing the gate. This inverts D-006's core rule (checked beats attested) and is the most serious gate hole found today: any agent can stamp review over a REQUEST_CHANGES lane by attesting approve. Re-stamp only once the lane file itself carries APPROVE at the reviewed sha"
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps:
+  review:
+    head_sha: da43844fda12965221344ca8b959bd8669df32f9
+    timestamp: '2026-08-19T22:23:31.704137+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 4531809a1b0d9ef233d1ba1a695fff95fc2c7ea0894803076abef3cec84c1917
+      lane_integrated_lines: '110'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: opus
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: approve
+      review_profile: fast
+      model_floor: opus
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-audit-activity-metric/integrated-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  finalize:
+    head_sha: ce2e8b5836fc9472901d522f08741200991616c7
+    timestamp: '2026-08-19T22:27:46.842837+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '194'
+      describe_pr: in_pr_body
+      post_mortem: 'not_applicable_with_reason: docs/skill change; the 8-door and 12-claim narrative is in the PR body and the run evidence'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+overrides: []
+route: measurement-definition fix|workflow-deliver|confirmed
+branch: fix/audit-activity-metric
+worktree: /Users/alexwelch/wt/dotdev/audit-activity-metric
+last_seen_sha: 894e7e50854676ff8d038beb7b73cf81d2c9cf09
+verify_local:
+  head_sha: ce2e8b5836fc9472901d522f08741200991616c7
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
+  - cmd: pre-commit run --all-files
+    exit: 0
