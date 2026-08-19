@@ -93,9 +93,13 @@ recommendation, not before it.
 
 Where the document's decision sections reduce to a single decision
 recommendation, compose `decision-memo` (Load and run
-`decision-memo/SKILL.md`) for those sections — its Pyramid/SCQA shaping
-is the canonical single-decision structure — rather than restating that
-discipline inline.
+`decision-memo/SKILL.md`) for those sections — use its Pyramid shape
+selection, headline-answer discipline, MECE claim grouping, and
+"what would change my mind" framing, rather than restating that
+discipline inline. Scope of the composition: do NOT emit its memo
+header block (title/To/From/Date) inside this document, and do NOT
+follow its upstream routing (e.g. "route back to `analysis-design`") —
+this workflow's own intake already covered that.
 
 ### 6. Numeric claims audit
 

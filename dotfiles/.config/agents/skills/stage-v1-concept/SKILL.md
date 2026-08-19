@@ -1,7 +1,7 @@
 ---
 name: stage-v1-concept
 disable-model-invocation: true
-description: Superseded by v1-workflow Step 2.25 (consolidation batch 2, 2026-08-19). Do not invoke; Load and run v1-workflow — its "Stage the Concept" step promotes scratch/ephemeral grill output to a real project directory.
+description: Superseded by v1-workflow Step 2.25 (2026-08-19). Do not invoke; Load and run v1-workflow — Stage the Concept promotes grill output.
 ---
 
 # stage-v1-concept — superseded

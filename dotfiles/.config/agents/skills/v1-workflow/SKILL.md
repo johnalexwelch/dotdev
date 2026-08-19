@@ -26,8 +26,8 @@ All output issues must represent vertical slices of V1 functionality. Do not pro
 Consumes: loose product idea, constraints, target users, any existing context
 Produces: approved V1_IDEA_BRIEF, approved V1_SYSTEM_DESIGN, decision-log entries, roadmap with implementation slices, ready-to-triage issues
 Requires: git (for system design context inspection when building in existing codebase)
-Side effects: creates/updates CONTEXT.md, decision-log.md, roadmap artifact, PRD(s), and issue(s) only when explicitly approved at each gate
-Human gates: approval required at 4 critical points: idea brief, system design, roadmap, and issue readiness
+Side effects: creates/updates CONTEXT.md, docs/decision-log.md, roadmap artifact, PRD(s), and issue(s) only when explicitly approved at each gate; Step 2.25 may create a new project directory (CONTEXT.md, docs/decision-log.md, docs/adr/, docs/v1-idea-brief.md) and optionally run git init + initial commit
+Human gates: approval required at 4 critical points: idea brief, system design, roadmap, and issue readiness — plus Step 2.25's step-local write gates: project-location confirmation before any file is written, and git-init confirmation
 
 ## Flow
 
@@ -92,9 +92,13 @@ For every significant decision accepted during the idea grill, create a decision
 
 This log becomes the context for system design and downstream PRDs.
 
-**Evidence:** decision-log.md with entries for all grill decisions.
+For scratch/ephemeral grills (no repo yet), do not write a log file here: the accepted decisions stay as `pending_decision_log_entries` in conversation until Step 2.25 promotes them to `docs/decision-log.md` in the staged project.
+
+**Evidence:** `docs/decision-log.md` with entries for all grill decisions — or, on the scratch/ephemeral path, the pending entries in conversation awaiting Step 2.25.
 
 ### Step 2.25: Stage the Concept (Conditional — scratch/ephemeral grills)
+
+**Invoke:** inline (no sub-skill — the staging discipline is below)
 
 **Trigger when:** the grill ran in scratch or ephemeral state, so its output lives only in conversation as `pending_context_entries`, `pending_decision_log_entries`, `pending_adr_entries`, and/or an approved `V1_IDEA_BRIEF` — and the user wants the concept real ("make this real", "stage this", "create the project"). Skip when the grill already wrote to a repo's durable docs.
 
@@ -152,7 +156,7 @@ For every significant architectural decision in the system design, create a deci
 
 This ensures downstream PRD writers and implementers understand the "why" behind the architecture.
 
-**Evidence:** decision-log.md with architecture decision entries.
+**Evidence:** `docs/decision-log.md` with architecture decision entries.
 
 ### Step 5: Create V1 Roadmap
 
@@ -206,6 +210,8 @@ This ensures downstream PRD writers and implementers understand the "why" behind
 ---
 
 ## Hard Gates and Approval Points
+
+**Step-local write gates (Step 2.25):** on the scratch/ephemeral path, project-location confirmation before any file is written and git-init confirmation — these precede Gate 2 but are step-local, not numbered pipeline gates.
 
 **Gate 1: V1 Idea Brief Approval**
 

@@ -39,7 +39,7 @@ The deterministic detector `scripts/check_tells.py` is not optional — it catch
 
 ## Exec mode
 
-For exec-bound drafts (board, ELT, CEO, customer; typical upstream producers: `decision-memo`, `workflow-executive-doc`, `strategic-analysis-review`), run the base passes above, then an **exec pass** that tunes for the voice that survives a 15-minute skim. Highest leverage: the opening leads with the answer, the close is the ask (not a summary), each heading answers "so what?". Then compress ~20% — never at the cost of a real caveat or a stated confidence basis.
+For exec-bound drafts (board, ELT, CEO, customer; typical upstream producers: `decision-memo`, `workflow-executive-doc`, `strategic-analysis-review`), run the base passes above, then an **exec pass** that tunes for the voice that survives a 15-minute skim. Highest leverage: the opening leads with the answer, the close is the ask (not a summary), each heading answers "so what?". Then compress ~20% — never at the cost of a real caveat or a stated confidence basis. In exec mode the base exit gate (step 3) runs on the **post-exec, post-compression** text — exec rewrites and compression introduce tells just like any rewrite, so the text that ships is the text that gets scanned.
 
 Exec-register patterns (beyond the base 29):
 

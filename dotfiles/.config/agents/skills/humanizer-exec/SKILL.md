@@ -1,7 +1,7 @@
 ---
 name: humanizer-exec
 disable-model-invocation: true
-description: Superseded by humanizer exec mode (consolidation batch 2, 2026-08-19). Do not invoke; Load and run humanizer and apply its "Exec mode" section instead.
+description: Superseded by humanizer exec mode (2026-08-19). Do not invoke; Load and run humanizer and apply its "Exec mode" section.
 ---
 
 # humanizer-exec — superseded

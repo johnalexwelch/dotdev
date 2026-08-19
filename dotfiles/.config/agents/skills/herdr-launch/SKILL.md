@@ -1,7 +1,7 @@
 ---
 name: herdr-launch
 disable-model-invocation: true
-description: Superseded by herdr (consolidation batch 2, 2026-08-19). Do not invoke; Load and run herdr and use its "Companion tools by delivery stage" section instead.
+description: Superseded by herdr (2026-08-19). Do not invoke; Load and run herdr — see its "Companion tools by delivery stage" section.
 ---
 
 # herdr-launch — superseded
