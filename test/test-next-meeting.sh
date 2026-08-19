@@ -46,6 +46,13 @@ spec.loader.exec_module(nm)
 case = sys.argv[2]
 now = datetime.now()
 
+# These test the format-independent logic, not macOS notification I/O — stub
+# notify() so cases that reach it (e.g. the Drive-search fallback) don't call
+# osascript, which is absent on the Linux CI runner. The notify RCE case
+# overrides subprocess.run instead and needs the real notify(), so it opts out.
+if case != "notify_passes_argv_not_source":
+    nm.notify = lambda *a, **k: None
+
 def ev(title, start, profile="work"):
     return {"title": title, "blob": title, "start": start, "_profile": profile}
 
