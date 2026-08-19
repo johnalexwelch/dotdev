@@ -181,7 +181,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "we're launching X", "launch plan", "launch checklist", "go-to-market checklist", "are we ready to ship", "go-live readiness" | **product launch** | product-launch-checklist |
 | "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog workflow** | workflow-autonomous-backlog |
 | Bug report, error, "it's broken", regression | **bug** | workflow-deliver with `kind=bug` |
-| Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature |
+| Vague idea, "what if we...", "I want to build..." | **ambiguous feature** | workflow-feature — downstream, workflow-feature may escalate to `wayfinder` on grill evidence (user-confirmed); the router itself never routes to wayfinder, which is explicit-invocation only (`/wayfinder`) |
 | "improve the wording", "the error message is confusing", "reword this label/tooltip/notification", any change to user-facing product copy or UX text | **UX copy change (tracked code)** | workflow-feature — user-visible copy lives in tracked source, so a copy edit is a code commit carrying the full worktree/review/finalize gates; never `direct` even when nothing is "broken" (baseline case 21: bug-ish phrasing, feature-shaped change) |
 | Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-deliver with `kind=feature` (`skill`/`docs` when the issue is a skill or docs change) |
 | A prompt/plan/handoff names `workflow-build-one` (superseded) | **ready issue (legacy name)** | workflow-deliver with `kind=feature` — tombstone redirect, D-006 #11 |

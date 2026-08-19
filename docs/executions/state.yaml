@@ -1,81 +1,74 @@
-run_id: 2026-08-19-workflows-route-map
-workflow: workflow-deliver
-kind: docs
+run_id: 2026-08-19-grill-wayfinder-escalation
+workflow: workflow-skill
+kind: skill
 budget: one-reviewer
-initialized_epoch: 1787151917
-status: done
+initialized_epoch: 1787152044
+status: active
 next: ''
-updated: '2026-08-19T15:12:06.638546+00:00'
+updated: '2026-08-19T15:41:18.434524+00:00'
 steps:
-- id: preflight
+- id: baseline
   required: true
   status: completed
-  evidence: 'worktree re-cut via worktree-baseline.sh (absolute path; prior sidecar had relative WT_PATH); sources: router/deliver/ledger SKILL.md, D-006, CONVENTIONS; PR #170 merged'
-- id: triage
-  required: true
-  status: completed
-  evidence: docs rewrite task well-formed; requirements enumerated by requester
+  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> feat/grill-wayfinder-escalation @ .claude/worktrees/grill-wayfinder-escalation'
 - id: implement
   required: true
   status: completed
-  evidence: 'workflows.md rewritten as route map (commits 3def5d3..c483cc9 after rebase onto 2be79e6): spine diagram, 3-layer table, gates table, tombstones; tdd: not_applicable_with_reason: prose reference doc, no executable behavior'
+  evidence: 3 SKILL.md edits committed 73fa139; lints 0 failures; tests 65/65
 - id: review
   required: true
   status: completed
-  evidence: 'fast profile (floor=fast); integrated lane, 3 rounds: R1 REQUEST_CHANGES (3 findings fixed), R2 REQUEST_CHANGES (1 finding fixed), R3 APPROVE; re-attested at 46c23cc post-rebase/re-init (reviewed file byte-identical, verified)'
-- id: qa
-  required: true
-  status: completed
-  evidence: 'not triggered: docs-only change to a reference markdown file; no frontend, user journey, or runtime behavior to QA'
+  evidence: integrated lane APPROVE (sonnet, fast floor); stamp review recorded
 - id: finalize
   required: true
   status: completed
-  evidence: 'draft PR #179 opened; finalize stamped with audited override per documented draft-PR collision (only failing checked field was pr-state=draft; CI green, verify-local PASS, review fresh); no merge per instruction'
+  evidence: 'finalize stamped; PR #180 open non-draft, CI green, threads resolved, verify-local green'
 stamps:
   review:
-    head_sha: 46c23ccc056bf0777545674b649ecf0ea2d7993a
-    timestamp: '2026-08-19T15:08:44.950612+00:00'
+    head_sha: b1b74898be4588a17ad5f6b031931909ee4c6d02
+    timestamp: '2026-08-19T15:39:45.465260+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 66214631cd263d01931ed332ed8b732ad8c9ea4afa3306bd90715080f9ee8260
-      lane_integrated_lines: '38'
+      lane_integrated_sha256: 692d1adbfc6d96136948bd30b488cc9465be8a842358eaaa44cfd888d3ef18ef
+      lane_integrated_lines: '39'
       lane_integrated_verdict: APPROVE
       lane_integrated_model: sonnet
       review_floor: fast
       worktree_verify: pass
     attested:
+      verdict: approve
       review_profile: fast
-      verdict: APPROVE
-      lanes: integrated=/tmp/ledger-lanes-2026-08-19-workflows-route-map/integrated-review.md
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-grill-wayfinder-escalation/integrated-review.md
+      reviewed_sha: '73fa139 transferred: post-merge three-dot scope unchanged (11 insertions, same 3 files + snapshot), merge brought only disjoint main content'
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 13d7f0817576f7d8d3c78294468003b372eb302c
-    timestamp: '2026-08-19T15:11:55.597347+00:00'
+    head_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
+    timestamp: '2026-08-19T15:41:18.434335+00:00'
     gate_type: reviewer-validation
     provenance: agent
-    checked: {}
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
     attested:
-      pr_number: '179'
-      describe_pr: done
       post_mortem: not_applicable
+      describe_pr: in_pr_body
+      pr_number: '180'
     override:
-      active: true
-      reason: "human-only policy keeps PR draft; documented Step 8 draft-PR collision (PR #170 fix not on origin/main \u2014 merge commit ec61612 not an ancestor; reland branch unmerged); CI green on PR #179, verify-local PASSED at HEAD, review stamp fresh; workaround pre-authorized by dispatching instruction"
-      timestamp: '2026-08-19T15:11:55.597510+00:00'
-overrides:
-- gate: finalize
-  reason: "human-only policy keeps PR draft; documented Step 8 draft-PR collision (PR #170 fix not on origin/main \u2014 merge commit ec61612 not an ancestor; reland branch unmerged); CI green on PR #179, verify-local PASSED at HEAD, review stamp fresh; workaround pre-authorized by dispatching instruction"
-  timestamp: '2026-08-19T15:11:55.597513+00:00'
-  head_sha: 13d7f0817576f7d8d3c78294468003b372eb302c
-branch: docs/workflows-route-map
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/workflows-route-map
-last_seen_sha: 34cc1411be7382e7eb59e42453569a46f5e18a08
+      active: false
+      reason: ''
+      timestamp: ''
+overrides: []
+branch: feat/grill-wayfinder-escalation
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/grill-wayfinder-escalation
+last_seen_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
 verify_local:
-  head_sha: 46c23ccc056bf0777545674b649ecf0ea2d7993a
+  head_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
   passed: true
   results:
   - cmd: ./test/run-tests.sh
