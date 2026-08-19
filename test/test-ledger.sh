@@ -442,7 +442,7 @@ run_ledger "$repoRT" init 2026-08-18-redact --workflow workflow-deliver \
     --kind bug --steps "impl"
 cat >"$repoRT/leaky.sh" <<'LEAK'
 #!/usr/bin/env bash
-echo "token=supersecretvalue1234 ghp_ABCDEFGHIJKLMNOPQRSTuvwx"
+echo "token=supersecretvalue1234 ghp_ABCDEFGHIJKLMNOPQRSTuvwx" # pragma: allowlist secret
 printf 'x%.0s' $(seq 1 120)
 echo ""
 exit 1
@@ -456,7 +456,7 @@ assert_status "diagnose stamp with leaky repro exits 0" 0 "$STATUS"
 assert_file_contains "attested values are not redacted" "$stateRT" \
     "token=attested-stays-verbatim"
 assert_file_not_contains "live tail redacts the ghp_ token" "$stateRT" \
-    "ghp_ABCDEFGHIJKLMNOPQRSTuvwx"
+    "ghp_ABCDEFGHIJKLMNOPQRSTuvwx" # pragma: allowlist secret
 assert_file_not_contains "live tail redacts the token= value" "$stateRT" \
     "supersecretvalue1234"
 assert_file_contains "live tail carries a REDACTED marker" "$stateRT" "REDACTED"
