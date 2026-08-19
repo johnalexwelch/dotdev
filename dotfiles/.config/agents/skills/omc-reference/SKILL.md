@@ -140,8 +140,8 @@ OMC is the runtime layer. Skills are the curriculum.
 
 **Team pipeline wraps skill execution:**
 
-- `team-plan` → may invoke `design-plan` or `to-prd` skill
-- `team-exec` → invokes `workflow-deliver` or `execute-phase` skill
+- `team-plan` → may invoke `to-prd` skill (product or migration mode)
+- `team-exec` → invokes `workflow-deliver` or `execute-prd` skill
 - `team-verify` → invokes `workflow-review` skill
 - `team-fix` → invokes `diagnose` skill
 

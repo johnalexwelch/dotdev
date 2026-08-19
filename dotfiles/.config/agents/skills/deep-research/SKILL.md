@@ -22,7 +22,7 @@ Requires: web_search tool available
 Side effects: writes the research summary; may create `docs/research/` directory
 Human gates: none (AFK by default); escalate only if sources are paywalled, unavailable, or contradictory beyond resolution
 
-Feeds: wayfinder (Research tickets), grill-with-docs (fact-gathering), design-plan, to-prd, workflow-roadmap.
+Feeds: wayfinder (Research tickets), grill-with-docs (fact-gathering), to-prd (product or migration mode), workflow-roadmap.
 
 ## Source Priority
 

@@ -21,7 +21,7 @@ Human gates: confirm question before building; capture answer before deleting
 ## Soft Context
 
 Typical workflows: mid-feature exploration (between grilling and planning), standalone design validation
-Pairs well with: grill-with-docs (grilling surfaces a question prototype can answer), workflow-feature (prototype step between grill and PRD), design-plan (prototype validates assumptions before planning)
+Pairs well with: grill-with-docs (grilling surfaces a question prototype can answer), workflow-feature (prototype step between grill and PRD), to-prd migration mode (prototype validates assumptions before refactor-scale planning)
 
 ## Pick a branch
 

@@ -14,7 +14,7 @@ Compare GitHub Issues, PRs, labels, execution outcomes, and post-mortems to dete
 ## When to invoke
 
 - After a batch of PRs merge
-- After execute-phase completes
+- After execute-prd completes a parent tree
 - After a post-mortem is written
 - Periodically (weekly or sprint boundary)
 - When issue tracker feels stale or inconsistent
@@ -275,7 +275,7 @@ The non-default-branch fallback and drift-check #2 (Issues closed incorrectly) h
 - Fetch recent closed PRs that were not merged when checking premature close or abandoned-review drift
 - Read PR bodies for issue references (Closes/Fixes/Resolves/Refs #N)
 - Read PR reviews and inline comments for unresolved or unanswered reviewer feedback
-- Read execute-phase outcome files if present (docs/executions/.phase-runs/)
+- Read legacy execute-phase outcome files if present (docs/executions/.phase-runs/; the lane is retired — these are historical artifacts)
 - Read post-mortems if present
 
 ### 2. Run drift checks
@@ -374,7 +374,7 @@ Skip the canvas when running headless (Codex AFK, CI, non-IDE context).
 
 ## Contract
 
-Consumes: GitHub Issues state, merged/closed PRs with bodies and review comments, execute-phase outcome files, post-mortems, label state
+Consumes: GitHub Issues state, merged/closed PRs with bodies and review comments, legacy execute-phase outcome files, post-mortems, label state
 Produces: structured drift report (markdown), recommended actions list, optional canvas artifact
 Requires: gh
 Side effects: may add/remove labels (automated subset only); may create follow-up issues (with approval)

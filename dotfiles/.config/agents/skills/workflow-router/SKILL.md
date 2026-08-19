@@ -28,8 +28,8 @@ The old "Audit Loop" is not an execution route. If a prompt, transcript, repo do
 
 - Code review gate → `workflow-review`
 - Delivery closure, PR body, reviewer comments, CI, reconciliation, and final PR action → `workflow-finalize`
-- Broad repo evidence gathering → `repo-audit`, then route findings through `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan`
-- Multi-phase refactor execution → `design-plan` / `execute-phase`, then `workflow-review` and `workflow-finalize`
+- Broad repo evidence gathering → `repo-audit`, then route findings through `workflow-roadmap`, `to-prd` (migration mode for refactor-scale findings), or `to-issues`
+- Multi-phase refactor execution → `to-prd` (migration mode) → `to-issues` → `triage` → `execute-prd`, whose children carry `workflow-review` and `workflow-finalize`
 
 Do not dispatch `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
 
@@ -188,10 +188,11 @@ If the user corrects the route, treat that correction as fresh routing input and
 | A prompt/plan/handoff names `workflow-build-one` (superseded) | **ready issue (legacy name)** | workflow-deliver with `kind=feature` — tombstone redirect, D-006 #11 |
 | A prompt/plan/handoff names `workflow-debug` (superseded) | **bug (legacy name)** | workflow-deliver with `kind=bug` — tombstone redirect, D-006 #11 |
 | Parent PRD issue with child issues, "execute this PRD", "implement all children of #N", "work through this parent issue", "execute the issue tree" | **PRD execution** | execute-prd |
-| "execute phase N", "run phase", "land phase", phase execution after an approved design-plan | **phase execution** | execute-phase (only when a `design-plan` artifact exists and the user has approved it) |
+| A prompt/plan/handoff names `design-plan` (superseded), "turn this audit into a plan", "create a refactor plan", refactor/migration/governance brief needing a phased plan | **refactor/migration planning** | to-prd (migration mode) — tombstone redirect, D-006 planning-lane consolidation 2026-08-19; then to-issues → triage → execute-prd |
+| A prompt/plan/handoff names `execute-phase` (retired), "execute phase N", "run phase", "land phase" | **phase execution (legacy name)** | execute-prd against the migration-mode parent issue tree; a lone slice routes to workflow-deliver — tombstone redirect, D-006 planning-lane consolidation 2026-08-19 |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
-| "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; design-plan only for refactor-scale phase plans |
-| Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` |
+| "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; refactor-scale findings take to-prd migration mode |
+| Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd` (migration mode for refactor-scale), or `to-issues` |
 | "Review this", "review my changes" | **review** | workflow-review — **exception:** if the review scope is SQL/dbt models, dashboards, metric trees, or executive-facing analyses (even inside a PR), route to the artifact-specific skill (`sql-review`, `dashboard-review`, `metric-tree-review`, `strategic-analysis-review`); ask which is intended when both PR and artifact signals are present. Per-model correctness/performance concerns on a SQL or dbt model — join fanout, NULL handling, window pitfalls — are `sql-review`, not `dbt-project-evaluator` (that is a whole-project structure/conventions audit, never a per-model review) |
 | "review this doc/email/Slack post/memo for clarity", "tighten this writing", "make this clearer", "proofread this", feedback wanted on HOW prose is written | **writing clarity review** | clarity-review — **carve-out vs `workflow-review`:** when the artifact is prose (doc, email, post, memo, spec text) and the concern is communication clarity rather than change correctness, route `clarity-review` even if the prose lives in a PR; `workflow-review` owns code/change correctness only |
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step (e.g. "just address the review comments on #42, don't finalize/merge yet") **or names the skill imperatively** (e.g. "Run receive-review on PR #17"), dispatch `receive-review` directly per the owner-vs-sub-step rule below — an imperative verb+skill-name is the explicit scope, not an ambiguity |
@@ -351,23 +352,24 @@ workflow-review → workflow-finalize → cleanup-delivery
 
 ## Specialized Audit / Refactor Lane (NOT the default product flow)
 
-`repo-audit` and `design-plan` + `execute-phase` form a **specialized lane** separate from the default vertical-slice product workflow:
+`repo-audit` and `to-prd` migration mode form a **specialized lane** separate from the default vertical-slice product workflow (successor to the retired `design-plan` + `execute-phase` pair — D-006 planning-lane consolidation, 2026-08-19):
 
 - **Repo evidence audit** → `repo-audit` (input to current workflow, not a default loop itself)
 - **Route audit findings** based on type:
   - Product/feature gaps → feed into `workflow-roadmap`, then proceed through the default flow above
   - Already-clear vertical implementation slices → route to `to-issues` or `triage` directly
-  - Repo-wide refactors, migrations, or multi-phase remediation → `design-plan` (not default product flow), then optionally `execute-phase`, then `workflow-review` and `workflow-finalize`
-- **Do not route audits directly to `execute-phase`** — a human-approved roadmap, PRD/issues, or design plan must exist first
+  - Repo-wide refactors, migrations, or multi-phase remediation → `to-prd` **migration mode** (FIND-NN/REQ-NN anchors, parent + ordered children, pilot/canary, rollback, sync-gate child issues) → `to-issues` → `triage` → `execute-prd`; each child carries the normal `workflow-review` and `workflow-finalize` gates
+- **Do not route audit findings straight to execution** — a human-approved roadmap, or a migration-mode PRD built from a human-approved audit/brief with triaged children, must exist first
 - **Key constraint:** PRD/spec parent issues must not be labeled `ready-for-agent` (per `triage` skill) — only child implementation issues produced by `to-issues` and meeting all readiness criteria may receive `ready-for-agent`
 
 ## Roadmap Gate Rule
 
-For feature planning that will produce PRDs and implementation issues, require an approved `workflow-roadmap` artifact before dispatching `to-prd` or `to-issues`.
+For product/feature planning that will produce PRDs and implementation issues, require an approved `workflow-roadmap` artifact before dispatching `to-prd` (product mode) or `to-issues`.
 
 - If roadmap evidence exists and is in scope: proceed.
 - If roadmap is missing, stale, or out of scope: route to `workflow-roadmap` first and halt downstream dispatch until approved.
 - Only an explicit user waiver may bypass this gate.
+- **Migration-mode exception (in-rule, not a waiver):** `to-prd` migration mode satisfies this gate with its input artifact instead — a **human-approved** repo-audit report or migration brief, per the mode's own roadmap-gate delta (D-006 planning-lane consolidation, 2026-08-19). The scope there is already settled; do not force a `workflow-roadmap` detour.
 
 ### Roadmap Doc Invariant (drift guard)
 
