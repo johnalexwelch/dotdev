@@ -430,6 +430,26 @@ assert_status "exec behind an assignment prefix blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if false; then :; else exec 2>/dev/null; git push origin main; fi')"
 assert_status "exec after else blocks" 2 "$STATUS"
 
+# The exec carrier only counts when suppression is actually present. Without
+# that conjunct an `exec` token alone blocks a mutation, and the block's
+# message tells the operator to remove a suppression that isn't there —
+# unactionable, and `docker exec` is as common as delivery commands get
+# (style lane R8). main permits all of these.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'docker exec -it app bash && git push origin main')"
+assert_status "docker exec with no suppression permits" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'kubectl exec pod -- ls && git commit -m x')"
+assert_status "kubectl exec with no suppression permits" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "add exec wrapper"')"
+assert_status "exec inside a commit message permits" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main # exec')"
+assert_status "exec in a trailing comment permits" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "ssh host 'exec bash' && git push origin main")"
+assert_status "exec in a quoted ssh payload with no suppression permits" 0 "$STATUS"
+
 # Under the inverted burden, ANY exec token is a carrier — distinguishing
 # command-word from argument is the enumeration problem that produced three
 # fail-opens, so these over-block instead. Both match main, which blocked
