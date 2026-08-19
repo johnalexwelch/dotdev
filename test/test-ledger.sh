@@ -861,6 +861,84 @@ run_ledger "$wt3" check finalize
 assert_status "post-stamp overrides tamper fails check finalize" 1 "$STATUS"
 assert_contains "overrides tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
 
+# Route is a durable snapshot key: forging one into the tracked snapshot
+# (live state has none) is tampering (D-006 Phase 5b).
+cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
+printf 'route: forged|other-flow|confirmed\n' >>"$wt3/docs/executions/state.yaml"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "forged snapshot route fails check finalize" 1 "$STATUS"
+assert_contains "forged snapshot route reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
+
+# --- init --route: route evidence (D-006 Phase 5b) ------------------------
+# Contract: `init --route "<classification>|<selected-flow>|confirmed"` records
+# a top-level `route:` field. Absent route: init succeeds but WARNs (default),
+# or exits 11 under LEDGER_REQUIRE_ROUTE=block (same flip pattern as
+# LEDGER_ENTRY_ENFORCE). Malformed route strings are schema-invalid (exit 6),
+# both at init time and when loading tampered state.
+
+repoR=$(new_repo route_evidence)
+stateR=$(live_state "$repoR")
+
+run_ledger "$repoR" init 2026-08-19-routed --workflow workflow-deliver \
+    --kind feature --steps "plan,impl" \
+    --route "ready issue|workflow-deliver|confirmed"
+assert_status "init with --route exits 0" 0 "$STATUS"
+assert_file_contains "live state records top-level route field" "$stateR" \
+    "route: ready issue|workflow-deliver|confirmed"
+assert_file_contains "committed snapshot carries route field" \
+    "$repoR/docs/executions/state.yaml" \
+    "route: ready issue|workflow-deliver|confirmed"
+
+run_ledger "$repoR" set plan completed --evidence "routed run step"
+assert_status "set after routed init exits 0" 0 "$STATUS"
+assert_file_contains "route field round-trips through subsequent writes" \
+    "$stateR" "route: ready issue|workflow-deliver|confirmed"
+
+run_ledger "$repoR" show
+assert_contains "show renders the route evidence" "$OUT" \
+    "ready issue|workflow-deliver|confirmed"
+
+run_ledger "$repoR" init 2026-08-19-unrouted --workflow workflow-deliver \
+    --kind feature --steps "plan" --force
+assert_status "init without --route exits 0 (default is warn)" 0 "$STATUS"
+assert_contains "unrouted init warns: no route evidence" "$OUT" \
+    "no route evidence — invoke workflow-router"
+assert_file_not_contains "unrouted init records no route field" "$stateR" "route:"
+
+OUT="$(cd "$repoR" && LEDGER_REQUIRE_ROUTE=block SKILLS_ROOT="$SKILLS_ROOT_REAL" \
+    bash "$LEDGER" init 2026-08-19-blocked --workflow workflow-deliver \
+    --kind feature --steps "plan" --force 2>&1)"
+STATUS=$?
+assert_status "LEDGER_REQUIRE_ROUTE=block escalates absent route to exit 11" 11 "$STATUS"
+assert_contains "blocked init names the missing route evidence" "$OUT" "no route evidence"
+assert_file_contains "blocked init writes nothing (prior run intact)" "$stateR" \
+    "run_id: 2026-08-19-unrouted"
+
+OUT="$(cd "$repoR" && LEDGER_REQUIRE_ROUTE=block SKILLS_ROOT="$SKILLS_ROOT_REAL" \
+    bash "$LEDGER" init 2026-08-19-routed2 --workflow workflow-deliver \
+    --kind bug --steps "plan" --route "bug|workflow-deliver|confirmed" --force 2>&1)"
+STATUS=$?
+assert_status "block env with --route present exits 0" 0 "$STATUS"
+assert_file_contains "block env records the route field" "$stateR" \
+    "route: bug|workflow-deliver|confirmed"
+
+for bad in "no-pipes-here" "a|b" "a|b|maybe" "|b|confirmed" "a||confirmed" \
+    "a|b|confirmed|extra"; do
+    run_ledger "$repoR" init 2026-08-19-badroute --workflow workflow-deliver \
+        --kind feature --steps "plan" --route "$bad" --force
+    assert_status "malformed route '$bad' exits 6" 6 "$STATUS"
+done
+assert_file_contains "malformed route writes nothing (prior run intact)" "$stateR" \
+    "run_id: 2026-08-19-routed2"
+
+# Schema layer: a malformed route smuggled into existing state fails load.
+printf 'route: tampered-no-pipes\n' >>"$stateR"
+run_ledger "$repoR" show
+assert_status "schema rejects malformed route on load with exit 6" 6 "$STATUS"
+assert_contains "load rejection names the bad route" "$OUT" "bad route"
+
 echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"

@@ -21,7 +21,7 @@ Full contract with exit codes and test-enforced refinements: `docs/executions/pl
 ## CLI
 
 ```
-ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--force]
+ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--route "<classification>|<selected-flow>|confirmed"] [--force]
 ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, fresh (see Freshness)
@@ -38,6 +38,8 @@ relay.sh --handoff <file> [--max-legs N=5] [--repo <path>] [--stop-file <path>]
 `relay.sh` is the handoff relay runner: it chains headless `claude -p` legs through a handoff file, continuing only on AFK-eligible exit_reasons (`completion-with-follow-ups`, `halt-for-continuation`) and stopping on completion (incl. the live ledger `<git-dir>/ledger/state.yaml` reaching `status: done` during the relay — a pre-existing `done` at launch is stale and ignored), human gates (NEEDS_HUMAN / needs-human / maintainer-decision / operator-runtime / secret-custody / `blocker:`), no-progress (handoff sha unchanged), max-legs, the stop-file kill switch, or a leg error — distinct exit codes 0/2/3/4/5/6, plus 1 for usage errors. Operator doc: the handoff skill's "Relay" section. Tested by `test/test-relay.sh`.
 
 Transition rules are code, not convention: required steps cannot be `skipped` (exit 3); `completed|skipped|blocked|failed` require evidence/reason (exit 4); `kind: bug` auto-inserts required `diagnose`/`fix` steps.
+
+**Route evidence (D-006 Phase 5b).** `init --route` records the confirmed ROUTE_CARD's classification and selected flow as a top-level `route:` field (workflow-router passes it at ledger-persist). Absent: init succeeds with a `WARNING: no route evidence — invoke workflow-router` line; `LEDGER_REQUIRE_ROUTE=block` escalates absence to a refusal (exit 11) — the same warn-then-flip pattern as entry enforcement. Malformed route strings (not `<classification>|<selected-flow>|confirmed`) are schema-invalid (exit 6) at init and on every load.
 
 ## Gates — checked vs attested
 
