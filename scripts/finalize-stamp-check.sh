@@ -2,11 +2,14 @@
 # finalize-stamp-check.sh — D-006 Phase 5a: server-side finalize-stamp gate.
 #
 # Called by the `finalize-stamp` job in .github/workflows/ci.yml against the
-# PR head checkout (full history). Requires the committed ledger snapshot
-# (docs/executions/state.yaml) to carry a finalize stamp that is fresh at
-# HEAD by the kernel's content-verified rule. The check itself is
-# `ledger.sh check-snapshot finalize` — freshness keeps exactly one
-# implementation (the kernel's fresh_since), never a re-implementation here.
+# PR head checkout (full history). Requires a committed PER-RUN ledger
+# snapshot (docs/executions/runs/<run_id>.yaml) changed by this PR to carry
+# a finalize stamp that is fresh at HEAD by the kernel's content-verified
+# rule. Candidates come from the diff vs --base; the check itself is
+# `ledger.sh check-snapshot finalize --file <candidate>` — freshness keeps
+# exactly one implementation (the kernel's fresh_since), never a
+# re-implementation here. The legacy shared docs/executions/state.yaml is a
+# frozen historical record and satisfies nothing.
 #
 # Closes the auto-merge bypass observed live on PR #167: the local merge-gate
 # hook (workflow-guard.sh) never sees a server-side merge, so GitHub's
@@ -115,8 +118,11 @@ esac
 # skills corpus, i.e. the product, and stays gated (Phase 5a review,
 # security M1 / logic MF1).
 merge_base="$(git merge-base "$BASE" HEAD 2>/dev/null)" || merge_base=""
+diff_ok=0
+changed=""
 if [ -n "$merge_base" ]; then
     if changed="$(git diff --name-only "$merge_base" HEAD 2>/dev/null)"; then
+        diff_ok=1
         if [ -z "$changed" ]; then
             pass_note "empty diff vs base $BASE"
         fi
@@ -153,11 +159,121 @@ else
     verdict "note: could not resolve merge-base with '$BASE'; docs-only exemption skipped"
 fi
 
-# The gate: committed snapshot must carry a fresh finalize stamp.
-out="$(bash "$LEDGER_SH" check-snapshot finalize 2>&1)"
-status=$?
-# The kernel's verdict is the LAST line — stderr noise (python warnings,
-# resolver chatter) merged into $out must not break the match (security S2).
+# The gate: a per-run committed snapshot changed by THIS PR must carry a
+# fresh finalize stamp. Candidates are the FLAT docs/executions/runs/*.yaml
+# files in the diff vs base that still exist at HEAD — a delivery's own
+# stamps are by construction commits on its branch, so its run file is always
+# in the diff. Nested runs/ paths are never candidates: the kernel cannot
+# author one (run_ids reject separators), and bash case globs cross '/', so
+# an unqualified runs/*.yaml arm would accept a hand-written nested file the
+# write-block guard is also asked to cover (review round: security H1 /
+# logic F1). At least one candidate must pass `check-snapshot finalize
+# --file` (a superseded force-re-init sibling may legitimately be stale).
+# Zero candidates on a non-exempt diff = the delivery never stamped. When
+# the diff itself could not be computed (no merge-base, failed diff), the
+# fallback enumerates the flat run files present at HEAD and runs the same
+# loop — resolvable and fail-closed, never the kernel's single-file tier,
+# which reads AMBIGUOUS forever once run files accumulate (logic F2).
+candidates=()
+deleted_candidates=0
+nested_candidates=0
+if [ "$diff_ok" -eq 1 ]; then
+    candidate_source="changed vs base $BASE"
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        # ?* (not *): a case glob's * matches the empty string, which would
+        # accept the dotfile basenames '.yaml'/'.yml' the kernel can never
+        # author (review round 2: security).
+        case "$path" in
+            docs/executions/runs/*/*)
+                nested_candidates=$((nested_candidates + 1))
+                ;;
+            docs/executions/runs/?*.yaml | docs/executions/runs/?*.yml)
+                if [ -f "$TOP/$path" ]; then
+                    candidates+=("$path")
+                else
+                    deleted_candidates=$((deleted_candidates + 1))
+                fi
+                ;;
+        esac
+    done <<<"$changed"
+else
+    candidate_source="present at HEAD (diff vs base unavailable)"
+    for f in "$TOP"/docs/executions/runs/*.yaml "$TOP"/docs/executions/runs/*.yml; do
+        [ -f "$f" ] || continue
+        candidates+=("${f#"$TOP"/}")
+    done
+fi
+
+out=""
+status=1
+malformed=""
+if [ "${#candidates[@]}" -eq 0 ]; then
+    out="no run snapshot (docs/executions/runs/*.yaml) ${candidate_source} — the delivery never stamped, or the run file was not committed"
+    if [ "$deleted_candidates" -gt 0 ]; then
+        out="$out, or every changed run file was deleted at HEAD ($deleted_candidates skipped)"
+    fi
+    if [ "$nested_candidates" -gt 0 ]; then
+        out="$out, or the run file is nested and was ignored ($nested_candidates skipped — the kernel only authors docs/executions/runs/<run_id>.yaml)"
+    fi
+    status=1
+else
+    # Scan every candidate (no early break) so schema-invalid siblings are
+    # collected even when another candidate passes. Precedence: any pass wins;
+    # else kernel environment breakage (exit 10) outranks plain failures so
+    # the warn-permit posture survives the loop. Exit 6 (corrupt snapshot) is
+    # tracked separately — a corrupt PR-visible record must never merge
+    # unannotated (logic F4).
+    pass_out=""
+    env_out=""
+    env_seen=0
+    fail_out=""
+    for cand in "${candidates[@]}"; do
+        cand_out="$(bash "$LEDGER_SH" check-snapshot finalize --file "$cand" 2>&1)"
+        cand_status=$?
+        case "$cand_status" in
+            0)
+                [ -n "$pass_out" ] || pass_out="$cand_out"
+                continue
+                ;;
+            6)
+                malformed="${malformed:+$malformed, }$cand"
+                ;;
+            10)
+                if [ "$env_seen" -eq 0 ]; then
+                    env_seen=1
+                    env_out="$cand_out"
+                fi
+                ;;
+        esac
+        fail_out="${fail_out}candidate $cand: $(printf '%s\n' "$cand_out" | tail -n 1)"$'\n'
+    done
+    if [ -n "$pass_out" ]; then
+        out="$pass_out"
+        status=0
+    elif [ "$env_seen" -eq 1 ]; then
+        out="$env_out"
+        status=10
+    else
+        out="${fail_out%$'\n'}"
+        status=1
+    fi
+fi
+
+# Schema-invalid siblings stay loud even on PASS ($malformed is single-line —
+# candidate paths come from diff/glob lines, no embedded newlines survive the
+# read loop).
+if [ -n "$malformed" ] && [ "$status" -eq 0 ]; then
+    verdict "note: schema-invalid run snapshot(s) in this PR (kernel exit 6): $malformed — corrupt PR-visible record; fix before merge"
+    echo "::warning::schema-invalid run snapshot(s): $malformed"
+fi
+
+# The kernel's verdict is the LAST line on the single-check paths — stderr
+# noise (python warnings, resolver chatter) merged into $out must not break
+# the match (security S2). On the aggregate multi-candidate FAIL path $out is
+# script-synthesized ("candidate <path>: <kernel tail>" lines) and is never
+# verdict-matched: verdict_line is only consumed under status 0, where $out
+# is raw kernel output for the passing candidate.
 verdict_line="$(printf '%s\n' "$out" | tail -n 1)"
 # $out is kernel output that interpolates untrusted snapshot text; collapse
 # newlines AND carriage returns before any log/annotation write so it can

@@ -103,7 +103,9 @@ Skill-specific rules (extend the step-ledger protocol):
   confirmation run `workflow-ledger/scripts/ledger.sh init <run_id> --workflow
   <target> --kind <k> --steps <csv> --route "<classification>|<selected-flow>|confirmed"`
   (route evidence from the confirmed ROUTE_CARD — init warns without it) and
-  `ledger.sh set <step> <status>` at each transition. Never hand-write `docs/executions/state.yaml` or the live state —
+  `ledger.sh set <step> <status>` at each transition. Never hand-write the
+  committed per-run snapshot (`docs/executions/runs/<run_id>.yaml`), the legacy
+  `docs/executions/state.yaml`, or the live state —
   they are script-owned (a guard hook blocks direct Edit/Write). The
   `WORKFLOW_STEPS` table above is a render of the ledger (`ledger.sh show`),
   not the durable record.

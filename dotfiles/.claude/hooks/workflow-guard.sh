@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # workflow-guard.sh — PreToolUse/PostToolUse guard rails for delivery workflows.
-# D-006 additions: merge gate (ledger check finalize), state.yaml write block,
+# D-006 additions: merge gate (ledger check finalize), ledger state write
+# block (git-dir live state, per-run snapshots, legacy state.yaml),
 # worktree-baseline sidecar write block, stderr-suppression block on mutating
 # forge/git commands, and entry enforcement (warn-only in Phase 0;
 # LEDGER_ENTRY_ENFORCE=block escalates).
@@ -172,9 +173,18 @@ rule3_tokenizer_blocks() {
 
 if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" ]; } && [ -n "$file_path" ]; then
     # Rule 2: ledger state files are script-owned; direct edits are blocked.
+    # Covers the git-dir live state, the per-run committed snapshots
+    # (docs/executions/runs/<run_id>.yaml — the current record), and the
+    # legacy shared docs/executions/state.yaml (frozen historical record).
     # Case-insensitive: APFS is case-insensitive, so a case-variant spelling
     # writes the real file.
-    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
+    # runs/ matches ANY depth and ANY basename prefix (.*, not .+ — a dotfile
+    # basename like '.yaml' IS the extension, leaving nothing for .+ to eat):
+    # the kernel only authors flat non-dotfile files, so anything else under
+    # runs/ is by definition hand-written — exactly what this rule blocks; the
+    # block set must never be narrower than what the CI gate could be asked to
+    # read (review rounds: security H1, security r2).
+    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)docs/executions/runs/.*\.ya?ml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
         printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/close) instead of editing it directly.\n' "$file_path" >&2
         exit 2
     fi

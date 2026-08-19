@@ -4,7 +4,11 @@
 # Moves workflow enforcement from prose the model complies with to a script
 # the model cannot silently bypass. Live state lives in the git-dir (survives
 # reset --hard, naturally per-worktree); stamp/init/close also write a
-# committed snapshot at docs/executions/state.yaml for the PR-visible record.
+# committed PER-RUN snapshot at docs/executions/runs/<run_id>.yaml for the
+# PR-visible record. Per-run files mean two concurrent runs never commit a
+# shared path — the cross-PR state.yaml merge-conflict class (#167/#174/
+# #180/#181) is structurally impossible. docs/executions/state.yaml is a
+# frozen legacy record: never written or read by new runs.
 #
 # Spec: docs/executions/plans/2026-08-19-workflow-ledger-spec.md
 # Authority: _docs/decision-log.md § D-006 (+ addenda).
@@ -15,7 +19,9 @@
 #   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 #   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 #   ledger.sh check <gate>
-#   ledger.sh check-snapshot <gate>   (CI mode: committed snapshot, no live state)
+#   ledger.sh check-snapshot <gate> [--file <path>]   (CI mode: committed per-run
+#             snapshot, no live state; --file names the run file — without it,
+#             the live run's file, else exactly one docs/executions/runs/*.yaml)
 #   ledger.sh reconcile [--apply]
 #   ledger.sh preflight --skill <name>
 #   ledger.sh review-floor [--base <ref>]
@@ -25,14 +31,17 @@
 #
 # Exit codes (the API — tests assert them):
 #   0  success / check passed
-#   1  check failed (MISSING|STALE), reconcile drift, preflight missing tool,
+#   1  check failed (MISSING|STALE), check-snapshot resolution refusals
+#      (AMBIGUOUS, INVALID), reconcile drift, preflight missing tool,
 #      verify-local command failure, usage errors
 #   2  stamp refused: one or more checked fields failed
 #   3  set refused: required step cannot be skipped
 #   4  set refused: terminal status without evidence/reason; override without --reason
 #   5  unknown step / unknown skill / unknown gate
-#   6  corrupt or schema-invalid state (never silently rewritten)
-#   7  init refused: an active run already exists (use --force)
+#   6  corrupt or schema-invalid state (never silently rewritten); a run_id
+#      unusable as a snapshot filename
+#   7  init refused: an active run already exists, or a committed run file
+#      for the run_id already exists (use --force)
 #   8  stamp refused: non-reviewer-validation gate type without --human
 #   9  verify-local: no docs/executions/ci-commands.yaml manifest (NO_MANIFEST)
 #  10  environment breakage (no python3 with PyYAML; misconfigured
@@ -47,10 +56,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_ROOT="${SKILLS_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 FORGE_SH="$SCRIPT_DIR/forge.sh"
 BASELINE_SH="$SKILLS_ROOT/setup-worktree/scripts/worktree-baseline.sh"
-SNAPSHOT_REL="docs/executions/state.yaml"
+RUNS_REL="docs/executions/runs"
 
 TOP=""
 LIVE=""
+# Per-run committed snapshot: resolved to $RUNS_REL/<run_id>.yaml by
+# set_snapshot_rel before any use (init's argv, the live run's run_id, or
+# check-snapshot's --file / single-file fallback). Never a shared path.
+SNAPSHOT_REL=""
 SNAPSHOT=""
 PYBIN=""
 FAILURES=""
@@ -73,7 +86,33 @@ require_repo() {
     local gitdir
     gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || die 10 "cannot resolve the git dir"
     LIVE="$gitdir/ledger/state.yaml"
+}
+
+set_snapshot_rel() {
+    # The run_id becomes a tracked filename AND a git pathspec (commit_snapshot
+    # passes it to `git add/commit --`): allowlist the charset rather than
+    # denylist shapes — glob metacharacters would otherwise sweep sibling runs'
+    # files into this run's ledger commits (review round: security L2), and
+    # separators/traversal would write outside $RUNS_REL.
+    case "$1" in
+        '' | .* | *..*)
+            die 6 "run_id unusable as a snapshot filename: '$1'"
+            ;;
+        *[!A-Za-z0-9._-]*)
+            die 6 "run_id unusable as a snapshot filename: '$1' (allowed: A-Za-z0-9._-)"
+            ;;
+    esac
+    SNAPSHOT_REL="$RUNS_REL/$1.yaml"
     SNAPSHOT="$TOP/$SNAPSHOT_REL"
+}
+
+# Resolve the committed snapshot path from the live run's run_id — the
+# common case for every command that operates on the active run.
+resolve_snapshot_from_live() {
+    local run_id
+    run_id="$(py get run_id)" || exit $?
+    [ -n "$run_id" ] || die 6 "live state has no run_id"
+    set_snapshot_rel "$run_id"
 }
 
 # The default `python3` on some machines (mise/pyenv shims, brew) lacks PyYAML;
@@ -241,11 +280,14 @@ def load():
         with open(LIVE) as fh:
             doc = yaml.safe_load(fh)
     except yaml.YAMLError as exc:
-        err(6, "live state is not valid YAML (refusing to touch it): %s" % exc)
+        # "ledger state at <path>", not "live state": gate_verdict's snapshot
+        # mode rebinds LIVE to a committed run snapshot, and the CI failure
+        # annotation must not misattribute the corrupt file (logic r2).
+        err(6, "ledger state at %s is not valid YAML (refusing to touch it): %s" % (LIVE, exc))
     try:
         validate(doc)
     except ValueError as exc:
-        err(6, "live state failed schema validation (refusing to touch it): %s" % exc)
+        err(6, "ledger state at %s failed schema validation (refusing to touch it): %s" % (LIVE, exc))
     return doc
 
 
@@ -273,7 +315,7 @@ def split_kv(items):
 
 
 def op_init(argv):
-    run_id, workflow, kind, steps_csv, budget, force, route = argv
+    run_id, workflow, kind, steps_csv, budget, force, route, snap_existed = argv
     force = force == "1"
     if route and not ROUTE_RE.match(route):
         err(
@@ -312,6 +354,16 @@ def op_init(argv):
             {
                 "action": "force-init",
                 "reason": "--force re-init over %s" % prior_note,
+                "timestamp": now(),
+            }
+        )
+    # Overwriting an existing committed run file (same run_id) is audited the
+    # same way — the bash layer already refused it without --force.
+    if force and snap_existed == "1":
+        overrides.append(
+            {
+                "action": "force-init",
+                "reason": "--force re-init over existing committed run file for %s" % run_id,
                 "timestamp": now(),
             }
         )
@@ -620,13 +672,18 @@ commit_snapshot() {
     py set_meta last_seen_sha "$(git -C "$TOP" rev-parse HEAD)" || exit $?
 }
 
-# Fresh iff every commit after the recorded sha touches ONLY the snapshot
-# file (verified by contents via diff-tree, never by subject — subjects are
-# attacker-controlled). Also requires sha to be an ancestor of HEAD: a HEAD
-# moved backwards (reset) must read STALE, not fresh.
+# Fresh iff every commit after the recorded sha touches ONLY this run's own
+# snapshot file (verified by contents via diff-tree, never by subject —
+# subjects are attacker-controlled). Exactly the run's own file: a commit
+# touching a DIFFERENT run's snapshot, or the legacy shared state.yaml, is a
+# real commit and reads STALE. Also requires sha to be an ancestor of HEAD:
+# a HEAD moved backwards (reset) must read STALE, not fresh.
 fresh_since() {
     local sha="$1" commits c paths
     [ -n "$sha" ] || return 1
+    # Never compare against an unresolved (empty) snapshot path — an empty
+    # exemption would make empty commits exempt by accident.
+    [ -n "$SNAPSHOT_REL" ] || return 1
     git -C "$TOP" cat-file -e "${sha}^{commit}" 2>/dev/null || return 1
     git -C "$TOP" merge-base --is-ancestor "$sha" HEAD 2>/dev/null || return 1
     commits="$(git -C "$TOP" log --format=%H "${sha}..HEAD" 2>/dev/null)" || return 1
@@ -1125,6 +1182,18 @@ cmd_init() {
         esac
     done
     [ -n "$workflow" ] && [ -n "$kind" ] && [ -n "$steps" ] || usage
+    set_snapshot_rel "$run_id"
+    # A committed run file with this run_id is a prior delivery's PR-visible
+    # audit record; overwriting it silently would rewrite history through the
+    # script itself (review round: security L3). Refuse without --force; a
+    # forced overwrite is recorded in overrides[] like any force-init.
+    local snap_existed=0
+    if [ -e "$SNAPSHOT" ]; then
+        snap_existed=1
+        if [ "$force" -ne 1 ]; then
+            die 7 "committed run file already exists for run_id '$run_id' ($SNAPSHOT_REL) — possibly a prior delivery's audit record; choose a new run_id or pass --force"
+        fi
+    fi
     # Route evidence (D-006 Phase 5b): warn by default when absent;
     # LEDGER_REQUIRE_ROUTE=block escalates to a refusal (exit 11) — the same
     # warn-then-flip pattern as entry enforcement (LEDGER_ENTRY_ENFORCE).
@@ -1134,7 +1203,7 @@ cmd_init() {
         fi
         printf 'WARNING: no route evidence — invoke workflow-router (recording init without route:)\n' >&2
     fi
-    py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" "$route" || exit $?
+    py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" "$route" "$snap_existed" || exit $?
     # Ground-truth anchors for reconcile (batch #6): where the run lives.
     py set_meta branch "$(git -C "$TOP" branch --show-current 2>/dev/null)" || exit $?
     py set_meta worktree "$TOP" || exit $?
@@ -1208,6 +1277,7 @@ cmd_stamp() {
 
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
     py get run_id >/dev/null || exit $?
+    resolve_snapshot_from_live
 
     local provenance="agent" head_sha
     [ "$human" -eq 1 ] && provenance="human"
@@ -1246,23 +1316,108 @@ cmd_stamp() {
 cmd_check() {
     [ $# -ge 1 ] || usage
     local out status
+    # Missing live state renders MISSING inside gate_verdict; only resolve
+    # the run's snapshot path when there is a live run to resolve from.
+    if [ -f "$LIVE" ]; then
+        resolve_snapshot_from_live
+    fi
     out="$(check_gate "$1")"
     status=$?
     printf '%s\n' "$out"
     exit "$status"
 }
 
-# CI-side gate check against the COMMITTED snapshot — no live state required
-# (D-006 Phase 5a: server-side merge gates run on a fresh checkout where the
-# git-dir ledger does not exist). Shares the whole verdict shell with `check`
-# via gate_verdict (snapshot mode): same schema validation on the untrusted
-# snapshot (malformed = exit 6), same content-verified fresh_since, same
-# message strings — minus the live-vs-snapshot drift compare, which needs
-# live state that CI lacks.
+# CI-side gate check against a COMMITTED per-run snapshot — no live state
+# required (D-006 Phase 5a: server-side merge gates run on a fresh checkout
+# where the git-dir ledger does not exist). Resolution order: an explicit
+# --file (the CI script passes candidates it discovered in the PR diff);
+# else the live run's file when live state exists; else exactly one
+# docs/executions/runs/*.yaml (zero → MISSING, several → ask for --file).
+# Shares the whole verdict shell with `check` via gate_verdict (snapshot
+# mode): same schema validation on the untrusted snapshot (malformed =
+# exit 6), same content-verified fresh_since, same message strings — minus
+# the live-vs-snapshot drift compare, which needs live state that CI lacks.
 cmd_check_snapshot() {
     [ $# -ge 1 ] || usage
-    local out status
-    out="$(gate_verdict "$1" snapshot)"
+    local gate="$1" file="" out status
+    shift
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --file)
+                file="$2"
+                shift 2
+                ;;
+            *) usage ;;
+        esac
+    done
+    if [ -n "$file" ]; then
+        # --file is shape-validated exactly like a kernel-authored run file:
+        # a single path segment under $RUNS_REL with a .ya?ml extension,
+        # inside THIS repo. Everything else is INVALID — --file must never be
+        # a validator-free door into the kernel (review round: security H1).
+        local rel="$file" top_phys file_dir file_base
+        case "$file" in
+            /*)
+                # Canonicalize both sides physically: on macOS the caller's
+                # spelling and $TOP can differ via /var -> /private/var.
+                top_phys="$(cd "$TOP" && pwd -P)" || die 10 "cannot resolve the repo root physically"
+                file_dir="$(cd "$(dirname "$file")" 2>/dev/null && pwd -P)" || file_dir=""
+                file_base="$(basename "$file")"
+                if [ -n "$file_dir" ] && [ "$file_dir" = "$top_phys/$RUNS_REL" ]; then
+                    rel="$RUNS_REL/$file_base"
+                else
+                    echo "INVALID: --file must name a run snapshot inside this repo at $RUNS_REL/<run_id>.yaml (got: $file)"
+                    exit 1
+                fi
+                ;;
+        esac
+        # ?* (not *): a case glob's * matches the empty string, which would
+        # accept the dotfile basenames '.yaml'/'.yml' the kernel can never
+        # author (review round 2: security).
+        case "$rel" in
+            "$RUNS_REL"/*/*)
+                echo "INVALID: --file must not be nested — the kernel only authors $RUNS_REL/<run_id>.yaml (got: $file)"
+                exit 1
+                ;;
+            "$RUNS_REL"/?*.yaml | "$RUNS_REL"/?*.yml) ;;
+            *)
+                echo "INVALID: --file must name a run snapshot at $RUNS_REL/<run_id>.yaml (got: $file)"
+                exit 1
+                ;;
+        esac
+        SNAPSHOT_REL="$rel"
+        SNAPSHOT="$TOP/$rel"
+    elif [ -f "$LIVE" ]; then
+        resolve_snapshot_from_live
+    else
+        local candidates=() f
+        for f in "$TOP/$RUNS_REL"/*.yaml "$TOP/$RUNS_REL"/*.yml; do
+            [ -f "$f" ] || continue
+            candidates+=("$f")
+        done
+        if [ "${#candidates[@]}" -eq 0 ]; then
+            echo "MISSING: no committed run snapshot under $RUNS_REL/"
+            exit 1
+        fi
+        if [ "${#candidates[@]}" -gt 1 ]; then
+            echo "AMBIGUOUS: ${#candidates[@]} run snapshots under $RUNS_REL/ — pass --file <path> to name the run under check"
+            exit 1
+        fi
+        SNAPSHOT="${candidates[0]}"
+        SNAPSHOT_REL="${SNAPSHOT#"$TOP"/}"
+    fi
+    # "Committed snapshot" is the contract: the file must exist in a COMMIT at
+    # HEAD, not merely the index (git add alone must not satisfy the gate) and
+    # not as a hand-placed working-tree artifact. cat-file with a rev:path is
+    # literal — no pathspec globbing, so an untracked 'rea?.yaml' can never
+    # ride a tracked sibling (review rounds: logic F5, security r2 Low). A
+    # missing file falls through to gate_verdict's MISSING instead.
+    if [ -f "$SNAPSHOT" ] &&
+        ! git -C "$TOP" cat-file -e "HEAD:$SNAPSHOT_REL" 2>/dev/null; then
+        echo "INVALID: run snapshot exists in the working tree but not in any commit at HEAD: $SNAPSHOT_REL"
+        exit 1
+    fi
+    out="$(gate_verdict "$gate" snapshot)"
     status=$?
     printf '%s\n' "$out"
     exit "$status"
@@ -1280,6 +1435,7 @@ cmd_reconcile() {
         esac
     done
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
+    resolve_snapshot_from_live
     local last head drift next_step branch rec_branch rec_wt pending_step truth=""
     last="$(py get last_seen_sha)" || exit $?
     head="$(git -C "$TOP" rev-parse HEAD)"
@@ -1440,6 +1596,7 @@ cmd_show() {
 
 cmd_close() {
     local run_id
+    resolve_snapshot_from_live
     run_id="$(py close)" || exit $?
     commit_snapshot close "$run_id"
     echo "closed run $run_id"

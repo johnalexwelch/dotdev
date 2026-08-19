@@ -161,12 +161,12 @@ When all steps pass:
 - When invoked by `run-backlog`, `workflow-autonomous-backlog`, Codex, or any AFK worker, always write a per-issue handoff artifact even when no follow-up work remains: PR URL, gate blocks, verification evidence, review-comment resolution, CI status, issue reconciliation, residual risks.
 - Enforce the Partial-Completion Contract before exit: **Complete** (all changes committed and pushed), **WIP-paused** (`wip:` commit naming what remains, pushed), or **Rolled back** (`git reset --hard <baseline>`, clean tree). Run `git status --short` before exit; any `M`/`??` source file fails the contract (and would fail the stamp).
 - If follow-up work was discovered (NEW-NN findings, post-mortem action items, reconciliation drift): **auto-handoff** (exit_reason: completion with follow-ups, remaining: the follow-up items with prompt-builder outputs). If no remaining work and this was not an AFK/backlog/Codex run: skip handoff.
-- **Close the run**: `ledger.sh close` on clean completion — the kernel owns the state files; never hand-edit `state.yaml`.
+- **Close the run**: `ledger.sh close` on clean completion — the kernel owns the state files; never hand-edit the run snapshot (`docs/executions/runs/<run_id>.yaml`) or the live state.
 - After merge or explicit abandonment, **Load and run `cleanup-delivery/SKILL.md`** to remove stale local worktrees/branches and reconcile ticket residue — do not hand-roll the git cleanup commands. Do not run cleanup before the merge/abandonment decision.
 
 ## Gate block — the stamp is the gate, the block is its render
 
-The durable finalize gate is the kernel's stamp record in `state.yaml` (checked: review fresh, tree clean, verify-local green at HEAD, forge CI/PR/threads; attested: post_mortem, describe_pr, pr_number). Every valid run also emits this block in the final response and handoffs as the in-conversation render of that record:
+The durable finalize gate is the kernel's stamp record in the run's committed snapshot, `docs/executions/runs/<run_id>.yaml` (checked: review fresh, tree clean, verify-local green at HEAD, forge CI/PR/threads; attested: post_mortem, describe_pr, pr_number). Every valid run also emits this block in the final response and handoffs as the in-conversation render of that record:
 
 ```markdown
 WORKFLOW_FINALIZE_GATE:

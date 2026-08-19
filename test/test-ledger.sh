@@ -14,6 +14,14 @@ set -uo pipefail
 #     exemption is verified by commit CONTENTS (touches only the snapshot
 #     file), never by subject — a chore(ledger)-titled code commit is STALE
 #     (R1 MF1, D-006 #4 content-verified refinement).
+#   - Committed snapshots are PER-RUN: docs/executions/runs/<run_id>.yaml.
+#     init/stamp/close write and commit only the run's own file, so two
+#     concurrent runs in different worktrees never touch a shared path (the
+#     cross-PR state.yaml conflict class: #167/#174/#180/#181). The freshness
+#     exemption covers exactly the run's OWN file — a commit touching a
+#     different run's file (or the legacy shared path) is NOT exempt.
+#   - docs/executions/state.yaml is a legacy historical record: new runs never
+#     create, modify, or read it, and it no longer satisfies any gate.
 #   - `stamp finalize --gate-type <gate_type>` selects the gate type
 #     (default reviewer-validation); non-reviewer types require --human.
 #   - Finalize resolves the branch PR via forge pr-for-branch itself; no_pr
@@ -100,6 +108,18 @@ assert_file_exists() {
     fi
 }
 
+assert_file_not_exists() {
+    local name="$1" path="$2"
+    if [ ! -e "$path" ]; then
+        echo "  PASS: $name"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: $name"
+        echo "    UNEXPECTEDLY PRESENT: $path"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
 assert_file_contains() {
     local name="$1" path="$2" needle="$3"
     if [ -f "$path" ] && grep -Fq "$needle" "$path"; then
@@ -161,6 +181,12 @@ run_ledger() {
 live_state() {
     local dir="$1"
     printf '%s/ledger/state.yaml' "$(git -C "$dir" rev-parse --absolute-git-dir)"
+}
+
+# Per-run committed snapshot path for a run id.
+run_snap() {
+    local dir="$1" run_id="$2"
+    printf '%s/docs/executions/runs/%s.yaml' "$dir" "$run_id"
 }
 
 commit_all() {
@@ -235,9 +261,15 @@ assert_status "init happy path exits 0" 0 "$STATUS"
 assert_file_exists "init creates live state in git-dir" "$stateA"
 assert_file_contains "live state records run_id" "$stateA" "run_id: 2026-08-19-demo"
 assert_file_contains "live state is active" "$stateA" "status: active"
-assert_file_exists "init writes committed snapshot" "$repoA/docs/executions/state.yaml"
+assert_file_exists "init writes committed per-run snapshot" \
+    "$(run_snap "$repoA" 2026-08-19-demo)"
+assert_file_not_exists "init does not write the legacy shared snapshot" \
+    "$repoA/docs/executions/state.yaml"
 last_msg=$(git -C "$repoA" log -1 --pretty=%s)
 assert_contains "init commits snapshot as chore(ledger)" "$last_msg" "chore(ledger): init"
+init_paths=$(git -C "$repoA" diff-tree --no-commit-id --name-only -r HEAD)
+assert_equal "init snapshot commit touches only its own run file" \
+    "docs/executions/runs/2026-08-19-demo.yaml" "$init_paths"
 
 run_ledger "$repoA" init 2026-08-19-demo2 --workflow workflow-build-one \
     --kind feature --steps "plan,impl,review"
@@ -247,6 +279,44 @@ run_ledger "$repoA" init 2026-08-19-demo3 --workflow workflow-build-one \
     --kind feature --steps "plan,impl,review" --force
 assert_status "re-init --force exits 0" 0 "$STATUS"
 assert_file_contains "forced re-init leaves overrides[] audit entry" "$stateA" "force"
+assert_file_exists "forced re-init writes its own run file" \
+    "$(run_snap "$repoA" 2026-08-19-demo3)"
+assert_file_exists "prior run file remains as historical record" \
+    "$(run_snap "$repoA" 2026-08-19-demo)"
+
+# run_id doubles as a tracked filename: path-hostile and glob shapes are
+# refused at init (exit 6, nothing written) — the only guard keeping a run
+# from writing or sweeping paths outside docs/executions/runs/.
+for bad in '../evil' 'a/b' '.hidden' 'run*id' 'run?id' 'with space' ''; do
+    run_ledger "$repoA" init "$bad" --workflow workflow-deliver \
+        --kind feature --steps "plan" --force
+    assert_status "path-hostile run_id '$bad' exits 6" 6 "$STATUS"
+done
+assert_contains "run_id refusal names the reason" "$OUT" \
+    "unusable as a snapshot filename"
+run_ledger "$repoA" init 'run*id' --workflow workflow-deliver \
+    --kind feature --steps "plan" --force
+assert_contains "charset refusal names the allowlist" "$OUT" "allowed: A-Za-z0-9._-"
+assert_file_contains "refused run_ids write nothing (demo3 still live)" \
+    "$stateA" "run_id: 2026-08-19-demo3"
+
+# Reusing a run_id whose committed run file already exists would silently
+# overwrite a prior delivery's PR-visible audit record: refused without
+# --force even when the prior run is closed.
+repoCol=$(new_repo run_collision)
+run_ledger "$repoCol" init 2026-08-19-col --workflow workflow-deliver \
+    --kind feature --steps "impl"
+run_ledger "$repoCol" set impl completed --evidence "done"
+run_ledger "$repoCol" close
+run_ledger "$repoCol" init 2026-08-19-col --workflow workflow-deliver \
+    --kind feature --steps "impl"
+assert_status "re-init reusing a committed run_id refused (exit 7)" 7 "$STATUS"
+assert_contains "collision refusal names the existing run file" "$OUT" "2026-08-19-col"
+run_ledger "$repoCol" init 2026-08-19-col --workflow workflow-deliver \
+    --kind feature --steps "impl" --force
+assert_status "collision re-init with --force exits 0" 0 "$STATUS"
+assert_file_contains "forced collision re-init leaves an overrides audit entry" \
+    "$(live_state "$repoCol")" "existing committed run file"
 
 # --- set: transition rules ---
 run_ledger "$repoA" set nosuchstep completed --evidence "x"
@@ -352,6 +422,20 @@ rm -f "$stateL.bak"
 run_ledger "$repoL" reconcile
 assert_status "legacy state without new fields reconciles clean" 0 "$STATUS"
 
+# --- legacy shared snapshot is a historical record: new runs never touch it ---
+repoLG=$(new_repo legacy_snapshot)
+printf 'legacy historical snapshot content — frozen\n' >"$repoLG/docs/executions/state.yaml"
+commit_all "$repoLG" "chore: pre-existing legacy snapshot"
+run_ledger "$repoLG" init 2026-08-19-postlegacy --workflow workflow-deliver \
+    --kind feature --steps "impl"
+assert_status "init beside a legacy state.yaml exits 0" 0 "$STATUS"
+assert_file_exists "init beside legacy writes its per-run file" \
+    "$(run_snap "$repoLG" 2026-08-19-postlegacy)"
+assert_file_contains "legacy state.yaml left byte-identical by init" \
+    "$repoLG/docs/executions/state.yaml" "legacy historical snapshot content — frozen"
+legacy_diff=$(git -C "$repoLG" diff HEAD~1..HEAD --name-only -- docs/executions/state.yaml)
+assert_equal "init commit never touches the legacy path" "" "$legacy_diff"
+
 # --- corrupt live state is exit 6, never silently rewritten ---
 repoH=$(new_repo corrupt_state)
 run_ledger "$repoH" init 2026-08-19-corrupt --workflow workflow-build-one \
@@ -435,6 +519,32 @@ assert_status "stamp fix green repro + regression exits 0" 0 "$STATUS"
 run_ledger "$repoB" check fix
 assert_status "check fix fresh after stamp" 0 "$STATUS"
 
+# The freshness exemption is the run's OWN file only: a commit touching a
+# DIFFERENT run's snapshot (e.g. arriving via merge) is a real commit and
+# must read STALE — cross-run files never share each other's exemption.
+mkdir -p "$repoB/docs/executions/runs"
+printf 'foreign: true\n' >"$repoB/docs/executions/runs/2026-08-19-foreign-run.yaml"
+git -C "$repoB" add -- docs/executions/runs/2026-08-19-foreign-run.yaml
+git -C "$repoB" commit -q -m "chore(ledger): stamp fix" \
+    -- docs/executions/runs/2026-08-19-foreign-run.yaml
+run_ledger "$repoB" check fix
+assert_status "commit touching another run's file is NOT exempt" 1 "$STATUS"
+assert_contains "foreign-run-file commit reads STALE" "$OUT" "STALE"
+git -C "$repoB" rm -q -- docs/executions/runs/2026-08-19-foreign-run.yaml
+git -C "$repoB" commit -q -m "chore: drop foreign run file"
+
+# The narrowing pin: under the old kernel a commit touching only the shared
+# docs/executions/state.yaml was the exempt shape; it must now read STALE.
+run_ledger "$repoB" stamp fix --attest regression_test=test/regress.sh \
+    --attest rationale="restamp for legacy-path pin"
+assert_status "fix re-stamp for legacy-path pin exits 0" 0 "$STATUS"
+printf 'legacy touch\n' >"$repoB/docs/executions/state.yaml"
+git -C "$repoB" add -- docs/executions/state.yaml
+git -C "$repoB" commit -q -m "chore(ledger): stamp fix" -- docs/executions/state.yaml
+run_ledger "$repoB" check fix
+assert_status "commit touching only legacy state.yaml is NOT exempt" 1 "$STATUS"
+assert_contains "legacy-path commit reads STALE" "$OUT" "STALE"
+
 # --- repro_tail redaction + snapshot cap (batch #4) ---
 repoRT=$(new_repo redact_tail)
 stateRT=$(live_state "$repoRT")
@@ -460,14 +570,13 @@ assert_file_not_contains "live tail redacts the ghp_ token" "$stateRT" \
 assert_file_not_contains "live tail redacts the token= value" "$stateRT" \
     "supersecretvalue1234"
 assert_file_contains "live tail carries a REDACTED marker" "$stateRT" "REDACTED"
+snapRT="$(run_snap "$repoRT" 2026-08-18-redact)"
 assert_file_not_contains "committed snapshot never carries the secret" \
-    "$repoRT/docs/executions/state.yaml" "supersecretvalue1234"
+    "$snapRT" "supersecretvalue1234"
 long_run="$(printf 'x%.0s' $(seq 1 100))"
 assert_file_contains "live state keeps the full tail" "$stateRT" "$long_run"
-assert_file_not_contains "snapshot repro_tail is capped" \
-    "$repoRT/docs/executions/state.yaml" "$long_run"
-assert_file_contains "snapshot marks the truncation" \
-    "$repoRT/docs/executions/state.yaml" "truncated"
+assert_file_not_contains "snapshot repro_tail is capped" "$snapRT" "$long_run"
+assert_file_contains "snapshot marks the truncation" "$snapRT" "truncated"
 
 # --- override flow ---
 run_ledger "$repoB" stamp diagnose --attest repro_cmd="bash repro.sh" \
@@ -674,7 +783,7 @@ run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
 assert_status "finalize happy path (no PR yet) exits 0" 0 "$STATUS"
 # R2 MF1: a mock-sourced stamp must be self-evident in the committed snapshot.
 assert_file_contains "mock-allowed stamp carries forge_mock marker" \
-    "$wt1/docs/executions/state.yaml" "forge_mock"
+    "$(run_snap "$wt1" 2026-08-19-rev)" "forge_mock"
 
 run_ledger "$wt1" check finalize
 assert_status "check finalize fresh after stamp" 0 "$STATUS"
@@ -736,7 +845,7 @@ run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
 assert_status "finalize stamp accepts a draft PR" 0 "$STATUS"
 assert_file_contains "draft stamp records actual pr_state" \
-    "$wt1/docs/executions/state.yaml" "pr_state: draft"
+    "$(run_snap "$wt1" 2026-08-19-rev)" "pr_state: draft"
 
 printf 'closed\n' >"$FORGE_MOCK_DIR/forgejo-pr-state-7"
 run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
@@ -804,7 +913,7 @@ run_ledger "$wt2" stamp review --attest verdict=approve \
     --attest "lanes=logic=$lane2_logic,tests=$lane2_tests,security=$lane2_sec"
 assert_status "security lane present satisfies the flagged floor" 0 "$STATUS"
 assert_file_contains "checked review_floor records the security flag" \
-    "$wt2/docs/executions/state.yaml" "standard+security"
+    "$(run_snap "$wt2" 2026-08-19-authrev)" "standard+security"
 
 # The attested profile is exactly fast|standard|full (logic R1 must-fix): a
 # suffixed value like full+security must be rejected, not rank as full while
@@ -822,6 +931,8 @@ assert_contains "invalid profile failure names review_profile" "$OUT" "review_pr
 # committed snapshot's durable content (run identity, stamps, overrides)
 # against live state.
 wt3=$(new_wt_fixture snapshot_drift)
+snap3_rel="docs/executions/runs/2026-08-18-snap.yaml"
+snap3="$wt3/$snap3_rel"
 lanes3="$TMPDIR_BASE/snapshot_drift/lanes"
 mkdir -p "$lanes3"
 lane3="$lanes3/integrated-review.md"
@@ -845,10 +956,10 @@ run_ledger "$wt3" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$lane3"
 assert_status "snapshot fixture review stamp exits 0" 0 "$STATUS"
 
-sed -i.bak 's/^run_id: .*/run_id: forged-run/' "$wt3/docs/executions/state.yaml"
-rm -f "$wt3/docs/executions/state.yaml.bak"
-git -C "$wt3" add -- docs/executions/state.yaml
-git -C "$wt3" commit -q -m "chore(ledger): stamp review" -- docs/executions/state.yaml
+sed -i.bak 's/^run_id: .*/run_id: forged-run/' "$snap3"
+rm -f "$snap3.bak"
+git -C "$wt3" add -- "$snap3_rel"
+git -C "$wt3" commit -q -m "chore(ledger): stamp review" -- "$snap3_rel"
 
 run_ledger "$wt3" check review
 assert_status "snapshot-only tamper commit keeps stamps fresh (the hole)" 0 "$STATUS"
@@ -864,14 +975,14 @@ assert_contains "snapshot mismatch failure is the snapshot check itself" "$OUT" 
 # Deliberate legacy-shape restore: a byte-copy of live state (pre-cap
 # snapshots were exactly this). snapshot_match must normalize both sides,
 # so benign version skew is never misdiagnosed as tampering (logic R1).
-cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
-git -C "$wt3" add -- docs/executions/state.yaml
-git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- docs/executions/state.yaml
+cp "$(live_state "$wt3")" "$snap3"
+git -C "$wt3" add -- "$snap3_rel"
+git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- "$snap3_rel"
 run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
 assert_status "finalize passes on a legacy byte-copy snapshot of live" 0 "$STATUS"
 assert_file_contains "finalize records the snapshot_current checked field" \
-    "$wt3/docs/executions/state.yaml" "snapshot_current"
+    "$snap3" "snapshot_current"
 
 # A tamper AFTER the finalize stamp is freshness-exempt (snapshot-only
 # commit), so `check finalize` itself must compare the snapshot (security
@@ -879,35 +990,35 @@ assert_file_contains "finalize records the snapshot_current checked field" \
 run_ledger "$wt3" check finalize
 assert_status "check finalize OK after the finalize stamp" 0 "$STATUS"
 
-sed -i.bak 's/verdict: approve/verdict: forged/g' "$wt3/docs/executions/state.yaml"
-rm -f "$wt3/docs/executions/state.yaml.bak"
-git -C "$wt3" add -- docs/executions/state.yaml
-git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+sed -i.bak 's/verdict: approve/verdict: forged/g' "$snap3"
+rm -f "$snap3.bak"
+git -C "$wt3" add -- "$snap3_rel"
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- "$snap3_rel"
 run_ledger "$wt3" check finalize
 assert_status "post-stamp verdict tamper fails check finalize" 1 "$STATUS"
 assert_contains "post-stamp tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
 
-cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
-git -C "$wt3" add -- docs/executions/state.yaml
-git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- docs/executions/state.yaml
+cp "$(live_state "$wt3")" "$snap3"
+git -C "$wt3" add -- "$snap3_rel"
+git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- "$snap3_rel"
 run_ledger "$wt3" check finalize
 assert_status "check finalize recovers after restore" 0 "$STATUS"
 
 sed -i.bak 's/^overrides: \[\]/overrides: [{gate: finalize, reason: forged-bypass}]/' \
-    "$wt3/docs/executions/state.yaml"
-rm -f "$wt3/docs/executions/state.yaml.bak"
-git -C "$wt3" add -- docs/executions/state.yaml
-git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+    "$snap3"
+rm -f "$snap3.bak"
+git -C "$wt3" add -- "$snap3_rel"
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- "$snap3_rel"
 run_ledger "$wt3" check finalize
 assert_status "post-stamp overrides tamper fails check finalize" 1 "$STATUS"
 assert_contains "overrides tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
 
 # Route is a durable snapshot key: forging one into the tracked snapshot
 # (live state has none) is tampering (D-006 Phase 5b).
-cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
-printf 'route: forged|other-flow|confirmed\n' >>"$wt3/docs/executions/state.yaml"
-git -C "$wt3" add -- docs/executions/state.yaml
-git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+cp "$(live_state "$wt3")" "$snap3"
+printf 'route: forged|other-flow|confirmed\n' >>"$snap3"
+git -C "$wt3" add -- "$snap3_rel"
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- "$snap3_rel"
 run_ledger "$wt3" check finalize
 assert_status "forged snapshot route fails check finalize" 1 "$STATUS"
 assert_contains "forged snapshot route reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
@@ -929,7 +1040,7 @@ assert_status "init with --route exits 0" 0 "$STATUS"
 assert_file_contains "live state records top-level route field" "$stateR" \
     "route: ready issue|workflow-deliver|confirmed"
 assert_file_contains "committed snapshot carries route field" \
-    "$repoR/docs/executions/state.yaml" \
+    "$(run_snap "$repoR" 2026-08-19-routed)" \
     "route: ready issue|workflow-deliver|confirmed"
 
 run_ledger "$repoR" set plan completed --evidence "routed run step"
@@ -979,6 +1090,78 @@ printf 'route: tampered-no-pipes\n' >>"$stateR"
 run_ledger "$repoR" show
 assert_status "schema rejects malformed route on load with exit 6" 6 "$STATUS"
 assert_contains "load rejection names the bad route" "$OUT" "bad route"
+
+# --- cross-run non-interference: concurrent runs share no committed path ---
+# The defect this design fix removes: two concurrent stamped PRs both
+# committing docs/executions/state.yaml merge-conflicted on it every time
+# (#167 twice, #174, #180, #181 within 24h), forcing keep-ours resolutions
+# plus full restamp ceremonies. Per-run files make the conflict structurally
+# impossible: each run commits only docs/executions/runs/<run_id>.yaml, so
+# two branches carrying two runs merge cleanly into the same base.
+fixtureX="$TMPDIR_BASE/concurrent"
+originX="$fixtureX/origin.git"
+seedX="$fixtureX/seed"
+workX="$fixtureX/work"
+wtA="$fixtureX/wtA"
+wtB="$fixtureX/wtB"
+
+mkdir -p "$fixtureX"
+git init --bare -q "$originX"
+git -C "$originX" symbolic-ref HEAD refs/heads/main
+git clone -q "$originX" "$seedX"
+git -C "$seedX" config user.email "t@example.com"
+git -C "$seedX" config user.name "Test"
+mkdir -p "$seedX/docs/executions" "$seedX/src"
+echo "opted-in" >"$seedX/docs/executions/.gitkeep"
+echo "print('app')" >"$seedX/src/app.py"
+git -C "$seedX" add -A
+git -C "$seedX" commit -q -m init
+git -C "$seedX" push -q origin main
+rm -rf "$seedX"
+
+git clone -q "$originX" "$workX"
+git -C "$workX" config user.email "t@example.com"
+git -C "$workX" config user.name "Test"
+(cd "$workX" && bash "$BASELINE" cut --branch feature/lane-a --path "$wtA" >/dev/null 2>&1)
+(cd "$workX" && bash "$BASELINE" cut --branch feature/lane-b --path "$wtB" >/dev/null 2>&1)
+for wt in "$wtA" "$wtB"; do
+    git -C "$wt" config user.email "t@example.com" 2>/dev/null
+    git -C "$wt" config user.name "Test" 2>/dev/null
+done
+
+run_ledger "$wtA" init 2026-08-19-lane-a --workflow workflow-deliver \
+    --kind feature --steps "impl" --route "ready issue|workflow-deliver|confirmed"
+assert_status "lane-a init exits 0" 0 "$STATUS"
+run_ledger "$wtB" init 2026-08-19-lane-b --workflow workflow-deliver \
+    --kind feature --steps "impl" --route "ready issue|workflow-deliver|confirmed"
+assert_status "lane-b init exits 0" 0 "$STATUS"
+
+assert_file_exists "lane-a writes only its own run file" "$(run_snap "$wtA" 2026-08-19-lane-a)"
+assert_file_not_exists "lane-a never sees lane-b's run file" "$(run_snap "$wtA" 2026-08-19-lane-b)"
+assert_file_not_exists "lane-a never writes the legacy shared path" \
+    "$wtA/docs/executions/state.yaml"
+
+echo "lane a work" >"$wtA/src/lane_a.py"
+commit_all "$wtA" "feat: lane a work"
+echo "lane b work" >"$wtB/src/lane_b.py"
+commit_all "$wtB" "feat: lane b work"
+git -C "$wtA" push -q origin feature/lane-a
+git -C "$wtB" push -q origin feature/lane-b
+
+mergeX="$fixtureX/merge"
+git clone -q "$originX" "$mergeX"
+git -C "$mergeX" config user.email "t@example.com"
+git -C "$mergeX" config user.name "Test"
+git -C "$mergeX" merge -q --no-edit origin/feature/lane-a >/dev/null 2>&1
+mergeA=$?
+assert_status "lane-a merges into main cleanly" 0 "$mergeA"
+git -C "$mergeX" merge -q --no-edit origin/feature/lane-b >/dev/null 2>&1
+mergeB=$?
+assert_status "lane-b merges after lane-a with NO conflict (the design goal)" 0 "$mergeB"
+assert_file_exists "merged main carries lane-a's run file" \
+    "$(run_snap "$mergeX" 2026-08-19-lane-a)"
+assert_file_exists "merged main carries lane-b's run file" \
+    "$(run_snap "$mergeX" 2026-08-19-lane-b)"
 
 echo ""
 echo "Passed: $PASS"

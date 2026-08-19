@@ -131,13 +131,37 @@ gh pr list --state merged --search "merged:>=$SINCE" --json number,headRefName \
             echo "PR #$pr: head unfetchable"
             continue
         }
-        git show "$(git rev-parse FETCH_HEAD):docs/executions/state.yaml" 2>/dev/null |
-            "${LEDGER_PYTHON:-python3}" -c '
+        # Per-run snapshots (2026-08-19): the PR's run files are the
+        # docs/executions/runs/*.yaml it changed vs its base. The legacy
+        # shared state.yaml fallback applies ONLY to pre-migration heads
+        # (no runs/ tree at the head) — an unconditional fallback would read
+        # the frozen legacy stamp and score unstamped post-migration PRs as
+        # "stamped", inverting the metric. Post-migration heads with no run
+        # file are UNSTAMPED, full stop.
+        head_sha=$(git rev-parse FETCH_HEAD)
+        base_sha=$(git merge-base "$head_sha" origin/main)
+        # :(glob) pathspecs keep '*' from crossing '/' — nested run files are
+        # never kernel-authored and must not enter the loop. Non-squash-merged
+        # heads (merge-base == head, empty diff) read UNSTAMPED — the
+        # conservative direction; verify those by hand.
+        run_files=$(git diff --name-only "$base_sha" "$head_sha" -- ':(glob)docs/executions/runs/*.yaml' ':(glob)docs/executions/runs/*.yml')
+        if [ -z "$run_files" ] && ! git cat-file -e "$head_sha:docs/executions/runs" 2>/dev/null; then
+            run_files="docs/executions/state.yaml"
+        fi
+        if [ -z "$run_files" ]; then
+            echo "PR #$pr: UNSTAMPED (no run snapshot changed)"
+            continue
+        fi
+        # Unquoted word-split is safe: run_ids reject whitespace (kernel
+        # allowlist), so run-file paths never contain spaces.
+        for f in $run_files; do
+            git show "$head_sha:$f" 2>/dev/null |
+                "${LEDGER_PYTHON:-python3}" -c '
 import sys, yaml
 pr = sys.argv[1]
 doc = yaml.safe_load(sys.stdin) or {}
 stamps = doc.get("stamps") or {}
-print(f"PR #{pr}:", "stamped" if "finalize" in stamps else "UNSTAMPED")
+print(f"PR #{pr} [{sys.argv[2]}]:", "stamped" if "finalize" in stamps else "UNSTAMPED")
 print(f"PR #{pr} route:", doc.get("route") or "ABSENT")
 for e in doc.get("overrides") or []:
     print(f"PR #{pr} overrides[]:", e)
@@ -145,7 +169,8 @@ for gate, s in stamps.items():
     o = (s or {}).get("override") or {}
     if o.get("active"):
         print(f"PR #{pr} {gate} override:", o.get("reason", ""))
-' "$pr"
+' "$pr" "$f"
+        done
     done
 ```
 

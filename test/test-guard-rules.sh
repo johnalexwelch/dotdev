@@ -194,7 +194,7 @@ assert_status "merge blocked once the override is stale" 2 "$STATUS"
 assert_contains "stale-override block prints OVERRIDE_STALE" "$OUT" "OVERRIDE_STALE"
 assert_contains "stale-override block carries the recorded reason" "$OUT" "guard bypass test"
 
-# --- Rule 2: state.yaml write block ---
+# --- Rule 2: ledger state write block ---
 opted_state=$(new_repo state_block opted)
 
 run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/state.yaml")"
@@ -213,6 +213,46 @@ assert_status "Edit of worktree git-dir live state blocked" 2 "$STATUS"
 run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/config/state.yaml")"
 assert_status "unrelated state.yaml not blocked" 0 "$STATUS"
 assert_not_contains "unrelated state.yaml carries no block message" "$OUT" "script-owned"
+
+# Per-run committed snapshots (docs/executions/runs/<run_id>.yaml) are
+# script-owned exactly like the legacy shared path.
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/2026-08-19-x.yaml")"
+assert_status "Edit of per-run snapshot blocked" 2 "$STATUS"
+assert_contains "per-run snapshot block says script-owned" "$OUT" "script-owned"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/2026-08-19-x.yaml")"
+assert_status "Write of per-run snapshot blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/2026-08-19-x.yml")"
+assert_status "per-run snapshot .yml spelling blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/RUNS/2026-08-19-X.YAML")"
+assert_status "case-variant per-run snapshot blocked" 2 "$STATUS"
+
+# Nested paths under runs/ are blocked too — the kernel can never author one
+# (run_ids reject separators), so any nested run file is hand-written, and the
+# CI candidate filter must never accept a shape the guard cannot block.
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/nested/forged.yaml")"
+assert_status "nested per-run snapshot path blocked" 2 "$STATUS"
+assert_contains "nested block says script-owned" "$OUT" "script-owned"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/a/b/c.yml")"
+assert_status "deeply nested runs .yml path blocked" 2 "$STATUS"
+
+# Dotfile-shaped basenames: '.yaml'/'.yml' ARE the whole basename, which a
+# `.+\.ya?ml` regex cannot match while case-glob accept sides match the empty
+# prefix — the block set must cover them (review round 2: security).
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/.yaml")"
+assert_status "dotfile-shaped runs snapshot (.yaml) blocked" 2 "$STATUS"
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/.yml")"
+assert_status "dotfile-shaped runs snapshot (.yml) blocked" 2 "$STATUS"
+
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/README.md")"
+assert_status "runs/README.md (migration note) not blocked" 0 "$STATUS"
+assert_not_contains "runs/README.md carries no block message" "$OUT" "script-owned"
+
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/other/runs/2026-08-19-x.yaml")"
+assert_status "runs/*.yaml outside docs/executions not blocked" 0 "$STATUS"
 
 # Worktree-baseline sidecars are script-owned too (D-006 hardening; PR #166
 # post_mortem forged-baseline pattern). They live OUTSIDE the repo as siblings

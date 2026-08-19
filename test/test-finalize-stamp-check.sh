@@ -6,20 +6,30 @@ set -uo pipefail
 # merge-gate hook never sees a server-side merge).
 #
 # Contract under test:
-#   - `ledger.sh check-snapshot <gate>`: CI-side gate check against the
-#     COMMITTED snapshot (docs/executions/state.yaml) — no live state needed.
+#   - `ledger.sh check-snapshot <gate> [--file <path>]`: CI-side gate check
+#     against a COMMITTED per-run snapshot (docs/executions/runs/<run_id>.yaml)
+#     — no live state needed. Resolution without --file: the live run's file
+#     when live state exists; else exactly one runs/*.yaml (zero → exit 1
+#     MISSING; more than one → exit 1 asking for --file). --file names the
+#     run file explicitly (the CI script passes candidates from the PR diff).
 #     Freshness is the kernel's content-verified fresh_since (single
 #     implementation): the stamp's head_sha must be ancestor-or-equal of HEAD
-#     and every commit after it must touch ONLY the snapshot file, verified by
-#     diff-tree contents, never by subject. Malformed snapshots are exit 6.
+#     and every commit after it must touch ONLY that run's own snapshot file,
+#     verified by diff-tree contents, never by subject. Malformed snapshots
+#     are exit 6. The legacy shared docs/executions/state.yaml satisfies
+#     nothing — it is a frozen historical record.
 #   - `scripts/finalize-stamp-check.sh`: the local script the CI job calls.
 #     Exemptions (pass-with-note): repo not opted in (no docs/executions/),
 #     head refs matching renovate/* or dependabot/*, docs-only diffs vs --base
 #     (docs/* minus docs/executions/*, plus root-level *.md — nested *.md
 #     outside docs/ is the skills corpus and stays gated), empty diffs.
-#     Overridden stamps PASS but the override reason is annotated into the
-#     summary. Kernel environment breakage (ledger exit 10) warn-permits with
-#     an ERROR note. Everything else requires a fresh finalize stamp (exit 1).
+#     Candidate discovery: the run files CHANGED vs --base's merge-base
+#     (docs/executions/runs/*.yaml present at HEAD); the gate passes iff at
+#     least one candidate carries a fresh finalize stamp. Zero candidates on
+#     a non-exempt diff is a FAIL (the delivery never stamped). Overridden
+#     stamps PASS but the override reason is annotated into the summary.
+#     Kernel environment breakage (ledger exit 10) warn-permits with an ERROR
+#     note. Everything else requires a fresh finalize stamp (exit 1).
 #   - Workflow wiring: .github/workflows/ci.yml parses as YAML and carries a
 #     `finalize-stamp` job that checks out the PR head with full history and
 #     calls the script from a step with step-level continue-on-error (soak
@@ -147,15 +157,15 @@ new_repo() {
     printf '%s' "$repo"
 }
 
-# Hand-craft a schema-valid committed snapshot carrying a finalize stamp at
-# the given sha. Legitimate here: check-snapshot treats the snapshot as
-# untrusted input (that is the point of the CI-side check), so the tests
+# Hand-craft a schema-valid committed per-run snapshot carrying a finalize
+# stamp at the given sha. Legitimate here: check-snapshot treats the snapshot
+# as untrusted input (that is the point of the CI-side check), so the tests
 # exercise the reader, not the writer.
 write_snapshot() {
-    local repo="$1" sha="$2" override_active="${3:-false}" reason="${4:-}"
-    mkdir -p "$repo/docs/executions"
-    cat >"$repo/docs/executions/state.yaml" <<EOF
-run_id: test-run
+    local repo="$1" sha="$2" override_active="${3:-false}" reason="${4:-}" run_id="${5:-test-run}"
+    mkdir -p "$repo/docs/executions/runs"
+    cat >"$repo/docs/executions/runs/$run_id.yaml" <<EOF
+run_id: $run_id
 workflow: workflow-deliver
 kind: skill
 budget: multi-lane
@@ -186,9 +196,10 @@ EOF
 }
 
 commit_snapshot_only() {
-    local repo="$1"
-    git -C "$repo" add -- docs/executions/state.yaml
-    git -C "$repo" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+    local repo="$1" run_id="${2:-test-run}"
+    git -C "$repo" add -- "docs/executions/runs/$run_id.yaml"
+    git -C "$repo" commit -q -m "chore(ledger): stamp finalize" \
+        -- "docs/executions/runs/$run_id.yaml"
 }
 
 echo "=== finalize-stamp-check tests ==="
@@ -245,11 +256,87 @@ assert_contains "sha not in history gets the distinct diagnostic" "$OUT" "not fo
 
 repoE=$(new_repo cs_malformed)
 write_snapshot "$repoE" "$(git -C "$repoE" rev-parse HEAD)"
-sed -i.bak 's/^kind: skill/kind: bogus-kind/' "$repoE/docs/executions/state.yaml"
-rm -f "$repoE/docs/executions/state.yaml.bak"
+sed -i.bak 's/^kind: skill/kind: bogus-kind/' "$repoE/docs/executions/runs/test-run.yaml"
+rm -f "$repoE/docs/executions/runs/test-run.yaml.bak"
 commit_snapshot_only "$repoE"
 run_ledger "$repoE" check-snapshot finalize
 assert_status "schema-invalid snapshot exits 6" 6 "$STATUS"
+
+# --- check-snapshot resolution: --file and the multi-run fallback ---
+run_ledger "$repoB" check-snapshot finalize --file docs/executions/runs/test-run.yaml
+assert_status "check-snapshot --file names the run file explicitly" 1 "$STATUS"
+assert_contains "--file verdict is the same STALE as bare resolution" "$OUT" "STALE"
+
+repoMulti=$(new_repo cs_multi)
+echo "work" >"$repoMulti/src/feature.py"
+commit_all "$repoMulti" "feat: work"
+shaMulti=$(git -C "$repoMulti" rev-parse HEAD)
+write_snapshot "$repoMulti" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" false "" old-run
+commit_snapshot_only "$repoMulti" old-run
+shaMulti=$(git -C "$repoMulti" rev-parse HEAD)
+write_snapshot "$repoMulti" "$shaMulti" false "" new-run
+commit_snapshot_only "$repoMulti" new-run
+run_ledger "$repoMulti" check-snapshot finalize
+assert_status "multiple run files without --file exits 1" 1 "$STATUS"
+assert_contains "multi-run fallback asks for --file" "$OUT" "pass --file"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/new-run.yaml
+assert_status "explicit --file passes on the fresh run" 0 "$STATUS"
+assert_contains "explicit --file verdict says OK" "$OUT" "OK"
+run_ledger "$repoMulti" check-snapshot finalize --file "$repoMulti/docs/executions/runs/new-run.yaml"
+assert_status "absolute --file inside the repo passes" 0 "$STATUS"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/old-run.yaml
+assert_status "--file checks the NAMED file, not any fresh sibling" 1 "$STATUS"
+assert_contains "--file on the stale run reads its own verdict" "$OUT" "not found in history"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/absent-run.yaml
+assert_status "--file on a missing path exits 1" 1 "$STATUS"
+assert_contains "missing --file target says MISSING" "$OUT" "MISSING"
+assert_contains "missing --file verdict names the requested path" "$OUT" \
+    "docs/executions/runs/absent-run.yaml"
+
+# --file is shape-validated like a kernel-authored run file: nested paths,
+# out-of-repo paths, dotfile-shaped basenames, and the legacy shared path are
+# all refused (INVALID).
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/nested/x.yaml
+assert_status "nested --file path rejected" 1 "$STATUS"
+assert_contains "nested --file rejection says INVALID" "$OUT" "INVALID"
+run_ledger "$repoMulti" check-snapshot finalize --file /tmp/outside-foreign.yaml
+assert_status "--file outside the repo rejected" 1 "$STATUS"
+assert_contains "outside --file rejection says INVALID" "$OUT" "INVALID"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/state.yaml
+assert_status "--file naming the legacy path rejected" 1 "$STATUS"
+assert_contains "legacy --file rejection says INVALID" "$OUT" "INVALID"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/.yaml
+assert_status "dotfile-shaped --file basename rejected" 1 "$STATUS"
+assert_contains "dotfile --file rejection says INVALID" "$OUT" "INVALID"
+
+# "Committed snapshot" means in a COMMIT: an untracked run file is refused,
+# and staging alone (git add, no commit) must not satisfy the check either —
+# nor may an untracked name reach a tracked sibling via pathspec globbing.
+printf 'stray: true\n' >"$repoMulti/docs/executions/runs/stray-run.yaml"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/stray-run.yaml
+assert_status "untracked run file rejected" 1 "$STATUS"
+assert_contains "untracked rejection says INVALID" "$OUT" "INVALID"
+git -C "$repoMulti" add -- docs/executions/runs/stray-run.yaml
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/stray-run.yaml
+assert_status "staged-but-uncommitted run file rejected" 1 "$STATUS"
+assert_contains "staged-only rejection says INVALID" "$OUT" "INVALID"
+git -C "$repoMulti" rm -q --cached -- docs/executions/runs/stray-run.yaml
+rm -f "$repoMulti/docs/executions/runs/stray-run.yaml"
+
+# The legacy shared snapshot satisfies nothing: a repo whose ONLY committed
+# snapshot is a fresh old-style state.yaml has no run file to check.
+repoLeg=$(new_repo cs_legacy_only)
+echo "work" >"$repoLeg/src/feature.py"
+commit_all "$repoLeg" "feat: work"
+shaLeg=$(git -C "$repoLeg" rev-parse HEAD)
+write_snapshot "$repoLeg" "$shaLeg" false "" legacy-shape
+mv "$repoLeg/docs/executions/runs/legacy-shape.yaml" "$repoLeg/docs/executions/state.yaml"
+rmdir "$repoLeg/docs/executions/runs" 2>/dev/null
+git -C "$repoLeg" add -- docs/executions/state.yaml
+git -C "$repoLeg" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_ledger "$repoLeg" check-snapshot finalize
+assert_status "legacy state.yaml alone no longer satisfies the gate" 1 "$STATUS"
+assert_contains "legacy-only repo reads MISSING" "$OUT" "MISSING"
 
 # --- finalize-stamp-check.sh: exemptions ---
 repoF="$TMPDIR_BASE/not_opted_in"
@@ -340,6 +427,117 @@ run_check "$repoK" --base "$baseK" --head-ref feat/stamped
 assert_status "stale finalize stamp fails" 1 "$STATUS"
 assert_contains "stale finalize stamp reports STALE" "$OUT" "STALE"
 
+# Candidate discovery: the changed run files vs base are the candidates; the
+# gate passes iff at least one is fresh. A superseded run (force re-init) may
+# leave a stale sibling on the same branch — the fresh final run still passes.
+repoK2=$(new_repo gate_two_runs)
+baseK2=$(git -C "$repoK2" rev-parse HEAD)
+echo "work" >"$repoK2/src/feature.py"
+commit_all "$repoK2" "feat: work"
+write_snapshot "$repoK2" "$(git -C "$repoK2" rev-parse HEAD)" false "" superseded-run
+commit_snapshot_only "$repoK2" superseded-run
+echo "more" >>"$repoK2/src/feature.py"
+commit_all "$repoK2" "feat: more work (stales superseded-run)"
+write_snapshot "$repoK2" "$(git -C "$repoK2" rev-parse HEAD)" false "" final-run
+commit_snapshot_only "$repoK2" final-run
+run_check "$repoK2" --base "$baseK2" --head-ref feat/two-runs
+assert_status "one fresh candidate among two changed run files passes" 0 "$STATUS"
+assert_contains "two-candidate pass reports PASS" "$OUT" "PASS"
+
+# A PR that changes code plus ONLY the legacy shared snapshot has zero run
+# candidates: the old-style state.yaml must not satisfy the migrated gate.
+repoK3=$(new_repo gate_legacy_shape)
+baseK3=$(git -C "$repoK3" rev-parse HEAD)
+echo "work" >"$repoK3/src/feature.py"
+commit_all "$repoK3" "feat: work"
+write_snapshot "$repoK3" "$(git -C "$repoK3" rev-parse HEAD)" false "" legacy-move
+mv "$repoK3/docs/executions/runs/legacy-move.yaml" "$repoK3/docs/executions/state.yaml"
+rmdir "$repoK3/docs/executions/runs" 2>/dev/null
+git -C "$repoK3" add -- docs/executions/state.yaml
+git -C "$repoK3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_check "$repoK3" --base "$baseK3" --head-ref feat/legacy-shape
+assert_status "legacy state.yaml diff has zero candidates and fails" 1 "$STATUS"
+assert_contains "zero-candidate failure names the runs path" "$OUT" "docs/executions/runs"
+
+# A nested run file is a shape the kernel can never author (run_ids reject
+# separators) — the candidate filter must not accept it (bash case globs
+# cross '/', so a bare runs/*.yaml arm would).
+repoNest=$(new_repo gate_nested)
+baseNest=$(git -C "$repoNest" rev-parse HEAD)
+echo "work" >"$repoNest/src/feature.py"
+commit_all "$repoNest" "feat: work"
+write_snapshot "$repoNest" "$(git -C "$repoNest" rev-parse HEAD)" false "" tmp-nest
+mkdir -p "$repoNest/docs/executions/runs/nested"
+mv "$repoNest/docs/executions/runs/tmp-nest.yaml" \
+    "$repoNest/docs/executions/runs/nested/forged.yaml"
+git -C "$repoNest" add -- docs/executions/runs/nested/forged.yaml
+git -C "$repoNest" commit -q -m "chore(ledger): stamp finalize" \
+    -- docs/executions/runs/nested/forged.yaml
+run_check "$repoNest" --base "$baseNest" --head-ref feat/nested
+assert_status "nested run file is not an accepted candidate" 1 "$STATUS"
+assert_contains "nested-only diff fails as zero candidates" "$OUT" "docs/executions/runs"
+assert_contains "zero-candidate diagnosis names the ignored nested path count" "$OUT" "nested"
+
+# Dotfile-shaped candidate (.yaml as the whole basename): the accept arm must
+# not match an empty prefix (review round 2: security).
+repoDotf=$(new_repo gate_dotfile)
+baseDotf=$(git -C "$repoDotf" rev-parse HEAD)
+echo "work" >"$repoDotf/src/feature.py"
+commit_all "$repoDotf" "feat: work"
+write_snapshot "$repoDotf" "$(git -C "$repoDotf" rev-parse HEAD)" false "" tmp-dotf
+mv "$repoDotf/docs/executions/runs/tmp-dotf.yaml" "$repoDotf/docs/executions/runs/.yaml"
+git -C "$repoDotf" add -f -- docs/executions/runs/.yaml
+git -C "$repoDotf" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/runs/.yaml
+run_check "$repoDotf" --base "$baseDotf" --head-ref feat/dotfile
+assert_status "dotfile-shaped run file is not an accepted candidate" 1 "$STATUS"
+
+# Unresolvable merge-base: the fallback enumerates the run files present at
+# HEAD and runs the same candidate loop — resolvable and fail-closed, instead
+# of delegating to the kernel's single-file tier (which reads AMBIGUOUS
+# forever once run files accumulate).
+repoFB=$(new_repo gate_fallback)
+echo "work" >"$repoFB/src/feature.py"
+commit_all "$repoFB" "feat: work"
+write_snapshot "$repoFB" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" false "" stale-old
+commit_snapshot_only "$repoFB" stale-old
+write_snapshot "$repoFB" "$(git -C "$repoFB" rev-parse HEAD)" false "" fresh-new
+commit_snapshot_only "$repoFB" fresh-new
+run_check "$repoFB" --base deadbeefdeadbeefdeadbeefdeadbeefdeadbeef --head-ref feat/fallback
+assert_status "unresolvable base falls back to HEAD run files and passes" 0 "$STATUS"
+assert_contains "fallback pass notes the skipped exemption" "$OUT" "could not resolve merge-base"
+assert_contains "fallback pass reports PASS" "$OUT" "PASS"
+
+# A schema-invalid (kernel exit 6) sibling must stay visible even when a
+# fresh candidate passes — a corrupt PR-visible record must never merge
+# unannotated.
+repoBadSib=$(new_repo gate_bad_sibling)
+baseBadSib=$(git -C "$repoBadSib" rev-parse HEAD)
+echo "work" >"$repoBadSib/src/feature.py"
+commit_all "$repoBadSib" "feat: work"
+write_snapshot "$repoBadSib" "$(git -C "$repoBadSib" rev-parse HEAD)" false "" bad-run
+sed -i.bak 's/^kind: skill/kind: bogus-kind/' "$repoBadSib/docs/executions/runs/bad-run.yaml"
+rm -f "$repoBadSib/docs/executions/runs/bad-run.yaml.bak"
+commit_snapshot_only "$repoBadSib" bad-run
+write_snapshot "$repoBadSib" "$(git -C "$repoBadSib" rev-parse HEAD)" false "" good-run
+commit_snapshot_only "$repoBadSib" good-run
+run_check "$repoBadSib" --base "$baseBadSib" --head-ref feat/bad-sibling
+assert_status "fresh candidate still passes beside a malformed sibling" 0 "$STATUS"
+assert_contains "malformed sibling is annotated on PASS" "$OUT" "bad-run"
+
+# Every changed run file deleted at HEAD is a distinct cause and the
+# zero-candidate diagnosis must say so.
+repoDel=$(new_repo gate_deleted)
+write_snapshot "$repoDel" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" false "" doomed
+commit_snapshot_only "$repoDel" doomed
+baseDel=$(git -C "$repoDel" rev-parse HEAD)
+echo "work" >"$repoDel/src/feature.py"
+commit_all "$repoDel" "feat: work"
+git -C "$repoDel" rm -q -- docs/executions/runs/doomed.yaml
+git -C "$repoDel" commit -q -m "chore: retire run file"
+run_check "$repoDel" --base "$baseDel" --head-ref feat/deleted
+assert_status "deleted-run-file diff still fails" 1 "$STATUS"
+assert_contains "zero-candidate diagnosis mentions deletion" "$OUT" "deleted at HEAD"
+
 repoL=$(new_repo gate_override)
 baseL=$(git -C "$repoL" rev-parse HEAD)
 echo "work" >"$repoL/src/feature.py"
@@ -377,8 +575,8 @@ baseM=$(git -C "$repoM" rev-parse HEAD)
 echo "work" >"$repoM/src/feature.py"
 commit_all "$repoM" "feat: work"
 write_snapshot "$repoM" "$(git -C "$repoM" rev-parse HEAD)"
-sed -i.bak 's/^kind: skill/kind: bogus-kind/' "$repoM/docs/executions/state.yaml"
-rm -f "$repoM/docs/executions/state.yaml.bak"
+sed -i.bak 's/^kind: skill/kind: bogus-kind/' "$repoM/docs/executions/runs/test-run.yaml"
+rm -f "$repoM/docs/executions/runs/test-run.yaml.bak"
 commit_snapshot_only "$repoM"
 run_check "$repoM" --base "$baseM" --head-ref feat/malformed
 assert_status "malformed snapshot fails the gate through the script" 1 "$STATUS"

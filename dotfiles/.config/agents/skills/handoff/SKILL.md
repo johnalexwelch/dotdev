@@ -13,7 +13,7 @@ Compress the current session into a handoff document so a fresh agent can contin
 
 ## Contract
 
-Consumes: `docs/executions/state.yaml` (primary source for run state / next steps when present), current conversation context, exit reason (manual, halt, completion), remaining work items
+Consumes: workflow-ledger run state — `ledger.sh show` / the branch's committed `docs/executions/runs/<run_id>.yaml` (primary source for run state / next steps when present), current conversation context, exit reason (manual, halt, completion), remaining work items
 Produces: handoff document at <repo-root>/docs/executions/handoffs/<date>-<slug>.md (persistent) mirrored to ~/.chorus/handoffs/<repo-name>/ (survives worktree teardown); paths always printed absolute
 Requires: none
 Side effects: creates handoff file; for Codex, writes to project directory
@@ -84,10 +84,10 @@ Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd
 
 ## Process
 
-0. If `docs/executions/state.yaml` exists, read it first — **but first, check whether the current branch is behind the verified workflow base** (the branch's merge-base against origin/main; this prevents stale state from a rebased or orphaned checkout). If behind, read the base copy instead: `git show $(git merge-base HEAD origin/main):docs/executions/state.yaml`. Use its `workflow`, `steps`, and `next` as the source of truth for "Where we are" and "Next steps". Fall back to conversation context only when the file is absent. Schema: `../_docs/state-cockpit.md`.
+0. Recover run state, preferring the live ledger: `workflow-ledger/scripts/ledger.sh show` (the git-dir state is per-worktree and authoritative). If the kernel cannot run, read the active run's committed per-run snapshot `docs/executions/runs/<run_id>.yaml` (the file changed on this branch; newest by `git log` when several exist) — **but first, check whether the current branch is behind the verified workflow base** (the branch's merge-base against origin/main; this prevents stale state from a rebased or orphaned checkout). If behind, read the base copy instead: `git show $(git merge-base HEAD origin/main):docs/executions/runs/<run_id>.yaml`. Use its `workflow`, `steps`, and `next` as the source of truth for "Where we are" and "Next steps". Fall back to conversation context only when no run state exists. (`docs/executions/state.yaml` is a frozen legacy record — do not trust it for current state.)
 1. Determine storage paths. Resolve the repo root with `git rev-parse --show-toplevel` and build the **absolute** repo-copy path from it. Set `repo-name` from the main repo's git dir (worktree-safe), NOT the toplevel: `agd=$(git rev-parse --absolute-git-dir); repo=$(basename "${agd%%/.git*}")`. Capture the literal value for the later mkdir/cp.
 2. Determine exit context (manual vs auto, exit reason, remaining items).
-2.5. **Live queue refresh** (only when the user explicitly asks "what's current?", "what's the latest?", or similar). Re-read open `ready-for-agent` issues from `gh issue list` and relevant PR merge states from `gh pr list --state open` for the active workflow. If the state in `docs/executions/state.yaml` conflicts with what you see live (e.g., an issue is closed, or a PR is merged), emit an explicit **conflict note** in the handoff ("Issue #X shown as open in state.yaml but closed in gh; PR #Y merged since state.yaml written") and use the live state as the source of truth for the handoff.
+2.5. **Live queue refresh** (only when the user explicitly asks "what's current?", "what's the latest?", or similar). Re-read open `ready-for-agent` issues from `gh issue list` and relevant PR merge states from `gh pr list --state open` for the active workflow. If the recorded run state (ledger / per-run snapshot) conflicts with what you see live (e.g., an issue is closed, or a PR is merged), emit an explicit **conflict note** in the handoff ("Issue #X shown as open in the run state but closed in gh; PR #Y merged since the snapshot was written") and use the live state as the source of truth for the handoff.
 3. If remaining items include actionable next-step issues, invoke `prompt-builder` for each to generate ready-to-use prompts. Treat the `ready-for-agent` label as a signal, not a strict gate — an issue tagged only `type:task` (or unlabeled) that is otherwise clearly actionable still qualifies; use judgment rather than skipping it on label technicality.
 4. Fill in the **Start here** directive (top of the document structure) with the real first next step and any open blocker.
 5. **Pre-flight check before you send the next command**: does it contain a literal newline separating two commands (not `&&`)? Does it pair `mkdir` with a `cp`/`install` that reads the directory it just created? If either is yes, split it — do not send it as written. This has been observed to bite even immediately after reading this exact warning; treat it as a checklist, not context to skim.
@@ -129,17 +129,18 @@ to "read this handoff" — it's already here.
 >    repo. `cd <absolute-work-repo-root>` first, and every `gh` call needs
 >    `--repo <owner/slug>` (a bare `gh issue view` resolves against the cwd repo and
 >    will hit the wrong project).
-> 1. Read `docs/executions/state.yaml` if present — SOURCE OF TRUTH for the active
->    `workflow`, completed `steps`, and the `next` queue. Resume from `next`; do
->    not redo completed steps. (Schema: `skills/_docs/state-cockpit.md`.)
+> 1. Recover run state — `workflow-ledger/scripts/ledger.sh show`, falling back to
+>    the branch's committed `docs/executions/runs/<run_id>.yaml` — SOURCE OF TRUTH
+>    for the active `workflow`, completed `steps`, and the `next` queue. Resume
+>    from `next`; do not redo completed steps.
 > 2. Read the paths under "Files to read first" (bottom of this doc) to rebuild context.
 > `<if the next step is to work a specific issue/ticket — grill, decide, implement:>`
 >    VERIFY it is still open before starting: `gh issue view <N> --repo <owner/slug> --json state,comments`.
 >    This handoff is a proxy — a concurrent agent may have closed/resolved it since it was written.
 >    If already CLOSED or carrying a resolution, STOP and reconcile (mirror the locked outcome), do not redo the work.
 >
-> Then do Next step 1: `<first next step>`. If `state.yaml` and this doc disagree,
-> `state.yaml` wins on run status.
+> Then do Next step 1: `<first next step>`. If the recorded run state and this doc
+> disagree, the run state wins on run status.
 > `<if a blocker is open:>` STOP first and resolve: `<blocker + the decision needed>`.
 
 ## Where we are
@@ -264,7 +265,7 @@ Honest limits:
 - If the exit reason is a blocker, be specific about what decision the human needs to make. "Needs human" alone is not actionable.
 - For Codex targets: include full prompt-builder outputs. Codex cannot ask questions.
 - For Claude targets: prompts can be lighter (Claude can ask the user).
-- Always include the **Start here** directive near the top of the handoff, and print the `Resume: read <path> ...` paste line last. The user pastes the path, not the whole prompt. If no `state.yaml` exists, drop its step 1 and boot off "Files to read first" only. For Codex the directive must be self-contained (no "ask the user"); for Claude it may leave a decision to the user.
+- Always include the **Start here** directive near the top of the handoff, and print the `Resume: read <path> ...` paste line last. The user pastes the path, not the whole prompt. If no run state exists (no live ledger, no per-run snapshot), drop its step 1 and boot off "Files to read first" only. For Codex the directive must be self-contained (no "ask the user"); for Claude it may leave a decision to the user.
 - Always print handoff paths as **absolute** paths (resolved via `git rev-parse --show-toplevel`), never relative. This applies to EVERY path in the body too ("Files to read first", "What was done", artifact references), not just the printed Resume line — repo-relative paths like `cora/docs/foo.md` do not resolve when the resumer's cwd is a different repo's worktree, which is the common case.
 - When the handoff's cwd will differ from the work repo (e.g. the session runs inside another repo's worktree while the map/issues/code live elsewhere), the **Start here** directive MUST name the absolute work-repo root AND the required `gh --repo <owner/slug>` flag. Do not assume the resumer can infer the work repo from cwd — a bare `gh` call resolves against the cwd repo and silently targets the wrong project.
 - Always write the global mirror under `~/.chorus/handoffs/<repo-name>/` so the handoff survives worktree destruction. Derive `<repo-name>` from `git rev-parse --absolute-git-dir` (strip `/.git*`, then basename) — never from `--show-toplevel`, which is a transient slug under worktrees.

@@ -29,9 +29,11 @@ repos:
     rev: v0.11.0
     hooks:
       - id: yamlfmt
-        # Ledger snapshot is machine-written by workflow-ledger/scripts/ledger.sh
-        # (Edit/Write hook-blocked); do not reformat script-owned output.
-        exclude: ^docs/executions/state\.yaml$
+        # Ledger snapshots are machine-written by workflow-ledger/scripts/ledger.sh
+        # (Edit/Write hook-blocked); do not reformat script-owned output. FLAT
+        # per-run files only — a nested runs/ yaml is hand-written by definition
+        # and gets no exemption. state.yaml is the frozen legacy record.
+        exclude: ^docs/executions/(state\.yaml|runs/[^/]+\.ya?ml)$
   - repo: local
     hooks:
       - id: skill-suite-lint
@@ -60,6 +62,8 @@ repos:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
         # Ledger snapshots are machine-written (hook-guarded) and every stamp
-        # embeds fresh commit SHAs, which false-positive as high-entropy
-        # strings — a per-finding baseline can never stay green (D-006).
-        exclude: ^docs/executions/state\.yaml$
+        # embeds fresh commit SHAs and lane sha256 digests, which
+        # false-positive as high-entropy strings — a per-finding baseline can
+        # never stay green (D-006). FLAT per-run files only, same rationale
+        # as the yamlfmt exclude above.
+        exclude: ^docs/executions/(state\.yaml|runs/[^/]+\.ya?ml)$

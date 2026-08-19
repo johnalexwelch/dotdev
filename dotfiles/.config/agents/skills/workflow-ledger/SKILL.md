@@ -3,7 +3,7 @@ name: workflow-ledger
 layer: kernel
 user-invocable: false
 disable-model-invocation: true
-description: Kernel library owning workflow run state, step transitions, and gate stamps via scripts/ledger.sh. Use when a workflow skill needs to record steps, stamp or check a gate (diagnose/fix/review/finalize), reconcile a stale run, or verify local CI parity — never hand-write state.yaml or gate blocks.
+description: Kernel library owning workflow run state, step transitions, and gate stamps via scripts/ledger.sh. Use when a workflow skill needs to record steps, stamp or check a gate (diagnose/fix/review/finalize), reconcile a stale run, or verify local CI parity — never hand-write ledger state files (live state or per-run snapshots) or gate blocks.
 ---
 
 # Workflow Ledger
@@ -15,7 +15,8 @@ Full contract with exit codes and test-enforced refinements: `docs/executions/pl
 ## State model
 
 - **Live state**: `$(git rev-parse --git-dir)/ledger/state.yaml` — survives `reset --hard`; per-worktree automatically. Owned by `ledger.sh`; a hook blocks direct Edit/Write.
-- **Committed snapshot**: `docs/executions/state.yaml`, written and committed (`chore(ledger): …`) only by `init`/`stamp`/`close` — the PR-visible audit record.
+- **Committed snapshot (per-run)**: `docs/executions/runs/<run_id>.yaml`, written and committed (`chore(ledger): …`) only by `init`/`stamp`/`close` — the PR-visible audit record. One file per run: concurrent runs never commit a shared path, which ends the cross-PR merge conflicts the old single snapshot caused (#167/#174/#180/#181).
+- **Legacy record**: `docs/executions/state.yaml` is frozen history — never written or read by new runs, and it satisfies no gate.
 - Every write is schema-validated; corrupt state is exit 6, never silently rewritten.
 
 ## CLI
@@ -25,7 +26,7 @@ ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [
 ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, fresh (see Freshness)
-ledger.sh check-snapshot <gate>   # CI mode: same stamp+freshness verdict against the committed snapshot, minus the live-state drift compare; used by the finalize-stamp CI job
+ledger.sh check-snapshot <gate> [--file <path>]   # CI mode: same stamp+freshness verdict against a committed per-run snapshot, minus the live-state drift compare; --file names the run file (the finalize-stamp CI job passes candidates from the PR diff), else the live run's file, else exactly one runs/*.yaml
 ledger.sh reconcile [--apply]     # ledger vs git ground truth; prints true frontier
 ledger.sh preflight --skill <name>
 ledger.sh review-floor [--base <ref>]   # prints fast|standard|full — the minimum profile; a path-pattern hit appends +security (floor is then at least standard, e.g. standard+security)
@@ -52,7 +53,7 @@ A stamp is writable only when every **checked** field passes at stamp time; **at
 | `review` | worktree verify; chosen profile ≥ `review-floor` — attest the bare word (`fast\|standard\|full`), never the printed `+security` token, which is refused; a `+security`-flagged floor adds a required security lane on top; every required lane file exists with `verdict:` line and an mtime no older than this run's init (a stale lane file from an earlier session is refused); per-lane `model:` ≥ floor; digests recorded | verdict, review_profile, lanes, model_floor |
 | `finalize` | `check review` fresh; `git status --porcelain` empty; `verify-local` passed at HEAD; committed snapshot's durable content (run identity, stamps, overrides) matches live state (`snapshot_current`; `check finalize` re-compares it, since a snapshot-only commit is freshness-exempt); via `forge.sh`: CI green, PR state (`open`\|`draft` passes), threads resolved (`no_pr` noted when no PR) | post_mortem, describe_pr, pr_number |
 
-**Freshness is strict, with one content-verified exemption**: `check` fails `STALE` on any commit after the stamp unless that commit touches *only* the committed snapshot file (verified via `git diff-tree` contents — never by commit subject, which is forgeable). A stamp's own snapshot commit is therefore exempt; nothing else is. **Overrides are audited, not prevented**: `--override --reason` stamps with a loud `OVERRIDDEN` marker and an `overrides[]` audit entry; use only on explicit user instruction. The same freshness rule applies: a stale override fails `check` with `OVERRIDE_STALE: … recorded reason: <reason>` — an expired authorization, distinguishable from a gate that never passed.
+**Freshness is strict, with one content-verified exemption**: `check` fails `STALE` on any commit after the stamp unless that commit touches *only* this run's own committed snapshot file, `docs/executions/runs/<run_id>.yaml` (verified via `git diff-tree` contents — never by commit subject, which is forgeable). A stamp's own snapshot commit is therefore exempt; nothing else is — a commit touching a different run's file or the legacy `state.yaml` reads STALE. **Overrides are audited, not prevented**: `--override --reason` stamps with a loud `OVERRIDDEN` marker and an `overrides[]` audit entry; use only on explicit user instruction. The same freshness rule applies: a stale override fails `check` with `OVERRIDE_STALE: … recorded reason: <reason>` — an expired authorization, distinguishable from a gate that never passed.
 
 ## Gate types (AFK semantics)
 
@@ -69,7 +70,7 @@ Workflow skills still display an in-conversation `WORKFLOW_STEPS` table (step | 
 
 ## Hook integration (workflow-guard.sh)
 
-Merge shapes (`gh pr merge|ready`, `git-forge`/`tea` merge, curl `/pulls/*/merge`) are blocked without a fresh finalize stamp in opted-in repos (`docs/executions/` present). Direct writes to state.yaml are blocked. stderr-suppression on mutating git/gh commands is blocked. Entry warn fires on tracked-code edits with no active run (`LEDGER_ENTRY_ENFORCE=block` escalates; default flips in Phase 5).
+Merge shapes (`gh pr merge|ready`, `git-forge`/`tea` merge, curl `/pulls/*/merge`) are blocked without a fresh finalize stamp in opted-in repos (`docs/executions/` present). Direct Edit/Write to ledger state is blocked — the git-dir live state, any `.yaml`/`.yml` under `docs/executions/runs/` at any depth (the kernel only authors flat, allowlist-named files, so anything else there is by definition hand-written), and the legacy `state.yaml`. stderr-suppression on mutating git/gh commands is blocked. Entry warn fires on tracked-code edits with no active run (`LEDGER_ENTRY_ENFORCE=block` escalates; default flips in Phase 5).
 
 ## Contract
 
