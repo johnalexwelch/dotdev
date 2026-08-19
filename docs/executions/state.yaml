@@ -1,72 +1,73 @@
-run_id: 2026-08-19-skills-consolidation-batch2
+run_id: 2026-08-19-relay-runner
 workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
-initialized_epoch: 1787152878
-status: active
+initialized_epoch: 1787152244
+status: done
 next: ''
-updated: '2026-08-19T16:38:05.306406+00:00'
+updated: '2026-08-19T16:47:26.051591+00:00'
 steps:
 - id: preflight
   required: true
   status: completed
-  evidence: 'worktree cut from origin/main (WORKTREE_BASELINE_GATE: origin/main -> feat/skills-consolidation-batch2); required tools gh/git present; brief is the Alex-approved batch-2 list'
+  evidence: 'worktree cut via worktree-baseline.sh: WORKTREE_BASELINE_GATE: origin/main -> feat/relay-runner @ /Users/alexwelch/wt/dotdev/relay-runner; claude CLI 2.1.235 ground-truthed: -p --output-format stream-json errors without --verbose (''requires --verbose'', exit 1); ec61612 confirmed NOT on origin/main -> non-draft PR path chosen'
 - id: triage
   required: true
   status: completed
-  evidence: "5 items well-formed, Alex-approved per-item; conflict lane checked: planning-lane owns design-plan/execute-phase/to-prd/execute-prd/router refactor rows/reference-workflows.md \u2014 none touched by this batch"
+  evidence: 'spec provided directly by main agent (Alex-approved); deliverable: relay.sh kernel-adjacent script + tests + handoff/workflow-ledger doc sections; stop-condition contract enumerated with distinct exit codes; no human-only decisions; AFK-safe'
 - id: implement
   required: true
   status: completed
-  evidence: "commit b77cc54: 16 files, +168/-819; herdr 673->162 total, humanizer exec-mode section, 3 tombstones (#164 pattern), callers rewired (workflow-executive-doc, grill-with-docs), catalog+decision-log updated; lint-skill-refs 0 dangling, lint-skill-suite failures=0, skills-index regenerated; tdd: not_applicable_with_reason: prose skill/docs change, no executable behavior \u2014 lints are the verification"
+  evidence: commits b376e99 (red suite, 46 asserts) + 3dffe9b (relay.sh green + handoff Relay section + ledger CLI listing); test/run-tests.sh 65/65 PASS, shellcheck clean on both files, lint-skill-refs + lint-skill-suite exit 0; empty test-file diff between red and green commits (two-lane TDD shape); flags ground-truthed against claude 2.1.235
 - id: review
   required: true
   status: completed
-  evidence: 'full profile, 4 opus lanes (security/logic/tests/style), 11 rounds, all APPROVE at a1171f0; 12 findings: 10 fixed, 2 deferred with named follow-ups'
+  evidence: 'workflow-review full profile (floor=full): 4 lanes x opus, 5 rounds (R1 all REQUEST_CHANGES -> R4/R5 all APPROVE); final verdicts: security APPROVE@e37236b, logic APPROVE@1068b19, tests APPROVE@e37236b, style APPROVE@1068b19; reviewers re-verified fixes by re-running their own exploits/mutations; lane files /tmp/ledger-lanes-2026-08-19-relay-runner/; stamp written at 30efedd (digests of final lane files)'
 - id: qa
   required: true
   status: completed
-  evidence: 'not applicable: prose-only skill markdown, no user-facing runtime behavior; lint/eval gate set is the verification'
+  evidence: 'live 1-leg smoke: real claude leg (run smoke-112314) read the seed handoff, wrote DONE to /tmp/relay-smoke, rewrote handoff with exit_reason: complete; relay exited 0 with full ADHD summary; transcript /tmp/relay-smoke-112314/leg-1.jsonl (26 stream-json lines); RELAY_CLAUDE_ARGS=''--permission-mode acceptEdits --add-dir /tmp'''
 - id: finalize
   required: true
   status: completed
-  evidence: 'PR #188 non-draft, MERGEABLE; verify-local PASSED at fb04a2b; not merged per instruction'
+  evidence: 'PR #187 open non-draft (NOT merged per instruction); finalize stamped at 4ba3e7d; CI green (Lint, Test suite, Finalize stamp, Secret scan, Shell syntax, Stow/Install dry runs); verify-local PASS at 4ba3e7d; threads resolved (no review threads)'
 stamps:
   review:
-    head_sha: c7ffbcb663942bb4c6515ad1b8343378a04c7c18
-    timestamp: '2026-08-19T16:36:28.460396+00:00'
+    head_sha: 64b969a472bef46e59035735da19f5ae3e5ced8a
+    timestamp: '2026-08-19T16:43:40.271467+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: d478681b107f2b30a8e4dfc68a646e7de1dbe2ad98de385978644c89d3452173
-      lane_security_lines: '231'
+      lane_security_sha256: 0d6db0882b255b665d6fa68a41c1124fadc1ee40a6e34119fd5d61c05355a47b
+      lane_security_lines: '117'
       lane_security_verdict: APPROVE
       lane_security_model: claude-opus-5[1m]
-      lane_logic_sha256: 053d4636d10d646d6ffbefb7eafee4d53904af38b9bd69abd38bb3962fd79106
-      lane_logic_lines: '121'
+      lane_logic_sha256: ee3e2d864af18f7f2a35cd46b61e3708db1327b75e9f18ee9864297e8b403d14
+      lane_logic_lines: '82'
       lane_logic_verdict: APPROVE
       lane_logic_model: claude-opus-5[1m]
-      lane_tests_sha256: 725a846db1b66b2c9f3570c2b7232838aaf1348201bf112da486f5978b1249a5
-      lane_tests_lines: '58'
+      lane_tests_sha256: 40c7f56be9652c84239a8cfb25b7277e2030fddb5c939df2bd6d5e4f7ff92f62
+      lane_tests_lines: '136'
       lane_tests_verdict: APPROVE
       lane_tests_model: claude-opus-5[1m]
-      lane_style_sha256: 3e1a29f5e75457b5ecec8be1d5a5fb1f012becf22d3acacdbc0c0c4cf4953cc6
-      lane_style_lines: '91'
+      lane_style_sha256: 0e2c0c2b11b493326dbd5a68caf1c2b8da3e6586a52b7e221a77d16bd6dd7b80
+      lane_style_lines: '64'
       lane_style_verdict: APPROVE
       lane_style_model: claude-opus-5[1m]
       review_floor: full
       worktree_verify: pass
     attested:
-      verdict: approve
       review_profile: full
-      lanes: logic=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/logic-review.md,security=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/security-review.md,style=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/style-review.md,tests=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/tests-review.md
+      verdict: APPROVE
+      model_floor: opus
+      lanes: security=/tmp/ledger-lanes-2026-08-19-relay-runner/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-relay-runner/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-relay-runner/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-relay-runner/style-review.md
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: a97765e776e6f64828430e6e83b456766e78f85f
-    timestamp: '2026-08-19T16:38:05.306263+00:00'
+    head_sha: 4ba3e7d2f4e8d072cc71536b735563b836a02ccb
+    timestamp: '2026-08-19T16:47:12.127679+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -75,19 +76,19 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
-      post_mortem: not_applicable
-      describe_pr: in_pr_body
-      pr_number: '188'
+      pr_number: '187'
+      describe_pr: 'handoff relay runner: relay.sh chains headless claude -p legs through a handoff file with gate-honoring stops (exit 0/1/2/3/4/5/6), fail-safe template default, workdir hygiene, argv audit; handoff Relay section + unified exit_reason vocabulary; ledger CLI listing; D-006 relay addendum in decision log; 80-assert red-first suite, zero real API calls'
+      post_mortem: "five review rounds (R1 all four lanes REQUEST_CHANGES -> final all APPROVE); two regressions caught by reviewers mid-delivery (latched ledger baseline deadening a test; template default briefly flipping fail-unsafe) \u2014 both fixed at root with discriminating guards, mutation-verified; four queue merges from origin/main during delivery (PRs 176-188 window) forced three review re-stamps; detect-secrets false positives allowlisted; live 1-leg smoke passed pre-review"
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-branch: feat/skills-consolidation-batch2
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/skills-consolidation-batch2
-last_seen_sha: a97765e776e6f64828430e6e83b456766e78f85f
+branch: feat/relay-runner
+worktree: /Users/alexwelch/wt/dotdev/relay-runner
+last_seen_sha: bed9d227b8c13c6814b8dbccfe10c3b4b4451c10
 verify_local:
-  head_sha: a97765e776e6f64828430e6e83b456766e78f85f
+  head_sha: 4ba3e7d2f4e8d072cc71536b735563b836a02ccb
   passed: true
   results:
   - cmd: ./test/run-tests.sh

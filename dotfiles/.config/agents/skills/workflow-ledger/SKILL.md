@@ -31,7 +31,11 @@ ledger.sh preflight --skill <name>
 ledger.sh review-floor [--base <ref>]   # prints fast|standard|full — the minimum profile; a path-pattern hit appends +security (floor is then at least standard, e.g. standard+security)
 ledger.sh verify-local            # runs docs/executions/ci-commands.yaml at HEAD
 ledger.sh show | close
+
+relay.sh --handoff <file> [--max-legs N=5] [--repo <path>] [--stop-file <path>]
 ```
+
+`relay.sh` is the handoff relay runner: it chains headless `claude -p` legs through a handoff file, continuing only on AFK-eligible exit_reasons (`completion-with-follow-ups`, `halt-for-continuation`) and stopping on completion (incl. the live ledger `<git-dir>/ledger/state.yaml` reaching `status: done` during the relay — a pre-existing `done` at launch is stale and ignored), human gates (NEEDS_HUMAN / needs-human / maintainer-decision / operator-runtime / secret-custody / `blocker:`), no-progress (handoff sha unchanged), max-legs, the stop-file kill switch, or a leg error — distinct exit codes 0/2/3/4/5/6, plus 1 for usage errors. Operator doc: the handoff skill's "Relay" section. Tested by `test/test-relay.sh`.
 
 Transition rules are code, not convention: required steps cannot be `skipped` (exit 3); `completed|skipped|blocked|failed` require evidence/reason (exit 4); `kind: bug` auto-inserts required `diagnose`/`fix` steps.
 
