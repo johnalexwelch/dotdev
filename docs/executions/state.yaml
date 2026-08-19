@@ -2,10 +2,10 @@ run_id: 2026-08-19-phase5b-route-evidence
 workflow: workflow-skill
 kind: skill
 budget: one-reviewer
-initialized_epoch: 1787151719
+initialized_epoch: 1787152447
 status: active
 next: red-tests
-updated: '2026-08-19T15:01:59.579552+00:00'
+updated: '2026-08-19T15:14:07.191008+00:00'
 steps:
 - id: red-tests
   required: true
@@ -32,6 +32,10 @@ steps:
   status: pending
   evidence: ''
 stamps: {}
-overrides: []
+overrides:
+- action: force-init
+  reason: --force re-init over prior run 2026-08-19-phase5b-route-evidence
+  timestamp: '2026-08-19T15:14:07.111041+00:00'
+route: skill/kernel change|workflow-skill|confirmed
 branch: feat/d006-phase5b-route-evidence
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
