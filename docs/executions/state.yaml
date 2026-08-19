@@ -3,8 +3,8 @@ workflow: workflow-deliver
 kind: bug
 budget: one-reviewer
 status: active
-next: review
-updated: '2026-08-18T23:54:14.916224+00:00'
+next: ''
+updated: '2026-08-19T00:38:17.551717+00:00'
 steps:
 - id: diagnose
   required: true
@@ -44,16 +44,33 @@ steps:
     186d973 test lane; cf71697 impl lane, no test files touched)'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'workflow-review full profile (computed floor), 4 independent opus lanes:
+    security/logic/tests/style. Round 1: 3 lanes REQUEST_CHANGES (short-ref shadowing
+    High, namespace-aliasing+omission Med, BSD sed CI-breaker High, --base contract,
+    5 more) -> fixes eed5578+d0a16ab. Round 2: lanes found 7 regressions in the fixes
+    (stale/retargetable origin/HEAD symref, pipefail abort, substring whitelist fail-open,
+    WT_PATH transplant, stderr-only stale marker, SC2154 CI lint) -> a8bf853+577bd73+c2c1094+8e55a9d.
+    All lanes APPROVE at final HEAD after merging advanced origin/main. Lane files
+    /tmp/{security,logic,tests,style}-review.md. Accepted risks: stacked fields advisory-plus-checked;
+    base-policy drift fails loud by design; Bash sidecar writes documented residual
+    (git ground truth is the primary control); offline symref trust marked possibly-stale
+    in PASS evidence'
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "user-journey QA evaluated: not applicable \u2014 backend delivery-tooling\
+    \ change (gate scripts, hook, tests), no user-facing journey"
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: blocked
+  evidence: "all checked fields green except one: kernel rejects draft PRs at stamp\
+    \ finalize (ledger.sh:808 requires prstate=open) while the guard hook blocks marking\
+    \ a PR ready without a finalize stamp \u2014 deadlock is the known Phase 3 defect\
+    \ fixed by open PR #170. PR #171 draft, CI 6/6 green, mergeState CLEAN, 0 review\
+    \ threads, verify-local PASSED at 3452dcc, tree clean. Unblock: land PR #170 first,\
+    \ then re-run the finalize stamp and complete the squash-merge of PR #171 through\
+    \ the gate"
 stamps:
   diagnose:
     head_sha: c2b5ca6fa8ced4b18978f25993e67ed37229b228
@@ -97,8 +114,8 @@ stamps:
       reason: ''
       timestamp: ''
   review:
-    head_sha: 8e55a9ddf95beb9123208105efdef6999a8c9b99
-    timestamp: '2026-08-18T23:54:14.916080+00:00'
+    head_sha: f9e300cfbac4addc93bb5b4890d0304b647e361c
+    timestamp: '2026-08-19T00:38:17.551450+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -128,4 +145,14 @@ stamps:
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: bcdbd789ae622bc88863e9ec1f885e346a145648
+last_seen_sha: 3452dcc5f0be896992bcfba73bfc8406c795b766
+verify_local:
+  head_sha: 3452dcc5f0be896992bcfba73bfc8406c795b766
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
