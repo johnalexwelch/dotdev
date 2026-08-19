@@ -4,25 +4,25 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787158336
 status: active
-next: preflight
-updated: '2026-08-19T16:52:16.611451+00:00'
+next: qa
+updated: '2026-08-19T17:07:43.792321+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> test/golden-redirect-tombstone-cases @ /Users/alexwelch/wt/dotdev/golden-redirect-tombstone-cases; fetched=true'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "Task pre-triaged: paired eval PR required by D-006 planning-lane consolidation (PR #186 decision-log entry) \u2014 add ~3 golden redirect cases exercising design-plan/execute-phase tombstone rows; eval-set files only"
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: '3 golden cases added to golden-routes.yaml (commit 36704cc); dry-run schema OK 48 cases; spot-checks --case 46/47/48 all PASS; full test/routing-eval.sh: total 48 pass 48 fail 0 pass-rate 100% RESULT: PASS (>=95%)'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: fast-profile integrated lane APPROVE at /tmp/ledger-lanes-2026-08-19-golden-redirect-cases/integrated-review.md, reviewed_sha=36704cc (HEAD)
 - id: qa
   required: true
   status: pending
@@ -31,8 +31,30 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 36704ccf829b65a4636c0ba0f9645cf5550c5cad
+    timestamp: '2026-08-19T17:07:43.792152+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 4dd373dad1ed9bbf5ea036823c1118edfc7be7ad49361f5283d142f8eec69d71
+      lane_integrated_lines: '30'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: sonnet
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: fast
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-golden-redirect-cases/integrated-review.md
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: eval-set addition|workflow-deliver|confirmed
 branch: test/golden-redirect-tombstone-cases
 worktree: /Users/alexwelch/wt/dotdev/golden-redirect-tombstone-cases
+last_seen_sha: 165b95dbaac26af1be386fddeac6841d11e605a1
