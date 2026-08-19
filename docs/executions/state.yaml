@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787150233
 status: active
 next: review
-updated: '2026-08-19T17:42:14.698728+00:00'
+updated: '2026-08-19T17:57:37.043200+00:00'
 steps:
 - id: preflight
   required: true
@@ -33,25 +33,25 @@ steps:
   evidence: ''
 stamps:
   review:
-    head_sha: 2a00da1c191f8123277fb47a655681f0dce806a8
-    timestamp: '2026-08-19T17:42:14.698513+00:00'
+    head_sha: 59c4e0c7d09cf3d4782f86c02cd62139e78a6810
+    timestamp: '2026-08-19T17:57:37.042965+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: 2f2d4e10a7cb190d6ba4b5573f343395bfa65418132e4a58f7b3ef6c81b1d704
-      lane_security_lines: '222'
+      lane_security_sha256: 7b4edc33cb8392374130ec0b9af03e569ee85d60a82729f7580ab7fd7eb6825a
+      lane_security_lines: '238'
       lane_security_verdict: APPROVE
       lane_security_model: claude-opus-5
-      lane_logic_sha256: 94c75a8ae794a3bc44cbe5a446bbfba7ddb559fd4a979e3a99943e52c48b07f0
-      lane_logic_lines: '198'
+      lane_logic_sha256: b79455c3d364cdaf3c63c5a680b25fc4093e4414dc83d9a72f020a8c4a20e1df
+      lane_logic_lines: '213'
       lane_logic_verdict: APPROVE
       lane_logic_model: claude-opus-5
-      lane_tests_sha256: 5faf6a9a3f52e7063cd5d00d6ec148f769b1a4574f840e543ef901c05939efdc
-      lane_tests_lines: '223'
+      lane_tests_sha256: 79da2338a3bf4f6ab3a859385f0f5faaf2cdd592bc1e06459ff2200f29f9d6fc
+      lane_tests_lines: '241'
       lane_tests_verdict: APPROVE
       lane_tests_model: claude-opus-5
-      lane_style_sha256: 2c010bf871720e9e3a8f8806b85e3afb97da3f1bc047dceb1bfa00d857f2f6e0
-      lane_style_lines: '183'
+      lane_style_sha256: a9e29e1abbdffc5f9cf52888b08306c7b1b3ccec66a36c03714f95049ebebeb7
+      lane_style_lines: '199'
       lane_style_verdict: APPROVE
       lane_style_model: claude-opus-5
       review_floor: full
@@ -70,4 +70,14 @@ overrides:
   timestamp: '2026-08-19T14:37:13.253891+00:00'
 branch: feat/guard-rule3-tokenizer
 worktree: /Users/alexwelch/dotdev-worktrees/guard-rule3-tokenizer
-last_seen_sha: 0dce430d507ad653329525af5baa1326d0fe9dbb
+last_seen_sha: 40eefafdb1a6a7767f88f2fd118e21481f0b5563
+verify_local:
+  head_sha: 40eefafdb1a6a7767f88f2fd118e21481f0b5563
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
