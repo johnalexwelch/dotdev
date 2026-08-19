@@ -195,3 +195,8 @@ cases:
     expected_route: v1-workflow
     source: synthetic
     notes: "2026-08-18 corpus audit sharpen 5: approved-brief resume trap — v1-workflow resumes at the right stage, never v1-system-design directly (case-39 counterpart)"
+  # ---- Misroute regressions ----------------------------------------------
+  - prompt: "I want to set up something like a Python cookiecutter for ML: a standardized workflow so data scientists can go from EDA to deployment with all the checks and linting built in, plus eventually a set of data-science skills so agents can help build these models."
+    expected_route: workflow-feature
+    source: log
+    notes: "real misroute 2026-08-19: session dispatched design-plan (violates design-plan's own not-for-new-product contract) and skipped discovery. Live table reads this as the ambiguous-feature row ('I want to build...') -> workflow-feature; confirmed by re-running the real prompt through workflow-router (ROUTE_CARD: ambiguous feature -> workflow-feature, high confidence, design-plan rejected — no decided brief, grilling needed first). wayfinder is explicit-invocation-only (/wayfinder), no classification-table row, so the router cannot select it — revisit if a wayfinder row is added. Adversarial neighbors: design-plan, v1-workflow, wayfinder"
