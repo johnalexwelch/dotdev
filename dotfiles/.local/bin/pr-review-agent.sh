@@ -8,17 +8,32 @@
 
 set -uo pipefail
 
-STATUS_FILE="/tmp/streamdeck-agent-status"
+# Stream Deck invokes scripts without an interactive shell — load deck config
+# from untracked ~/.streamdeck and pin PATH explicitly.
+# shellcheck disable=SC1090
+[[ -f "$HOME/.streamdeck" ]] && source "$HOME/.streamdeck"
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+
+# Single status slot shared by all deck agent keys — last writer wins.
+# Private per-user $TMPDIR, not world-writable /tmp.
+STATUS_FILE="${TMPDIR:-/tmp}/streamdeck-agent-status"
 OUT_DIR="$HOME/Documents/pr-reviews"
 mkdir -p "$OUT_DIR"
 
-notify() { osascript -e "display notification \"$1\" with title \"PR review agent\"" >/dev/null 2>&1; }
+# Message passed as argv, never interpolated into AppleScript source —
+# tab-URL-derived text must stay data, not code.
+notify() {
+    osascript -e 'on run argv' \
+        -e 'display notification (item 1 of argv) with title "PR review agent"' \
+        -e 'end run' -- "$1" >/dev/null 2>&1
+}
 
 # --- 1. What am I looking at? ---------------------------------------------
 URL="$(osascript -e 'tell application "Google Chrome" to return URL of active tab of front window' 2>/dev/null)"
 
+# Numeric PR pages only — /pull/new/<branch> and friends must not pass.
 case "$URL" in
-    https://github.com/*/pull/*) ;;
+    https://github.com/*/pull/[0-9]*) ;;
     *)
         notify "Front Chrome tab is not a GitHub PR"
         exit 1
@@ -26,12 +41,19 @@ case "$URL" in
 esac
 
 SLUG="$(printf '%s' "$URL" | sed -E 's#https://github.com/([^/]+)/([^/]+)/pull/([0-9]+).*#\1-\2-\3#')"
+# Belt and braces: a slug that still contains a slash is not a filename.
+case "$SLUG" in
+    */*)
+        notify "Could not parse PR URL"
+        exit 1
+        ;;
+esac
 OUT_FILE="$OUT_DIR/$SLUG.md"
 
 # --- 2. Where's the checkout? ---------------------------------------------
 # Point this at wherever you keep the repo. If you work across several,
 # swap this for a lookup keyed on the repo name in $URL.
-REPO_DIR="${DOJO_REPO_DIR:-$HOME/code}"
+REPO_DIR="${DOJO_REPO_DIR:-$HOME/dojo}"
 cd "$REPO_DIR" 2>/dev/null || {
     notify "Repo dir not found: $REPO_DIR"
     exit 1

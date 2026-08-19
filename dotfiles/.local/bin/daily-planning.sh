@@ -10,24 +10,43 @@
 
 set -uo pipefail
 
-REPO_DIR="${DOJO_NOTES_DIR:-$HOME/notes}" # any dir with your Claude setup
+# Stream Deck invokes scripts without an interactive shell, so ~/.zshrc (and
+# the env.zsh it sources) never runs. Load deck config from untracked
+# ~/.streamdeck and pin PATH explicitly.
+# shellcheck disable=SC1090
+[[ -f "$HOME/.streamdeck" ]] && source "$HOME/.streamdeck"
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+
+REPO_DIR="${DOJO_REPO_DIR:-$HOME/dojo}" # any dir with your Claude setup
 OUT_DIR="$HOME/Documents/daily-briefs"
 STAMP="$(date +%Y-%m-%d)"
 OUT_FILE="$OUT_DIR/triage-$STAMP.md"
-STATUS_FILE="/tmp/streamdeck-agent-status"
+# Single status slot shared by all deck agent keys — last writer wins.
+# Private per-user $TMPDIR, not world-writable /tmp.
+STATUS_FILE="${TMPDIR:-/tmp}/streamdeck-agent-status"
 
 mkdir -p "$OUT_DIR"
 
-notify() { osascript -e "display notification \"$1\" with title \"Daily planning\"" >/dev/null 2>&1; }
+# Message passed as argv, never interpolated into AppleScript source —
+# calendar/Slack-derived text must stay data, not code.
+notify() {
+    osascript -e 'on run argv' \
+        -e 'display notification (item 1 of argv) with title "Daily planning"' \
+        -e 'end run' -- "$1" >/dev/null 2>&1
+}
 
 # --- 1. Start the triage agent in the background --------------------------
 # NOTE: no --bare. Bare mode skips skill/plugin discovery, which would make
 # /morning-triage unavailable. Slower startup is the price of your skills.
+# The digest reads attacker-authored text (email, Slack), so the agent runs
+# with mutating tools denied: prompt injection can at worst shape the digest,
+# never execute code or write files. MCP readers stay available.
 (
     echo "running" >"$STATUS_FILE"
     if cd "$REPO_DIR" 2>/dev/null && command -v claude >/dev/null 2>&1; then
         claude -p "/morning-triage" \
             --permission-mode dontAsk \
+            --disallowedTools "Bash,Write,Edit,NotebookEdit" \
             --output-format json \
             --max-turns 40 \
             --max-budget-usd 2.00 \
@@ -48,8 +67,17 @@ notify() { osascript -e "display notification \"$1\" with title \"Daily planning
 ) >/dev/null 2>&1 &
 
 # --- 2. Put you in Sunsama's daily planning view --------------------------
-open -a "Sunsama"
+open -a "Sunsama" || {
+    notify "Sunsama not installed"
+    exit 1
+}
 sleep 1.2
-osascript -e 'tell application "System Events" to keystroke "p"' >/dev/null 2>&1
-
-notify "Planning view open — digest is running"
+# Only send the keystroke if Sunsama actually became frontmost — a blind
+# keystroke lands in whatever app has focus.
+FRONT="$(osascript -e 'tell application "System Events" to get name of first process whose frontmost is true' 2>/dev/null)"
+if [[ "$FRONT" == "Sunsama" ]]; then
+    osascript -e 'tell application "System Events" to keystroke "p"' >/dev/null 2>&1
+    notify "Planning view open — digest is running"
+else
+    notify "Sunsama not frontmost — digest is running, open planning manually"
+fi
