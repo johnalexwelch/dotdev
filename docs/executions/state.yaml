@@ -1,84 +1,37 @@
-run_id: 2026-08-18-kernel-shouldfix-batch
+run_id: 2026-08-18-phase5a-closeout
 workflow: workflow-deliver
 kind: skill
 budget: multi-lane
+initialized_epoch: 1787103716
 status: active
-next: ''
-updated: '2026-08-19T01:28:24.631752+00:00'
+next: preflight
+updated: '2026-08-19T01:41:56.137116+00:00'
 steps:
+- id: preflight
+  required: true
+  status: pending
+  evidence: ''
+- id: triage
+  required: true
+  status: pending
+  evidence: ''
 - id: implement
   required: true
-  status: completed
-  evidence: '8 items landed red-first: 16 commits (8 red + 8 fix); run-tests exit 0 (141 ledger/47 forge/48 guard asserts); shellcheck clean'
+  status: pending
+  evidence: ''
 - id: review
   required: true
-  status: completed
-  evidence: 4 opus lanes, 11 rounds, all approve; artifacts in /tmp/ledger-lanes-kernel-shouldfix-batch
+  status: pending
+  evidence: ''
+- id: qa
+  required: true
+  status: pending
+  evidence: ''
 - id: finalize
   required: true
-  status: completed
-  evidence: 'PR #174 open, CI green, review stamped'
-stamps:
-  review:
-    head_sha: dbf3e68ebe380425c550288d916de836c1558d50
-    timestamp: '2026-08-19T01:25:46.821398+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      lane_security_sha256: b4dbb44c3427bba6c0e1a087c7bd010f8074ea5b9b63ed467d71107a01fee723
-      lane_security_lines: '299'
-      lane_security_verdict: approve
-      lane_security_model: claude-opus-5[1m]
-      lane_logic_sha256: 2b177906c6826b83f43ae60ee430951c5edf4843de8bf988bb5c1c71d336a4f6
-      lane_logic_lines: '124'
-      lane_logic_verdict: approve
-      lane_logic_model: claude-opus-5
-      lane_tests_sha256: 9dd4d27608d5503496b6f0ee25fbfadb141c8460d75ad9a820cff2f5d358f255
-      lane_tests_lines: '849'
-      lane_tests_verdict: approve
-      lane_tests_model: claude-opus-5[1m]
-      lane_style_sha256: c25da61bb7c3ac2afd9ed3cf009d1eb43fe1c0b0041fe10c119d26d69b68e644
-      lane_style_lines: '179'
-      lane_style_verdict: approve
-      lane_style_model: claude-opus-5[1m]
-      review_floor: full
-      worktree_verify: pass
-    attested:
-      verdict: approve
-      review_profile: full
-      lanes: security=/tmp/ledger-lanes-kernel-shouldfix-batch/security-review.md,logic=/tmp/ledger-lanes-kernel-shouldfix-batch/logic-review.md,tests=/tmp/ledger-lanes-kernel-shouldfix-batch/tests-review.md,style=/tmp/ledger-lanes-kernel-shouldfix-batch/style-review.md
-      model_floor: opus
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  finalize:
-    head_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
-    timestamp: '2026-08-19T01:28:24.631540+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      snapshot_current: '1'
-      ci: green
-      pr_state: open
-      threads_resolved: 'yes'
-    attested:
-      pr_number: '174'
-      describe_pr: done
-      post_mortem: none
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
+  status: pending
+  evidence: ''
+stamps: {}
 overrides: []
-last_seen_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
-verify_local:
-  head_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
-  passed: true
-  results:
-  - cmd: ./test/run-tests.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
-    exit: 0
+branch: feat/phase5a-closeout
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/phase5a-closeout
