@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: active
 next: diagnose
-updated: '2026-08-19T14:55:25.603768+00:00'
+updated: '2026-08-19T14:59:13.469718+00:00'
 steps:
 - id: diagnose
   required: true
@@ -17,8 +17,8 @@ steps:
   evidence: ''
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> fix/reland-170-draft-finalize @ .claude/worktrees/reland-170-draft-finalize; WORKFLOW_BASE_GATE resolved_base=origin/main fallback_reason=origin/staging_absent fetched=true; graphify: not_available_with_reason: no graphify-out/graph.json in repo; context: user brief is a complete execution spec (payload commits 617a85a,c8f15e0,a303da4,bea36c3 verified unreachable from origin/main; buggy line confirmed at ledger.sh:1056 on main; test-ledger.sh has zero draft coverage)'
 - id: triage
   required: true
   status: pending
@@ -39,7 +39,23 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  diagnose:
+    head_sha: 8a012f5e82fcd08f5d990dd69433c54040207601
+    timestamp: '2026-08-19T14:59:13.469510+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '2'
+      repro_tail: 'warning: You appear to have cloned an empty repository. stamp fi...[truncated]'
+    attested:
+      root_cause: "checked_finalize() in ledger.sh requires forge pr-state strictly 'open'; the delivery convention (human-only policy) keeps PRs draft through the stamp, so every stamped run deadlocks at finalize. PR #170 fixed this (accept draft alongside open, record actual state) but merged into stacked parent feat/phase3-review-finalize after that parent landed via #169 \u2014 ec61612 is unreachable from origin/main, so the fix was lost. Re-land = cherry-pick 617a85a (red test), c8f15e0 (fix), a303da4+bea36c3 (sibling docs) adapted to the #174-hardened kernel."
+      repro_cmd: bash /tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/repro-draft-finalize.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
+last_seen_sha: 8a012f5e82fcd08f5d990dd69433c54040207601
