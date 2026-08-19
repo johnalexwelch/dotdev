@@ -1,86 +1,45 @@
-run_id: 2026-08-19-adhd-output-style
+run_id: 2026-08-19-reland-170-draft-finalize
 workflow: workflow-deliver
-kind: skill
+kind: bug
 budget: one-reviewer
-initialized_epoch: 1787149939
-status: done
-next: ''
-updated: '2026-08-19T14:48:19.717426+00:00'
+initialized_epoch: 1787151325
+status: active
+next: diagnose
+updated: '2026-08-19T14:55:25.603768+00:00'
 steps:
+- id: diagnose
+  required: true
+  status: pending
+  evidence: ''
+- id: fix
+  required: true
+  status: pending
+  evidence: ''
 - id: preflight
   required: true
-  status: completed
-  evidence: 'worktree cut via worktree-baseline.sh: WORKTREE_BASELINE_GATE: origin/main -> feat/adhd-output-style @ /Users/alexwelch/wt/dotdev/adhd-output-style; graphify: not_available_with_reason: no graphify-out/graph.json in repo; context: spec provided directly by user (Alex-approved), output-style mechanism ground-truthed against claude 2.1.235 binary strings'
+  status: pending
+  evidence: ''
 - id: triage
   required: true
-  status: completed
-  evidence: 'well-formed: 5 concrete file changes, exact settings key confirmed (outputStyle), no human-only decisions; AFK-safe'
+  status: pending
+  evidence: ''
 - id: implement
   required: true
-  status: completed
-  evidence: 'commit 2023626: 6 files (output-styles/adhd.md new, settings.json outputStyle=adhd, install.sh mkdir, CLAUDE.md contract para, write-a-skill checklist line, CONVENTIONS.md Output contract); port fidelity: body diff vs i-have-adhd SKILL.md = 1 deliberate word (skill->style); YAML frontmatter + settings JSON validated; tdd: not_applicable_with_reason: prose/config port with no executable behavior - validated by parse checks and body diff'
+  status: pending
+  evidence: ''
 - id: review
   required: true
-  status: completed
-  evidence: workflow-review fast profile (floor=fast); integrated lane verdict APPROVE, reviewed_sha=2023626; lane file /tmp/ledger-lanes-2026-08-19-adhd-output-style/integrated-review.md; stamp written
+  status: pending
+  evidence: ''
 - id: qa
   required: true
-  status: completed
-  evidence: 'end-to-end smoke test: style file at ~/.claude/output-styles/adhd.md + claude -p --settings outputStyle=adhd -> model confirms contract sentence present in system prompt and reports ''Output style: adhd''; control run without setting -> NO; live config restored (temp file removed to avoid future stow conflict)'
+  status: pending
+  evidence: ''
 - id: finalize
   required: true
-  status: completed
-  evidence: 'PR #176 draft (per instruction, not merged); finalize stamped at 401e5d3 via scratch ec61612 workaround; verify-local PASS (run-tests, lint-skill-refs, lint-skill-suite); snapshot pushed'
-stamps:
-  review:
-    head_sha: 20236269ce4da4a4bb3c99438d5550e8a4619524
-    timestamp: '2026-08-19T14:41:08.686158+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      lane_integrated_sha256: aed7be934bcd3c61d2487b19683500f1a1e24f46991a2159e5f595737b982f05
-      lane_integrated_lines: '36'
-      lane_integrated_verdict: APPROVE
-      lane_integrated_model: claude-sonnet-4-5
-      review_floor: fast
-      worktree_verify: pass
-    attested:
-      review_profile: fast
-      verdict: APPROVE
-      lanes: integrated=/tmp/ledger-lanes-2026-08-19-adhd-output-style/integrated-review.md
-      model_floor: sonnet
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  finalize:
-    head_sha: 401e5d3c1f11c242a499436dd70bf7d3976cc8aa
-    timestamp: '2026-08-19T14:47:34.651940+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      ci: green
-      pr_state: draft
-      threads_resolved: 'yes'
-    attested:
-      post_mortem: 'clean single-round delivery; one arg-parse retry on stamp (one --attest per k=v); qa step kernel-required so satisfied with live sandboxed smoke test instead of skip; finalize stamped via documented scratch-checkout workaround at ec61612 (PR #170 draft-acceptance fix not on main)'
-      describe_pr: 'ADHD output style as session default: full contract port to output-styles/adhd.md, outputStyle=adhd in settings.json, install.sh stow pre-create, CLAUDE.md contract paragraph, write-a-skill+CONVENTIONS exemption lines'
-      pr_number: '176'
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
+  status: pending
+  evidence: ''
+stamps: {}
 overrides: []
-branch: feat/adhd-output-style
-worktree: /Users/alexwelch/wt/dotdev/adhd-output-style
-last_seen_sha: 5e4d39e603fdbde8ff739d48584bb22bb674fb92
-verify_local:
-  head_sha: 401e5d3c1f11c242a499436dd70bf7d3976cc8aa
-  passed: true
-  results:
-  - cmd: ./test/run-tests.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
-    exit: 0
+branch: fix/reland-170-draft-finalize
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
