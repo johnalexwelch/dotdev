@@ -1,83 +1,37 @@
-run_id: 2026-08-19-router-v1-feature-seam
+run_id: 2026-08-19-skills-consolidation-batch2
 workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
-initialized_epoch: 1787152956
+initialized_epoch: 1787152878
 status: active
-next: ''
-updated: '2026-08-19T16:09:02.539073+00:00'
+next: preflight
+updated: '2026-08-19T15:21:18.437590+00:00'
 steps:
 - id: preflight
   required: true
-  status: completed
-  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> fix/router-v1-vs-feature-seam @ .claude/worktrees/router-v1-vs-feature-seam; router-only scope, golden-routes.yaml untouched'
+  status: pending
+  evidence: ''
+- id: triage
+  required: true
+  status: pending
+  evidence: ''
 - id: implement
   required: true
-  status: completed
-  evidence: V1 row + ambiguous-feature row signal sharpened; V1-vs-feature boundary sentence added after classification table; v1-workflow description checked clean (no internal-tooling phrasing)
-- id: eval
-  required: true
-  status: completed
-  evidence: 'routing-eval full run vs #181 45-case golden set: total 45 pass 45 fail 0 pass-rate 100% RESULT: PASS; case 45 PASS (workflow-feature) + 3/3 single-case probes; dry-run schema OK'
+  status: pending
+  evidence: ''
 - id: review
   required: true
-  status: completed
-  evidence: 'review stamp: fast profile, integrated lane APPROVE (/tmp/integrated-review-v1seam.md, model sonnet)'
+  status: pending
+  evidence: ''
+- id: qa
+  required: true
+  status: pending
+  evidence: ''
 - id: finalize
   required: true
-  status: completed
-  evidence: 'finalize stamped at 02eb394; PR #183 open non-draft, CI all green, verify-local PASS; NOT merged per work order'
-stamps:
-  review:
-    head_sha: 3952a170e042b7e2319d1e498e88bf7fbba6f2e0
-    timestamp: '2026-08-19T16:07:28.397608+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      lane_integrated_sha256: 0053f5e6cebdae557c1abdecf59bbc53379abfc0e1a9be3c1b7bc60e66059799
-      lane_integrated_lines: '41'
-      lane_integrated_verdict: APPROVE
-      lane_integrated_model: sonnet
-      review_floor: fast
-      worktree_verify: pass
-    attested:
-      verdict: approve
-      review_profile: fast
-      lanes: integrated=/tmp/integrated-review-v1seam.md
-      reviewed_sha: '0dca090 transferred: post-#178-merge, three-dot scope unchanged (router+snapshot only), eval 45/45 at this wording'
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  finalize:
-    head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
-    timestamp: '2026-08-19T16:09:02.538854+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      snapshot_current: '1'
-      ci: green
-      pr_state: open
-      threads_resolved: 'yes'
-    attested:
-      post_mortem: not_applicable
-      describe_pr: in_pr_body
-      pr_number: '183'
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
+  status: pending
+  evidence: ''
+stamps: {}
 overrides: []
-branch: fix/router-v1-vs-feature-seam
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
-last_seen_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
-verify_local:
-  head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
-  passed: true
-  results:
-  - cmd: ./test/run-tests.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
-    exit: 0
+branch: feat/skills-consolidation-batch2
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/skills-consolidation-batch2
