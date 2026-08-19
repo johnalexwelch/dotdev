@@ -4,7 +4,7 @@
 
 Alex-approved corpus consolidation batch 2 (2026-08-19): five items, one PR. Evidence base: `skill-invocations.log` full span (2026-07-20 → 2026-08-19) — zero invocations ever of `herdr`, `herdr-launch`, `humanizer-exec`, `stage-v1-concept`, `find-skills`, `decision-memo`; `humanizer` 8, `deep-research` 1. The retro trio and `graph-first` were explicitly examined and KEPT per Alex's per-item answers.
 
-1. **herdr-launch → herdr.** One `herdr` skill; the genuinely distinct content — stage-appropriate companion-tool launches (implement/review/ci/cleanup) — kept as § Companion tools by delivery stage. Pair slimmed 673 → 162 lines (herdr 382→153, tombstone 9). Tombstone per the #164 pattern (redirect body, `disable-model-invocation: true`). Decision log records: retirement candidate if still zero-use at next audit (the auto-naming extension covers the automatic case).
+1. **herdr-launch → herdr.** One `herdr` skill; the genuinely distinct content — stage-appropriate companion-tool launches (implement/review/ci/cleanup) — kept as § Companion tools by delivery stage. Pair slimmed 673 → 164 lines (herdr 382→155, tombstone 9). Tombstone per the #164 pattern (redirect body, `disable-model-invocation: true`). Decision log records: retirement candidate if still zero-use at next audit (the auto-naming extension covers the automatic case).
 2. **humanizer-exec → humanizer § Exec mode.** More than tone constraints (exec-register table, sharpen-don't-reorganize scope rule, no-fabricated-headline gate) → full section, not a paragraph. Sole skill caller `workflow-executive-doc` rewired (flow diagram, Step 9 polish, pairs-well). Tombstoned.
 3. **Twin disambiguation, no retirement** (plugin twins aren't ours to remove): corpus `find-skills` description claims canonical status over `meta-skills:find-skills`; corpus `deep-research` names the engine boundary vs `meta-skills:deep-research` (Claude-native AFK web research with cited markdown asset vs OpenAI Deep Research API — choose by engine).
 4. **Exec-writing seam.** `decision-memo` ↔ `workflow-executive-doc` mirror sentences (single decision → exec one-pager vs full memos/board docs); exec-doc's polish step is explicitly `Load and run humanizer` (exec mode) and its decision sections compose `decision-memo` where applicable.
@@ -14,14 +14,15 @@ Catalog: router Knowledge/utility row 8→6; skills-index regenerated; SKILL-MAN
 
 ## Review
 
-Independent `workflow-review`, `full` profile (computed floor: `full`), 4 opus lanes (security, logic, tests, style), four rounds:
+Independent `workflow-review`, `full` profile (computed floor: `full`), 4 opus lanes (security, logic, tests, style), five rounds:
 
 - **R1** (`1723c60`): security/tests/style APPROVE, logic REQUEST_CHANGES — 7 findings: v1-workflow Contract/Hard-Gates inventory missing Step 2.25's write gates; Step 2's on-disk decision-log evidence unsatisfiable on the scratch path Step 2.25 exists to serve; exec-mode passes running after the `check_tells` exit gate; four unbound herdr pane placeholders + lost `open_yazi`/date-strip input defaults + HERDR_ENV skip→stop semantic change; unscoped `decision-memo` composition; missing router legacy-name rows.
 - **R2** (`85dc4cb`): six closed and independently re-verified; router rows deferred (see Notes). 4× APPROVE, two new style should-fixes.
 - **R3** (`286ea78`): HERDR_ENV gate scoped stop-vs-skip, yazi opt-out mechanism named. 4× APPROVE.
-- **R4** (`b3c1d3a` + this commit): the tests lane caught that the merged skill documented a **nonexistent** top-level `herdr wait`. Verified against the installed binary and corrected at all 9 sites to `herdr pane wait-output [--match TEXT|--regex PATTERN] --timeout N <PANE_ID>` and `herdr agent wait <TARGET> --until <STATUS>`, plus the JSON-contract list and prose defaults. A pre-existing origin/main documentation error, fixed here. 4× APPROVE, all lanes re-verifying the CLI surface themselves rather than trusting the claim.
+- **R4** (`b3c1d3a`, `e49875e`): the tests lane caught that the merged skill documented a **nonexistent** top-level `herdr wait`. Verified against the installed binary and corrected at all 9 sites to `herdr pane wait-output [--match TEXT|--regex PATTERN] --timeout N <PANE_ID>` and `herdr agent wait <TARGET> --until <STATUS>`, plus the JSON-contract list and prose defaults. A pre-existing origin/main error (the style lane independently counted exactly 9 `herdr wait ` occurrences on origin/main), fixed here. 4× APPROVE, every lane re-verifying the CLI surface itself rather than trusting the claim.
+- **R5** (`44aca19` + this commit): the logic lane caught that R4 had silently dropped origin/main's timeout exit-status contract while the PR body claimed it was preserved — restored as a `--help`-grounded clause, and this record corrected. Two PR-body accuracy corrections from the style and logic lanes folded in.
 
-Rebased onto the advanced `origin/main` (`f0214d9`, after #180/#181) mid-review; pre-rebase SHAs map `b77cc54→1723c60`, `850db8d→85dc4cb`, `d67b302→286ea78`. Lane files carry all four rounds with superseded quotes marked.
+Rebased onto the advanced `origin/main` (`f0214d9`, after #180/#181) mid-review; pre-rebase SHAs map `b77cc54→1723c60`, `850db8d→85dc4cb`, `d67b302→286ea78`. Lane files record every round's verdict and per-finding closure status.
 
 ## Test plan
 
