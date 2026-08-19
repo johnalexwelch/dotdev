@@ -191,12 +191,15 @@ for repo in "$@"; do
     # renamed) exits non-zero and leaves the tracking refs at whatever they
     # held — the exact under-count the fetch exists to prevent, and the as-of
     # stamp below would then assert a freshness the fetch did not deliver.
-    git -C "$repo" fetch -q --prune --all || {
+    # `origin`, not `--all`: the metric only ever reads origin/*, and --all fails
+    # the whole fetch when ANY unrelated remote is unreachable, withholding a
+    # figure whose origin refs are current (chorus has 2 remotes, pergamon 3).
+    git -C "$repo" fetch -q --prune origin || {
         echo "$repo: fetch failed — figure withheld"
         continue
     }
-    as_of="$(date '+%Y-%m-%d %H:%M')"   # measured, not asserted: only reachable
-                                        # after a fetch that actually succeeded
+    as_of="$(date '+%Y-%m-%d %H:%M %Z')"   # measured, not asserted: reachable
+                                           # only after a fetch that succeeded
     ref="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
     ref="${ref:-origin/main}"  # assign-then-default: `| sed … || echo main` never
                                # fires, because sed exits 0 whatever git returned
