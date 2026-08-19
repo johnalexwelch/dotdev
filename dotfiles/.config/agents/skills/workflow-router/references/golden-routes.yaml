@@ -200,3 +200,16 @@ cases:
     expected_route: workflow-feature
     source: log
     notes: "real misroute 2026-08-19: session dispatched design-plan (violates design-plan's own not-for-new-product contract) and skipped discovery. Live table reads this as the ambiguous-feature row ('I want to build...') -> workflow-feature; confirmed by re-running the real prompt through workflow-router (ROUTE_CARD: ambiguous feature -> workflow-feature, high confidence, design-plan rejected — no decided brief, grilling needed first). wayfinder is explicit-invocation-only (/wayfinder), no classification-table row, so the router cannot select it — revisit if a wayfinder row is added. Adversarial neighbors: design-plan, v1-workflow, wayfinder"
+  # ---- D-006 planning-lane consolidation redirects (pairs PR #186) ---------
+  - prompt: "Turn this audit into a phased plan."
+    expected_route: to-prd
+    source: synthetic
+    notes: "D-006 planning-lane consolidation tombstone row (pairs PR #186): audit-to-phased-plan phrasing routes to to-prd migration mode, never the retired design-plan"
+  - prompt: "Create a refactor plan from this brief."
+    expected_route: to-prd
+    source: synthetic
+    notes: "D-006 planning-lane consolidation tombstone row (pairs PR #186): refactor-plan-from-brief phrasing routes to to-prd migration mode, never the retired design-plan"
+  - prompt: "Execute phase 3 of the plan."
+    expected_route: execute-prd
+    source: synthetic
+    notes: "D-006 planning-lane consolidation tombstone row (pairs PR #186): execute-phase-N phrasing routes to execute-prd against the migration-mode issue tree, never the retired execute-phase"
