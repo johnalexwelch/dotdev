@@ -3,20 +3,21 @@ workflow: workflow-deliver
 kind: skill
 budget: multi-lane
 status: active
-next: implement
-updated: '2026-08-18T21:59:59.639776+00:00'
+next: finalize
+updated: '2026-08-19T01:13:40.796848+00:00'
 steps:
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: '8 items landed red-first: 16 commits (8 red + 8 fix); run-tests exit 0 (141 ledger/47 forge/48 guard asserts); shellcheck clean'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 4 opus lanes, 11 rounds, all approve; artifacts in /tmp/ledger-lanes-kernel-shouldfix-batch
 - id: finalize
   required: true
   status: pending
   evidence: ''
 stamps: {}
 overrides: []
+last_seen_sha: 4fb33d7652e8563ab2f3e4214220b620077711c6

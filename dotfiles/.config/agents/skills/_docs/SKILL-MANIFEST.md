@@ -6,9 +6,9 @@ The prior keep rule was too narrow: on-demand skills are intentionally absent fr
 
 Active skills:
 
+- `airflow-failure-rca`
 - `analysis-council`
 - `analysis-design`
-- `brain-ops`
 - `caveman`
 - `clarity-review`
 - `cleanup-delivery`
@@ -31,6 +31,7 @@ Active skills:
 - `execute-phase`
 - `execute-prd`
 - `experiment-design`
+- `external-tool-compatibility`
 - `graph-first`
 - `grill-with-docs`
 - `handoff`
@@ -56,7 +57,7 @@ Active skills:
 - `repo-audit`
 - `resolving-merge-conflicts`
 - `review-scaffolding`
-- `rowan` *(excluded from the D-006 retirement 2026-08-18 — revived by PR #149; direction vs `brain-ops` flagged, see AUDIT_REPORT.md)*
+- `rowan` *(the live knowledge-OS skill; its predecessor `brain-ops` was retired 2026-08-18 — corpus-optimization audit batch 1, Alex-approved — see AUDIT_REPORT.md)*
 - `run-backlog`
 - `runbook-author`
 - `setup-skills`

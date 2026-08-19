@@ -664,7 +664,7 @@ Machine-local, not stowed. Generated from `settings.local.template.json` on firs
 - **Engineering**: `tdd`, `implement`, `diagnose`, `workflow-debug`, `workflow-feature`, `workflow-finalize`, `workflow-review`, `run-backlog`, `pr-responder`, `pr-review`, `repo-audit`, `slop-cleaner`, `sql-review`, `lineage-audit`
 - **Docs / content**: `decision-log`, `decision-memo`, `handoff`, `humanizer`, `clarity-review`, `runbook-author`, `post-mortem`, `incident-retro`, `slack-update`
 - **Data**: `data-quality-audit`, `data-readiness-check`, `mock-data-generator`
-- **Agent / CHORUS ops**: `brain-ops`, `to-issues`, `to-prd`, `triage`, `herdr-launch`, `execute-prd`, `execute-phase`, `setup-worktree`
+- **Agent / CHORUS ops**: `rowan`, `to-issues`, `to-prd`, `triage`, `herdr-launch`, `execute-prd`, `execute-phase`, `setup-worktree`
 - **UI / design**: `dashboard-design`, `dashboard-review`, `prototype`, `stage-v1-concept`
 
 ---

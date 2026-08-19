@@ -128,9 +128,9 @@ Load and run `triage/SKILL.md` to:
 
 ## Stop gate
 
-**This workflow STOPS after triage.** It does not proceed to implementation. The output is a set of ready-for-agent issues that workflow-build-one or run-backlog can pick up later.
+**This workflow STOPS after triage.** It does not proceed to implementation. The output is a set of ready-for-agent issues that workflow-deliver or run-backlog can pick up later.
 
-If the user wants to immediately proceed to building, they should invoke workflow-build-one on a specific issue after this workflow completes.
+If the user wants to immediately proceed to building, they should invoke workflow-deliver (with the matching kind) on a specific issue after this workflow completes.
 
 ## Worktree Policy
 
@@ -147,4 +147,4 @@ Human gates: Step 1 grilling requires user participation; Step 1.9 design approv
 ## Context
 
 Typical workflows: standalone (entry point for new features)
-Pairs well with: workflow-build-one (picks up where this stops), run-backlog (batch execution of produced issues), workflow-autonomous-backlog (module discovery through AFK handoff), prototype (optional exploration between grilling and PRD)
+Pairs well with: workflow-deliver (picks up where this stops), run-backlog (batch execution of produced issues), workflow-autonomous-backlog (module discovery through AFK handoff), prototype (optional exploration between grilling and PRD)

@@ -108,5 +108,5 @@ Human gates: missing journey definitions, unavailable app URL, unavailable Playw
 
 ## Context
 
-Typical workflows: workflow-build-one (conditional blocking gate), workflow-debug (conditional blocking gate after fix)
+Typical workflows: workflow-deliver (conditional blocking gate; for kind=bug it runs after the fix)
 Pairs well with: workflow-review, workflow-finalize

@@ -43,15 +43,17 @@ writes:
 
 ## Deprecation Status
 
-Status: standalone use deprecated. This skill remains loadable only because `workflow-build-one, workflow-debug, run-backlog, or workflow-finalize human-gate sidecar` may invoke it as an implementation helper.
+Status: standalone use deprecated. This skill remains loadable only because `workflow-deliver, run-backlog, or workflow-finalize human-gate sidecar` may invoke it as an implementation helper.
 
-- Workflow owner: `workflow-build-one, workflow-debug, run-backlog, or workflow-finalize human-gate sidecar`
+- Workflow owner: `workflow-deliver, run-backlog, or workflow-finalize human-gate sidecar`
 - Reason: Worktree setup is a sidecar/helper, not an execution workflow.
 - Date: 2026-05-21
 
 ## `scripts/worktree-baseline.sh` (D-005)
 
-`scripts/worktree-baseline.sh` implements the accepted `cut`/`verify`/`emit` interface from `_docs/decision-log.md` D-005: base-branch resolution (per `references/base-branch-policy.md`), `git fetch --prune`, stacked-parent ancestry checks, path/branch derivation, env-file copy, and exact `WORKFLOW_BASE_GATE`/`WORKTREE_BASELINE_GATE`/`STACKED_WORKTREE_GATE` evidence-line emission. It is net-new and not yet wired into any caller (including this skill's own Steps 0-4 above, which still inline the same logic) — D-005's scope names `workflow-build-one` Step 0 as the first real caller, migrated in a follow-up phase. Tested by `test/test-worktree-baseline.sh`.
+`scripts/worktree-baseline.sh` implements the accepted `cut`/`verify`/`emit` interface from `_docs/decision-log.md` D-005: base-branch resolution (per `references/base-branch-policy.md`), `git fetch --prune`, stacked-parent ancestry checks, path/branch derivation, env-file copy, and exact `WORKFLOW_BASE_GATE`/`WORKTREE_BASELINE_GATE`/`STACKED_WORKTREE_GATE` evidence-line emission. It is the canonical cut/verify interface for delivery worktrees: `workflow-deliver` Step 0 (preflight) cuts every delivery worktree with `worktree-baseline.sh cut` (D-005 named the single-issue delivery workflow's Step 0 as the first real caller; that workflow is now `workflow-deliver`, D-006 #11). This skill's own Steps 0-4 below still inline the same logic. Tested by `test/test-worktree-baseline.sh`.
+
+`verify` computes its verdict from git ground truth (D-006 hardening, closes the PR #166 forged-baseline pattern): it re-resolves the workflow base itself against fully-qualified `refs/remotes/origin/...` refs and ancestry-checks HEAD against real history. The `cut`-written sidecar (`.worktree-baseline.<name>.state`) is never the source of truth — it is a strictly-parsed cross-check that fails loudly (exit 11) on any mismatch, missing key, or non-KEY=VALUE line, and `workflow-guard.sh` blocks Edit/Write to it as script-owned. A sidecar-less worktree verifies on ground truth alone. If `git fetch` fails, `verify` resolves from existing remote-tracking refs with a loud possibly-stale warning rather than failing (cut still hard-fails); `--base` is caller-trusted and labeled as such in the PASS line. Stacked-parent fields remain advisory-plus-checked: they can only add an ancestry constraint, never relax the base check.
 
 ## Contract
 

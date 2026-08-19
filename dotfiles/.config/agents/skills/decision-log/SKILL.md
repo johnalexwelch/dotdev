@@ -2,7 +2,7 @@
 name: decision-log
 model: sonnet
 reasoning: high
-description: Use when grilling, design, PRD, planning, or implementation workflows need to record or consume accepted decisions, alternatives considered, and tradeoffs.
+description: Records and consumes accepted decisions — the question, the decision, alternatives considered, and tradeoffs — in the project decision log. Use when the user says "log this decision", "record what we decided", or "check the decision log", or as the record/consume step inside grill, design, PRD, planning, and implementation workflows.
 ---
 
 # Decision Log

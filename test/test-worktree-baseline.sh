@@ -217,6 +217,390 @@ set -e
 assert_status "verify fails ancestry check against an unrelated parent" 6 "$ancestry_fail_status"
 assert_contains "ancestry failure message names the base" "$ancestry_fail_output" "not a descendant of"
 
+# --- Forged sidecar must not satisfy verify (PR #166 post_mortem pattern) ---
+# verify's ancestry ground truth comes from git itself (re-resolved base per
+# base-branch-policy), never from the cut-written sidecar; the sidecar is a
+# cross-check that fails loudly on mismatch.
+
+# A raw `git worktree add` checkout that does NOT descend from the real
+# resolved base, plus a hand-written sidecar pointing RESOLVED_BASE at a ref
+# the checkout does descend from. Trusting the sidecar passes this; ground
+# truth must reject it.
+work=$(new_fixture forged_sidecar)
+git -C "$work" branch stale
+echo "advance" >>"$work/README.md"
+git -C "$work" commit -qam "advance main past stale"
+git -C "$work" push -q origin main
+wt="$TMPDIR_BASE/forged_sidecar/wt1"
+git -C "$work" worktree add -b feature/forged "$wt" stale >/dev/null 2>&1
+cat >"$TMPDIR_BASE/forged_sidecar/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/forged
+WT_PATH=$wt
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=stale
+FALLBACK_REASON=origin/staging_absent
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+forged_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+forged_status=$?
+set -e
+assert_status "verify rejects forged sidecar on a non-descendant worktree" 6 "$forged_status"
+assert_contains "forged-sidecar rejection names the real base" "$forged_output" "not a descendant of origin/main"
+
+# Tampered RESOLVED_BASE on a genuinely well-based worktree: ancestry ground
+# truth holds, but the sidecar no longer matches it — fail loudly, don't trust.
+# Sidecars are regenerated whole from heredocs (not sed -i) so the mutation is
+# portable across BSD/GNU sed on CI runners.
+work=$(new_fixture tampered_base)
+wt="$TMPDIR_BASE/tampered_base/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/tamper --path "$wt" >/dev/null)
+git -C "$work" branch old origin/main
+cat >"$TMPDIR_BASE/tampered_base/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/tamper
+WT_PATH=$wt
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=old
+FALLBACK_REASON=origin/staging_absent
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+tampered_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+tampered_status=$?
+set -e
+assert_status "verify fails on sidecar RESOLVED_BASE mismatch" 11 "$tampered_status"
+assert_contains "base-mismatch message names ground truth" "$tampered_output" "does not match git ground truth"
+assert_contains "base-mismatch message names the field" "$tampered_output" "RESOLVED_BASE"
+
+# Tampered BRANCH: the sidecar's recorded branch must match the branch git
+# actually has checked out in the worktree.
+work=$(new_fixture tampered_branch)
+wt="$TMPDIR_BASE/tampered_branch/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/real --path "$wt" >/dev/null)
+cat >"$TMPDIR_BASE/tampered_branch/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/imposter
+WT_PATH=$wt
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=origin/main
+FALLBACK_REASON=origin/staging_absent
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+branch_mismatch_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+branch_mismatch_status=$?
+set -e
+assert_status "verify fails on sidecar BRANCH mismatch" 11 "$branch_mismatch_status"
+assert_contains "branch-mismatch message names the field" "$branch_mismatch_output" "BRANCH"
+
+# A sidecar carrying anything but known KEY=VALUE lines is tampering, and it
+# must never execute: load_state used to source the file, so an injected
+# `echo PASS; exit 0` line ran as shell inside verify and won outright.
+work=$(new_fixture injected_sidecar)
+wt="$TMPDIR_BASE/injected_sidecar/wt1"
+git -C "$work" worktree add -b feature/inject "$wt" origin/main >/dev/null 2>&1
+cat >"$TMPDIR_BASE/injected_sidecar/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/inject
+WT_PATH=$wt
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=origin/main
+FALLBACK_REASON=origin/staging_absent
+echo "PASS: injected" ; exit 0
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+injected_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+injected_status=$?
+set -e
+assert_status "verify rejects a sidecar with a non-KEY=VALUE line" 11 "$injected_status"
+assert_contains "injected-line rejection names the problem" "$injected_output" "unrecognized"
+
+# No sidecar at all: verify stands on git ground truth alone — a clean
+# worktree genuinely descending from the resolved base passes standalone.
+work=$(new_fixture no_sidecar)
+wt="$TMPDIR_BASE/no_sidecar/wt1"
+git -C "$work" worktree add -b feature/bare "$wt" origin/main >/dev/null 2>&1
+set +e
+no_sidecar_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+no_sidecar_status=$?
+set -e
+assert_status "verify passes without a sidecar on genuine ground truth" 0 "$no_sidecar_status"
+assert_contains "sidecar-less verify reports PASS" "$no_sidecar_output" "PASS:"
+
+# --- Review round-1 hardening contracts ---
+
+# Ambiguous short refnames must not steer the recomputed base: a local TAG
+# literally named origin/staging shadows the remote-tracking namespace in
+# rev-parse/merge-base short-name resolution, silently retargeting ground
+# truth. Resolution must use fully-qualified refs/remotes/origin/... refs.
+work=$(new_fixture shadow_staging)
+git -C "$work" branch stale
+echo "advance" >>"$work/README.md"
+git -C "$work" commit -qam "advance main past stale"
+git -C "$work" push -q origin main
+wt="$TMPDIR_BASE/shadow_staging/wt1"
+git -C "$work" worktree add -b feature/shadow "$wt" stale >/dev/null 2>&1
+git -C "$work" tag origin/staging stale
+set +e
+shadow_staging_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+shadow_staging_status=$?
+set -e
+assert_status "verify ignores a local tag shadowing origin/staging" 6 "$shadow_staging_status"
+assert_contains "staging-shadow rejection names the real base" "$shadow_staging_output" "not a descendant of origin/main"
+
+# Same shadow on the default-branch fallback path (tag named origin/main).
+work=$(new_fixture shadow_default)
+git -C "$work" branch stale
+echo "advance" >>"$work/README.md"
+git -C "$work" commit -qam "advance main past stale"
+git -C "$work" push -q origin main
+wt="$TMPDIR_BASE/shadow_default/wt1"
+git -C "$work" worktree add -b feature/shadow2 "$wt" stale >/dev/null 2>&1
+git -C "$work" tag origin/main stale
+set +e
+shadow_default_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+shadow_default_status=$?
+set -e
+assert_status "verify ignores a local tag shadowing origin/main" 6 "$shadow_default_status"
+assert_contains "default-shadow rejection names the real base" "$shadow_default_output" "not a descendant of origin/main"
+
+# Omission is tampering too: deleting a key must not vacuously pass its
+# cross-check. Every known key is required once a sidecar exists.
+work=$(new_fixture missing_key)
+wt="$TMPDIR_BASE/missing_key/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/missing --path "$wt" >/dev/null)
+sidecar="$TMPDIR_BASE/missing_key/.worktree-baseline.wt1.state"
+grep -v '^RESOLVED_BASE=' "$sidecar" >"$sidecar.tmp" && mv "$sidecar.tmp" "$sidecar"
+set +e
+missing_key_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+missing_key_status=$?
+set -e
+assert_status "verify fails on a sidecar missing a required key" 11 "$missing_key_status"
+assert_contains "missing-key message names the key" "$missing_key_output" "RESOLVED_BASE"
+
+# STACKED must be exactly true or false — anything else is tampering, not
+# an implicit "not stacked" downgrade.
+work=$(new_fixture bad_stacked)
+wt="$TMPDIR_BASE/bad_stacked/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/badstack --path "$wt" >/dev/null)
+sidecar="$TMPDIR_BASE/bad_stacked/.worktree-baseline.wt1.state"
+grep -v '^STACKED=' "$sidecar" >"$sidecar.tmp" && mv "$sidecar.tmp" "$sidecar"
+echo "STACKED=maybe" >>"$sidecar"
+set +e
+bad_stacked_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+bad_stacked_status=$?
+set -e
+assert_status "verify fails on an invalid STACKED value" 11 "$bad_stacked_status"
+assert_contains "bad-STACKED message names the field" "$bad_stacked_output" "STACKED"
+
+# A bare known key with no '=' is its own parse-failure branch.
+work=$(new_fixture bare_key)
+wt="$TMPDIR_BASE/bare_key/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/barekey --path "$wt" >/dev/null)
+echo "PARENT_PR" >>"$TMPDIR_BASE/bare_key/.worktree-baseline.wt1.state"
+set +e
+bare_key_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+bare_key_status=$?
+set -e
+assert_status "verify fails on a bare known-key line" 11 "$bare_key_status"
+assert_contains "bare-key message flags the missing separator" "$bare_key_output" "no '='"
+
+# emit is load_state's second caller: a corrupt sidecar must fail closed
+# there too, never emit gate lines.
+work=$(new_fixture emit_corrupt)
+wt="$TMPDIR_BASE/emit_corrupt/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/emitbad --path "$wt" >/dev/null)
+echo "evil-line" >>"$TMPDIR_BASE/emit_corrupt/.worktree-baseline.wt1.state"
+set +e
+emit_corrupt_output=$(cd "$work" && bash "$SCRIPT" emit --path "$wt" 2>&1)
+emit_corrupt_status=$?
+set -e
+assert_status "emit fails on a corrupt sidecar" 11 "$emit_corrupt_status"
+assert_contains "emit corruption message says unrecognized" "$emit_corrupt_output" "unrecognized"
+
+# An explicit --base is the caller naming ground truth: it skips the
+# sidecar's RESOLVED_BASE cross-check and the PASS line must say the base
+# was caller-supplied so the evidence can't pose as a resolved-base pass.
+work=$(new_fixture base_override)
+wt="$TMPDIR_BASE/base_override/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/baseok --path "$wt" >/dev/null)
+git -C "$work" branch legit-base origin/main
+set +e
+base_override_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" --base legit-base 2>&1)
+base_override_status=$?
+set -e
+assert_status "verify --base passes on a genuine ancestor" 0 "$base_override_status"
+assert_contains "override PASS names the caller-supplied base" "$base_override_output" "caller-supplied base legit-base"
+
+# ...and --base still enforces real ancestry.
+work=$(new_fixture base_override_fail)
+git -C "$work" branch stale
+echo "advance" >>"$work/README.md"
+git -C "$work" commit -qam "advance main past stale"
+git -C "$work" push -q origin main
+wt="$TMPDIR_BASE/base_override_fail/wt1"
+git -C "$work" worktree add -b feature/basefail "$wt" stale >/dev/null 2>&1
+set +e
+base_fail_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" --base origin/main 2>&1)
+base_fail_status=$?
+set -e
+assert_status "verify --base fails on a non-descendant" 6 "$base_fail_status"
+
+# Detached HEAD is its own fault, not sidecar tampering — the message must
+# point the operator at the checkout, not the state file.
+work=$(new_fixture detached_head)
+wt="$TMPDIR_BASE/detached_head/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/detach --path "$wt" >/dev/null)
+git -C "$wt" checkout -q --detach HEAD
+set +e
+detached_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+detached_status=$?
+set -e
+assert_status "verify fails distinctly on detached HEAD" 12 "$detached_status"
+assert_contains "detached message names the condition" "$detached_output" "detached HEAD"
+
+# verify must not brick on network loss: fetch failure falls back to the
+# existing remote-tracking refs with a loud staleness warning (cut keeps its
+# hard exit 10 — cutting from an unfetchable base is different from
+# re-checking ancestry offline).
+work=$(new_fixture offline_verify)
+wt="$TMPDIR_BASE/offline_verify/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/offline --path "$wt" >/dev/null)
+git -C "$work" remote set-url origin /nonexistent/nope.git
+offline_work="$work"
+offline_wt="$wt"
+set +e
+offline_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+offline_status=$?
+set -e
+assert_status "verify falls back to cached refs when fetch fails" 0 "$offline_status"
+assert_contains "offline verify warns about staleness" "$offline_output" "possibly stale"
+
+# The stacked PASS line is gate evidence — pin it verbatim like the other
+# gate strings in this suite (reuses the stacked_parent fixture's output).
+assert_contains "stacked verify PASS line is verbatim" "$stacked_verify_output" \
+    "PASS: $child_wt is clean, descends from origin/main, and descends from parent parent/feature-a"
+
+# --- Review round-2 regression contracts ---
+
+# git never updates refs/remotes/origin/HEAD on fetch, so after a remote
+# default-branch rename the symref is stale as a matter of course. Detection
+# must fall through to `git remote show origin` when the symref's branch no
+# longer resolves — not only when the symref is absent.
+work=$(new_fixture renamed_default)
+origin="$TMPDIR_BASE/renamed_default/origin.git"
+git -C "$origin" branch trunk main
+git -C "$origin" symbolic-ref HEAD refs/heads/trunk
+git -C "$origin" branch -D main
+wt="$TMPDIR_BASE/renamed_default/wt1"
+set +e
+renamed_output=$(cd "$work" && bash "$SCRIPT" cut --branch feature/renamed --path "$wt" 2>&1)
+renamed_status=$?
+set -e
+assert_status "cut survives a renamed remote default branch" 0 "$renamed_status"
+assert_contains "renamed-default cut resolves the new default" "$renamed_output" "resolved_base: origin/trunk"
+
+# Offline with no origin/HEAD symref and no origin/staging must end in the
+# actionable die 7, not a raw set -e abort from the remote-show fallback.
+work=$(new_fixture offline_no_symref)
+wt="$TMPDIR_BASE/offline_no_symref/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/nosymref --path "$wt" >/dev/null)
+git -C "$work" symbolic-ref --delete refs/remotes/origin/HEAD
+git -C "$work" remote set-url origin /nonexistent/nope.git
+set +e
+no_symref_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+no_symref_status=$?
+set -e
+assert_status "offline verify without symref dies 7, not raw abort" 7 "$no_symref_status"
+assert_contains "offline no-symref failure is a Blocked message" "$no_symref_output" "Blocked:"
+
+# The key whitelist must be an exact match, not a substring match: a
+# compound key that is a space-joined run of whitelist names must die 11,
+# never reach printf -v (whose failure is swallowed by the if-guarded call).
+work=$(new_fixture compound_key)
+wt="$TMPDIR_BASE/compound_key/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/compound --path "$wt" >/dev/null)
+echo "BRANCH WT_PATH=x" >>"$TMPDIR_BASE/compound_key/.worktree-baseline.wt1.state"
+set +e
+compound_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+compound_status=$?
+set -e
+assert_status "verify rejects a compound whitelist-substring key" 11 "$compound_status"
+assert_contains "compound-key rejection says unrecognized" "$compound_output" "unrecognized"
+
+# A sidecar can't be transplanted between worktrees: WT_PATH must match the
+# worktree actually being verified (canonicalized — trailing slashes and
+# relative spellings of the same directory still pass).
+work=$(new_fixture swapped_sidecar)
+wt1="$TMPDIR_BASE/swapped_sidecar/wt1"
+wt2="$TMPDIR_BASE/swapped_sidecar/wt2"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/stackswap --path "$wt1" \
+    --parent-branch origin/main --parent-pr 7 >/dev/null)
+(cd "$work" && bash "$SCRIPT" cut --branch feature/plainswap --path "$wt2" >/dev/null)
+cat >"$TMPDIR_BASE/swapped_sidecar/.worktree-baseline.wt1.state" <<EOF
+BRANCH=feature/stackswap
+WT_PATH=$wt2
+PREFERRED_BASE=origin/staging
+RESOLVED_BASE=origin/main
+FALLBACK_REASON=origin/staging_absent
+STACKED=false
+PARENT_BRANCH=
+PARENT_PR=
+EOF
+set +e
+swapped_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt1" 2>&1)
+swapped_status=$?
+set -e
+assert_status "verify rejects a sidecar transplanted from another worktree" 11 "$swapped_status"
+assert_contains "swap rejection names WT_PATH" "$swapped_output" "WT_PATH"
+
+# The origin/HEAD symref is a plain hand-settable pointer: when the network
+# works, the remote's own answer (remote show) must outrank it, so
+# retargeting the symref at another remote-tracking ref cannot steer the
+# recomputed base.
+work=$(new_fixture symref_retarget)
+git -C "$work" branch legacy
+git -C "$work" push -q origin legacy
+echo "advance" >>"$work/README.md"
+git -C "$work" commit -qam "advance main past legacy"
+git -C "$work" push -q origin main
+wt="$TMPDIR_BASE/symref_retarget/wt1"
+git -C "$work" worktree add -b feature/symref "$wt" origin/legacy >/dev/null 2>&1
+git -C "$work" symbolic-ref refs/remotes/origin/HEAD refs/remotes/origin/legacy
+set +e
+symref_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt" 2>&1)
+symref_status=$?
+set -e
+assert_status "verify ignores a retargeted origin/HEAD symref when online" 6 "$symref_status"
+assert_contains "symref-retarget rejection names the real base" "$symref_output" "not a descendant of origin/main"
+
+# The staleness marker must reach stdout evidence, not just stderr — callers
+# (ledger.sh) discard stderr on success, so a stale pass must be visibly
+# stale in the PASS line itself. Reuses the offline_verify fixture state.
+set +e
+offline_stdout=$(cd "$offline_work" && bash "$SCRIPT" verify --path "$offline_wt" 2>/dev/null)
+set -e
+assert_contains "offline PASS line itself carries the staleness marker" "$offline_stdout" "possibly stale"
+
+# Counterpart to the swapped_sidecar WT_PATH cross-check above: an
+# equivalent spelling (trailing slash) of the same worktree canonicalizes
+# equal and still passes.
+work=$(new_fixture path_spelling)
+wt="$TMPDIR_BASE/path_spelling/wt1"
+(cd "$work" && bash "$SCRIPT" cut --branch feature/spelling --path "$wt" >/dev/null)
+set +e
+spelling_output=$(cd "$work" && bash "$SCRIPT" verify --path "$wt/" 2>&1)
+spelling_status=$?
+set -e
+assert_status "verify accepts a trailing-slash spelling of the same path" 0 "$spelling_status"
+
 echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"

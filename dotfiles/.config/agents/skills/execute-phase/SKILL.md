@@ -3,7 +3,7 @@ name: execute-phase
 layer: orchestrator
 model: sonnet
 reasoning: medium
-description: Execute one or more phases of a design-plan output for refactor-scale or migration work. Reads a phase section from a plan, creates a per-phase git branch, dispatches scoped [auto] tasks, verifies, commits on pass, and writes phase-run evidence. Do not use for normal issue-based product work; use workflow-build-one, execute-prd, or run-backlog after triage.
+description: Execute one or more phases of a design-plan output for refactor-scale or migration work. Reads a phase section from a plan, creates a per-phase git branch, dispatches scoped [auto] tasks, verifies, commits on pass, and writes phase-run evidence. Do not use for normal issue-based product work; use workflow-deliver, execute-prd, or run-backlog after triage.
 triggers:
   - "/execute-phase"
   - "execute phase"
@@ -86,7 +86,7 @@ consume.
 This is not the default product delivery path. Use it only when a human-
 approved `design-plan` exists. Normal vertical issues created by
 `to-issues` and approved by `triage` should be executed by
-`workflow-build-one`, `execute-prd`, or `run-backlog`.
+`workflow-deliver`, `execute-prd`, or `run-backlog`.
 
 ## Workflow Progress Reporting
 

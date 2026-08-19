@@ -178,3 +178,20 @@ cases:
     expected_route: session-insight
     source: synthetic
     notes: "session reflection row"
+  # ---- Corpus sharpen batch 1 (2026-08-18 corpus-optimization audit §5) ----
+  - prompt: "Log this decision — we accepted the phased rollout; record the alternatives and tradeoffs in the decision log."
+    expected_route: decision-log
+    source: synthetic
+    notes: "2026-08-18 corpus audit sharpen 1: decision-log seam vs grill/design/PRD siblings — record-a-decision request is decision-log, not a planning flow"
+  - prompt: "Implement this spec end to end — issue #77 is ready-for-agent with clear acceptance criteria."
+    expected_route: workflow-deliver
+    source: synthetic
+    notes: "2026-08-18 corpus audit sharpen 2: implement is a chain-internal step, never a delivery entry point — imperative implement on a ready issue routes to the delivery owner"
+  - prompt: "Audit our dbt project layout against best practices — are staging and marts structured correctly?"
+    expected_route: dbt-project-evaluator
+    source: synthetic
+    notes: "2026-08-18 corpus audit sharpen 4: sql-review vs dbt-project-evaluator seam — whole-project structure/conventions audit, not per-model review (case-26 counterpart)"
+  - prompt: "The V1 brief is already approved — pick up from system design and carry it through to issues."
+    expected_route: v1-workflow
+    source: synthetic
+    notes: "2026-08-18 corpus audit sharpen 5: approved-brief resume trap — v1-workflow resumes at the right stage, never v1-system-design directly (case-39 counterpart)"
