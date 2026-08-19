@@ -911,7 +911,7 @@ run_ledger "$wt3" stamp review --attest verdict=approve \
 assert_status "snapshot fixture review stamp exits 0" 0 "$STATUS"
 
 sed -i.bak 's/^run_id: .*/run_id: forged-run/' "$snap3"
-rm -f "$wt3/docs/executions/state.yaml.bak"
+rm -f "$snap3.bak"
 git -C "$wt3" add -- "$snap3_rel"
 git -C "$wt3" commit -q -m "chore(ledger): stamp review" -- "$snap3_rel"
 
@@ -945,7 +945,7 @@ run_ledger "$wt3" check finalize
 assert_status "check finalize OK after the finalize stamp" 0 "$STATUS"
 
 sed -i.bak 's/verdict: approve/verdict: forged/g' "$snap3"
-rm -f "$wt3/docs/executions/state.yaml.bak"
+rm -f "$snap3.bak"
 git -C "$wt3" add -- "$snap3_rel"
 git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- "$snap3_rel"
 run_ledger "$wt3" check finalize
@@ -960,7 +960,7 @@ assert_status "check finalize recovers after restore" 0 "$STATUS"
 
 sed -i.bak 's/^overrides: \[\]/overrides: [{gate: finalize, reason: forged-bypass}]/' \
     "$snap3"
-rm -f "$wt3/docs/executions/state.yaml.bak"
+rm -f "$snap3.bak"
 git -C "$wt3" add -- "$snap3_rel"
 git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- "$snap3_rel"
 run_ledger "$wt3" check finalize

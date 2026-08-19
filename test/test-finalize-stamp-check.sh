@@ -278,7 +278,7 @@ write_snapshot "$repoMulti" "$shaMulti" false "" new-run
 commit_snapshot_only "$repoMulti" new-run
 run_ledger "$repoMulti" check-snapshot finalize
 assert_status "multiple run files without --file exits 1" 1 "$STATUS"
-assert_contains "multi-run fallback asks for --file" "$OUT" "--file"
+assert_contains "multi-run fallback asks for --file" "$OUT" "pass --file"
 run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/new-run.yaml
 assert_status "explicit --file passes on the fresh run" 0 "$STATUS"
 assert_contains "explicit --file verdict says OK" "$OUT" "OK"
