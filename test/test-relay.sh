@@ -35,7 +35,7 @@ set -uo pipefail
 # Defense-in-depth: even if a future impl bypasses the PATH stub (absolute
 # path, env scrubbing), no real API call can succeed or spend money.
 export ANTHROPIC_BASE_URL="http://127.0.0.1:1"
-export ANTHROPIC_API_KEY="relay-test-invalid"
+export ANTHROPIC_API_KEY="relay-test-invalid" # pragma: allowlist secret
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 RELAY="$ROOT/dotfiles/.config/agents/skills/workflow-ledger/scripts/relay.sh"
@@ -287,7 +287,7 @@ assert_equal "leg runs from --repo" "$REPO" "$(cat "$CASE_DIR/pwd-1")"
 
 echo "== relay: human-gate stops with exit 2 =="
 
-for term in "NEEDS_HUMAN" "needs-human" "maintainer-decision" "operator-runtime" "secret-custody" "blocker: pick strategy A or B"; do
+for term in "NEEDS_HUMAN" "needs-human" "maintainer-decision" "operator-runtime" "secret-custody" "blocker: pick strategy A or B"; do # pragma: allowlist secret
     new_case
     seed_handoff
     leg_writes 1 halt-for-continuation "gate note: $term"
