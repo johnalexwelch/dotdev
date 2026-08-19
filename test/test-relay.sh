@@ -489,6 +489,34 @@ mark_ledger_done "$REPO"
 run_relay --handoff "$HANDOFF" --repo "$REPO"
 assert_status "gate scan outranks ledger-done (err toward stopping)" 2 "$STATUS"
 
+echo "== relay: shipped handoff template fails safe =="
+
+# Guard against an unsafe default in handoff/SKILL.md's document template: an
+# unedited template must never make the relay report the work complete (R3
+# style-lane regression — the template briefly defaulted to `complete`).
+new_case
+TEMPLATE_EXIT_LINE="$(sed -n 's/^\(exit_reason:[[:space:]]*.*\)$/\1/p' \
+    "$ROOT/dotfiles/.config/agents/skills/handoff/SKILL.md" | head -1)"
+assert_contains "the shipped template carries an exit_reason line" "$TEMPLATE_EXIT_LINE" "exit_reason:"
+cat >"$HANDOFF" <<EOF
+# Handoff — unedited template
+
+$TEMPLATE_EXIT_LINE
+
+## Body
+seed
+EOF
+cat >"$CASE_DIR/leg-1.handoff" <<EOF
+# Handoff — leg rewrote it but left the template value
+
+$TEMPLATE_EXIT_LINE
+
+## Body
+leg 1 was here
+EOF
+run_relay --handoff "$HANDOFF" --repo "$REPO"
+assert_status "unedited template exit_reason must not report complete (fails safe)" 2 "$STATUS"
+
 echo "== relay: summary shape =="
 
 new_case

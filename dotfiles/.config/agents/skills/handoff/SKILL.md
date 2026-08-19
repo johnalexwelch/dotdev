@@ -102,8 +102,10 @@ Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd
 # Handoff — [short title of current work]
 
 Exit: [manual | halt: <reason> | completion with follow-ups | backlog run complete]
-exit_reason: complete
+exit_reason: needs-human
 [^ replace with exactly ONE value from the vocabulary in "Automatic (workflow exit)".
+ The default is the fail-safe value on purpose: an unedited template must stop a
+ relay, never report the work complete.
  Keep the vocabulary legend itself out of the handoff body: the relay's gate scan
  matches gate words anywhere in the file, so an echoed legend stops the loop.]
 Target: [claude | codex | either]
