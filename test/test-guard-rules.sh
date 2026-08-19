@@ -383,6 +383,30 @@ assert_status "force-clobber stderr redirect blocked" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main>>/dev/null 2>&1')"
 assert_status "unspaced appending stdout-dup blocked" 2 "$STATUS"
 
+# `exec 2>/dev/null` redirects the CURRENT SHELL for every later segment, so
+# the suppression lands in a different segment from the mutation with no
+# terminator token for the per-construct arming logic to hang on (logic lane
+# R3). main blocked these under whole-command semantics — a fail-open
+# regression, which is why it is fixed rather than recorded like the
+# fail-closed notes.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 2>/dev/null; git push origin main')"
+assert_status "exec stderr redirect then push blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec >/dev/null 2>&1; git commit -am wip')"
+assert_status "exec stdout-dup then commit blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 3>&1 2>/dev/null; gh pr create --fill')"
+assert_status "exec with an fd then pr create blocks" 2 "$STATUS"
+
+# `exec cmd 2>/dev/null` REPLACES the shell, so no later segment runs — the
+# redirect-first requirement must exclude it rather than arm the whole command.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec mytool --flag 2>/dev/null && git push origin main')"
+assert_status "exec replacing the shell does not arm" 0 "$STATUS"
+
+# A bare exec redirect with no mutation anywhere stays permitted.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 2>/dev/null; npm run lint')"
+assert_status "exec redirect without a mutation permits" 0 "$STATUS"
+
 # The exclusion that keeps &> on its own branch must survive the widening.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main &>/dev/null')"
 assert_status "ampersand-redirect suppression still blocked" 2 "$STATUS"
