@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152447
 status: done
 next: ''
-updated: '2026-08-19T15:57:27.309990+00:00'
+updated: '2026-08-19T16:16:04.926956+00:00'
 steps:
 - id: red-tests
   required: true
@@ -33,22 +33,21 @@ steps:
   evidence: 'stamp finalize at 1737389 (CI green, PR #182 open, threads resolved); PR left unmerged per instruction'
 stamps:
   review:
-    head_sha: 0c7d78beb5f8d4217fdfbeca080ddce8202cfdf7
-    timestamp: '2026-08-19T15:51:25.674515+00:00'
+    head_sha: ac6a3fb4c536da6dc222e40ce8e9efcccdaf1646
+    timestamp: '2026-08-19T16:16:04.926757+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 4e618719aa9f1a088233ed75bc7bf3112b385ad8f5eb689538b913ee0505b735
-      lane_integrated_lines: '156'
+      lane_integrated_sha256: 0440149aa08571a384185e166ebc56cfc286d51057130e167d5ba3eed6df6586
+      lane_integrated_lines: '162'
       lane_integrated_verdict: approve
       lane_integrated_model: opus
       review_floor: fast
       worktree_verify: pass
     attested:
-      review_profile: fast
       verdict: approve
+      review_profile: fast
       lanes: integrated=/tmp/phase5b-182-integrated-review.md
-      model_floor: opus
     override:
       active: false
       reason: ''
@@ -78,9 +77,9 @@ overrides:
 route: skill/kernel change|workflow-skill|confirmed
 branch: feat/d006-phase5b-route-evidence
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
-last_seen_sha: 20829f2e9d4190e568c79d770a1a65a585736268
+last_seen_sha: 578eede7e7ab24983bbe1a66ea4ec910dd66f04a
 verify_local:
-  head_sha: 0c7d78beb5f8d4217fdfbeca080ddce8202cfdf7
+  head_sha: ac6a3fb4c536da6dc222e40ce8e9efcccdaf1646
   passed: true
   results:
   - cmd: ./test/run-tests.sh
