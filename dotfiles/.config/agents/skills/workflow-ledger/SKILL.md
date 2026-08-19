@@ -35,7 +35,7 @@ ledger.sh show | close
 relay.sh --handoff <file> [--max-legs N=5] [--repo <path>] [--stop-file <path>]
 ```
 
-`relay.sh` is the handoff relay runner: it chains headless `claude -p` legs through a handoff file, continuing only on AFK-eligible exit_reasons (`completion-with-follow-ups`, `halt-for-continuation`) and stopping on completion, human gates (NEEDS_HUMAN / maintainer-decision / operator-runtime / secret-custody / `blocker:`), no-progress (handoff sha unchanged), max-legs, the stop-file kill switch, or a leg error — distinct exit codes 0/2/3/4/5/6. Operator doc: the handoff skill's "Relay" section. Tested by `test/test-relay.sh`.
+`relay.sh` is the handoff relay runner: it chains headless `claude -p` legs through a handoff file, continuing only on AFK-eligible exit_reasons (`completion-with-follow-ups`, `halt-for-continuation`) and stopping on completion (incl. the live ledger flipping to `status: done` during the relay), human gates (NEEDS_HUMAN / needs-human / maintainer-decision / operator-runtime / secret-custody / `blocker:`), no-progress (handoff sha unchanged), max-legs, the stop-file kill switch, or a leg error — distinct exit codes 0/2/3/4/5/6, plus 1 for usage errors. Operator doc: the handoff skill's "Relay" section. Tested by `test/test-relay.sh`.
 
 Transition rules are code, not convention: required steps cannot be `skipped` (exit 3); `completed|skipped|blocked|failed` require evidence/reason (exit 4); `kind: bug` auto-inserts required `diagnose`/`fix` steps.
 

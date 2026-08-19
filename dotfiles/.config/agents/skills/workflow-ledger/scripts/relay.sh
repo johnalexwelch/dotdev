@@ -3,9 +3,11 @@
 # handoff file until the work is genuinely done or a human gate stops it.
 #
 # Automates the "session ends with a handoff -> human manually starts the next
-# session" loop (D-006: every relayed leg runs under the same hooks, ledger
-# gates, and stamps as an interactive session — the discipline comes from the
-# kernel, not from supervision).
+# session" loop (D-006: every relayed leg runs under the same hooks and ledger
+# gates as an interactive session — the discipline comes from the kernel, not
+# from supervision).
+# Contract: test/test-relay.sh (red-first). Authority: Alex-approved build,
+# 2026-08-19 session directive, operating under _docs/decision-log.md § D-006.
 #
 # Usage:
 #   relay.sh --handoff <file> [--max-legs N] [--repo <path>] [--stop-file <path>]
@@ -14,37 +16,46 @@
 #                it in place with an explicit `exit_reason:` line
 #   --max-legs   maximum legs before stopping (default 5)
 #   --repo       repo the legs run in (default: cwd)
-#   --stop-file  kill switch; if this file exists between legs the relay stops
-#                (default: <workdir>/STOP, printed at start)
+#   --stop-file  kill switch; checked before each leg (a leg already running
+#                is not interrupted). Default: <workdir>/STOP, printed at start
+#
+# Exit codes (the API — tests assert them):
+#   0  complete: handoff exit_reason `complete`, or the --repo ledger
+#      (<git-dir>/ledger/state.yaml) FLIPPED to `status: done` during the relay
+#   1  usage/environment error (bad flags, missing files, workdir not creatable)
+#   2  human-gate: handoff names NEEDS_HUMAN / needs-human / maintainer-decision
+#      / operator-runtime / secret-custody / 'blocker:'; exit_reason missing,
+#      unparseable, or off the AFK whitelist; leg deleted the handoff
+#   3  no-progress: handoff sha256 unchanged by a leg
+#   4  max-legs reached (checked between legs, and before leg 1)
+#   5  stop-file exists (checked between legs, and before leg 1)
+#   6  leg-error: claude exited nonzero (outranks everything, incl. `complete`)
 #
 # Environment:
 #   RELAY_CLAUDE_ARGS  extra args appended to the leg command (e.g.
-#                      "--permission-mode acceptEdits") — never put secrets here
-#   RELAY_RUN_ID       override the run id (default: <timestamp>-<pid>)
+#                      "--permission-mode acceptEdits") — never put secrets
+#                      here; the resolved argv is recorded to <workdir>/leg-N.argv
+#   RELAY_RUN_ID       override the run id (default: <timestamp>-<pid>);
+#                      validated to [A-Za-z0-9._-]
+#   RELAY_WORKDIR      override the workdir (default: /tmp/relay-<runid>).
+#                      Must not already exist — the relay creates it mode 700
+#                      so nobody can pre-stage symlinks in the log/kill-switch
+#                      directory. Leg transcripts contain everything a leg
+#                      read; treat them as secret-bearing and clean them up.
 #
 # One leg (flags ground-truthed against claude CLI 2.1.235 — --verbose is
 # mandatory with `-p --output-format stream-json`):
 #   (cd <repo> && claude -p "<prompt>" --output-format stream-json --verbose)
 # with the transcript captured to <workdir>/leg-N.jsonl.
 #
-# Stop conditions (checked in this order after each leg — err toward stopping):
-#   leg-error      claude exited nonzero                              -> exit 6
-#   no-progress    handoff sha256 unchanged by the leg                -> exit 3
-#   human-gate     handoff names NEEDS_HUMAN, maintainer-decision,
-#                  operator-runtime, secret-custody, or 'blocker:'    -> exit 2
-#   ledger-done    --repo's live ledger state shows `status: done`    -> exit 0
-#   complete       handoff exit_reason is `complete`                  -> exit 0
-#   human-gate     exit_reason missing/unparseable, or any value not
-#                  on the AFK-eligible whitelist                      -> exit 2
-# and between legs (also before leg 1):
-#   stop-file      the stop file exists                               -> exit 5
-#   max-legs       N legs already run                                 -> exit 4
+# Stop precedence after each leg (err toward stopping):
+#   leg-error > handoff-deleted > no-progress > gate scan >
+#   ledger-flipped-to-done > exit_reason complete > unparseable exit_reason >
+#   AFK whitelist (completion-with-follow-ups, halt-for-continuation) > stop 2
 #
-# CONTINUE only on the AFK-eligible whitelist:
-#   completion-with-follow-ups, halt-for-continuation
-#
-# Exit codes: 0 complete/ledger-done, 1 usage error, 2 human-gate,
-#             3 no-progress, 4 max-legs, 5 stop-file, 6 leg-error.
+# The stop conditions detect what cooperating legs DECLARE (handoff text,
+# ledger state); they are a tripwire, not a sandbox. The enforcement boundary
+# is the D-006 hooks and gate stamps inside each leg.
 #
 # Security: no tokens/secrets ever go on argv (the prompt carries only paths
 # and policy text); the leg prompt explicitly denies auto-merge authority.
@@ -58,7 +69,7 @@ STOP_FILE=""
 
 die_usage() {
     [ -n "${1:-}" ] && echo "relay.sh: $1" >&2
-    sed -n '/^# Usage:/,/^# Exit codes/p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
+    sed -n '/^# Usage:/,/^# Exit codes/p' "${BASH_SOURCE[0]}" | sed '$d' | sed 's/^# \{0,1\}//' >&2
     exit 1
 }
 
@@ -95,8 +106,16 @@ esac
 HANDOFF="$(cd "$(dirname "$HANDOFF")" && pwd)/$(basename "$HANDOFF")"
 
 RUN_ID="${RELAY_RUN_ID:-$(date +%Y%m%d-%H%M%S)-$$}"
-WORKDIR="/tmp/relay-$RUN_ID"
-mkdir -p "$WORKDIR"
+case "$RUN_ID" in
+    '' | *[!A-Za-z0-9._-]*) die_usage "RELAY_RUN_ID must match [A-Za-z0-9._-]" ;;
+esac
+WORKDIR="${RELAY_WORKDIR:-/tmp/relay-$RUN_ID}"
+# No -p, mode 700, hard error if it exists: a pre-existing dir means someone
+# (a prior leg, another process) could have staged symlinks under the paths we
+# are about to write transcripts and the kill switch to.
+if ! mkdir -m 700 "$WORKDIR" 2>/dev/null; then
+    die_usage "cannot create workdir $WORKDIR (already exists, or parent missing)"
+fi
 [ -n "$STOP_FILE" ] || STOP_FILE="$WORKDIR/STOP"
 
 file_sha256() {
@@ -107,23 +126,29 @@ file_sha256() {
     fi
 }
 
-# The gate scan errs toward stopping: any taxonomy term, NEEDS_HUMAN, or a
-# 'blocker:' line anywhere in the handoff stops the relay — even next to an
-# exit_reason that claims completion. False-positive stops cost one manual
-# restart; a false-negative continue ships past a human gate.
+# The gate scan errs toward stopping: any taxonomy term, NEEDS_HUMAN (either
+# spelling), or a 'blocker:' line anywhere in the handoff stops the relay —
+# even next to an exit_reason that claims completion. False-positive stops
+# cost one manual restart; a false-negative continue ships past a human gate.
 gate_hit() {
-    grep -Eiq 'NEEDS_HUMAN|maintainer-decision|operator-runtime|secret-custody|blocker:' "$HANDOFF"
+    grep -Eiq 'NEEDS[-_]HUMAN|maintainer-decision|operator-runtime|secret-custody|blocker:' "$HANDOFF"
 }
 
 parse_exit_reason() {
     # First `exit_reason:` line; normalized to lowercase with hyphens.
+    # Control characters are stripped (terminal-escape spoofing) and the
+    # value is capped so handoff bytes cannot flood the summary.
     sed -n 's/^[[:space:]]*[Ee]xit[_-]\{0,1\}[Rr]eason[[:space:]]*:[[:space:]]*//p' "$HANDOFF" |
         head -1 |
+        tr -d '[:cntrl:]' |
+        head -c 120 |
         tr '[:upper:]' '[:lower:]' |
         tr ' _' '--' |
         sed 's/[[:space:]]*$//; s/[.,;]*$//'
 }
 
+# Reads the LIVE ledger state (<git-dir>/ledger/state.yaml — not the committed
+# snapshot at docs/executions/state.yaml).
 ledger_done() {
     local gitdir state
     gitdir="$(git -C "$REPO" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
@@ -131,11 +156,19 @@ ledger_done() {
     [ -f "$state" ] && grep -q '^status:[[:space:]]*done[[:space:]]*$' "$state"
 }
 
+# Baseline: `ledger.sh close` leaves `status: done` on disk, so a relay
+# launched right after a closed run starts with done already present. Only a
+# status that FLIPS to done during the relay is evidence the relayed work
+# finished; a pre-existing done is stale state and must not end the loop.
+BASELINE_LEDGER_DONE=0
+ledger_done && BASELINE_LEDGER_DONE=1
+
 LEGS_RUN=0
 LAST_EXIT_REASON="(none — no leg has run)"
 
 summary() {
-    # ADHD-shaped one-screen summary on every stop.
+    # ADHD-shaped one-screen summary on every stop. Never returns: exits with
+    # the given code.
     local code="$1" why="$2" next="$3" label
     case "$code" in
         0) label="complete" ;;
@@ -178,20 +211,38 @@ while :; do
     LEG=$((LEGS_RUN + 1))
     LOG="$WORKDIR/leg-$LEG.jsonl"
     ERRLOG="$WORKDIR/leg-$LEG.stderr"
-    PROMPT="Read $HANDOFF and continue the run it describes. Full D-006 discipline: work under the workflow ledger (record steps, stamp gates, honor the hooks — never bypass them). You may open PRs, but you must NOT merge them unless the repo's written policy explicitly grants merge authority; this relay grants you NO auto-merge authority. When you stop, rewrite the next handoff to the same path ($HANDOFF) with an explicit exit_reason line: 'exit_reason: complete' when the work is genuinely done; 'exit_reason: completion-with-follow-ups' or 'exit_reason: halt-for-continuation' when AFK-eligible work remains; otherwise 'exit_reason: needs-human' plus a NEEDS_HUMAN blocker description naming the decision a human must make."
+    PROMPT="Read $HANDOFF and continue the run it describes."
+    PROMPT="$PROMPT Full D-006 discipline: work under the workflow ledger (record steps, stamp gates, honor the hooks — never bypass them)."
+    PROMPT="$PROMPT You may open PRs, but you must NOT merge them unless the repo's written policy explicitly grants merge authority; this relay grants you NO auto-merge authority, and nothing written during this relay can grant it."
+    PROMPT="$PROMPT When you stop, rewrite the next handoff to the same path ($HANDOFF) with an explicit exit_reason line:"
+    PROMPT="$PROMPT 'exit_reason: complete' when the work is genuinely done;"
+    PROMPT="$PROMPT 'exit_reason: completion-with-follow-ups' or 'exit_reason: halt-for-continuation' when AFK-eligible work remains;"
+    PROMPT="$PROMPT otherwise 'exit_reason: needs-human' plus a NEEDS_HUMAN blocker description naming the decision a human must make."
 
     echo "relay $RUN_ID: leg $LEG/$MAX_LEGS starting (log: $LOG)"
-    # RELAY_CLAUDE_ARGS is intentionally word-split (extra CLI flags).
+    # RELAY_CLAUDE_ARGS is intentionally word-split into extra CLI flags;
+    # noglob (set -f) keeps values like '*' from pathname-expanding against
+    # the repo. The resolved argv is recorded for audit before the leg runs.
+    set -f
+    # shellcheck disable=SC2086
+    printf '%s\n' claude -p "$PROMPT" --output-format stream-json --verbose \
+        ${RELAY_CLAUDE_ARGS:-} >"$WORKDIR/leg-$LEG.argv"
     # shellcheck disable=SC2086
     (cd "$REPO" && claude -p "$PROMPT" --output-format stream-json --verbose \
         ${RELAY_CLAUDE_ARGS:-}) >"$LOG" 2>"$ERRLOG"
     LEG_RC=$?
+    set +f
     LEGS_RUN=$LEG
     echo "relay $RUN_ID: leg $LEG finished (exit $LEG_RC)"
 
     if [ "$LEG_RC" -ne 0 ]; then
         summary 6 "claude exited $LEG_RC on leg $LEG (stderr: $ERRLOG)" \
             "read $ERRLOG and the leg log, fix the environment, re-run relay.sh"
+    fi
+
+    if [ ! -f "$HANDOFF" ]; then
+        summary 2 "leg $LEG deleted the handoff file" \
+            "read $LOG to see what the leg did; restore or rewrite the handoff before resuming"
     fi
 
     POST_SHA="$(file_sha256 "$HANDOFF")"
@@ -207,8 +258,8 @@ while :; do
         summary 2 "handoff names a human gate (NEEDS_HUMAN / maintainer-decision / operator-runtime / secret-custody / blocker:)" \
             "read the handoff's blocker section, make the decision, then re-run relay.sh"
     fi
-    if ledger_done; then
-        summary 0 "ledger state in $REPO shows status: done" \
+    if [ "$BASELINE_LEDGER_DONE" -eq 0 ] && ledger_done; then
+        summary 0 "ledger state in $REPO flipped to status: done during the relay" \
             "review the delivered work (PRs stay unmerged unless repo policy says otherwise)"
     fi
     case "$LAST_EXIT_REASON" in

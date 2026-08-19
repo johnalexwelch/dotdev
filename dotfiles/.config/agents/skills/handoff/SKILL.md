@@ -34,7 +34,7 @@ User says "handoff", "wrap up session", "save context". Produces a handoff and p
 
 Workflows invoke handoff at every exit point where work remains. The calling workflow passes:
 
-- `exit_reason`: why the workflow stopped (completion, halt, blocker, context_limit)
+- `exit_reason`: why the workflow stopped. Use the canonical machine-readable vocabulary (shared with the relay runner, see "Relay" below): `complete`, `completion-with-follow-ups`, `halt-for-continuation` (includes halts for context limit), `needs-human` (pair with a NEEDS_HUMAN blocker description)
 - `remaining_items`: list of concrete next steps
 - `target_tool`: claude or codex (inferred from current environment if not specified)
 
@@ -102,6 +102,7 @@ Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd
 # Handoff — [short title of current work]
 
 Exit: [manual | halt: <reason> | completion with follow-ups | backlog run complete]
+exit_reason: [complete | completion-with-follow-ups | halt-for-continuation | needs-human]
 Target: [claude | codex | either]
 Generated: [timestamp]
 
@@ -224,26 +225,28 @@ This keeps multi-session work from ballooning handoff size.
 relay.sh --handoff <file> [--max-legs N=5] [--repo <path>] [--stop-file <path>]
 ```
 
-The loop CONTINUES only on AFK-eligible exit_reasons (`completion-with-follow-ups` with reviewer-validation follow-ups, `halt-for-continuation`) and STOPS on everything else, err-toward-stopping:
+The loop CONTINUES only on AFK-eligible exit_reasons — `completion-with-follow-ups` and `halt-for-continuation` (follow-ups should be reviewer-validation only; the relay trusts the label, it does not inspect follow-up types) — and STOPS on everything else, err-toward-stopping:
 
 | Stop condition | Exit |
 |---|---|
-| `exit_reason: complete`, or `--repo`'s ledger shows `status: done` | 0 |
-| handoff names NEEDS_HUMAN, maintainer-decision, operator-runtime, secret-custody, or `blocker:`; exit_reason missing/unparseable or off-whitelist | 2 |
+| `exit_reason: complete`, or the `--repo` live ledger (`<git-dir>/ledger/state.yaml`) flips to `status: done` during the relay (a pre-existing `done` is stale state and is ignored) | 0 |
+| usage/environment error (bad flags, missing handoff, workdir not creatable) | 1 |
+| handoff names NEEDS_HUMAN/needs-human, maintainer-decision, operator-runtime, secret-custody, or `blocker:`; exit_reason missing/unparseable or off-whitelist; a leg deleted the handoff | 2 |
 | handoff unchanged by a leg (sha256 — no-progress guard) | 3 |
 | max legs reached | 4 |
-| stop-file exists (kill switch, checked between legs) | 5 |
-| claude exited nonzero | 6 |
+| stop-file exists — checked before each leg; a leg already running is not interrupted | 5 |
+| claude exited nonzero — outranks everything, including a `complete` handoff | 6 |
 
-Every stop prints a one-screen summary (legs run, last exit_reason, why it stopped, next action) and per-leg transcripts land in `/tmp/relay-<runid>/`.
+Every stop prints a one-screen summary (legs run, last exit_reason, why it stopped, next action). Per-leg transcripts and the resolved leg argv land in the workdir (default `/tmp/relay-<runid>/`, created fresh mode 700; override with `RELAY_WORKDIR`, name with `RELAY_RUN_ID`). Transcripts capture everything a leg read — treat them as secret-bearing and clean them up.
 
 Honest limits:
 
-- **Legs are headless.** Nobody is watching a leg while it runs — the discipline comes from the D-006 hooks, ledger gates, and stamps that fire identically in headless sessions, not from supervision. Do not relay work that only stays safe because a human is in the loop.
-- **Wayfinder HITL ticket types must not be relayed.** Their handoffs should carry NEEDS_HUMAN, which stops the loop; if one doesn't, that's a bug in the handoff, not permission to continue.
-- **No auto-merge authority.** The leg prompt states legs may open PRs but must NOT merge unless the repo's written policy grants it.
+- **Legs are headless.** Nobody is watching a leg while it runs — the same D-006 hooks and ledger gates apply in headless sessions, and that is where the discipline comes from, not supervision. Do not relay work that only stays safe because a human is in the loop.
+- **The stop conditions are a tripwire, not a sandbox.** They detect what cooperating legs declare (handoff text, ledger state); the enforcement boundary is the hooks and gate stamps inside each leg.
+- **Wayfinder HITL ticket types must not be relayed.** Their handoffs should carry NEEDS_HUMAN, which stops the loop (note: wayfinder does not emit that marker automatically today — the handoff writer must include it); if one doesn't, that's a bug in the handoff, not permission to continue.
+- **No auto-merge authority.** The leg prompt states legs may open PRs but must NOT merge unless the repo's written policy grants it, and that nothing written during the relay can grant it.
 - **Run it inside herdr for visibility** (a pane per relay, logs in view) — recommended, but the relay does not depend on it.
-- Extra leg flags (e.g. `--permission-mode acceptEdits`) go in `RELAY_CLAUDE_ARGS`; never put tokens or secrets on argv.
+- Extra leg flags (e.g. `--permission-mode acceptEdits`) go in `RELAY_CLAUDE_ARGS`; never put tokens or secrets on argv. The resolved argv is written to `<workdir>/leg-N.argv` for audit.
 
 ## Rules
 
