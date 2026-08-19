@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787171183
 status: active
 next: preflight
-updated: '2026-08-19T20:26:23.140731+00:00'
+updated: '2026-08-19T20:51:09.509863+00:00'
 steps:
 - id: preflight
   required: true
@@ -17,8 +17,8 @@ steps:
   evidence: ''
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'decision entry appended (51a114c amended): problem measured across 14 repos, decision + 5 named implementation requirements with file:line citations, supersession of the earlier local-only shape recorded, non-decisions listed; markdownlint clean'
 - id: review
   required: true
   status: pending
@@ -27,8 +27,30 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: f29076cfd59deb2420b3cf5d496a02e97354ecea
+    timestamp: '2026-08-19T20:51:09.509685+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 962452324def7dc19c75fa9f0273480933860af636c24d26455a15a9af74be72
+      lane_integrated_lines: '134'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: opus
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: approve
+      review_profile: fast
+      model_floor: opus
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-d006-multi-repo-adoption/integrated-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: governance decision record|workflow-deliver|confirmed
 branch: docs/d006-multi-repo-adoption
 worktree: /Users/alexwelch/wt/dotdev/d006-multi-repo-adoption
+last_seen_sha: bb1fd9fac8647589c3f77625c3f8683552d2016e
