@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787158336
 status: active
-next: qa
-updated: '2026-08-19T17:07:43.792321+00:00'
+next: ''
+updated: '2026-08-19T17:10:23.721937+00:00'
 steps:
 - id: preflight
   required: true
@@ -25,12 +25,12 @@ steps:
   evidence: fast-profile integrated lane APPROVE at /tmp/ledger-lanes-2026-08-19-golden-redirect-cases/integrated-review.md, reviewed_sha=36704cc (HEAD)
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'full routing eval 48/48 pass-rate 100% RESULT: PASS; verify-local PASSED at 105636b (run-tests, lint-skill-refs, lint-skill-suite)'
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'PR #190 opened non-draft (https://github.com/johnalexwelch/dotdev/pull/190); review stamped APPROVE fast; verify-local PASSED; handoff: do-not-merge per task'
 stamps:
   review:
     head_sha: 36704ccf829b65a4636c0ba0f9645cf5550c5cad
@@ -53,8 +53,34 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 105636b9f03ea5182c0c3f3ba3720a2259343b1f
+    timestamp: '2026-08-19T17:10:23.721771+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '190'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: eval-set addition|workflow-deliver|confirmed
 branch: test/golden-redirect-tombstone-cases
 worktree: /Users/alexwelch/wt/dotdev/golden-redirect-tombstone-cases
-last_seen_sha: 165b95dbaac26af1be386fddeac6841d11e605a1
+last_seen_sha: 105636b9f03ea5182c0c3f3ba3720a2259343b1f
+verify_local:
+  head_sha: 105636b9f03ea5182c0c3f3ba3720a2259343b1f
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
