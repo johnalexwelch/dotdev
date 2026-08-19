@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152447
 status: active
-next: review
-updated: '2026-08-19T15:51:25.674682+00:00'
+next: finalize
+updated: '2026-08-19T15:57:12.972591+00:00'
 steps:
 - id: red-tests
   required: true
@@ -25,11 +25,11 @@ steps:
   evidence: verify-local PASSED at df95818
 - id: review
   required: true
-  status: active
-  evidence: ''
+  status: completed
+  evidence: integrated lane approve (model opus, /tmp/phase5b-182-integrated-review.md); stamp review at 0c7d78b
 - id: finalize
   required: true
-  status: pending
+  status: active
   evidence: ''
 stamps:
   review:
@@ -53,6 +53,24 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 1737389829c421ee2815c45f0276cb5ad2559519
+    timestamp: '2026-08-19T15:57:12.972432+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '182'
+      describe_pr: done
+      post_mortem: Phase 5b landed route enforcement at 3 layers; upstream moved 3x mid-gate (merged forward each time); lane ran 4 rounds incl. reverted-tuple control run
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides:
 - action: force-init
   reason: --force re-init over prior run 2026-08-19-phase5b-route-evidence
@@ -60,7 +78,7 @@ overrides:
 route: skill/kernel change|workflow-skill|confirmed
 branch: feat/d006-phase5b-route-evidence
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
-last_seen_sha: b4574189264746ea975356e141f0356d726e99ff
+last_seen_sha: 1737389829c421ee2815c45f0276cb5ad2559519
 verify_local:
   head_sha: 0c7d78beb5f8d4217fdfbeca080ddce8202cfdf7
   passed: true
