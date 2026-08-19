@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787171183
 status: active
 next: preflight
-updated: '2026-08-19T20:51:09.509863+00:00'
+updated: '2026-08-19T20:55:36.770975+00:00'
 steps:
 - id: preflight
   required: true
@@ -49,8 +49,38 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 9c631b500936a580c020403a2961682a24fe9d34
+    timestamp: '2026-08-19T20:55:36.770751+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '193'
+      describe_pr: in_pr_body
+      post_mortem: 'not_applicable_with_reason: docs-only decision record; 3-round review narrative carried in the PR body'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: governance decision record|workflow-deliver|confirmed
 branch: docs/d006-multi-repo-adoption
 worktree: /Users/alexwelch/wt/dotdev/d006-multi-repo-adoption
-last_seen_sha: bb1fd9fac8647589c3f77625c3f8683552d2016e
+last_seen_sha: 9c631b500936a580c020403a2961682a24fe9d34
+verify_local:
+  head_sha: 9c631b500936a580c020403a2961682a24fe9d34
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
+  - cmd: pre-commit run --all-files
+    exit: 0
