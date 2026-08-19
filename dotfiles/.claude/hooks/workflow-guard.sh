@@ -162,22 +162,37 @@ substitution_spans() {
 # whose description overstates its guarantee is its own defect — the next
 # maintainer reads it and stops looking.
 #
-# INDIRECTION BOUNDARY — declared scope, not an oversight. Suppression that
-# reaches a mutation through NAME BINDING is out of scope for a lexical
-# tripwire: `./deploy.sh 2>/dev/null`, `f() { git push; }; f 2>/dev/null`,
-# aliases. The security lane proved this cannot be closed lexically:
+# VISIBILITY BOUNDARY — an ACCEPTED FAIL-OPEN REGRESSION vs main, declared
+# deliberately. Stated as a principle, not a list, because an open set
+# written as a closed list is the documentation-layer version of the mistake
+# the carrier model made in code (security lane R10):
 #
-#     f() { git push origin main; }; f 2>/dev/null    must BLOCK
+#   Rule 3 sees a mutation only when its text sits UNQUOTED, AS A COMMAND, in
+#   the same segment as the suppression. Any mechanism that carries command
+#   text across that boundary — name binding (`./deploy.sh`, aliases,
+#   functions), parameter expansion, `eval`, a here-document, a file read at
+#   runtime — is OUT OF SCOPE and FAILS OPEN.
+#
+# main blocked several of these under whole-command semantics, so giving them
+# up IS a regression — named as such because this branch's own rule is that a
+# fail-open regression gets fixed. The exception is taken because the class is
+# unreachable lexically, not because it is cheap.
+#
+# Why unreachable: the suppressed segment and the mutating one are not
+# distinguishable BY SEGMENTATION —
+#
+#     ./deploy.sh 2>/dev/null                           must BLOCK
 #     bash test.sh 2>/dev/null && git push origin main  must PERMIT (batch #1)
 #
-# The two are lexically identical — mutation in one segment, suppression in
-# another, no carrier token in either. Only whether the suppressed segment
-# invokes a name bound to the mutation separates them, and that is name
-# binding, not lexing. So no lexical predicate can block the first and permit
-# the second: a true inversion would block every batch #1 chain, which is the
-# behavior item #1 deliberately removed. Closing this class needs a tokenizer
-# that tracks redirection scope; adding carrier #11 buys bounded shapes at the
-# price of batch-#1 regressions and never closes it.
+# Both are a suppressed non-mutating-looking segment; whether the suppressed
+# command is bound to a mutation lives outside the command text entirely, in
+# a file or a previously-defined alias. No predicate over this text can see
+# it. (Narrower shapes ARE separable — a function defined and invoked in the
+# same command can be caught by a scoped carrier, verified by the style lane
+# — but that is carrier #11 with the usual costs, and it leaves the general
+# class open.) Closing this properly needs a tokenizer that tracks
+# redirection scope. The load-bearing controls are the stamps and freshness
+# rules, which do not depend on rule 3.
 #
 # Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
 # Suppression on a test/lint segment chained before a push must not block
@@ -242,8 +257,8 @@ has_suppressed_mutating_segment() {
     # whether a given `exec` is a command word — rather than an argument or
     # quoted text — is the same open-ended enumeration that produced three
     # fail-opens across rounds R3–R7 (bare, then opener-prefixed, then
-    # assignment-prefixed). Under the inverted burden any `exec` token is a
-    # carrier and the command blocks — but only when suppression is actually
+    # assignment-prefixed). So any `exec` token counts as a carrier — but the
+    # carrier arms only when suppression is actually
     # present somewhere. Without that conjunct an `exec` token alone blocks a
     # mutation, and the emitted message tells the operator to remove a
     # suppression that isn't there: unactionable, and `docker exec` is as
