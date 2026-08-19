@@ -174,6 +174,16 @@ for gate, s in stamps.items():
     done
 ```
 
+**Repo activity — state the ref scope or do not cite the number.** Any activity figure in an audit finding must name what it counted, because the three defensible methods disagree by up to 10x and the ranking they produce is not the same ranking. Measured 2026-08-19 over one 7-day window: chorus 25 HEAD-only / 7 default-branch / 46 all-refs; taro 2 / 2 / 21; dotdev 38 / 38 / 447 (every worktree branch counts). Default branch is the figure for any "code landed without a gate" claim — that is the claim such findings make; `--all` measures agent busy-ness across branches and inflates repos with bot branches. A cross-repo audit that mixes the two produces a false priority order: on all-refs the 2026-08-19 audit read as a four-way tie (chorus 46 / delphi 22 / taro 21 / ml-models 20), on default-branch it read ml-models 20 / delphi 9 / chorus 7 / taro 2 — ml-models at twice the next repo. Report as `N commits on <branch> in <window>`, never a bare count.
+
+```bash
+# Default branch (the gate-relevant figure). Repeat per repo; name the branch.
+git -C "$repo" log "$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||' || echo main)" \
+    --since="7 days ago" --oneline | wc -l
+# All refs, only when the question is total agent activity — label it as such.
+git -C "$repo" log --all --since="7 days ago" --oneline | wc -l
+```
+
 **Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
 
 ```bash
