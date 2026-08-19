@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787150233
 status: active
 next: review
-updated: '2026-08-19T17:57:37.043200+00:00'
+updated: '2026-08-19T18:00:51.518774+00:00'
 steps:
 - id: preflight
   required: true
@@ -64,15 +64,33 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 85a9c69ca77b9fb6fe14f26eab552cdf06a9deeb
+    timestamp: '2026-08-19T18:00:51.518556+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: draft
+      threads_resolved: 'yes'
+    attested:
+      post_mortem: 'not_applicable_with_reason: single-unit delivery; drift/review narrative carried in PR body'
+      describe_pr: 'body_file=docs/executions/.pr-bodies/2026-08-19-pr-guard-rule3-tokenizer.md; mode=issue_only; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason: no graph.json; applied_to_pr=true'
+      pr_number: '192'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides:
 - action: force-init
   reason: --force re-init over prior run 2026-08-19-guard-rule3-tokenizer
   timestamp: '2026-08-19T14:37:13.253891+00:00'
 branch: feat/guard-rule3-tokenizer
 worktree: /Users/alexwelch/dotdev-worktrees/guard-rule3-tokenizer
-last_seen_sha: 40eefafdb1a6a7767f88f2fd118e21481f0b5563
+last_seen_sha: 85a9c69ca77b9fb6fe14f26eab552cdf06a9deeb
 verify_local:
-  head_sha: 40eefafdb1a6a7767f88f2fd118e21481f0b5563
+  head_sha: 85a9c69ca77b9fb6fe14f26eab552cdf06a9deeb
   passed: true
   results:
   - cmd: ./test/run-tests.sh
@@ -80,4 +98,6 @@ verify_local:
   - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
     exit: 0
   - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
+  - cmd: pre-commit run --all-files
     exit: 0
