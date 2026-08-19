@@ -4,30 +4,52 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152956
 status: active
-next: preflight
-updated: '2026-08-19T15:22:36.956397+00:00'
+next: finalize
+updated: '2026-08-19T15:33:41.519763+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> fix/router-v1-vs-feature-seam @ .claude/worktrees/router-v1-vs-feature-seam; router-only scope, golden-routes.yaml untouched'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: V1 row + ambiguous-feature row signal sharpened; V1-vs-feature boundary sentence added after classification table; v1-workflow description checked clean (no internal-tooling phrasing)
 - id: eval
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'routing-eval full run vs #181 45-case golden set: total 45 pass 45 fail 0 pass-rate 100% RESULT: PASS; case 45 PASS (workflow-feature) + 3/3 single-case probes; dry-run schema OK'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'review stamp: fast profile, integrated lane APPROVE (/tmp/integrated-review-v1seam.md, model sonnet)'
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 0dca090de1e6bbdaa37627bd8f304109ffa2947d
+    timestamp: '2026-08-19T15:33:41.519610+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 0053f5e6cebdae557c1abdecf59bbc53379abfc0e1a9be3c1b7bc60e66059799
+      lane_integrated_lines: '41'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: sonnet
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: fast
+      lanes: integrated=/tmp/integrated-review-v1seam.md
+      model_floor: sonnet
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: fix/router-v1-vs-feature-seam
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
+last_seen_sha: 6ec4c8d0cec0197503e6db227f9be1f5f5b7c9d7
