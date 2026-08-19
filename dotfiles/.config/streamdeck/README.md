@@ -30,20 +30,25 @@ in git history, and this repo is public).
 
 ## Scripts
 
-> **Pending:** none of these files exist in the repo yet. They were authored
-> in the Cowork session and still need to be exported from it. Run
-> `next-meeting.py debug` first — its icalBuddy parsing was never run against
-> real output.
-
-Deck-invoked scripts will live in `~/.local/bin/` (stowed from
+Deck-invoked scripts live in `~/.local/bin/` (stowed from
 `dotfiles/.local/bin/`, on `$PATH`):
 
 | Script | Does |
 |---|---|
 | `next-meeting.py` | `join` / `doc` / `both` / `debug` — reads icalBuddy, opens conference link and/or prep doc |
-| `daily-planning.sh` | fires `/morning-triage` headless, opens Sunsama planning view |
-| `pr-review-agent.sh` | reads frontmost Chrome tab, runs a read-only PR review agent |
+| `daily-planning.sh` | fires `/morning-triage` headless, opens Sunsama planning view; digest → `~/Documents/daily-briefs/` |
+| `pr-review-agent.sh` | reads frontmost Chrome tab, runs a read-only PR review agent; review → `~/Documents/pr-reviews/` |
 | `agent-status.sh` | prints agent state for the Stateful Executor polling key |
+| `pr-review-count.sh` | prints the open review-requested PR count (key 15) |
+
+> `next-meeting.py debug` has still never been run against real icalBuddy
+> output — run it first after enabling the calendar mirror. The
+> format-independent logic is covered by `test/test-next-meeting.sh`.
+
+The two agent scripts share one status slot
+(`$TMPDIR/streamdeck-agent-status`, read by `agent-status.sh`): last writer
+wins, so one Stateful Executor key reflects whichever agent ran most
+recently.
 
 `meeting-docs.tsv` (meeting-title → prep-doc URL map) contains internal
 meeting titles and doc URLs, and this repo is **public** — it stays
@@ -52,16 +57,20 @@ untracked. Place it at `~/.config/streamdeck/meeting-docs.tsv` (a
 
 ## Environment variables
 
-Set in `dotfiles/.config/zsh/configs/env.zsh`:
+Stream Deck invokes scripts **without an interactive shell**, so `~/.zshrc`
+exports never reach them. Every deck script therefore loads untracked
+`~/.streamdeck` itself and pins its own `PATH`; env.zsh also sources
+`~/.streamdeck` so interactive shells agree.
 
-- `DOJO_REPO_DIR` — repo the deck's agent scripts (`pr-review-agent.sh`,
-  `daily-planning.sh`) run against.
-- `DOJO_NOTES_DIR` — Obsidian vault where prep docs land (aliases
-  `BRAIN_VAULT`).
+Set in `~/.streamdeck` (host-specific, may reveal account addresses — never
+commit; this repo is public):
 
-`CAL_WORK` / `CAL_PERSONAL` (icalBuddy calendar names) are host-specific and
-may reveal account addresses, so they live in untracked `~/.streamdeck`,
-sourced by env.zsh's credential loop.
+- `CAL_WORK` / `CAL_PERSONAL` — icalBuddy calendar names, comma-separated.
+- `DOJO_REPO_DIR` — dir the agent scripts `cd` into before running `claude`
+  (defaults to `~/dojo`). Also exported by env.zsh for interactive use.
+- `MEETING_DOCS` — optional override for the title→doc map path (defaults to
+  `~/.config/streamdeck/meeting-docs.tsv`).
+- `ICALBUDDY` — optional override for the icalBuddy binary path.
 
 ## Calendar source
 

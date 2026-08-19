@@ -13,6 +13,19 @@ Lands the four Stream Deck deck-invoked scripts from the Cowork design handoff i
 
 Copied the handoff scripts verbatim except the `MAP_FILE` patch in `next-meeting.py` (dead `SCRIPT_DIR` removed with it), ran `shfmt -w` to match the repo's pre-commit formatting, set exec bits. The scripts are env-driven: `DOJO_REPO_DIR`/`DOJO_NOTES_DIR` (added to `env.zsh` in #178) and `CAL_WORK`/`CAL_PERSONAL` (untracked `~/.streamdeck`, pending the Google calendar mirror).
 
+## Review round 1 → fixes
+
+The 4-lane review returned REQUEST_CHANGES across all lanes; every blocker is fixed in this round:
+
+- **RCE (security F1, proven PoC):** all `notify()` helpers now pass text as `argv` to `osascript` — calendar-invite titles can no longer execute AppleScript/shell
+- **Unconfined agent (security F2):** `daily-planning.sh` runs `/morning-triage` with `--disallowedTools "Bash,Write,Edit,NotebookEdit"` — prompt injection in email/Slack can shape the digest, not execute code
+- **Dead env at deck-invoke time (logic L1, proven):** Stream Deck never sources `.zshrc`, so every script now loads untracked `~/.streamdeck` itself and pins `PATH`; fallbacks corrected to dirs that exist (`~/dojo`)
+- **Wrong event picked on all-day days (logic L2, reproduced):** `pick_event` sorts `None`-start events last; all-day events no longer suppress the 20-minute lookahead
+- **`CONF_RE` host-anchored (security F4 / logic L3):** `https://evil.tld/meet.google.com/x` no longer reaches `open`
+- **Var-name collision (logic L4 / style F1):** `daily-planning.sh` uses `DOJO_REPO_DIR`; consumer-less `DOJO_NOTES_DIR` removed from env.zsh and README
+- Also: status file moved to private `$TMPDIR` (F5/L9, documented single-slot), Sunsama keystroke gated on frontmost (L7), numeric-PR URL guard + slug slash check (L8), timeout/no-doc notifications (L6), same-line date+time parsing that skips the title line (L5), placeholder calendar names in the docstring (F3), README stale-pending note replaced and `MEETING_DOCS`/`ICALBUDDY` documented (L10/style), and `pr-review-count.sh` lands so key 15's README claim is backed (L10)
+- **New:** `test/test-next-meeting.sh` — 7 hermetic cases over the format-independent layer (pick ordering, URL anchoring, map collision, personal masking, env loader), per the tests lane's proportionality call; the icalBuddy format fixture stays deferred until the mirror produces real output
+
 ## How to verify
 
 - `python3 -m py_compile dotfiles/.local/bin/next-meeting.py` → clean

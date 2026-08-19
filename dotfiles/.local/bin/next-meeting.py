@@ -24,10 +24,13 @@ WORK vs PERSONAL
 icalBuddy can't label which calendar an event came from in its property list,
 so we query each calendar set separately and tag the results:
 
-    export CAL_WORK="Alex Welch,ClassDojo"       # calendar names, comma-separated
-    export CAL_PERSONAL="Personal,Family"
+    export CAL_WORK="<work calendar names>"      # calendar names, comma-separated
+    export CAL_PERSONAL="<personal calendar names>"
 
 Find your exact calendar names with:  icalBuddy calendars
+Set them in untracked ~/.streamdeck — Stream Deck invokes this script without
+an interactive shell, so ~/.zshrc exports never reach it; the script loads
+~/.streamdeck itself.
 
 Both sets are merged for `join`. Prep-doc lookup and title display are
 restricted to the work set — so a personal appointment is still joinable from
@@ -48,8 +51,32 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 LOOKAHEAD_MIN = 20
+
+_ENV_RE = re.compile(r'^(?:export\s+)?([A-Z_][A-Z0-9_]*)=([\'"]?)(.*)\2\s*$')
+
+
+def _load_streamdeck_env() -> None:
+    """Deck presses arrive without an interactive shell, so ~/.zshrc never
+    ran — pull CAL_WORK / CAL_PERSONAL / MEETING_DOCS / ICALBUDDY from
+    untracked ~/.streamdeck ourselves. Simple KEY=VALUE / export lines only;
+    already-set environment always wins."""
+    cfg = Path.home() / ".streamdeck"
+    if not cfg.exists():
+        return
+    try:
+        lines = cfg.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return
+    for line in lines:
+        m = _ENV_RE.match(line.strip())
+        if m and m.group(1) in {"CAL_WORK", "CAL_PERSONAL", "MEETING_DOCS", "ICALBUDDY"}:
+            os.environ.setdefault(m.group(1), m.group(3))
+
+
+_load_streamdeck_env()
+
 # The title→doc map holds internal meeting names and URLs, so it lives
-# outside the (public) dotfiles repo — see dotfiles/.config/streamdeck/README.md.
+# outside the (public) dotfiles repo — see ~/.config/streamdeck/README.md.
 MAP_FILE = Path(
     os.environ.get("MEETING_DOCS")
     or Path.home() / ".config" / "streamdeck" / "meeting-docs.tsv"
@@ -66,14 +93,25 @@ EVT = "@@EVT@@"          # bullet, used to split events apart
 DOC_RE = re.compile(
     r"https://(?:docs\.google\.com|www\.notion\.so|[a-z0-9.-]*\.notion\.site)/[^\s)>\"'\\]+"
 )
-CONF_RE = re.compile(r"https://[^\s)>\"']*(?:meet\.google\.com|zoom\.us)/[^\s)>\"']+")
+# Host-anchored like DOC_RE — an unanchored pattern would let
+# https://evil.tld/meet.google.com/x reach `open`.
+CONF_RE = re.compile(
+    r"https://(?:[a-z0-9-]+\.)*(?:meet\.google\.com|zoom\.us)/[^\s)>\"']+"
+)
 DATE_RE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 TIME_RE = re.compile(r"\b(\d{2}:\d{2})\b")
 
 
 def notify(msg: str, title: str = "Meeting") -> None:
+    # Message and title travel as argv, never interpolated into AppleScript
+    # source — a calendar-invite title is attacker-controlled text, and an
+    # f-string here is an arbitrary-code-execution hole (do shell script).
     subprocess.run(
-        ["osascript", "-e", f'display notification "{msg}" with title "{title}"'],
+        ["osascript",
+         "-e", "on run argv",
+         "-e", "display notification (item 1 of argv) with title (item 2 of argv)",
+         "-e", "end run",
+         "--", msg, title],
         capture_output=True,
     )
 
@@ -111,6 +149,7 @@ def run_icalbuddy(cals, command):
         notify("icalBuddy not installed — brew install ical-buddy")
         sys.exit(1)
     except subprocess.TimeoutExpired:
+        notify("icalBuddy timed out — calendar may still be syncing")
         return ""
     if out.returncode != 0:
         notify((out.stderr or "icalBuddy failed").strip().split("\n")[-1][:100])
@@ -137,15 +176,21 @@ def parse_events(raw, label):
             continue
         title = lines[0]
 
+        # Take the start from the first non-title line that carries a time,
+        # pairing it with a date on that same line — scanning the whole blob
+        # lets a "09:30" in the title or notes beat the real start time.
         start = None
-        d = DATE_RE.search(chunk)
-        t = TIME_RE.search(chunk)
-        if t:
+        for ln in lines[1:]:
+            t = TIME_RE.search(ln)
+            if not t:
+                continue
+            d = DATE_RE.search(ln)
             day = d.group(1) if d else datetime.now().strftime("%Y-%m-%d")
             try:
                 start = datetime.strptime(f"{day} {t.group(1)}", "%Y-%m-%d %H:%M")
             except ValueError:
                 start = None
+            break
 
         events.append({
             "title": title,
@@ -163,7 +208,13 @@ def all_events():
 
     running, upcoming = [], []
     for label, cals in calendar_sets():
-        running += parse_events(run_icalbuddy(cals, "eventsNow"), label)
+        # All-day events (OOO, focus blocks) are "in progress" all day but
+        # have no parseable start — if they counted as running, one of them
+        # would disable the lookahead for the whole day.
+        running += [
+            ev for ev in parse_events(run_icalbuddy(cals, "eventsNow"), label)
+            if ev["start"]
+        ]
         for ev in parse_events(run_icalbuddy(cals, "eventsToday"), label):
             if ev["start"] and now <= ev["start"] <= horizon:
                 upcoming.append(ev)
@@ -175,8 +226,10 @@ def pick_event(events):
     if not events:
         return None
     now = datetime.now()
+    # None-start events sort LAST — a 0 key here would make an unparsed
+    # all-day event beat a meeting starting in five minutes.
     return min(events, key=lambda e: abs((e["start"] - now).total_seconds())
-               if e["start"] else 0)
+               if e["start"] else float("inf"))
 
 
 def conference_url(ev):
@@ -266,6 +319,8 @@ def main():
         doc = prep_doc_url(ev)
         if doc:
             subprocess.run(["open", doc])
+        elif mode == "doc":
+            notify(f"No prep doc for {safe_title(ev)}")
 
 
 if __name__ == "__main__":

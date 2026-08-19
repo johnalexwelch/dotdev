@@ -7,7 +7,9 @@
 #
 # Press-to-clear: run with `--clear` to reset to idle after you've seen it.
 
-STATUS_FILE="/tmp/streamdeck-agent-status"
+# Private per-user $TMPDIR, not world-writable /tmp. Must match the path the
+# writer scripts (daily-planning.sh, pr-review-agent.sh) use.
+STATUS_FILE="${TMPDIR:-/tmp}/streamdeck-agent-status"
 
 if [[ "${1:-}" == "--clear" ]]; then
     echo "idle" >"$STATUS_FILE"

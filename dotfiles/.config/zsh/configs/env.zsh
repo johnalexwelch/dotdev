@@ -44,9 +44,8 @@ export CHORUS_REGISTRY="$HOME/projects/chorus/registry.yaml"
 # Rowan brain (Obsidian knowledge system)
 export BRAIN_VAULT="$HOME/Documents/Home"
 
-# Stream Deck deck scripts (~/.local/bin — see ~/.config/streamdeck/README.md)
+# Stream Deck scripts (~/.local/bin — see ~/.config/streamdeck/README.md).
+# Deck presses don't get an interactive shell, so the scripts source
+# untracked ~/.streamdeck themselves (CAL_WORK/CAL_PERSONAL live there —
+# public repo, never commit them); this export is for interactive use.
 export DOJO_REPO_DIR="$HOME/dojo"
-export DOJO_NOTES_DIR="$BRAIN_VAULT"
-# CAL_WORK / CAL_PERSONAL (icalBuddy calendar names) live in untracked
-# ~/.streamdeck, sourced by the credential loop above — this repo is public,
-# never commit them. Setup steps: ~/.config/streamdeck/README.md
