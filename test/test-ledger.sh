@@ -284,6 +284,37 @@ assert_file_exists "forced re-init writes its own run file" \
 assert_file_exists "prior run file remains as historical record" \
     "$(run_snap "$repoA" 2026-08-19-demo)"
 
+# run_id doubles as a tracked filename: path-hostile and glob shapes are
+# refused at init (exit 6, nothing written) — the only guard keeping a run
+# from writing or sweeping paths outside docs/executions/runs/.
+for bad in '../evil' 'a/b' '.hidden' 'run*id' 'run?id' 'with space' ''; do
+    run_ledger "$repoA" init "$bad" --workflow workflow-deliver \
+        --kind feature --steps "plan" --force
+    assert_status "path-hostile run_id '$bad' exits 6" 6 "$STATUS"
+done
+assert_contains "run_id refusal names the reason" "$OUT" \
+    "unusable as a snapshot filename"
+assert_file_contains "refused run_ids write nothing (demo3 still live)" \
+    "$stateA" "run_id: 2026-08-19-demo3"
+
+# Reusing a run_id whose committed run file already exists would silently
+# overwrite a prior delivery's PR-visible audit record: refused without
+# --force even when the prior run is closed.
+repoCol=$(new_repo run_collision)
+run_ledger "$repoCol" init 2026-08-19-col --workflow workflow-deliver \
+    --kind feature --steps "impl"
+run_ledger "$repoCol" set impl completed --evidence "done"
+run_ledger "$repoCol" close
+run_ledger "$repoCol" init 2026-08-19-col --workflow workflow-deliver \
+    --kind feature --steps "impl"
+assert_status "re-init reusing a committed run_id refused (exit 7)" 7 "$STATUS"
+assert_contains "collision refusal names the existing run file" "$OUT" "2026-08-19-col"
+run_ledger "$repoCol" init 2026-08-19-col --workflow workflow-deliver \
+    --kind feature --steps "impl" --force
+assert_status "collision re-init with --force exits 0" 0 "$STATUS"
+assert_file_contains "forced collision re-init leaves an overrides audit entry" \
+    "$(live_state "$repoCol")" "force"
+
 # --- set: transition rules ---
 run_ledger "$repoA" set nosuchstep completed --evidence "x"
 assert_status "set on unknown step exits 5" 5 "$STATUS"
@@ -498,6 +529,18 @@ assert_status "commit touching another run's file is NOT exempt" 1 "$STATUS"
 assert_contains "foreign-run-file commit reads STALE" "$OUT" "STALE"
 git -C "$repoB" rm -q -- docs/executions/runs/2026-08-19-foreign-run.yaml
 git -C "$repoB" commit -q -m "chore: drop foreign run file"
+
+# The narrowing pin: under the old kernel a commit touching only the shared
+# docs/executions/state.yaml was the exempt shape; it must now read STALE.
+run_ledger "$repoB" stamp fix --attest regression_test=test/regress.sh \
+    --attest rationale="restamp for legacy-path pin"
+assert_status "fix re-stamp for legacy-path pin exits 0" 0 "$STATUS"
+printf 'legacy touch\n' >"$repoB/docs/executions/state.yaml"
+git -C "$repoB" add -- docs/executions/state.yaml
+git -C "$repoB" commit -q -m "chore(ledger): stamp fix" -- docs/executions/state.yaml
+run_ledger "$repoB" check fix
+assert_status "commit touching only legacy state.yaml is NOT exempt" 1 "$STATUS"
+assert_contains "legacy-path commit reads STALE" "$OUT" "STALE"
 
 # --- repro_tail redaction + snapshot cap (batch #4) ---
 repoRT=$(new_repo redact_tail)
@@ -799,7 +842,7 @@ run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
 assert_status "finalize stamp accepts a draft PR" 0 "$STATUS"
 assert_file_contains "draft stamp records actual pr_state" \
-    "$wt1/docs/executions/state.yaml" "pr_state: draft"
+    "$(run_snap "$wt1" 2026-08-19-rev)" "pr_state: draft"
 
 printf 'closed\n' >"$FORGE_MOCK_DIR/forgejo-pr-state-7"
 run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \

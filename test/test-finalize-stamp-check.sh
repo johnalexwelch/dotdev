@@ -282,9 +282,27 @@ assert_contains "multi-run fallback asks for --file" "$OUT" "pass --file"
 run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/new-run.yaml
 assert_status "explicit --file passes on the fresh run" 0 "$STATUS"
 assert_contains "explicit --file verdict says OK" "$OUT" "OK"
+run_ledger "$repoMulti" check-snapshot finalize --file "$repoMulti/docs/executions/runs/new-run.yaml"
+assert_status "absolute --file inside the repo passes" 0 "$STATUS"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/old-run.yaml
+assert_status "--file checks the NAMED file, not any fresh sibling" 1 "$STATUS"
+assert_contains "--file on the stale run reads its own verdict" "$OUT" "not found in history"
 run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/absent-run.yaml
 assert_status "--file on a missing path exits 1" 1 "$STATUS"
 assert_contains "missing --file target says MISSING" "$OUT" "MISSING"
+assert_contains "missing --file verdict names the requested path" "$OUT" \
+    "docs/executions/runs/absent-run.yaml"
+
+# --file is shape-validated like a kernel-authored run file: nested paths,
+# out-of-repo paths, and the legacy shared path are all refused (INVALID).
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/nested/x.yaml
+assert_status "nested --file path rejected" 1 "$STATUS"
+assert_contains "nested --file rejection says INVALID" "$OUT" "INVALID"
+run_ledger "$repoMulti" check-snapshot finalize --file /tmp/outside-foreign.yaml
+assert_status "--file outside the repo rejected" 1 "$STATUS"
+assert_contains "outside --file rejection says INVALID" "$OUT" "INVALID"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/state.yaml
+assert_status "--file naming the legacy path rejected" 1 "$STATUS"
 
 # The legacy shared snapshot satisfies nothing: a repo whose ONLY committed
 # snapshot is a fresh old-style state.yaml has no run file to check.
@@ -421,6 +439,71 @@ git -C "$repoK3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions
 run_check "$repoK3" --base "$baseK3" --head-ref feat/legacy-shape
 assert_status "legacy state.yaml diff has zero candidates and fails" 1 "$STATUS"
 assert_contains "zero-candidate failure names the runs path" "$OUT" "docs/executions/runs"
+
+# A nested run file is a shape the kernel can never author (run_ids reject
+# separators) — the candidate filter must not accept it (bash case globs
+# cross '/', so a bare runs/*.yaml arm would).
+repoNest=$(new_repo gate_nested)
+baseNest=$(git -C "$repoNest" rev-parse HEAD)
+echo "work" >"$repoNest/src/feature.py"
+commit_all "$repoNest" "feat: work"
+write_snapshot "$repoNest" "$(git -C "$repoNest" rev-parse HEAD)" false "" tmp-nest
+mkdir -p "$repoNest/docs/executions/runs/nested"
+mv "$repoNest/docs/executions/runs/tmp-nest.yaml" \
+    "$repoNest/docs/executions/runs/nested/forged.yaml"
+git -C "$repoNest" add -- docs/executions/runs/nested/forged.yaml
+git -C "$repoNest" commit -q -m "chore(ledger): stamp finalize" \
+    -- docs/executions/runs/nested/forged.yaml
+run_check "$repoNest" --base "$baseNest" --head-ref feat/nested
+assert_status "nested run file is not an accepted candidate" 1 "$STATUS"
+assert_contains "nested-only diff fails as zero candidates" "$OUT" "docs/executions/runs"
+
+# Unresolvable merge-base: the fallback enumerates the run files present at
+# HEAD and runs the same candidate loop — resolvable and fail-closed, instead
+# of delegating to the kernel's single-file tier (which reads AMBIGUOUS
+# forever once run files accumulate).
+repoFB=$(new_repo gate_fallback)
+echo "work" >"$repoFB/src/feature.py"
+commit_all "$repoFB" "feat: work"
+write_snapshot "$repoFB" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" false "" stale-old
+commit_snapshot_only "$repoFB" stale-old
+write_snapshot "$repoFB" "$(git -C "$repoFB" rev-parse HEAD)" false "" fresh-new
+commit_snapshot_only "$repoFB" fresh-new
+run_check "$repoFB" --base deadbeefdeadbeefdeadbeefdeadbeefdeadbeef --head-ref feat/fallback
+assert_status "unresolvable base falls back to HEAD run files and passes" 0 "$STATUS"
+assert_contains "fallback pass notes the skipped exemption" "$OUT" "could not resolve merge-base"
+assert_contains "fallback pass reports PASS" "$OUT" "PASS"
+
+# A schema-invalid (kernel exit 6) sibling must stay visible even when a
+# fresh candidate passes — a corrupt PR-visible record must never merge
+# unannotated.
+repoBadSib=$(new_repo gate_bad_sibling)
+baseBadSib=$(git -C "$repoBadSib" rev-parse HEAD)
+echo "work" >"$repoBadSib/src/feature.py"
+commit_all "$repoBadSib" "feat: work"
+write_snapshot "$repoBadSib" "$(git -C "$repoBadSib" rev-parse HEAD)" false "" bad-run
+sed -i.bak 's/^kind: skill/kind: bogus-kind/' "$repoBadSib/docs/executions/runs/bad-run.yaml"
+rm -f "$repoBadSib/docs/executions/runs/bad-run.yaml.bak"
+commit_snapshot_only "$repoBadSib" bad-run
+write_snapshot "$repoBadSib" "$(git -C "$repoBadSib" rev-parse HEAD)" false "" good-run
+commit_snapshot_only "$repoBadSib" good-run
+run_check "$repoBadSib" --base "$baseBadSib" --head-ref feat/bad-sibling
+assert_status "fresh candidate still passes beside a malformed sibling" 0 "$STATUS"
+assert_contains "malformed sibling is annotated on PASS" "$OUT" "bad-run"
+
+# Every changed run file deleted at HEAD is a distinct cause and the
+# zero-candidate diagnosis must say so.
+repoDel=$(new_repo gate_deleted)
+write_snapshot "$repoDel" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" false "" doomed
+commit_snapshot_only "$repoDel" doomed
+baseDel=$(git -C "$repoDel" rev-parse HEAD)
+echo "work" >"$repoDel/src/feature.py"
+commit_all "$repoDel" "feat: work"
+git -C "$repoDel" rm -q -- docs/executions/runs/doomed.yaml
+git -C "$repoDel" commit -q -m "chore: retire run file"
+run_check "$repoDel" --base "$baseDel" --head-ref feat/deleted
+assert_status "deleted-run-file diff still fails" 1 "$STATUS"
+assert_contains "zero-candidate diagnosis mentions deletion" "$OUT" "deleted at HEAD"
 
 repoL=$(new_repo gate_override)
 baseL=$(git -C "$repoL" rev-parse HEAD)

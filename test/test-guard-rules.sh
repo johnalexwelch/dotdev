@@ -229,6 +229,16 @@ assert_status "per-run snapshot .yml spelling blocked" 2 "$STATUS"
 run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/RUNS/2026-08-19-X.YAML")"
 assert_status "case-variant per-run snapshot blocked" 2 "$STATUS"
 
+# Nested paths under runs/ are blocked too — the kernel can never author one
+# (run_ids reject separators), so any nested run file is hand-written, and the
+# CI candidate filter must never accept a shape the guard cannot block.
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/nested/forged.yaml")"
+assert_status "nested per-run snapshot path blocked" 2 "$STATUS"
+assert_contains "nested block says script-owned" "$OUT" "script-owned"
+
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/a/b/c.yml")"
+assert_status "deeply nested runs .yml path blocked" 2 "$STATUS"
+
 run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/README.md")"
 assert_status "runs/README.md (migration note) not blocked" 0 "$STATUS"
 assert_not_contains "runs/README.md carries no block message" "$OUT" "script-owned"
