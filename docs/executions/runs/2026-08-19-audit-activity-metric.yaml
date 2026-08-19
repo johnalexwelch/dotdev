@@ -4,21 +4,21 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787174526
 status: active
-next: preflight
-updated: '2026-08-19T21:22:06.080177+00:00'
+next: review
+updated: '2026-08-19T21:49:18.286516+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'worktree-baseline.sh cut: origin/main -> fix/audit-activity-metric @ absolute path; motivating measurement run pre-recorded (HEAD-only/default-branch/all-refs spread across 5 repos)'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'two-part fix from the #193 review''s R3-4 NIT, escalated after measurement: (a) correct taro/delphi figures in the merged entry to default-branch counts + state the method, (b) add an activity-metric recipe to skill-system-audit step 5 so the next audit cannot drift; AFK-safe, no human-only gates'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "R2 closure: MAJOR exit-1-in-loop fixed to continue \u2014 measured, not reasoned: the 14-repo sweep prints 1 line and dies at the first repo under exit 1 vs 20 lines with continue (taro 30 and dotdev 38 both past the abort point); loop context restored with a coverage-check sentence; Five-not-Four bullet count; dotdev all-refs example stamped as-of with the 449->451 drift named; AS_OF added to the reported line and --prune to the fetch; entry now enumerates THREE corrections and withdraws the no-merge-commits claim (chorus origin/main carries 4 in-window merges) while keeping the blocked-merge-leaves-no-trace hedge"
 - id: review
   required: true
   status: pending
@@ -27,8 +27,31 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 186b45e2dd1bdfd32ad7c920233629e852e22da6
+    timestamp: '2026-08-19T21:49:18.286360+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 160d9f8f4a558bbafacc63392925c8be4d195362ae8cb9a7951be34732b2dc2c
+      lane_integrated_lines: '115'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: opus
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: approve
+      review_profile: fast
+      model_floor: opus
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-audit-activity-metric/integrated-review.md
+      reviewed_sha: lane approved e1ec059; HEAD 186b45e adds only the lane's own two verbatim nit prescriptions (fetch origin not --all; %Z in as_of), closure evidence in implement step
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: measurement-definition fix|workflow-deliver|confirmed
 branch: fix/audit-activity-metric
 worktree: /Users/alexwelch/wt/dotdev/audit-activity-metric
+last_seen_sha: db0b59fe10e7c89d86da44ca0f2d14d41663b8ac
