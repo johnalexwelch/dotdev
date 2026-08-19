@@ -200,6 +200,14 @@ for repo in "$@"; do
     }
     as_of="$(date '+%Y-%m-%d %H:%M %Z')"   # measured, not asserted: reachable
                                            # only after a fetch that succeeded
+                                           # (%Z matters — audit windows straddle
+                                           # DST boundaries)
+    # origin/HEAD is a CLONE-TIME cache and no fetch ever refreshes it, so an
+    # upstream that migrated master->main leaves a stale-but-resolvable ref:
+    # no fatal, no withhold, and a silent 4.5x under-count in one observed
+    # fixture. This is the residue of the assumed-`main` failure mode, and the
+    # only door in the class a guard cannot close — so refresh, don't guard.
+    git -C "$repo" remote set-head origin --auto >/dev/null 2>&1 || true
     ref="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
     ref="${ref:-origin/main}"  # assign-then-default: `| sed … || echo main` never
                                # fires, because sed exits 0 whatever git returned
