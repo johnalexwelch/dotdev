@@ -203,15 +203,20 @@ for repo in "$@"; do
                                            # only after a fetch that succeeded
                                            # (%Z matters — audit windows straddle
                                            # DST boundaries)
-    # origin/HEAD is a CLONE-TIME cache and no fetch ever refreshes it, so an
-    # upstream that migrated master->main leaves a stale-but-resolvable ref:
-    # no fatal, no withhold, and a silent 4.5x under-count in one observed
-    # fixture. This is the residue of the assumed-`main` failure mode, and the
-    # only door in the class a guard cannot close — so refresh, don't guard.
-    git -C "$repo" remote set-head origin --auto >/dev/null 2>&1 || true
-    ref="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
-    ref="${ref:-origin/main}"  # assign-then-default: `| sed … || echo main` never
-                               # fires, because sed exits 0 whatever git returned
+    # Ask the remote, never the local cache. refs/remotes/origin/HEAD is set at
+    # CLONE time and no fetch refreshes it, so an upstream that migrated
+    # master->main AND kept the old branch alive leaves a stale-but-resolvable
+    # ref: no fatal, no withhold, a silently wrong count. (If the old branch was
+    # deleted, --prune above makes it unresolvable and the guard below withholds
+    # loudly — so this only bites repos that keep the retired branch.)
+    # `remote set-head --auto` would repair the cache, but it writes a
+    # user-visible ref in a repo the audit does not own, and on failure it
+    # leaves the stale cache in the measurement path. Reading ls-remote costs
+    # nothing extra (set-head does the same call, then writes) and closes the
+    # door by construction: an unreachable or headless remote yields an empty
+    # ref, which the guard below turns into an explicit withhold.
+    ref="$(git -C "$repo" ls-remote --symref origin HEAD 2>/dev/null |
+        sed -n 's|^ref: refs/heads/\(.*\)\tHEAD$|origin/\1|p')"
     # Every remaining silent-zero door is the same shape: a ref name that looks
     # fine and resolves to nothing. `git log` prints nothing, `wc -l` prints 0.
     # `continue`, never `exit` — an abort here drops every later repo from the
@@ -225,7 +230,7 @@ for repo in "$@"; do
 done
 ```
 
-Confirm the withheld repos are a short, explained list before reporting coverage — a sweep that silently measured 2 of 14 reads exactly like one that measured 14. One residual with no guard: a **shallow** clone under-counts silently (a fixture reads 2 against a truth of 5) because the history simply is not there. None of the audited repos is shallow today; check `git rev-parse --is-shallow-repository` before trusting a figure from an unfamiliar checkout.
+Confirm the withheld repos are a short, explained list before reporting coverage — a sweep that silently measured 2 of 14 reads exactly like one that measured 14. One residual with no guard: a **shallow** clone under-counts silently because the history simply is not there (the size of the miss is whatever was truncated — no figure to quote). None of the audited repos is shallow today; check `git rev-parse --is-shallow-repository` before trusting a figure from an unfamiliar checkout.
 
 **Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
 
