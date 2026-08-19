@@ -398,14 +398,47 @@ assert_status "exec stdout-dup then commit blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 3>&1 2>/dev/null; gh pr create --fill')"
 assert_status "exec with an fd then pr create blocks" 2 "$STATUS"
 
-# `exec cmd 2>/dev/null` REPLACES the shell, so no later segment runs — the
-# redirect-first requirement must exclude it rather than arm the whole command.
+# `exec cmd 2>/dev/null` replaces the shell so nothing later runs, but the
+# inverted burden does not try to prove that lexically — it is a carrier and
+# blocks. Fail-closed and matches main.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec mytool --flag 2>/dev/null && git push origin main')"
-assert_status "exec replacing the shell does not arm" 0 "$STATUS"
+assert_status "exec with a command word blocks (over-block, matches main)" 2 "$STATUS"
 
 # A bare exec redirect with no mutation anywhere stays permitted.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 2>/dev/null; npm run lint')"
 assert_status "exec redirect without a mutation permits" 0 "$STATUS"
+
+# Splitting on `;` leaves a construct's opening token attached to the segment,
+# so a segment-start anchor misses a wrapped exec (style lane R7). Verified as
+# genuine suppression by substituting a `>&2` write for the push and observing
+# no leak; main blocks all three, so these are fail-open regressions.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '( exec 2>/dev/null; git push origin main )')"
+assert_status "exec inside a subshell blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ exec 2>/dev/null; git push origin main; }')"
+assert_status "exec inside a brace group blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then exec 2>/dev/null; git push origin main; fi')"
+assert_status "exec after then blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'for i in 1; do exec 2>/dev/null; git push origin main; done')"
+assert_status "exec after do blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'X=1 exec 2>/dev/null; git push origin main')"
+assert_status "exec behind an assignment prefix blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if false; then :; else exec 2>/dev/null; git push origin main; fi')"
+assert_status "exec after else blocks" 2 "$STATUS"
+
+# Under the inverted burden, ANY exec token is a carrier — distinguishing
+# command-word from argument is the enumeration problem that produced three
+# fail-opens, so these over-block instead. Both match main, which blocked
+# them under whole-command semantics, so neither is a regression.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo exec 2>/dev/null && git push origin main')"
+assert_status "exec as a bare argument blocks (over-block, matches main)" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'bash -c "exec 2>/dev/null"; git push origin main')"
+assert_status "exec in a quoted payload blocks (over-block, matches main)" 2 "$STATUS"
 
 # The exclusion that keeps &> on its own branch must survive the widening.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main &>/dev/null')"
