@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152956
 status: active
 next: ''
-updated: '2026-08-19T16:07:28.397812+00:00'
+updated: '2026-08-19T16:09:02.539073+00:00'
 steps:
 - id: preflight
   required: true
@@ -50,8 +50,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: fa9467505b72f1fa70b9a900f592e0e4db7f4c70
-    timestamp: '2026-08-19T15:57:33.722624+00:00'
+    head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
+    timestamp: '2026-08-19T16:09:02.538854+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -70,9 +70,9 @@ stamps:
 overrides: []
 branch: fix/router-v1-vs-feature-seam
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
-last_seen_sha: 27fcf639e6e92e5b70570ddd2b4ff2929e112380
+last_seen_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
 verify_local:
-  head_sha: fa9467505b72f1fa70b9a900f592e0e4db7f4c70
+  head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
   passed: true
   results:
   - cmd: ./test/run-tests.sh
