@@ -216,6 +216,35 @@ When a fresh session picks up a handoff and itself needs to hand off again, it s
 
 This keeps multi-session work from ballooning handoff size.
 
+## Relay (autonomous handoff chaining)
+
+`workflow-ledger/scripts/relay.sh` automates the chain above: instead of a human pasting the Resume line into each fresh session, the relay runs headless legs (`claude -p ... --output-format stream-json --verbose`) that each read the handoff, continue the run, and rewrite the handoff in place with an explicit `exit_reason:` line.
+
+```bash
+relay.sh --handoff <file> [--max-legs N=5] [--repo <path>] [--stop-file <path>]
+```
+
+The loop CONTINUES only on AFK-eligible exit_reasons (`completion-with-follow-ups` with reviewer-validation follow-ups, `halt-for-continuation`) and STOPS on everything else, err-toward-stopping:
+
+| Stop condition | Exit |
+|---|---|
+| `exit_reason: complete`, or `--repo`'s ledger shows `status: done` | 0 |
+| handoff names NEEDS_HUMAN, maintainer-decision, operator-runtime, secret-custody, or `blocker:`; exit_reason missing/unparseable or off-whitelist | 2 |
+| handoff unchanged by a leg (sha256 — no-progress guard) | 3 |
+| max legs reached | 4 |
+| stop-file exists (kill switch, checked between legs) | 5 |
+| claude exited nonzero | 6 |
+
+Every stop prints a one-screen summary (legs run, last exit_reason, why it stopped, next action) and per-leg transcripts land in `/tmp/relay-<runid>/`.
+
+Honest limits:
+
+- **Legs are headless.** Nobody is watching a leg while it runs — the discipline comes from the D-006 hooks, ledger gates, and stamps that fire identically in headless sessions, not from supervision. Do not relay work that only stays safe because a human is in the loop.
+- **Wayfinder HITL ticket types must not be relayed.** Their handoffs should carry NEEDS_HUMAN, which stops the loop; if one doesn't, that's a bug in the handoff, not permission to continue.
+- **No auto-merge authority.** The leg prompt states legs may open PRs but must NOT merge unless the repo's written policy grants it.
+- **Run it inside herdr for visibility** (a pane per relay, logs in view) — recommended, but the relay does not depend on it.
+- Extra leg flags (e.g. `--permission-mode acceptEdits`) go in `RELAY_CLAUDE_ARGS`; never put tokens or secrets on argv.
+
 ## Rules
 
 - Do NOT duplicate content already in artifacts (PRDs, plans, ADRs, issues, commits). Reference by path or URL.
