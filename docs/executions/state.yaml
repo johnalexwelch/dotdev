@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152044
 status: active
-next: finalize
-updated: '2026-08-19T15:15:51.119035+00:00'
+next: ''
+updated: '2026-08-19T15:39:45.465429+00:00'
 steps:
 - id: baseline
   required: true
@@ -21,12 +21,12 @@ steps:
   evidence: integrated lane APPROVE (sonnet, fast floor); stamp review recorded
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'finalize stamped; PR #180 open non-draft, CI green, threads resolved, verify-local green'
 stamps:
   review:
-    head_sha: 73fa13921aaebc71a83d62f8003ff2e0ee772402
-    timestamp: '2026-08-19T15:13:24.792143+00:00'
+    head_sha: b1b74898be4588a17ad5f6b031931909ee4c6d02
+    timestamp: '2026-08-19T15:39:45.465260+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -37,8 +37,10 @@ stamps:
       review_floor: fast
       worktree_verify: pass
     attested:
+      verdict: approve
       review_profile: fast
       lanes: integrated=/tmp/ledger-lanes-2026-08-19-grill-wayfinder-escalation/integrated-review.md
+      reviewed_sha: '73fa139 transferred: post-merge three-dot scope unchanged (11 insertions, same 3 files + snapshot), merge brought only disjoint main content'
     override:
       active: false
       reason: ''
@@ -62,7 +64,7 @@ stamps:
 overrides: []
 branch: feat/grill-wayfinder-escalation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/grill-wayfinder-escalation
-last_seen_sha: 024650a875a95100c2b08759d5c0e2477d35361b
+last_seen_sha: 3cf7da506af3ef7120913530f7e965c44042216f
 verify_local:
   head_sha: 024650a875a95100c2b08759d5c0e2477d35361b
   passed: true
