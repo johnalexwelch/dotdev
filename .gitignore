@@ -168,3 +168,6 @@ dotfiles/.pi/taskflows/runs/
 
 # dotfiles/.local is real stow payload (gh shim) — override global ~/.gitignore_global ".local/"
 !dotfiles/.local/
+
+# Stream Deck: meeting-title -> prep-doc map holds internal titles/URLs (public repo)
+dotfiles/.config/streamdeck/meeting-docs.tsv
