@@ -3,9 +3,9 @@ workflow: workflow-skill
 kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152447
-status: active
-next: finalize
-updated: '2026-08-19T15:57:12.972591+00:00'
+status: done
+next: ''
+updated: '2026-08-19T15:57:27.309990+00:00'
 steps:
 - id: red-tests
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: integrated lane approve (model opus, /tmp/phase5b-182-integrated-review.md); stamp review at 0c7d78b
 - id: finalize
   required: true
-  status: active
-  evidence: ''
+  status: completed
+  evidence: 'stamp finalize at 1737389 (CI green, PR #182 open, threads resolved); PR left unmerged per instruction'
 stamps:
   review:
     head_sha: 0c7d78beb5f8d4217fdfbeca080ddce8202cfdf7
@@ -78,7 +78,7 @@ overrides:
 route: skill/kernel change|workflow-skill|confirmed
 branch: feat/d006-phase5b-route-evidence
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
-last_seen_sha: 1737389829c421ee2815c45f0276cb5ad2559519
+last_seen_sha: 20829f2e9d4190e568c79d770a1a65a585736268
 verify_local:
   head_sha: 0c7d78beb5f8d4217fdfbeca080ddce8202cfdf7
   passed: true
