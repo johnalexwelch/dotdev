@@ -3,12 +3,12 @@ name: to-prd
 layer: orchestrator
 model: sonnet
 reasoning: high
-description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context.
+description: Turn the current conversation context into a PRD and publish it to the project issue tracker. Use when user wants to create a PRD from the current context. Also owns migration mode — turning a repo-audit report or refactor/migration brief into a phased PRD (FIND-NN/REQ-NN anchors, parent + ordered children executed by execute-prd); successor to design-plan (D-006 planning-lane consolidation, 2026-08-19).
 ---
 
 ## Contract
 
-Consumes: conversation context, codebase understanding, grilling output, decision log
+Consumes: conversation context, codebase understanding, grilling output, decision log; repo-audit report or refactor/migration brief (migration mode)
 Produces: PRD issue on the project issue tracker
 Requires: gh
 Side effects: creates issue on the project issue tracker
@@ -20,6 +20,13 @@ Typical workflows: feature ideation (after /grill-with-docs, before /to-issues)
 Pairs well with: decision-log, grill-with-docs, domain-modeling, to-issues, triage
 
 This skill takes the current conversation context and codebase understanding and produces a PRD. Do NOT interview the user — just synthesize what you already know.
+
+## Mode selection
+
+Input shape picks the mode:
+
+- **Product mode** (default; the process and template below, unchanged): conversation context or a product brief → feature PRD.
+- **Migration mode**: the input is a repo-audit report (`docs/audits/*-repo-audit.md`) or a refactor/migration/already-decided governance brief — scope is settled, discovery is done. Apply the deltas in `## Migration mode` on top of the product-mode process. Successor to the retired `design-plan` → `execute-phase` lane (D-006 planning-lane consolidation, 2026-08-19).
 
 The issue tracker and triage label vocabulary should have been provided to you — run `/setup-skills` if not.
 
@@ -163,3 +170,15 @@ A description of the things that are out of scope for this PRD.
 Any further notes about the feature.
 
 </prd-template>
+
+## Migration mode
+
+Deltas on the product-mode process for refactor-scale work. The PRD template is the same; these change how it is filled and how children are cut.
+
+- **Roadmap gate**: satisfied by the repo-audit report or the user-approved migration brief itself — the scope is already decided; do not force a `workflow-roadmap` detour.
+- **Anchors**: preserve `FIND-NN` / `REQ-NN` / ticket IDs verbatim from the audit or brief — never renumber. Implementation Decisions maps anchors → slices; every child issue cut by `to-issues` must cite the anchors it addresses.
+- **Phasing is issue ordering, not a phase runner**: sequencing lives as one parent PRD issue plus ordered child issues with explicit dependencies ("blocked by #N"). The tree is executed by `execute-prd`; there is no separate phase executor.
+- **Pilot/canary slice**: the first child proves the migration pattern on the narrowest real surface. Canary precedes any deletion; no file or behavior is deleted before its replacement is live and verified. Waiving the pilot requires stated reasoning in Implementation Decisions.
+- **Rollback expectation**: every child states its rollback (revert unit or recovery path); the PRD carries the overall rollback posture in Implementation Decisions.
+- **Sync gates are child issues**: human-only checkpoints (approvals, production verification, credential/custody actions) become explicit child issues marked for a human and ordered in the dependency chain — never silent assumptions inside an agent-executable slice.
+- **User stories**: the extensive-actor bar relaxes to affected-behavior coverage — enumerate the behaviors that must not regress.

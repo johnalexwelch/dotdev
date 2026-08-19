@@ -25,8 +25,8 @@ Human gates: roadmap approval before creating PRDs, issues, implementation plans
 
 ## Context
 
-Typical workflows: strategic planning before `workflow-feature`, `to-prd`, `design-plan`, `to-issues`, or `workflow-autonomous-backlog`
-Pairs well with: repo-audit, improve-codebase-architecture, decision-log, grill-with-docs, prototype, workflow-review (full profile, security lane), to-prd, design-plan, to-issues
+Typical workflows: strategic planning before `workflow-feature`, `to-prd` (product or migration mode), `to-issues`, or `workflow-autonomous-backlog`
+Pairs well with: repo-audit, improve-codebase-architecture, decision-log, grill-with-docs, prototype, workflow-review (full profile, security lane), to-prd, to-issues
 
 ## When To Use
 
@@ -54,7 +54,7 @@ goals/context
   -> evidence synthesis
   -> roadmap milestones
   -> human approval
-  -> to-prd / design-plan / to-issues / prototype / needs-human
+  -> to-prd (product or migration mode) / to-issues / prototype / needs-human
 ```
 
 ## Workflow Progress Reporting
@@ -157,7 +157,7 @@ Every roadmap item must include:
   - `prototype`
   - `grill-with-docs`
   - `to-prd`
-  - `design-plan` (only for refactor-scale, migration, or multi-phase remediation that cannot yet be expressed as vertical issue slices)
+  - `to-prd` migration mode (only for refactor-scale, migration, or multi-phase remediation that cannot yet be expressed as vertical issue slices)
   - `to-issues`
   - `repo-audit`
   - `improve-codebase-architecture`
@@ -165,7 +165,7 @@ Every roadmap item must include:
   - `needs-human`
 - **Backlog transition plan:** whether this item needs a PRD parent, can go
   directly to issue breakdown, has expected child dependencies, and should route
-  next to `to-prd`, `to-issues`, `design-plan`, or `needs-human`.
+  next to `to-prd` (product or migration mode), `to-issues`, or `needs-human`.
 
 Do not bury risk. If a roadmap item changes product behavior, public interfaces, data model, auth/payment behavior, infrastructure, rollout strategy, or security posture, mark a human gate.
 

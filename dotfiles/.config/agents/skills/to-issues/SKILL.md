@@ -16,8 +16,8 @@ Human gates: slice breakdown presented for approval before publishing
 
 ## Context
 
-Typical workflows: planning-to-execution (after /design-plan or /to-prd)
-Pairs well with: decision-log, design-plan, to-prd, triage, setup-skills, implement
+Typical workflows: planning-to-execution (after /to-prd, product or migration mode)
+Pairs well with: decision-log, to-prd, triage, setup-skills, implement
 
 ## References
 

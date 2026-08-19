@@ -70,4 +70,4 @@ Human gates: none
 ## Context
 
 Typical workflows: any (interrupt utility, not part of a specific workflow)
-Pairs well with: improve-codebase-architecture (local findings may trigger), design-plan (strategic findings may trigger replanning)
+Pairs well with: improve-codebase-architecture (local findings may trigger), to-prd migration mode (strategic findings may trigger refactor-scale replanning)

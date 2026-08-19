@@ -17,7 +17,7 @@ Human gates: none for term clarification; ADR creation requires user confirmatio
 ## Context
 
 Typical workflows: invoked inline during grill-with-docs, improve-codebase-architecture, or tdd planning
-Pairs well with: grill-with-docs, improve-codebase-architecture, tdd, design-plan, codebase-design
+Pairs well with: grill-with-docs, improve-codebase-architecture, tdd, to-prd, codebase-design
 
 # Domain Modeling
 
