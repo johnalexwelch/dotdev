@@ -4,25 +4,25 @@ kind: skill
 budget: multi-lane
 initialized_epoch: 1787103716
 status: active
-next: preflight
-updated: '2026-08-19T01:41:56.137116+00:00'
+next: qa
+updated: '2026-08-19T03:00:19.805664+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: worktree cut via worktree-baseline.sh (origin/main -> feat/phase5a-closeout); D-006 log + addenda read; kernel/SKILL.md, ci.yml, routing-eval.yml, skill-system-audit, workflow-review/deliver, CONVENTIONS.md surveyed
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: '3 scoped items from Phase 5a brief: finalize-stamp CI check (soak non-blocking), audit scoreboard (D-006 #15), run-scoped artifact-path convention; all AFK-safe, one PR'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'red-first: red suite 3bfa47d -> green b22f942 (check-snapshot subcommand, scripts/finalize-stamp-check.sh, ci.yml soak job; 36/36 asserts, full run-tests exit 0); scoreboard+convention 21d6f50; lints failures=0; tdd: ran'
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: '4 opus lanes (security/logic/tests/style), 3 rounds + 2 delta confirms, all APPROVE at 90a1341; artifacts /tmp/ledger-lanes-2026-08-18-phase5a-closeout; R1 must-fixes: docs-only narrowing, scoreboard loop; R2 must-fix: OVERRIDDEN status guard; suites 52/0 + 153/0'
 - id: qa
   required: true
   status: pending
@@ -31,7 +31,41 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 90a1341748c11690ba1adc123a632881099a321e
+    timestamp: '2026-08-19T03:00:19.805400+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: d524b5c03c684e8b143c65f3223a07b04caea1ab6619fba53fb16c91cebea10c
+      lane_security_lines: '113'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5
+      lane_logic_sha256: 498836bac18c925fa3561b7d554bd5b55c9d4ea9145b166c6546970cb7826d67
+      lane_logic_lines: '350'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-opus-5
+      lane_tests_sha256: b5befd77a83faab6eb9da11327ca0007f294d691fb4c21a4758fdbb26383a206
+      lane_tests_lines: '199'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-5
+      lane_style_sha256: fbd2180fcf99fadb861bb1125856deba3f19a8d7f25b6cf6aae70ea327940932
+      lane_style_lines: '132'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5
+      review_floor: full+security
+      worktree_verify: pass
+    attested:
+      review_profile: full
+      verdict: APPROVE
+      model_floor: opus
+      lanes: security=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/security-review.md,logic=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/logic-review.md,tests=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/tests-review.md,style=/tmp/ledger-lanes-2026-08-18-phase5a-closeout/style-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/phase5a-closeout
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/phase5a-closeout
+last_seen_sha: 0099c59581d5982918f302b974de1e8233ecf31c
