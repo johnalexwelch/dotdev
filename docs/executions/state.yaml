@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787151724
 status: active
-next: review
-updated: '2026-08-19T15:11:15.378078+00:00'
+next: finalize
+updated: '2026-08-19T15:17:29.617038+00:00'
 steps:
 - id: preflight
   required: true
@@ -21,12 +21,12 @@ steps:
   evidence: "appended case 45 to golden-routes.yaml (commit ed28f5d, +5 lines, eval-set only); dry-run gate PASS: 'schema OK \u2014 45 cases (18 log, 27 synthetic); all expected routes present in SKILL.md'; full eval running in background; tdd: not_applicable_with_reason: eval-set data addition validated by existing deterministic routing-eval.sh harness (dry-run schema gate + full eval), no new code paths"
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'workflow-review fast profile: integrated lane (sonnet) APPROVE at ed28f5d, lane file /tmp/ledger-lanes-2026-08-19-golden-case-45/integrated-review.md; review stamp written'
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "full routing eval run (sonnet judge): total 45 pass 43 fail 2 pass-rate 95% RESULT: PASS (>=95%). Case 45 FAIL expected=workflow-feature got=v1-workflow \u2014 recorded as Phase-next router-confusability signal per dispatch instructions, not a reason to change expected_route. Other fail: case 4 handoff->direct, pre-existing, untouched by this change. Dry-run schema gate PASS (45 cases)."
 - id: finalize
   required: true
   status: pending
@@ -52,7 +52,35 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 51cfee8fbb14503638d5e4a54838a25b19e96113
+    timestamp: '2026-08-19T15:17:29.616870+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '181'
+      describe_pr: 'PR body from describe step: summary, misroute provenance, expected-route justification, dry-run + full-eval verbatim results, Phase-next router note'
+      post_mortem: 'not_required: eval-set-only data addition, no incident/bug; case-45 eval failure recorded in PR body as Phase-next router work'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: test/golden-case-45-ml-cookiecutter
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/golden-case-45-ml-cookiecutter
-last_seen_sha: ab3f26a51f7212d99a3e63b4ae777ad90f55fe10
+last_seen_sha: 51cfee8fbb14503638d5e4a54838a25b19e96113
+verify_local:
+  head_sha: 51cfee8fbb14503638d5e4a54838a25b19e96113
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
