@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152418
 status: active
-next: qa
-updated: '2026-08-19T16:12:58.801560+00:00'
+next: finalize
+updated: '2026-08-19T16:15:45.094175+00:00'
 steps:
 - id: preflight
   required: true
@@ -25,12 +25,12 @@ steps:
   evidence: 'round 2: 4/4 lanes APPROVE at 98ac025 (all opus, reviewed_sha match at dispatch); post-review merge of origin/main (aebf173) verified content-identical to reviewed diff excluding docs/executions/state.yaml bookkeeping (sorted +/- line-set diff empty); routing-eval dry-run green at 45 cases, lint failures=0 post-merge'
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "user-journey-qa trigger conditions absent: no frontend, no user-facing product behavior, no auth/navigation/payment flows \u2014 markdown skill corpus + lint/test change; skip-with-reason per workflow-deliver Step 5"
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: 'PR-first: pushing and opening non-draft PR (ec61612 draft-acceptance fix not in base), then stamp finalize'
 stamps:
   review:
     head_sha: 4438542b62f4d02f7aafd5d3430dd69d35968ad3
@@ -64,12 +64,29 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
+    timestamp: '2026-08-19T16:15:45.093990+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '186'
+      post_mortem: not_applicable_with_reason:single-unit-skill-change-no-phase-drift
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/planning-lane-consolidation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/planning-lane-consolidation
-last_seen_sha: 324214c5aa0027e7a2f9ab66a0dc765112f10cdc
+last_seen_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
 verify_local:
-  head_sha: 98ac025a73f2137b59c14174a6cbab0724e16549
+  head_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
   passed: true
   results:
   - cmd: ./test/run-tests.sh
