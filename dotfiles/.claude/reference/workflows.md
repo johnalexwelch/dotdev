@@ -1,164 +1,119 @@
-# Workflow Routing
+# Workflow Route Map (D-006 system)
 
-> **`workflow-router` is the sole routing authority** (per `docs/adr/0002-sole-routing-authority.md` + `~/.claude/skills/workflow-router/SKILL.md`). This file is reference documentation only — it does not route. When a session begins or a new task arrives, invoke `workflow-router` first.
+> **This file does not route — `workflow-router` does.** The router is the sole
+> routing authority (`docs/adr/0002-sole-routing-authority.md`); its
+> classification table is the live, golden-eval-pinned source of truth. This
+> file is the human-readable **map** of the system the router dispatches into.
+> Per the D-005/D-006 drift rule it never restates a skill's procedure — each
+> section links its owning skill, and when this map and a `SKILL.md` disagree,
+> the skill wins. Skills live in `dotfiles/.config/agents/skills/` (canon),
+> active at `~/.claude/skills`.
 
-## The Canonical Loop
+## The delivery spine
 
-For all product / feature / delivery work:
-
-```
-/workflow-router                                                          ← start here
-        │
-        ▼
-   classify task
-        │
-        ▼
-┌──────────────────────────────────────────────────────────────────┐
-│  IDEA → BRIEF → ISSUES → TRIAGE → BUILD → REVIEW → FINALIZE      │
-└──────────────────────────────────────────────────────────────────┘
-        │
-        ▼
-/grill-with-docs        ← clarify intent, capture decisions, update CONTEXT.md/ADRs
-        │
-        ▼
-/to-prd                 ← turn the grilled idea into a PRD on the issue tracker
-        │
-        ▼
-/to-issues              ← split the PRD into vertical-slice ready-for-agent issues
-        │
-        ▼
-/triage                 ← move each issue through the triage state machine
-        │
-        ▼
-/workflow-deliver       ← implement one ready issue end-to-end (kind from router; dispatches executor)
-   (or /execute-prd     for a parent PRD tree;
-       /run-backlog     for AFK batch processing)
-        │
-        ▼
-/workflow-review        ← MANDATORY multi-lane review gate (Security + Logic + Tests + Style + conditional lanes)
-        │  • Fresh subagents per round; main session never self-approves
-        │  • Verdict must be APPROVE before workflow-finalize
-        │  • Up to 3 review rounds; escalate to human after that
-        ▼
-/workflow-finalize      ← MANDATORY delivery closure (post-mortem? → describe-pr → push → receive-review → watch-ci → reconcile-issues → repo-policy-controlled final action)
-        │  • Honors REPO_DELIVERY_POLICY (`human-only` vs `auto-merge-eligible`)
-        │  • Emits `WORKFLOW_FINALIZE_GATE` block as evidence
-        ▼
-   PR ready for human merge (or auto-merged where policy allows)
+```text
+            PLANNING TIER (feeds the spine)
+ wayfinder ──▶ grill-with-docs ──▶ to-prd ──▶ to-issues ──▶ triage
+ (foggy epic   (interrogate the    (PRD on    (vertical     (readiness
+  → map of      idea; decisions     tracker)   slices)       state machine
+  tickets)      → decision-log)                              → ready-for-agent)
+                                                   │
+                                     ready work unit │ bug report │ skill/docs change
+                                                   │
+                                                   ▼
+ any request ──▶ workflow-router ──────▶ workflow-deliver (kind = feature|bug|skill|docs)
+                 │ classification         │ one kernel-gated run (workflow-ledger):
+                 │ pinned by golden       │
+                 │ eval (≥95%, CI:        │   worktree cut (worktree-baseline.sh)
+                 │ routing-eval.yml)      │     → [diagnose — required iff kind=bug]
+                 │ route card → confirm   │     → implement
+                 │ → preflight →          │     → review stamp   (ledger.sh stamp review)
+                 │ ledger init            │     → finalize stamp (ledger.sh stamp finalize)
+                 │                        ▲
+                 │        batch drivers ──┘  execute-prd  (parent PRD tree, dependency order)
+                 │                           run-backlog  (independent ready issues, AFK)
+                 │                           — each dispatches one deliver-run per work unit
+                 ▼
+              other routes (see below)      │
+                                            ▼
+                                    merge — guarded twice:
+                                    workflow-guard.sh merge gate (local hook)
+                                    + ci.yml finalize-stamp job (server-side snapshot check)
 ```
 
-**Gate invariants — these never get skipped:**
+Owners: `workflow-router` (classification, route card, preflight, ledger
+init), `workflow-deliver` (the single-unit delivery orchestrator — supersedes
+`workflow-build-one` and `workflow-debug`, D-006 #11), `workflow-ledger` (every
+gate), `setup-worktree` (`scripts/worktree-baseline.sh` cut/verify/emit),
+`execute-prd` / `run-backlog` (batch dispatch). Inside a deliver-run, review is
+`workflow-review` (judgment — returns lane files + verdict, never stamps) and
+closure is `workflow-finalize` (PR body, reviewer comments, CI, reconcile,
+repo-policy-controlled final action).
 
-- Every non-trivial branch goes through `workflow-review` with dispatched subagents (not inline reasoning, not green CI, not Claude/Bugbot/Codex reviews) — the `WORKFLOW_REVIEW_GATE` block is the only valid evidence.
-- Every PR goes through `workflow-finalize` — `WORKFLOW_FINALIZE_GATE` is the only valid evidence.
-- The executor never reviews its own code. Reviewer never reviews their own review (each round is a fresh subagent context).
-- All non-trivial work starts on a worktree (`setup-worktree` or `using-git-worktrees`); never commit directly to `main`.
+Bugs are a **kind, not a separate workflow**: `ledger.sh init --kind bug`
+inserts required `diagnose`/`fix` steps and the kernel refuses `stamp fix`
+without a captured red repro — diagnose-first is enforced by the kernel, not by
+routing, so a misroute is recoverable (re-init `--kind bug`), not fatal.
 
-## Audit Loop — RETIRED
+## Three layers (D-006 #12)
 
-> The "Audit Loop" (repo-audit → design-plan → execute-phase + standalone /review + /post-mortem + /describe-pr) is **not a routable workflow**. If a prompt, doc, transcript, agent memory, or older `workflows.md` revision mentions running the Audit Loop, translate it into the canonical loop above per `workflow-router`'s **Audit Loop Retirement Rule**:
+Every workflow skill carries a `layer:` tag; `lint-skill-suite.sh` enforces the
+rules per layer. Determinism means something different at each altitude:
 
-| Old "Audit Loop" step | Canonical replacement |
-|------------------------|------------------------|
-| `/repo-audit` as a default loop entry | `/repo-audit` only as evidence input for `workflow-roadmap`, `to-prd`, `to-issues`, or `design-plan` — never as a standalone loop |
-| `/design-plan` as the default for refactors | `/design-plan` only for refactor-scale phase plans that cannot be expressed as vertical-slice issues; otherwise go through `/to-prd → /to-issues` |
-| `/execute-phase` for issue work | `/workflow-deliver` per issue (or `/execute-prd` for a PRD tree, `/run-backlog` for batch) |
-| Standalone `/review` as a code-review gate | `/workflow-review` (multi-lane subagent dispatch) |
-| Standalone `/post-mortem` as a separate retro pass | Post-mortem invoked **inside** `/workflow-finalize` Step 0.5 when the work was audit-derived or generated `NEW-NN` findings |
-| Standalone `/describe-pr` to write a PR body | `/describe-pr` invoked **inside** `/workflow-finalize` Step 1; never run free-standing |
-| Standalone `/watch-ci` | `/watch-ci` invoked **inside** `/workflow-finalize` Step 3 |
+| Layer | Determinism comes from | Example skills |
+|---|---|---|
+| **kernel** | Scripts + tests. No LLM judgment; state files are script-owned (hooks block hand-edits); behavior fixed by `test/test-ledger.sh` etc. | `workflow-ledger` (`ledger.sh`, `forge.sh`) and its machinery: `setup-worktree`'s `worktree-baseline.sh`, the `workflow-guard.sh` hook |
+| **orchestrator** | Thin sequencers whose gates are **kernel calls** — `ledger.sh init/set/stamp/check` — never prose checks or inline bash procedures. | `workflow-router`, `workflow-deliver`, `workflow-finalize`, `execute-prd`, `run-backlog`, `triage` |
+| **judgment** | Evals + report contracts — golden-route evals, lane-file contracts (`model:`/`verdict:`/`reviewed_sha:`), A/B via audition. Judgment skills **never stamp**; the invoking orchestrator records the gate. | `workflow-review`, `grill-with-docs`, `wayfinder`, the `*-review` adapters |
 
-If you find yourself reaching for `/repo-audit`, `/design-plan`, or `/execute-phase` outside the contexts above, stop and re-route through `/workflow-router`.
+## What gates you
 
-## Specialized Routes
+Enforcement is mechanical, not honor-system. Every escape is an **audited
+override** — loud, recorded, human-instructed — never a silent bypass
+(D-006 #5). Owners: `workflow-ledger/SKILL.md` (ledger gates),
+`dotfiles/.claude/hooks/workflow-guard.sh` (guard rules), `.github/workflows/ci.yml`
+(CI check). Guard rules bite only in opted-in repos (`docs/executions/` present).
 
-These cover work that doesn't fit the canonical loop and have their own routing rules:
+| Gate | Trigger | Escape |
+|---|---|---|
+| **Guard rule 1 — merge gate** | Any merge shape (`gh pr merge\|ready`, `tea`/`git-forge` merge, curl `/pulls/*/merge`) without a fresh finalize stamp → exit 2 | `stamp finalize --override --reason` on explicit user instruction; a broken kernel warns-and-permits (never bricks delivery) |
+| **Guard rule 2 (+2b) — script-owned files** | Direct Edit/Write to `state.yaml` (live or snapshot) or `.worktree-baseline.*.state` sidecars → blocked | None — use `ledger.sh` / `worktree-baseline.sh`; the files are the kernel's, not yours |
+| **Guard rule 3 — stderr suppression** | `2>/dev/null` (or `&>`) attached to a mutating `git`/`gh`/`tea`/`git-forge` segment → blocked | None — re-run without suppression; failures must be visible |
+| **Guard rule 4 — entry enforcement** | Tracked-code edit with no active ledger run → warn (`LEDGER_ENTRY_ENFORCE=block` escalates to exit 2) | Enter the system: route via `workflow-router` / `ledger.sh init` |
+| **Ledger `diagnose`** (kind=bug) | `stamp diagnose` refuses unless `repro_cmd` runs now and exits non-zero (captured) | `--override --reason` for irreproducible bugs, user-instructed |
+| **Ledger `fix`** (kind=bug) | `stamp fix` refuses unless the same repro now exits 0 and a regression test exists | `--override --reason`, user-instructed |
+| **Ledger `review`** | `stamp review` refuses unless: worktree verifies, chosen profile ≥ `review-floor`, every lane file exists (run-scoped path, fresh mtime) with `verdict:` line, per-lane model ≥ floor | `--override --reason`, user-instructed; escalating above floor is always legal |
+| **Ledger `finalize`** | `stamp finalize` refuses unless: review stamp fresh (strict SHA, snapshot-only commits exempt), tree clean, `verify-local` green at HEAD, forge state good (CI, PR, threads) | `--override --reason`, user-instructed; stale overrides fail `check` as `OVERRIDE_STALE` |
+| **CI finalize-stamp check** | `ci.yml` `finalize-stamp` job runs `scripts/finalize-stamp-check.sh` against the committed snapshot (`check-snapshot`) on every PR — catches server-side merges that never consult the local hook | Overrides ride the snapshot and stay visible in the PR; job is non-blocking during the soak week, then required |
 
-| Task type | Route | Notes |
-|-----------|-------|-------|
-| Bug fix | `/workflow-deliver` with `kind=bug` | Diagnose-first is kernel-enforced: `ledger.sh init --kind bug` inserts required diagnose/fix steps and refuses `stamp fix` without a red repro (D-006 #11) |
-| V1 product idea grilling | `/grill-with-docs` (V1 discovery mode) → produces `V1_IDEA_BRIEF` | Pre-PRD shaping |
-| V1 technical system design | `/v1-system-design` (after the V1 grill) | Pre-implementation architecture |
-| Product/engineering roadmap | `/workflow-roadmap` | Multi-area sequencing; usually fed by `/repo-audit` |
-| Parent-PRD execution | `/execute-prd` | When child issues have dependencies |
-| AFK backlog | `/run-backlog` | Independent ready-for-agent issues; batched |
-| Quick change, single file, no design decisions | direct action | Rename, typo, config tweak |
-| Research / cross-system investigation | RPI chain (`create-research-questions → create-research → create-design-discussion → create-structure-outline → create-plan → ...`) | Unfamiliar codebase or research-heavy task |
-| Feature dev in known codebase | Superpowers chain (`brainstorming → writing-plans → using-git-worktrees → subagent-driven-development → finishing-a-development-branch`) | When you don't want to publish a PRD first |
-| Executive memo, board update, strategy doc | `/workflow-executive-doc` | Document workflow, not delivery workflow |
-| D&D / campaign / session prep | `/dnd-workflow` | Creative routing |
-| Receiving review comments | `/receive-review` | Always before implementing reviewer feedback |
-| Cleanup after merge / closed / abandoned PR | `/cleanup-delivery` | Worktrees, branches, ticket state |
-| Workflow effectiveness audit | `/skill-system-audit` | Did skills/workflows actually fire correctly? |
-| Session wrap | `/handoff` | At session exit |
+## Other routes (pointers, not the table)
 
-## Worktree Rules
+The **authoritative** classification table lives in
+`workflow-router/SKILL.md` — do not extend this list, extend that table (and
+its golden set). Representative lanes:
 
-- All non-trivial work MUST start on a worktree cut from `origin/staging` (or `origin/main` when `staging` is stale and the substitution is documented).
-- Use `setup-worktree` (canonical loop / Audit-derived) or `superpowers:using-git-worktrees` (Superpowers chain) — never commit directly to `main` or work in the primary checkout.
-- Every workflow that mutates code must emit a `WORKTREE_BASELINE_GATE` line.
+- **V1 product idea** → `v1-workflow` (gated pipeline; owns grill → design → issues)
+- **Refactor-scale / migration** → `design-plan` → `execute-phase` — a specialized lane, never the default product flow
+- **Repo evidence** → `repo-audit`, findings routed onward (roadmap / to-prd / to-issues) — never a standalone loop
+- **Roadmap / sequencing** → `workflow-roadmap`
+- **Review-only requests** → `workflow-review` (code) or the artifact-specific adapters (`sql-review`, `clarity-review`, …)
+- **Ship / close out a PR** → `workflow-finalize`; **cleanup after merge** → `cleanup-delivery`
+- **Skill authoring/revision** → `workflow-skill`; **skill effectiveness** → `skill-system-audit` (owns the D-006 scoreboard)
+- **Session exit** → `handoff`; **reflection** → `session-insight`
 
-## Author / Review / Retro Separation (mandatory)
+## Tombstones (do not resurrect)
 
-Three distinct subagent contexts, no overlap:
+- `workflow-build-one` and `workflow-debug` → **`workflow-deliver`** with
+  `kind=feature` / `kind=bug` (D-006 #11). The router carries legacy-name
+  redirect rows; any doc or prompt naming the old skills means deliver.
+- The **"Audit Loop"** is not a routable workflow. The router owns the
+  translation rule (`workflow-router/SKILL.md` § Audit Loop Retirement Rule).
+- Prose gate blocks (`WORKFLOW_REVIEW_GATE`, `WORKFLOW_FINALIZE_GATE`) are
+  replaced by **ledger stamps** — the only valid review/finalize evidence is
+  `ledger.sh stamp review` / `stamp finalize` (and their committed snapshots).
+  Worktree evidence remains the `WORKFLOW_BASE_GATE` +
+  `WORKTREE_BASELINE_GATE` block, but only as printed by
+  `worktree-baseline.sh` — never hand-written.
 
-1. **Executor** (writes code) — dispatched by `workflow-deliver` or other implementation skills. Never reviews its own output.
-2. **Reviewer** (evaluates code) — dispatched by `workflow-review` as multiple parallel lanes (`security-reviewer`, `code-reviewer`, `test-engineer`, etc.). Fresh subagent per round. Never reviews their own prior review.
-3. **Post-mortem** (writes the retro) — dispatched inside `workflow-finalize` Step 0.5 when audit-derived or NEW-NN findings exist. Reads the plan, phase-run outcomes, and git range; writes `docs/executions/<date>-post-mortem.md`. The PR body (Step 1, `describe-pr`) then cites the retro.
-
-The main session orchestrates; it does not write production code, review its own work, or self-author retros.
-
-## OMC Integration
-
-OMC (oh-my-claudecode) is the **runtime** — it provides agent dispatch, model routing, team pipelines, and execution infrastructure.
-
-Skills are the **curriculum** — they define *what* to do, while OMC provides *how* to execute it.
-
-- `team-exec` (OMC pipeline stage) executes `workflow-deliver`.
-- `team-verify` (OMC pipeline stage) executes `workflow-review`.
-- OMC keyword triggers (`autopilot`, `ralph`, `ultrawork`, etc.) bypass `workflow-router`'s classification step only. Any mutating code, commit, PR, or delivery action reached through those shortcuts must still satisfy `WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, and `WORKFLOW_FINALIZE_GATE`. The gates are non-negotiable regardless of dispatch path.
-- When OMC and a skill overlap: OMC provides the mechanics, the skill provides the domain logic. Example: `code-reviewer` is the OMC subagent type, dispatched BY `workflow-review` the skill.
-
-## Loop Progress Board (mandatory visual confirmation)
-
-Every transition through the canonical loop emits a progress board so the workflow is visible end-to-end. This makes skipped steps obvious and creates an audit trail in the transcript.
-
-### Template
-
-```
-✅ /workflow-router    → routed to <classification>
-✅ /grill-with-docs    → <N> decisions, <M> batches; CONTEXT.md updated
-✅ /to-prd             → PRD #<N> published
-⏭️ /to-issues          ← decomposing into <N> vertical-slice ready-for-agent issues
-   /triage             → move each issue through the triage state machine
-   /workflow-deliver   → implement one ready issue end-to-end
-   /workflow-review    → multi-lane subagent dispatch (fresh per round)
-   /workflow-finalize  → describe-pr → CI → reconcile → final action
-```
-
-### Conventions
-
-- `✅` for completed steps, with a one-line outcome summary after `→` (numbers, IDs, artifact names, gate-block status).
-- `⏭️` for the currently active step, with `←` describing what it's about to do.
-- No icon (plain text) for upcoming steps.
-- Emit the board at every transition:
-  - **Before** invoking the next skill (active = next skill, with `← <what it'll do>`)
-  - **After** completing a step (flip the active marker to `✅ <skill> → <outcome>`)
-- One board per transition. Don't spam multiple in a row; combine into a single rendering.
-- Substitute the alternative implementation skill (`/execute-prd` for PRD trees; `/run-backlog` for AFK batches) when the route diverges; a bug stays `/workflow-deliver` with `kind=bug` — same skill, different kind.
-- Gate evidence (`WORKTREE_BASELINE_GATE`, `WORKFLOW_REVIEW_GATE`, `WORKFLOW_FINALIZE_GATE`) is the verbose audit trail. The Loop Progress Board is the at-a-glance dashboard. Both are required.
-
-The owning agent (the main session orchestrating the loop) emits the board — not the skill itself. The agent has the state; the skill has the work.
-
-## Quick Reference
-
-- **Don't know where to start?** → `/workflow-router`
-- **Have a vague idea?** → `/workflow-router` → it'll route to `/workflow-feature` or `/v1-workflow`
-- **Have a clear `ready-for-agent` issue?** → `/workflow-router` → `/workflow-deliver` (kind=feature)
-- **Have a parent PRD with children?** → `/workflow-router` → `/execute-prd`
-- **Have a bug?** → `/workflow-router` → `/workflow-deliver` (kind=bug)
-- **Implementation done, need review?** → `/workflow-review`
-- **Review passed, need to ship?** → `/workflow-finalize`
-- **Someone says "do the audit loop"?** → translate per the table above, then route via `/workflow-router`
-
-When in doubt, ask `workflow-router`. Don't re-derive the routing yourself from memory.
+When in doubt, ask `workflow-router`. Don't re-derive routing from memory — or
+from this file.
