@@ -215,6 +215,22 @@ has_suppressed_mutating_segment() {
     segs="${segs//"||"/$'\n'}"
     segs="${segs//";"/$'\n'}"
     segs="${segs//"|"/$'\n'}"
+    # A redirection-only `exec` redirects the CURRENT SHELL for every later
+    # segment, so the suppression sits in a segment of its own with no
+    # terminator token for the arming logic above to hang on (logic lane R3;
+    # fail-open regression vs main). Requiring the redirect to come first
+    # excludes `exec cmd 2>/dev/null`, which replaces the shell so nothing
+    # later runs.
+    if [ "$whole" -eq 0 ]; then
+        while IFS= read -r seg; do
+            [ -n "$seg" ] || continue
+            if grep -Eq '^[[:space:]]*exec[[:space:]]+([0-9]*[<>]|&>)' <<<"$seg" &&
+                seg_has_suppression "$seg"; then
+                whole=1
+                break
+            fi
+        done <<<"$segs"
+    fi
     while IFS= read -r seg; do
         [ -n "$seg" ] || continue
         if [ "$whole" -eq 0 ]; then
