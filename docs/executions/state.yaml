@@ -4,34 +4,55 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152447
 status: active
-next: red-tests
-updated: '2026-08-19T15:14:07.191008+00:00'
+next: review
+updated: '2026-08-19T15:51:25.674682+00:00'
 steps:
 - id: red-tests
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: red suite committed 155/175 -> commit test(workflow-ledger)
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'commits 34f9a6a 4236141 a967f4f : tests+impl+docs; 175/175 green'
 - id: docs
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'SKILL.md x3, spec, decision-log Phase 5b entry w/ flip preconditions; PR #182'
 - id: verify
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: verify-local PASSED at df95818
 - id: review
   required: true
-  status: pending
+  status: active
   evidence: ''
 - id: finalize
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 0c7d78beb5f8d4217fdfbeca080ddce8202cfdf7
+    timestamp: '2026-08-19T15:51:25.674515+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 4e618719aa9f1a088233ed75bc7bf3112b385ad8f5eb689538b913ee0505b735
+      lane_integrated_lines: '156'
+      lane_integrated_verdict: approve
+      lane_integrated_model: opus
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      review_profile: fast
+      verdict: approve
+      lanes: integrated=/tmp/phase5b-182-integrated-review.md
+      model_floor: opus
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides:
 - action: force-init
   reason: --force re-init over prior run 2026-08-19-phase5b-route-evidence
@@ -39,3 +60,14 @@ overrides:
 route: skill/kernel change|workflow-skill|confirmed
 branch: feat/d006-phase5b-route-evidence
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
+last_seen_sha: b4574189264746ea975356e141f0356d726e99ff
+verify_local:
+  head_sha: 0c7d78beb5f8d4217fdfbeca080ddce8202cfdf7
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
