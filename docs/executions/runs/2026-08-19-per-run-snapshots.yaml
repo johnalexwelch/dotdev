@@ -1,0 +1,85 @@
+run_id: 2026-08-19-per-run-snapshots
+workflow: workflow-deliver
+kind: feature
+budget: multi-lane
+initialized_epoch: 1787157126
+status: active
+next: review
+updated: '2026-08-19T18:33:35.836637+00:00'
+steps:
+- id: preflight
+  required: true
+  status: completed
+  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> feat/per-run-ledger-snapshots @ .claude/worktrees/per-run-snapshots; graphify: not_available_with_reason: no graphify-out in repo'
+- id: triage
+  required: true
+  status: completed
+  evidence: task message carries full acceptance criteria; AFK-safe
+- id: implement
+  required: true
+  status: completed
+  evidence: "per-run snapshot kernel + consumers landed across 5 commits (rebased onto 4bb5a6b); tdd: ran \u2014 two-lane red-first, 66 red assertions across 4 suites then green (test-ledger 197/0, finalize-stamp-check 66/0, guard-rules 140/0, worktree-baseline 71/0); verify-local PASSED at 16a7674; shellcheck clean at CI severity"
+- id: review
+  required: true
+  status: active
+  evidence: ''
+- id: qa
+  required: true
+  status: pending
+  evidence: ''
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps:
+  review:
+    head_sha: 38325856f4ebdcd5b074143a11fd08fc6f44b8f1
+    timestamp: '2026-08-19T18:33:35.836434+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 464e303a12d9c082226e1d68ae99c2a79f1f0b153d32b763ac93a7a8f36cb127
+      lane_security_lines: '194'
+      lane_security_verdict: APPROVE
+      lane_security_model: opus
+      lane_logic_sha256: ef55f43c36126164a5f3a13a384efd02ca94fd873eb3ff48d6e448d096e3ab99
+      lane_logic_lines: '102'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: opus
+      lane_tests_sha256: 04d4c9f7f0c75054327408367b75ad1a19806820fad12bd61b3da4d72f5f76b7
+      lane_tests_lines: '48'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: opus
+      lane_style_sha256: 4c08f605541e6401e51f7de7dae2e2d63d71fd7405a80e3a5db0f82fe8e086d5
+      lane_style_lines: '234'
+      lane_style_verdict: APPROVE
+      lane_style_model: opus
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: full
+      model_floor: opus
+      lanes: security=/tmp/ledger-lanes-2026-08-19-per-run-snapshots/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-per-run-snapshots/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-per-run-snapshots/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-per-run-snapshots/style-review.md,compat=/tmp/ledger-lanes-2026-08-19-per-run-snapshots/compat-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+overrides:
+- action: force-init
+  reason: --force re-init over prior run 2026-08-19-per-run-snapshots
+  timestamp: '2026-08-19T16:32:06.730994+00:00'
+route: kernel feature|workflow-deliver|confirmed
+branch: feat/per-run-ledger-snapshots
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/per-run-snapshots
+last_seen_sha: 38325856f4ebdcd5b074143a11fd08fc6f44b8f1
+verify_local:
+  head_sha: 38325856f4ebdcd5b074143a11fd08fc6f44b8f1
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
