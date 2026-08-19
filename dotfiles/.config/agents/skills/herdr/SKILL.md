@@ -73,7 +73,7 @@ herdr pane wait-output --regex "server.*ready" --timeout 30000 1-3       # --reg
 herdr agent wait 1-1 --until done --timeout 60000                        # agent wait: TARGET first; --until repeatable
 ```
 
-`pane wait-output --source recent` (the default source) matches against unwrapped recent text, so soft wrapping never breaks matches; inspect that same transcript with `pane read --source recent-unwrapped`. Use `pane read` for output that already exists, `pane wait-output` for output you expect next. Without `--until`, `agent wait` matches idle/done/blocked; without `--timeout`, both wait indefinitely.
+`pane wait-output --source recent` (the default source) matches against unwrapped recent text, so soft wrapping never breaks matches; inspect that same transcript with `pane read --source recent-unwrapped`. Use `pane read` for output that already exists, `pane wait-output` for output you expect next. Without `--until`, `agent wait` matches idle/done/blocked; without `--timeout`, both wait indefinitely. With `--timeout`, both fail (non-zero exit) when it elapses, so `if ! herdr pane wait-output …; then` is a valid readiness check.
 
 ## Recipes
 
