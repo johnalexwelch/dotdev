@@ -4,7 +4,7 @@ kind: skill
 budget: multi-lane
 status: active
 next: finalize
-updated: '2026-08-19T01:18:54.549098+00:00'
+updated: '2026-08-19T01:24:54.957579+00:00'
 steps:
 - id: implement
   required: true
@@ -20,8 +20,8 @@ steps:
   evidence: ''
 stamps:
   review:
-    head_sha: 2e2dc28276a69dd178223c571417af1512b19ced
-    timestamp: '2026-08-19T01:18:54.548776+00:00'
+    head_sha: d7e36c73228dc9c45361f54f835b26252c2498ba
+    timestamp: '2026-08-19T01:24:54.957290+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -47,10 +47,20 @@ stamps:
       verdict: approve
       review_profile: full
       lanes: security=/tmp/ledger-lanes-kernel-shouldfix-batch/security-review.md,logic=/tmp/ledger-lanes-kernel-shouldfix-batch/logic-review.md,tests=/tmp/ledger-lanes-kernel-shouldfix-batch/tests-review.md,style=/tmp/ledger-lanes-kernel-shouldfix-batch/style-review.md
-      reviewed_sha: 'aec1a24 transferred to e016223 per logic-lane proof: 202 identical executable lines, 0 behavioral diffs across 20 shapes, suites green at both'
+      reviewed_sha: 'aec1a24 transferred: e016223 docs-only per logic proof; d7e36c7 test-fixture allowlist pragmas only (CI-mandated, flagged in PR body per two-lane rule)'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 2e2dc28276a69dd178223c571417af1512b19ced
+last_seen_sha: c6cb9713e0cba2f41741318ca00503ba9dec4d7f
+verify_local:
+  head_sha: c6cb9713e0cba2f41741318ca00503ba9dec4d7f
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
