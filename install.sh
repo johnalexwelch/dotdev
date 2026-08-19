@@ -32,7 +32,6 @@ run_cmd bash "$DOTFILES/scripts/gh-extensions.sh"
 run_cmd mkdir -p "$HOME/Library/Application Support"
 run_cmd ln -sf "$HOME/.config/arc" "$HOME/Library/Application Support/Arc"
 run_cmd ln -sf "$HOME/.config/cursor" "$HOME/Library/Application Support/Cursor"
-run_cmd ln -sf "$HOME/.config/streamdeck" "$HOME/Library/Application Support/com.elgato.StreamDeck"
 
 # macOS defaults
 run_cmd bash "$DOTFILES/scripts/macos/defaults.sh"
