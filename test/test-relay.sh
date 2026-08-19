@@ -475,6 +475,45 @@ run_relay --handoff "$HANDOFF" --repo "$REPO" --max-legs 4
 assert_status "ledger stop re-arms after a stale baseline (new run closes) -> 0" 0 "$STATUS"
 assert_equal "re-armed ledger stop ends at leg 2, not max-legs" 2 "$(invocations)"
 
+# P1 isolates the run_id branch: a stale done at launch, then ONE leg that
+# opens and closes a DIFFERENT run. Only "done carries a new run_id" can stop
+# this; re-baselining alone cannot (status never left done between checks).
+new_case
+seed_handoff
+leg_writes 1 halt-for-continuation
+leg_writes 2 halt-for-continuation
+cat >"$CASE_DIR/leg-1.hook" <<EOF
+gitdir=\$(git -C "$REPO" rev-parse --absolute-git-dir)
+mkdir -p "\$gitdir/ledger"
+printf 'run_id: DIFFERENT-RUN\nstatus: done\n' >"\$gitdir/ledger/state.yaml"
+EOF
+mark_ledger_done "$REPO"
+run_relay --handoff "$HANDOFF" --repo "$REPO" --max-legs 3
+assert_status "P1: a stale done then a DIFFERENT run closing -> 0 (run_id branch)" 0 "$STATUS"
+assert_equal "P1 stops at leg 1" 1 "$(invocations)"
+
+# P2 isolates rebaseline_ledger: the SAME run_id goes done -> active -> done.
+# The run_id never changes, so only a re-taken baseline can see the second
+# done as new.
+new_case
+seed_handoff
+leg_writes 1 halt-for-continuation
+leg_writes 2 halt-for-continuation
+leg_writes 3 halt-for-continuation
+cat >"$CASE_DIR/leg-1.hook" <<EOF
+gitdir=\$(git -C "$REPO" rev-parse --absolute-git-dir)
+mkdir -p "\$gitdir/ledger"
+printf 'run_id: relay-test\nstatus: active\n' >"\$gitdir/ledger/state.yaml"
+EOF
+cat >"$CASE_DIR/leg-2.hook" <<EOF
+gitdir=\$(git -C "$REPO" rev-parse --absolute-git-dir)
+printf 'run_id: relay-test\nstatus: done\n' >"\$gitdir/ledger/state.yaml"
+EOF
+mark_ledger_done "$REPO"
+run_relay --handoff "$HANDOFF" --repo "$REPO" --max-legs 4
+assert_status "P2: same run_id done->active->done -> 0 (rebaseline branch)" 0 "$STATUS"
+assert_equal "P2 stops at leg 2" 2 "$(invocations)"
+
 new_case
 seed_handoff
 leg_writes 1 "needs-human" "A human must choose the rollout strategy"
@@ -494,10 +533,31 @@ echo "== relay: shipped handoff template fails safe =="
 # Guard against an unsafe default in handoff/SKILL.md's document template: an
 # unedited template must never make the relay report the work complete (R3
 # style-lane regression — the template briefly defaulted to `complete`).
+#
+# The extraction is anchored to the fenced "## Handoff document structure"
+# block and the extracted value is checked before use. A positional
+# `sed | head -1` over the whole file was silently defeatable: an earlier
+# column-0 exit_reason: line elsewhere in the doc made the guard read the
+# wrong line and pass while the real template was unsafe (R4 tests lane
+# reproduced exactly that). A mis-extraction must fail loudly, not pass.
 new_case
-TEMPLATE_EXIT_LINE="$(sed -n 's/^\(exit_reason:[[:space:]]*.*\)$/\1/p' \
-    "$ROOT/dotfiles/.config/agents/skills/handoff/SKILL.md" | head -1)"
+TEMPLATE_EXIT_LINE="$(sed -n '/^## Handoff document structure$/,/^```$/p' \
+    "$ROOT/dotfiles/.config/agents/skills/handoff/SKILL.md" |
+    sed -n 's/^\(exit_reason:[[:space:]]*.*\)$/\1/p' | head -1)"
 assert_contains "the shipped template carries an exit_reason line" "$TEMPLATE_EXIT_LINE" "exit_reason:"
+# Fail loudly if extraction drifted onto something that is not a vocabulary
+# value, instead of silently guarding the wrong line.
+case "${TEMPLATE_EXIT_LINE#exit_reason:}" in
+    " complete" | " completion-with-follow-ups" | " halt-for-continuation" | " needs-human")
+        echo "  PASS: extracted template value is a known vocabulary value"
+        PASS=$((PASS + 1))
+        ;;
+    *)
+        echo "  FAIL: extracted template value is a known vocabulary value"
+        echo "    got '$TEMPLATE_EXIT_LINE' — extraction drifted off the template block"
+        FAIL=$((FAIL + 1))
+        ;;
+esac
 cat >"$HANDOFF" <<EOF
 # Handoff — unedited template
 
