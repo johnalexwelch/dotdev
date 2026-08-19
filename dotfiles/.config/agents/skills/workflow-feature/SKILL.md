@@ -54,6 +54,14 @@ Load and run `grill-with-docs/SKILL.md` to:
 - Create ADRs for significant architectural decisions
 - Output: shared understanding of what to build plus decision-log entries
 
+#### Step 1 escalation: wayfinder handoff (evidence-based)
+
+Sometimes grilling reveals the effort cannot resolve into a one-session issue set. The trigger is one principle: **the effort demonstrably exceeds one session's resolution.** Signal examples (evidence of that principle, not a closed list): 3+ independent deliverables; open decisions spanning multiple domains; "eventually" items with dependencies; the grill's unresolved-branch tree (`.grill-tree.md`) still growing after two batches.
+
+When the evidence is there, HALT discovery — do not keep grilling toward a PRD that cannot converge. Present the escalation recommendation *with the evidence*, and on the user's confirmation, seed `/wayfinder` chart mode with the grill answers captured so far: pending decision entries and open branches become ticket candidates.
+
+Escalation is evidence-based and user-confirmed, never guessed at routing time. Wayfinder is explicit-invocation only — the user's confirmation is what invokes it. This clause owns the signal list; `grill-with-docs` mirrors the trigger for grills invoked outside this workflow and points back here.
+
 ### Step 1.5: Prototype (optional)
 
 Load and run `prototype/SKILL.md` when grilling surfaces a question that reasoning alone cannot answer:
