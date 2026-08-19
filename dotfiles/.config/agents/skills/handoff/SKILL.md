@@ -102,7 +102,10 @@ Run this, read the LITERAL output, and hardcode it — do NOT pass `$repo`/`$agd
 # Handoff — [short title of current work]
 
 Exit: [manual | halt: <reason> | completion with follow-ups | backlog run complete]
-exit_reason: [complete | completion-with-follow-ups | halt-for-continuation | needs-human]
+exit_reason: complete
+[^ replace with exactly ONE value from the vocabulary in "Automatic (workflow exit)".
+ Keep the vocabulary legend itself out of the handoff body: the relay's gate scan
+ matches gate words anywhere in the file, so an echoed legend stops the loop.]
 Target: [claude | codex | either]
 Generated: [timestamp]
 
@@ -229,7 +232,7 @@ The loop CONTINUES only on AFK-eligible exit_reasons — `completion-with-follow
 
 | Stop condition | Exit |
 |---|---|
-| `exit_reason: complete`, or the `--repo` live ledger (`<git-dir>/ledger/state.yaml`) flips to `status: done` during the relay (a pre-existing `done` is stale state and is ignored) | 0 |
+| `exit_reason: complete`, or the `--repo` live ledger (`<git-dir>/ledger/state.yaml`) was not already `done` at the previous observation and is `done` after a leg — or its `done` carries a different `run_id` (a pre-existing `done` at launch is stale state and is ignored; the check re-arms after every leg) | 0 |
 | usage/environment error (bad flags, missing handoff, workdir not creatable) | 1 |
 | handoff names NEEDS_HUMAN/needs-human, maintainer-decision, operator-runtime, secret-custody, or `blocker:`; exit_reason missing/unparseable or off-whitelist; a leg deleted the handoff | 2 |
 | handoff unchanged by a leg (sha256 — no-progress guard) | 3 |

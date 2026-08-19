@@ -6,8 +6,8 @@
 # session" loop (D-006: every relayed leg runs under the same hooks and ledger
 # gates as an interactive session — the discipline comes from the kernel, not
 # from supervision).
-# Contract: test/test-relay.sh (red-first). Authority: Alex-approved build,
-# 2026-08-19 session directive, operating under _docs/decision-log.md § D-006.
+# Contract: test/test-relay.sh (red-first).
+# Authority: _docs/decision-log.md § D-006 relay addendum (2026-08-19).
 #
 # Usage:
 #   relay.sh --handoff <file> [--max-legs N] [--repo <path>] [--stop-file <path>]
@@ -21,7 +21,9 @@
 #
 # Exit codes (the API — tests assert them):
 #   0  complete: handoff exit_reason `complete`, or the --repo ledger
-#      (<git-dir>/ledger/state.yaml) FLIPPED to `status: done` during the relay
+#      (<git-dir>/ledger/state.yaml) REACHED `status: done` during the relay —
+#      it was not already done at the previous observation, or the done belongs
+#      to a different run_id (a pre-existing done at launch is stale, ignored)
 #   1  usage/environment error (bad flags, missing files, workdir not creatable)
 #   2  human-gate: handoff names NEEDS_HUMAN / needs-human / maintainer-decision
 #      / operator-runtime / secret-custody / 'blocker:'; exit_reason missing,
@@ -149,19 +151,48 @@ parse_exit_reason() {
 
 # Reads the LIVE ledger state (<git-dir>/ledger/state.yaml — not the committed
 # snapshot at docs/executions/state.yaml).
-ledger_done() {
-    local gitdir state
+ledger_state_file() {
+    local gitdir
     gitdir="$(git -C "$REPO" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
-    state="$gitdir/ledger/state.yaml"
+    printf '%s/ledger/state.yaml' "$gitdir"
+}
+
+ledger_done() {
+    local state
+    state="$(ledger_state_file)" || return 1
     [ -f "$state" ] && grep -q '^status:[[:space:]]*done[[:space:]]*$' "$state"
 }
 
-# Baseline: `ledger.sh close` leaves `status: done` on disk, so a relay
-# launched right after a closed run starts with done already present. Only a
-# status that FLIPS to done during the relay is evidence the relayed work
-# finished; a pre-existing done is stale state and must not end the loop.
+ledger_run_id() {
+    local state
+    state="$(ledger_state_file)" || return 0
+    [ -f "$state" ] || return 0
+    sed -n 's/^run_id:[[:space:]]*//p' "$state" | head -1 | tr -d '[:cntrl:]'
+}
+
+# `ledger.sh close` leaves `status: done` on disk, so a relay launched right
+# after a closed run starts with done already present — stale state that must
+# not end the loop. Only a done this relay OBSERVES ARRIVING counts, and the
+# baseline is re-taken after every leg: a latched one-shot boolean would blind
+# the relay to a genuine active->done transition later in the same run
+# (leg 1 opens a run, leg 2 closes it).
 BASELINE_LEDGER_DONE=0
 ledger_done && BASELINE_LEDGER_DONE=1
+BASELINE_RUN_ID="$(ledger_run_id)"
+
+# True iff a done state arrived since the last observation: it was not done
+# then, or the done belongs to a different run than the one we last saw.
+ledger_done_is_new() {
+    ledger_done || return 1
+    [ "$BASELINE_LEDGER_DONE" -eq 0 ] && return 0
+    [ "$(ledger_run_id)" != "$BASELINE_RUN_ID" ]
+}
+
+rebaseline_ledger() {
+    BASELINE_LEDGER_DONE=0
+    ledger_done && BASELINE_LEDGER_DONE=1
+    BASELINE_RUN_ID="$(ledger_run_id)"
+}
 
 LEGS_RUN=0
 LAST_EXIT_REASON="(none — no leg has run)"
@@ -255,13 +286,14 @@ while :; do
     [ -n "$LAST_EXIT_REASON" ] || LAST_EXIT_REASON="(missing)"
 
     if gate_hit; then
-        summary 2 "handoff names a human gate (NEEDS_HUMAN / maintainer-decision / operator-runtime / secret-custody / blocker:)" \
+        summary 2 "handoff names a human gate (NEEDS_HUMAN / needs-human / maintainer-decision / operator-runtime / secret-custody / blocker:)" \
             "read the handoff's blocker section, make the decision, then re-run relay.sh"
     fi
-    if [ "$BASELINE_LEDGER_DONE" -eq 0 ] && ledger_done; then
-        summary 0 "ledger state in $REPO flipped to status: done during the relay" \
+    if ledger_done_is_new; then
+        summary 0 "ledger state in $REPO reached status: done during the relay" \
             "review the delivered work (PRs stay unmerged unless repo policy says otherwise)"
     fi
+    rebaseline_ledger
     case "$LAST_EXIT_REASON" in
         complete)
             summary 0 "handoff exit_reason is complete" \
