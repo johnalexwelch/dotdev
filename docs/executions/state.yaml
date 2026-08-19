@@ -3,8 +3,8 @@ workflow: workflow-deliver
 kind: skill
 budget: multi-lane
 status: active
-next: finalize
-updated: '2026-08-19T01:25:46.821682+00:00'
+next: ''
+updated: '2026-08-19T01:28:24.631752+00:00'
 steps:
 - id: implement
   required: true
@@ -16,8 +16,8 @@ steps:
   evidence: 4 opus lanes, 11 rounds, all approve; artifacts in /tmp/ledger-lanes-kernel-shouldfix-batch
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'PR #174 open, CI green, review stamped'
 stamps:
   review:
     head_sha: dbf3e68ebe380425c550288d916de836c1558d50
@@ -52,10 +52,28 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
+    timestamp: '2026-08-19T01:28:24.631540+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '174'
+      describe_pr: done
+      post_mortem: none
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
-last_seen_sha: dbf3e68ebe380425c550288d916de836c1558d50
+last_seen_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
 verify_local:
-  head_sha: c6cb9713e0cba2f41741318ca00503ba9dec4d7f
+  head_sha: fc16d2a5978ae394c99e55f2cdaf44da9284c01a
   passed: true
   results:
   - cmd: ./test/run-tests.sh
