@@ -4,8 +4,8 @@ kind: skill
 budget: multi-lane
 initialized_epoch: 1787103716
 status: active
-next: finalize
-updated: '2026-08-19T03:09:45.885683+00:00'
+next: ''
+updated: '2026-08-19T03:13:40.831000+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: "user-journey-qa not triggered: CI/tooling/skill-doc change only (workflow job, kernel subcommand, test suite, skill markdown) \u2014 no frontend, user-facing behavior, auth/navigation/payment flow, or UX acceptance criteria; conditional gate skipped-with-reason per workflow-deliver Step 5"
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'PR #175 open, CI green (7/7 checks incl. new finalize-stamp job), review stamped fresh at c42ae6f, verify-local PASSED at dc0e5c8'
 stamps:
   review:
     head_sha: c42ae6fc367209a7f89d739b5ffff97b43fffd44
@@ -65,12 +65,30 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: dc0e5c87a203b886cffeeecad371b6757e498890
+    timestamp: '2026-08-19T03:13:40.830776+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '175'
+      describe_pr: done
+      post_mortem: none
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/phase5a-closeout
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/phase5a-closeout
-last_seen_sha: c42ae6fc367209a7f89d739b5ffff97b43fffd44
+last_seen_sha: dc0e5c87a203b886cffeeecad371b6757e498890
 verify_local:
-  head_sha: 21eb924bdc6c71ac686256a43e81b0972f66c165
+  head_sha: dc0e5c87a203b886cffeeecad371b6757e498890
   passed: true
   results:
   - cmd: ./test/run-tests.sh
