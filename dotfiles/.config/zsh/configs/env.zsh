@@ -12,7 +12,7 @@ export XDG_DATA_HOME="$HOME/.local/share"
 export XDG_STATE_HOME="$HOME/.local/state"
 
 # Credential files
-for cred in .redshift .metabase .trino .asana .slack .readwise .anthropic .todoist .google .chief-of-staff-env .openai .discord .spotify; do
+for cred in .redshift .metabase .trino .asana .slack .readwise .anthropic .todoist .google .chief-of-staff-env .openai .discord .spotify .streamdeck; do
   [[ -f "$HOME/$cred" ]] && source "$HOME/$cred"
 done
 
@@ -43,3 +43,10 @@ export CHORUS_REGISTRY="$HOME/projects/chorus/registry.yaml"
 
 # Rowan brain (Obsidian knowledge system)
 export BRAIN_VAULT="$HOME/Documents/Home"
+
+# Stream Deck deck scripts (~/.local/bin — see ~/.config/streamdeck/README.md)
+export DOJO_REPO_DIR="$HOME/dojo"
+export DOJO_NOTES_DIR="$BRAIN_VAULT"
+# CAL_WORK / CAL_PERSONAL (icalBuddy calendar names) live in untracked
+# ~/.streamdeck, sourced by the credential loop above — this repo is public,
+# never commit them. Setup steps: ~/.config/streamdeck/README.md
