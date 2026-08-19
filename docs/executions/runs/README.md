@@ -15,6 +15,21 @@ file.
 `../state.yaml` remains as a frozen historical record of pre-migration runs.
 It is never written or read by new runs and satisfies no gate.
 
-Files here accumulate as delivery history (one per run). The CI finalize gate
+**Mid-flight runs at the migration boundary**: a run inited by the
+pre-migration kernel carries snapshot commits to the legacy path, which are
+no longer freshness-exempt — every pre-upgrade stamp reads STALE (rendered as
+"non-ledger commits exist after its stamp"). The run is not bricked: re-stamp
+each gate and re-run `verify-local` under the current kernel; the first stamp
+creates this run's file here. The legacy commit satisfies nothing.
+
+**Reading historical run files**: `status: active` in a run file that is not
+the branch's current run means the run was abandoned or superseded
+(`init --force` writes the successor's file and never rewrites the old one);
+the live git-dir ledger is authoritative for what is actually active.
+
+Files here accumulate as delivery history (one per run). Run filenames are
+kernel-validated (`A-Za-z0-9._-`, flat — never nested); a nested yaml under
+this directory is by definition hand-written and both the write-block guard
+and the CI gate refuse it. The CI finalize gate
 (`scripts/finalize-stamp-check.sh`) checks only the run files a PR actually
 changed; `skill-system-audit` reads them for the D-006 scoreboard.

@@ -132,12 +132,24 @@ gh pr list --state merged --search "merged:>=$SINCE" --json number,headRefName \
             continue
         }
         # Per-run snapshots (2026-08-19): the PR's run files are the
-        # docs/executions/runs/*.yaml it changed vs its base. Pre-migration
-        # PRs fall back to the legacy shared state.yaml.
+        # docs/executions/runs/*.yaml it changed vs its base. The legacy
+        # shared state.yaml fallback applies ONLY to pre-migration heads
+        # (no runs/ tree at the head) — an unconditional fallback would read
+        # the frozen legacy stamp and score unstamped post-migration PRs as
+        # "stamped", inverting the metric. Post-migration heads with no run
+        # file are UNSTAMPED, full stop.
         head_sha=$(git rev-parse FETCH_HEAD)
         base_sha=$(git merge-base "$head_sha" origin/main)
         run_files=$(git diff --name-only "$base_sha" "$head_sha" -- 'docs/executions/runs/*.yaml' 'docs/executions/runs/*.yml')
-        [ -n "$run_files" ] || run_files="docs/executions/state.yaml"
+        if [ -z "$run_files" ] && ! git cat-file -e "$head_sha:docs/executions/runs" 2>/dev/null; then
+            run_files="docs/executions/state.yaml"
+        fi
+        if [ -z "$run_files" ]; then
+            echo "PR #$pr: UNSTAMPED (no run snapshot changed)"
+            continue
+        fi
+        # Unquoted word-split is safe: run_ids reject whitespace (kernel
+        # allowlist), so run-file paths never contain spaces.
         for f in $run_files; do
             git show "$head_sha:$f" 2>/dev/null |
                 "${LEDGER_PYTHON:-python3}" -c '
