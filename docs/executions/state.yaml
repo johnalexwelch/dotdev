@@ -1,90 +1,169 @@
-run_id: 2026-08-18-retire-brain-ops
+run_id: 2026-08-18-verify-ground-truth
 workflow: workflow-deliver
-kind: skill
+kind: bug
 budget: one-reviewer
 status: active
-next: finalize
-updated: '2026-08-19T00:11:54.168479+00:00'
+next: ''
+updated: '2026-08-19T00:41:52.084325+00:00'
 steps:
+- id: diagnose
+  required: true
+  status: completed
+  evidence: "root cause + red repro stamped; scratch repro: raw worktree add from\
+    \ stale + forged sidecar -> verify exit 0 while is-ancestor(origin/main,HEAD)=false;\
+    \ fix direction: (a) recompute ground truth in verify + sidecar as loud cross-check\
+    \ AND (b) hook-block sidecar Edit/Write \u2014 (b) alone rejected: Bash heredoc\
+    \ bypasses Edit/Write hooks trivially, which is exactly how a forger writes the\
+    \ file"
+- id: fix
+  required: true
+  status: completed
+  evidence: 'stamp fix at cf71697: repro green (both suites), regression_test=test/test-worktree-baseline.sh'
 - id: preflight
   required: true
   status: completed
-  evidence: 'worktree-baseline.sh cut: origin/main -> chore/retire-brain-ops @ .claude/worktrees/retire-brain-ops
-    (WORKTREE_BASELINE_GATE emitted)'
+  evidence: 'WORKFLOW_BASE_GATE origin/staging->origin/main (staging absent, fetched);
+    WORKTREE_BASELINE_GATE origin/main -> fix/worktree-verify-ground-truth @ .claude/worktrees/verify-ground-truth;
+    graphify: not_available_with_reason: no graphify-out/graph.json in repo; context:
+    user report cites PR #166 post_mortem forged-baseline pattern, files read (worktree-baseline.sh,
+    test-worktree-baseline.sh, ledger.sh checked_review, workflow-guard.sh, D-006
+    log)'
 - id: triage
   required: true
   status: completed
-  evidence: kind=skill retirement; Alex approval 2026-08-18 (corpus-optimization-audit
-    batch 1, docs/executions/plans/2026-08-18-corpus-optimization-audit.md sec 2.1/6);
-    zero brain-ops entries in ~/.claude/logs/skill-invocations.log full span 2026-07-20..2026-08-18
+  evidence: "AFK-safe: clear acceptance criteria encoded as red tests (9 baseline\
+    \ + 4 guard); fix direction locked in diagnose evidence \u2014 both (a) ground-truth\
+    \ recompute and (b) hook sidecar block"
 - id: implement
   required: true
   status: completed
-  evidence: 'commit be31056: delete brain-ops dir + 6 catalog/doc updates; lint-skill-refs
-    dangling=0; lint-skill-suite failures=0; run-tests.sh exit=0 all sub-suites Failed:0'
+  evidence: 'worktree-baseline.sh cmd_verify ground-truth rewrite + load_state strict
+    parse + workflow-guard rule 2b; full run-tests.sh green (33 baseline / 45 guard-rules
+    / 108 ledger / all others), lint-refs+lint-suite 0, shellcheck clean on new code
+    (one pre-existing SC2015 info untouched); tdd: ran (red-first two-lane: c2b5ca6,
+    186d973 test lane; cf71697 impl lane, no test files touched)'
 - id: review
   required: true
   status: completed
-  evidence: workflow-review fast profile (floor=fast per review-floor); integrated
-    lane dispatched to fresh subagent (sonnet), lane file /tmp/2026-08-18-retire-brain-ops-integrated-review.md,
-    verdict APPROVE, reviewed_sha=be31056 matches HEAD; review stamp recorded
+  evidence: "review restamped at f9e300c after merging origin/main (PR #172 + PR #170-era\
+    \ base moves; state.yaml conflict kept branch run record); diff vs base unchanged\
+    \ by the merge, run-tests green post-merge; original full-profile 4-lane APPROVE\
+    \ evidence unchanged (lanes /tmp/{security,logic,tests,style}-review.md); stamped\
+    \ via kernel revision ec61612 (PR #170, merged by Alex 2026-08-19T00:32Z into\
+    \ its stacked parent \u2014 NOTE: not yet re-landed on main)"
 - id: qa
   required: true
   status: completed
-  evidence: ./test/run-tests.sh exit=0 (all sub-suites Failed:0 incl ledger 108, guard
-    39, gh-shim 38); lint-skill-refs dangling=0; lint-skill-suite failures=0 warnings=93
-    pre-existing
+  evidence: "user-journey QA evaluated: not applicable \u2014 backend delivery-tooling\
+    \ change (gate scripts, hook, tests), no user-facing journey"
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: blocked
+  evidence: "all checked fields green except one: kernel rejects draft PRs at stamp\
+    \ finalize (ledger.sh:808 requires prstate=open) while the guard hook blocks marking\
+    \ a PR ready without a finalize stamp \u2014 deadlock is the known Phase 3 defect\
+    \ fixed by open PR #170. PR #171 draft, CI 6/6 green, mergeState CLEAN, 0 review\
+    \ threads, verify-local PASSED at 3452dcc, tree clean. Unblock: land PR #170 first,\
+    \ then re-run the finalize stamp and complete the squash-merge of PR #171 through\
+    \ the gate"
 stamps:
-  review:
-    head_sha: be3105625c025fd910249825ce40dc310575878d
-    timestamp: '2026-08-19T00:09:26.940658+00:00'
+  diagnose:
+    head_sha: c2b5ca6fa8ced4b18978f25993e67ed37229b228
+    timestamp: '2026-08-18T22:53:39.165368+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 77d58ca3726ec64b860f08b14c21d04d514433a94ea379a8c5f26f7450b5c6f6
-      lane_integrated_lines: '38'
-      lane_integrated_verdict: APPROVE
-      lane_integrated_model: sonnet
-      review_floor: fast
+      repro_exit: '1'
+      repro_tail: ' sidecar-less verify reports PASS     expected output to contain:
+        PASS:     output was: Blocked: no base ref available to verify ancestry against;
+        pass --base or --parent-branch.  Passed: 22 Failed: 9'
+    attested:
+      root_cause: 'cmd_verify derives its ancestry target from the cut-written sidecar
+        (load_state -> RESOLVED_BASE/STACKED/PARENT_BRANCH), a plain hand-writable
+        file; a forged sidecar points verify at any ref the checkout descends from,
+        so a non-descendant worktree passes, and the recorded BRANCH is never checked
+        against git at all. ledger.sh checked_review''s worktree_verify field inherits
+        the bypass. Observed as PR #166''s forged-baseline pattern.'
+      repro_cmd: bash test/test-worktree-baseline.sh && bash test/test-guard-rules.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  fix:
+    head_sha: cf71697913282f035e6c49289577abcbd5a7925b
+    timestamp: '2026-08-18T22:59:14.212191+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-worktree-baseline.sh
+    attested:
+      rationale: verify now derives ancestry from git itself (recomputed base per
+        base-branch-policy, or explicit --base); sidecar demoted to loud cross-check
+        (exit 11 on BRANCH/RESOLVED_BASE mismatch, strict KEY=VALUE parse instead
+        of sourcing kills the shell-injection vector); workflow-guard blocks Edit/Write
+        to sidecars as script-owned defense-in-depth
+      regression_test: test/test-worktree-baseline.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
+  review:
+    head_sha: f9e300cfbac4addc93bb5b4890d0304b647e361c
+    timestamp: '2026-08-19T00:38:17.551450+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: efba2ceb2ed5094bba7d22a096af32b9ecb64a501079eaa47dcbe2b967e623a0
+      lane_security_lines: '25'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-4-5
+      lane_logic_sha256: a81c8107af965469339a8a8a0f533bd45a78caa24570ced95647b2beb9683303
+      lane_logic_lines: '27'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-opus-4-5
+      lane_tests_sha256: b1bb6b1985b6441e57698f977029bc59dc13efb001e945a0b31c3ff0d6d45938
+      lane_tests_lines: '25'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-4-5
+      lane_style_sha256: 653c404fb72487eccb6a9d188ed581c101e467e186a74afd5f58dff3e91ba751
+      lane_style_lines: '28'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-4-5
+      review_floor: full
       worktree_verify: pass
     attested:
+      review_profile: full
       verdict: APPROVE
-      review_profile: fast
-      model_floor: sonnet
-      lanes: integrated=/tmp/2026-08-18-retire-brain-ops-integrated-review.md
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 3e0ae1427f845f79b5cbfc939683eb0a91b5792d
-    timestamp: '2026-08-19T00:11:54.168225+00:00'
+    head_sha: 1bfeaf5f765f1ea1e770fafca74d1f2797dcb0d7
+    timestamp: '2026-08-19T00:41:52.084073+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
       ci: green
-      pr_state: open
+      pr_state: draft
       threads_resolved: 'yes'
     attested:
-      pr_number: '172'
-      describe_pr: "chore(skills): retire brain-ops (corpus audit batch 1, Alex-approved)\
-        \ \u2014 delete deprecated skill dir, atomic catalog updates, rowan is live\
-        \ successor"
-      post_mortem: 'clean single-commit retirement; coverage check upgraded the evidence:
-        brain-ops''s archived-only CLI commands are dead in the live CLI, so no capability
-        lost; skills-index regen also reconciled #166/#167 drift'
+      post_mortem: 'not_applicable: routine single-unit bug fix, no design-plan/phase
+        drift'
+      describe_pr: 'body_file=docs/executions/.pr-bodies/2026-08-18-pr-fix-worktree-verify-ground-truth.md
+        (scratch, applied to PR then moved out of tree); mode=issue_only; issues=none;
+        phase_evidence=not_applicable; graphify=not_available_with_reason: no graphify-out/graph.json;
+        applied_to_pr=true'
+      pr_number: '171'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-last_seen_sha: 3e0ae1427f845f79b5cbfc939683eb0a91b5792d
+last_seen_sha: 1bfeaf5f765f1ea1e770fafca74d1f2797dcb0d7
 verify_local:
-  head_sha: 3e0ae1427f845f79b5cbfc939683eb0a91b5792d
+  head_sha: 1bfeaf5f765f1ea1e770fafca74d1f2797dcb0d7
   passed: true
   results:
   - cmd: ./test/run-tests.sh

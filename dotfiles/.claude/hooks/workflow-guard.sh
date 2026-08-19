@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # workflow-guard.sh — PreToolUse/PostToolUse guard rails for delivery workflows.
 # D-006 additions: merge gate (ledger check finalize), state.yaml write block,
-# stderr-suppression block on mutating forge/git commands, and entry
-# enforcement (warn-only in Phase 0; LEDGER_ENTRY_ENFORCE=block escalates).
+# worktree-baseline sidecar write block, stderr-suppression block on mutating
+# forge/git commands, and entry enforcement (warn-only in Phase 0;
+# LEDGER_ENTRY_ENFORCE=block escalates).
 set -euo pipefail
 
 input="$(cat)"
@@ -56,8 +57,19 @@ is_mutating_forge_cmd() {
 
 if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" ]; } && [ -n "$file_path" ]; then
     # Rule 2: ledger state files are script-owned; direct edits are blocked.
-    if grep -Eq '(^|/)docs/executions/state\.yaml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
+    # Case-insensitive: APFS is case-insensitive, so a case-variant spelling
+    # writes the real file.
+    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
         printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/close) instead of editing it directly.\n' "$file_path" >&2
+        exit 2
+    fi
+
+    # Rule 2b: worktree-baseline sidecars are script-owned as well — written
+    # by `worktree-baseline.sh cut`, cross-checked by `verify`. They live
+    # outside any repo (sibling of the worktree path), so match the filename
+    # pattern anywhere (D-006 hardening; PR #166 forged-baseline pattern).
+    if grep -Eiq '(^|/)\.worktree-baseline\.[^/]+\.state$' <<<"$file_path"; then
+        printf 'Blocked: %s is script-owned; it is written by worktree-baseline.sh cut and cross-checked by verify — never write it by hand.\n' "$file_path" >&2
         exit 2
     fi
 
