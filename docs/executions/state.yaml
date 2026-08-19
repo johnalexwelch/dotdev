@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152418
 status: done
 next: ''
-updated: '2026-08-19T16:16:01.573700+00:00'
+updated: '2026-08-19T16:28:33.899418+00:00'
 steps:
 - id: preflight
   required: true
@@ -33,33 +33,33 @@ steps:
   evidence: 'PR #186 open non-draft; stamp finalize at 68c6bdd (kernel: review freshness, clean tree, verify-local PASSED, forge state); do-not-merge per brief'
 stamps:
   review:
-    head_sha: 4438542b62f4d02f7aafd5d3430dd69d35968ad3
-    timestamp: '2026-08-19T16:12:58.801381+00:00'
+    head_sha: f55e96b94d5dbae46f46ffcab70d50e2e4bc65f7
+    timestamp: '2026-08-19T16:28:33.899201+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: 1f0d759a8478c46fec8146c66c5d477167b7b266ca22c7140a189c95f2c0cbae
-      lane_security_lines: '51'
+      lane_security_sha256: 1c1f79c3ee94f2c6bd2054479a30d5ce1e7f2e295f9100b0c94a089ae4623b0b
+      lane_security_lines: '45'
       lane_security_verdict: APPROVE
       lane_security_model: claude-opus-5[1m]
-      lane_logic_sha256: 0b5d6cf54c14cab78f11d2c2ef07bd0b069b52c545ce16d710f60ae05ced4be3
-      lane_logic_lines: '82'
-      lane_logic_verdict: APPROVE
+      lane_logic_sha256: 29ffd19d965838f8384fc0f6450f919f3b74a427879433bd2507d19b34958939
+      lane_logic_lines: '60'
+      lane_logic_verdict: REQUEST_CHANGES
       lane_logic_model: claude-opus-5[1m]
-      lane_tests_sha256: 76f597d211c9a92c1a6b877e65aa104e6eb3379e71137e6d76dfdad3b253ed9f
-      lane_tests_lines: '267'
-      lane_tests_verdict: APPROVE
+      lane_tests_sha256: da8a0ef9585e18c80f7c9a89db67635b9f848d0685d618e4ce7e0e3cd96937f1
+      lane_tests_lines: '192'
+      lane_tests_verdict: REQUEST_CHANGES
       lane_tests_model: claude-opus-5[1m]
-      lane_style_sha256: ff7cd0ca3dbfcd356c6396019f477edec5bf56608c036bbcf6995ae4822bbf17
-      lane_style_lines: '78'
+      lane_style_sha256: 9f8a6d6ac784bc066a5b4d5edc9de9a7a3e97fd44ac789fe4b9658e563901027
+      lane_style_lines: '84'
       lane_style_verdict: APPROVE
       lane_style_model: claude-opus-5[1m]
       review_floor: full
       worktree_verify: pass
     attested:
+      verdict: approve
       review_profile: full
-      verdict: APPROVE
-      lanes: security=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/style-review.md
+      lanes: logic=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/logic-review.md,security=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/security-review.md,style=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/style-review.md,tests=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/tests-review.md
     override:
       active: false
       reason: ''
@@ -84,7 +84,7 @@ stamps:
 overrides: []
 branch: feat/planning-lane-consolidation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/planning-lane-consolidation
-last_seen_sha: 652b347d021e7052de6cf43b19876982cc72b6a8
+last_seen_sha: a7e156783885331443d5a294cff9041306a66cf1
 verify_local:
   head_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
   passed: true
