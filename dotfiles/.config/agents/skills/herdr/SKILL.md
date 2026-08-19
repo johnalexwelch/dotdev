@@ -5,7 +5,7 @@ description: "Control herdr from inside it: manage workspaces/tabs/panes, spawn 
 
 # herdr — agent skill
 
-Before anything else, check `HERDR_ENV`. If it is not `1`, say you are not running inside a herdr-managed pane and stop — never inspect or control herdr panes from outside herdr.
+Before anything else, check `HERDR_ENV`. If it is not `1`, never inspect or control herdr panes from outside herdr: for pane/workspace control requests, say you are not running inside a herdr-managed pane and stop; for the companion-tools stage launches (see § Companion tools by delivery stage), print the skip line and continue — those are cosmetic and never block the calling workflow.
 
 You are inside herdr, a terminal-native agent multiplexer. The `herdr` binary in PATH talks to the running instance over a local unix socket. Full protocol/API reference: [socket api docs](https://herdr.dev/docs/socket-api/).
 
@@ -108,7 +108,7 @@ herdr pane read 1-1 --source recent --lines 100
 
 After `setup-worktree` (or at the matching delivery stage), open stage-appropriate companion tools. Outside herdr (`HERDR_ENV != 1`), print one skip line ("HERDR_ENV not set — skipping companion tools") and continue — companion tooling is cosmetic and never blocks the calling workflow. Record the `workspace_id` from the implement stage — later stages reuse it; if it is missing for review/ci/cleanup, halt and ask the caller for it. Tool missing (lazygit, yazi, delta)? Warn and skip that pane; a failed `workspace create` aborts the stage, a failed split/tab-create warns and continues.
 
-**implement** — isolated workspace at the worktree + lazygit + yazi (yazi tab on by default; skip only if the caller opts out):
+**implement** — isolated workspace at the worktree + lazygit + yazi (yazi tab included by default; skip it only when the caller explicitly asks to — there is no flag, the caller's request is the opt-out):
 
 ```bash
 herdr workspace create --cwd <worktree_path> --label "<issue_slug>"   # parse workspace_id; slug = worktree basename, leading date prefix stripped

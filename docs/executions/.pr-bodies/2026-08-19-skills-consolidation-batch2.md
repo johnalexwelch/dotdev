@@ -14,7 +14,7 @@ Catalog: router Knowledge/utility row 8→6; skills-index regenerated; SKILL-MAN
 
 ## Review
 
-Independent `workflow-review`, `full` profile (computed floor: full): 4 opus lanes (security, logic, tests, style) → R1: security/tests/style APPROVE, logic REQUEST_CHANGES (7 findings: v1-workflow contract/gate inventory, scratch-path Step 2 decision-log collision, exec-mode gate ordering, herdr placeholder bindings + input defaults + HERDR_ENV skip semantics, decision-memo composition scoping, router legacy rows) → all fixed except the two router-table additions (deferred, see Notes) → R2 delta verification APPROVE.
+Independent `workflow-review`, `full` profile (computed floor: full): 4 opus lanes (security, logic, tests, style) → R1: security/tests/style APPROVE, logic REQUEST_CHANGES (7 findings: v1-workflow contract/gate inventory, scratch-path Step 2 decision-log collision, exec-mode gate ordering, herdr placeholder bindings + input defaults + HERDR_ENV skip semantics, decision-memo composition scoping, router legacy rows) → all fixed except the two router-table additions (deferred, see Notes) → R2 delta verification: 4× APPROVE, with two new style should-fixes (HERDR_ENV gate top/section contradiction; yazi opt-out mechanism) closed in a final wording commit confirmed by the lanes.
 
 ## Test plan
 
