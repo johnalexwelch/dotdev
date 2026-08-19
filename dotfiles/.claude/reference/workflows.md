@@ -13,10 +13,10 @@
 
 ```text
             PLANNING TIER (feeds the spine)
- wayfinder ──▶ grill-with-docs ──▶ to-prd ──▶ to-issues ──▶ triage
- (foggy epic   (interrogate the    (PRD on    (vertical     (readiness
-  → map of      idea; decisions     tracker)   slices)       state machine
-  tickets)      → decision-log)                              → ready-for-agent)
+ [wayfinder] ─▶ workflow-feature ─▶ grill-with-docs ─▶ to-prd ─▶ to-issues ─▶ triage
+ (optional:      (default entry:     (interrogate the   (PRD on   (vertical    (readiness
+  huge/foggy      ambiguous idea      idea; decisions     tracker)  slices)      state machine
+  efforts only)   → shaped work)      → decision-log)                            → ready-for-agent)
                                                    │
                                      ready work unit │ bug report │ skill/docs change
                                                    │
@@ -57,8 +57,10 @@ routing, so a misroute is recoverable (re-init `--kind bug`), not fatal.
 
 ## Three layers (D-006 #12)
 
-Every workflow skill carries a `layer:` tag; `lint-skill-suite.sh` enforces the
-rules per layer. Determinism means something different at each altitude:
+Every skill on this map's delivery spine carries a `layer:` tag (tagging is
+staged — touched skills first, per the D-006 Track C decision; untagged skills
+get a lint warn, tagged-but-violating skills a lint error from
+`lint-skill-suite.sh`). Determinism means something different at each altitude:
 
 | Layer | Determinism comes from | Example skills |
 |---|---|---|
@@ -72,7 +74,8 @@ Enforcement is mechanical, not honor-system. Every escape is an **audited
 override** — loud, recorded, human-instructed — never a silent bypass
 (D-006 #5). Owners: `workflow-ledger/SKILL.md` (ledger gates),
 `dotfiles/.claude/hooks/workflow-guard.sh` (guard rules), `.github/workflows/ci.yml`
-(CI check). Guard rules bite only in opted-in repos (`docs/executions/` present).
+(CI check). Rules 1 and 4 bite only in opted-in repos (`docs/executions/`
+present); rules 2/2b and 3 fire everywhere.
 
 | Gate | Trigger | Escape |
 |---|---|---|
@@ -92,6 +95,7 @@ The **authoritative** classification table lives in
 `workflow-router/SKILL.md` — do not extend this list, extend that table (and
 its golden set). Representative lanes:
 
+- **Ambiguous feature idea** → `workflow-feature` (default planning-tier entry; `wayfinder` only for efforts too big/foggy for a single session)
 - **V1 product idea** → `v1-workflow` (gated pipeline; owns grill → design → issues)
 - **Refactor-scale / migration** → `design-plan` → `execute-phase` — a specialized lane, never the default product flow
 - **Repo evidence** → `repo-audit`, findings routed onward (roadmap / to-prd / to-issues) — never a standalone loop
