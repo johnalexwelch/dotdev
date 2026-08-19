@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: active
 next: diagnose
-updated: '2026-08-19T14:59:13.469718+00:00'
+updated: '2026-08-19T15:03:34.084649+00:00'
 steps:
 - id: diagnose
   required: true
@@ -21,12 +21,12 @@ steps:
   evidence: 'WORKTREE_BASELINE_GATE: origin/main -> fix/reland-170-draft-finalize @ .claude/worktrees/reland-170-draft-finalize; WORKFLOW_BASE_GATE resolved_base=origin/main fallback_reason=origin/staging_absent fetched=true; graphify: not_available_with_reason: no graphify-out/graph.json in repo; context: user brief is a complete execution spec (payload commits 617a85a,c8f15e0,a303da4,bea36c3 verified unreachable from origin/main; buggy line confirmed at ledger.sh:1056 on main; test-ledger.sh has zero draft coverage)'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'AFK-safe: explicit payload (4 commits), captured red repro, acceptance = suite green + PR open non-merged; no human-only decisions beyond draft-vs-ready at finalize (user pre-authorized non-draft PR)'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: cherry-pick sequence started
 - id: review
   required: true
   status: pending
@@ -55,7 +55,22 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  fix:
+    head_sha: f64aab1989e986a86d7f2159846f0167b4e3e0e2
+    timestamp: '2026-08-19T15:03:34.084479+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-ledger.sh
+    attested:
+      rationale: 'Re-applied PR #170''s F3 fix to the #174-hardened kernel: checked_finalize accepts pr-state open OR draft (actual state recorded in checked fields); merged/closed still refuse. Test adapted to batch-#8 sanitized flat mock filenames (old nested path would have fake-passed via the leftover ''none'' lookup). Docs siblings re-landed: finalize SKILL.md stale ''Known collision'' note replaced with draft-stamps-normally, verdict-token underscores in 21 reviewer-brief files.'
+      regression_test: test/test-ledger.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: 8a012f5e82fcd08f5d990dd69433c54040207601
+last_seen_sha: 72589069dece5c5cb509863944fc755b7adc72cc
