@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152956
 status: active
 next: finalize
-updated: '2026-08-19T15:33:41.519763+00:00'
+updated: '2026-08-19T15:35:52.203358+00:00'
 steps:
 - id: preflight
   required: true
@@ -49,7 +49,35 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 02eb3949de7189aaf16321799dbd3e00299b68d4
+    timestamp: '2026-08-19T15:35:52.203212+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '183'
+      describe_pr: 'PR #183 body carries summary, seam definition, router-only scope note, and eval test plan'
+      post_mortem: 'seam sharpened via wording only; eval 45/45 (100%) vs #181 golden set incl case 45; #180 same-row conflict noted in PR body'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: fix/router-v1-vs-feature-seam
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
-last_seen_sha: 6ec4c8d0cec0197503e6db227f9be1f5f5b7c9d7
+last_seen_sha: 02eb3949de7189aaf16321799dbd3e00299b68d4
+verify_local:
+  head_sha: 02eb3949de7189aaf16321799dbd3e00299b68d4
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
