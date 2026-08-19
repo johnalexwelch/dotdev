@@ -22,8 +22,11 @@ tags = ["key", "private"]
 severity = "HIGH"
 
 [[rules.allowlists]]
-description = "Audit/remediation records quote the private-key header string as evidence; no key material (see DL-0018)"
-paths = ['''docs/audits/.*\.md''']
+description = "Audit/remediation records may quote the backtick-quoted private-key header string as evidence; real key material still flags (see DL-0018)"
+condition = "AND"
+regexTarget = "line"
+regexes = ['''`-----BEGIN ((RSA|DSA|EC|PGP|OPENSSH) )?PRIVATE KEY( BLOCK)?-----`''']
+paths = ['''^docs/audits/[^/]*\.md$''']
 
 [[rules]]
 id = "certificate"
