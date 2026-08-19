@@ -4,21 +4,21 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787151724
 status: active
-next: preflight
-updated: '2026-08-19T15:02:04.223312+00:00'
+next: review
+updated: '2026-08-19T15:11:15.378078+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'worktree cut via worktree-baseline.sh (WORKTREE_BASELINE_GATE: origin/main -> test/golden-case-45-ml-cookiecutter); ledger init 2026-08-19-golden-case-45 kind=skill; graphify: not_available_with_reason: no graphify-out/graph.json in repo; context: golden-routes.yaml (44 cases), router SKILL.md classification table read directly'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'task well-formed: add exactly one golden case (45) to golden-routes.yaml; expected_route corrected to workflow-feature per live table (wayfinder has no classification-table row, explicit-invocation only) and coordinator-relayed real ROUTE_CARD rerun; eval-set-only PR, no router edits; AFK-safe'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "appended case 45 to golden-routes.yaml (commit ed28f5d, +5 lines, eval-set only); dry-run gate PASS: 'schema OK \u2014 45 cases (18 log, 27 synthetic); all expected routes present in SKILL.md'; full eval running in background; tdd: not_applicable_with_reason: eval-set data addition validated by existing deterministic routing-eval.sh harness (dry-run schema gate + full eval), no new code paths"
 - id: review
   required: true
   status: pending
@@ -31,7 +31,28 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: ed28f5d8e9e2a624ff73b5c425e079644b59dd63
+    timestamp: '2026-08-19T15:11:15.377884+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: a19a9fde15cab4411fc9217e15b9a667d60ef72f68077c27fd1ea8fce6102a34
+      lane_integrated_lines: '96'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: claude-sonnet-5
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      review_profile: fast
+      verdict: APPROVE
+      lanes: integrated=/tmp/ledger-lanes-2026-08-19-golden-case-45/integrated-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: test/golden-case-45-ml-cookiecutter
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/golden-case-45-ml-cookiecutter
+last_seen_sha: ab3f26a51f7212d99a3e63b4ae777ad90f55fe10
