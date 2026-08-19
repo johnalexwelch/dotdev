@@ -174,18 +174,27 @@ for gate, s in stamps.items():
     done
 ```
 
-**Repo activity — state the ref scope or do not cite the number.** Any activity figure in an audit finding must name what it counted, because the three defensible methods disagree by up to 10x and the ranking they produce is not the same ranking. Measured 2026-08-19 over one 7-day window: chorus 25 HEAD-only / 7 default-branch / 46 all-refs; taro 2 / 2 / 21; dotdev 38 / 38 / 447 (every worktree branch counts). Default branch is the figure for any "code landed without a gate" claim — that is the claim such findings make; `--all` measures agent busy-ness across branches and inflates repos with bot branches. A cross-repo audit that mixes the two produces a false priority order: on all-refs the 2026-08-19 audit read as a four-way tie (chorus 46 / delphi 22 / taro 21 / ml-models 20), on default-branch it read ml-models 20 / delphi 9 / chorus 7 / taro 2 — ml-models at twice the next repo. Report as `N commits on <branch> in <window>`, never a bare count.
+**Repo activity — count the remote-tracking default branch, after a fetch, over an absolute window.** Activity figures decide which repo an audit prioritises, so the method has to be pinned or the priority order is an artefact of the command. Four ways to get this wrong, all observed in the 2026-08-19 cross-repo audit, each one silent:
+
+- **Local branch instead of remote-tracking ref.** `git log main` counts the checkout, not what landed. chorus's local `main` was 102 commits behind `origin/main`; the local count read 7 against a true 13. Never strip the `origin/` prefix off the resolved ref.
+- **No fetch.** A remote-tracking ref last updated days ago under-counts by however much has landed since, and reports it as fact.
+- **Assuming the default branch is `main`.** `taro`'s `origin/HEAD` is `origin/staging`; counting `main` gave 2 where the gated branch had 30. Treat `origin/HEAD` as the suggestion and confirm it against the repo's actual convention.
+- **`--all` when the claim is about gates.** All-refs counts bot branches and every local worktree: dotdev reads 38 on its default branch and 449 across all refs. Use `--all` only for "how much agent activity happened", and label it that way.
+- **Relative windows.** `--since="7 days ago"` is unreproducible; a later re-run cannot tell drift from error. Record an absolute boundary.
+
+Getting this wrong is not a rounding error. The same audit, same window, ranked its repos ml-models 20 / delphi 9 / chorus 7 / taro 2 on local branches — and taro 30 / ml-models 20 / chorus 13 / delphi 10 once the refs were fetched and resolved correctly. The leader changed, and the repo the audit had dismissed as negligible was the most active one. Report every figure as `N commits on <ref> since <absolute timestamp>`, naming the ref.
 
 ```bash
-# Default branch (the gate-relevant figure). Repeat per repo; name the branch.
-# Assign then default: `... | sed ... || echo main` does NOT work, because `||`
-# binds to the whole pipeline and sed exits 0 even when symbolic-ref failed —
-# the fallback never fires and `git log ""` dies with "ambiguous argument".
-branch="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')"
-branch="${branch:-main}"
-git -C "$repo" log "$branch" --since="7 days ago" --oneline | wc -l
-# All refs, only when the question is total agent activity — label it as such.
-git -C "$repo" log --all --since="7 days ago" --oneline | wc -l
+SINCE="2026-08-12 17:00"        # absolute; never "7 days ago"
+git -C "$repo" fetch -q --all   # stale tracking refs under-count silently
+ref="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
+ref="${ref:-origin/main}"       # assign-then-default: `| sed ... || echo main`
+                                # never fires, because sed exits 0 regardless
+# A resolved ref can still be absent (origin/HEAD -> origin/develop, ref gone):
+# git log then prints nothing and wc -l reports a plausible 0.
+git -C "$repo" rev-parse --verify --quiet "$ref" >/dev/null ||
+    { echo "$repo: default ref $ref does not resolve — figure withheld"; exit 1; }
+echo "$repo: $(git -C "$repo" log "$ref" --since="$SINCE" --oneline | wc -l | tr -d ' ') commits on $ref since $SINCE"
 ```
 
 **Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
