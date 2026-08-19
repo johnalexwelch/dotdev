@@ -4,25 +4,25 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152418
 status: active
-next: preflight
-updated: '2026-08-19T15:13:38.171847+00:00'
+next: qa
+updated: '2026-08-19T16:12:58.801560+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'WORKTREE_BASELINE_GATE verify PASS (descends from origin/main @2be79e6); evidence base re-verified in skill-invocations.log: design-plan 1, execute-phase 0, execute-prd 1; graphify: not_available_with_reason: no graphify-out/graph.json in repo; open-PR collision check: PR #179 (workflows.md route map) open -> workflows.md skipped for followup'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'Alex-approved consolidation plan (2026-08-19) is the work item; acceptance criteria explicit in brief: to-prd migration mode, 2 tombstones, router rewire, caller rewires, golden check, decision-log+catalog; AFK-safe'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "commit f8b910a: 27 files, +128/-430; to-prd migration mode, 2 tombstones, router rewire, 15 caller files rewired, lint exemptions, catalogs+decision-log; lint-skill-suite failures=0, lint-skill-refs dangling=0, routing-eval --dry-run green (44 cases, all routes present); tdd: not_applicable_with_reason: prose/markdown skill corpus change \u2014 determinism via lint suite + routing-eval dry-run, no executable behavior added"
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'round 2: 4/4 lanes APPROVE at 98ac025 (all opus, reviewed_sha match at dispatch); post-review merge of origin/main (aebf173) verified content-identical to reviewed diff excluding docs/executions/state.yaml bookkeeping (sorted +/- line-set diff empty); routing-eval dry-run green at 45 cases, lint failures=0 post-merge'
 - id: qa
   required: true
   status: pending
@@ -31,7 +31,50 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 4438542b62f4d02f7aafd5d3430dd69d35968ad3
+    timestamp: '2026-08-19T16:12:58.801381+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 1f0d759a8478c46fec8146c66c5d477167b7b266ca22c7140a189c95f2c0cbae
+      lane_security_lines: '51'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5[1m]
+      lane_logic_sha256: 0b5d6cf54c14cab78f11d2c2ef07bd0b069b52c545ce16d710f60ae05ced4be3
+      lane_logic_lines: '82'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-opus-5[1m]
+      lane_tests_sha256: 76f597d211c9a92c1a6b877e65aa104e6eb3379e71137e6d76dfdad3b253ed9f
+      lane_tests_lines: '267'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-5[1m]
+      lane_style_sha256: ff7cd0ca3dbfcd356c6396019f477edec5bf56608c036bbcf6995ae4822bbf17
+      lane_style_lines: '78'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5[1m]
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      review_profile: full
+      verdict: APPROVE
+      lanes: security=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation-r2/style-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/planning-lane-consolidation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/planning-lane-consolidation
+last_seen_sha: 324214c5aa0027e7a2f9ab66a0dc765112f10cdc
+verify_local:
+  head_sha: 98ac025a73f2137b59c14174a6cbab0724e16549
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
