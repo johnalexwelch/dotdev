@@ -176,13 +176,19 @@ fi
 # which reads AMBIGUOUS forever once run files accumulate (logic F2).
 candidates=()
 deleted_candidates=0
+nested_candidates=0
 if [ "$diff_ok" -eq 1 ]; then
     candidate_source="changed vs base $BASE"
     while IFS= read -r path; do
         [ -n "$path" ] || continue
+        # ?* (not *): a case glob's * matches the empty string, which would
+        # accept the dotfile basenames '.yaml'/'.yml' the kernel can never
+        # author (review round 2: security).
         case "$path" in
-            docs/executions/runs/*/*) ;;
-            docs/executions/runs/*.yaml | docs/executions/runs/*.yml)
+            docs/executions/runs/*/*)
+                nested_candidates=$((nested_candidates + 1))
+                ;;
+            docs/executions/runs/?*.yaml | docs/executions/runs/?*.yml)
                 if [ -f "$TOP/$path" ]; then
                     candidates+=("$path")
                 else
@@ -206,6 +212,9 @@ if [ "${#candidates[@]}" -eq 0 ]; then
     out="no run snapshot (docs/executions/runs/*.yaml) ${candidate_source} — the delivery never stamped, or the run file was not committed"
     if [ "$deleted_candidates" -gt 0 ]; then
         out="$out, or every changed run file was deleted at HEAD ($deleted_candidates skipped)"
+    fi
+    if [ "$nested_candidates" -gt 0 ]; then
+        out="$out, or the run file is nested and was ignored ($nested_candidates skipped — the kernel only authors docs/executions/runs/<run_id>.yaml)"
     fi
     status=1
 else

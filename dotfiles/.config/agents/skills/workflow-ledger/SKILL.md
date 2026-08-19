@@ -70,7 +70,7 @@ Workflow skills still display an in-conversation `WORKFLOW_STEPS` table (step | 
 
 ## Hook integration (workflow-guard.sh)
 
-Merge shapes (`gh pr merge|ready`, `git-forge`/`tea` merge, curl `/pulls/*/merge`) are blocked without a fresh finalize stamp in opted-in repos (`docs/executions/` present). Direct Edit/Write to ledger state is blocked — the git-dir live state, per-run snapshots `docs/executions/runs/**.y(a)ml` (any depth; the kernel only authors flat files, so a nested runs/ yaml is by definition hand-written), and the legacy `state.yaml`. stderr-suppression on mutating git/gh commands is blocked. Entry warn fires on tracked-code edits with no active run (`LEDGER_ENTRY_ENFORCE=block` escalates; default flips in Phase 5).
+Merge shapes (`gh pr merge|ready`, `git-forge`/`tea` merge, curl `/pulls/*/merge`) are blocked without a fresh finalize stamp in opted-in repos (`docs/executions/` present). Direct Edit/Write to ledger state is blocked — the git-dir live state, any `.yaml`/`.yml` under `docs/executions/runs/` at any depth (the kernel only authors flat, allowlist-named files, so anything else there is by definition hand-written), and the legacy `state.yaml`. stderr-suppression on mutating git/gh commands is blocked. Entry warn fires on tracked-code edits with no active run (`LEDGER_ENTRY_ENFORCE=block` escalates; default flips in Phase 5).
 
 ## Contract
 

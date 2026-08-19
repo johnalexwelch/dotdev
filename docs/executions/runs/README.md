@@ -23,9 +23,11 @@ each gate and re-run `verify-local` under the current kernel; the first stamp
 creates this run's file here. The legacy commit satisfies nothing.
 
 **Reading historical run files**: `status: active` in a run file that is not
-the branch's current run means the run was abandoned or superseded
-(`init --force` writes the successor's file and never rewrites the old one);
-the live git-dir ledger is authoritative for what is actually active.
+the branch's current run means the run was abandoned or superseded — a
+successor run under a different run_id writes its own file and never rewrites
+the old one (the one exception is `init --force` reusing the *same* run_id,
+which overwrites that file with an `overrides[]` audit entry); the live
+git-dir ledger is authoritative for what is actually active.
 
 Files here accumulate as delivery history (one per run). Run filenames are
 kernel-validated (`A-Za-z0-9._-`, flat — never nested); a nested yaml under

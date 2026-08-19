@@ -280,11 +280,14 @@ def load():
         with open(LIVE) as fh:
             doc = yaml.safe_load(fh)
     except yaml.YAMLError as exc:
-        err(6, "live state is not valid YAML (refusing to touch it): %s" % exc)
+        # "ledger state at <path>", not "live state": gate_verdict's snapshot
+        # mode rebinds LIVE to a committed run snapshot, and the CI failure
+        # annotation must not misattribute the corrupt file (logic r2).
+        err(6, "ledger state at %s is not valid YAML (refusing to touch it): %s" % (LIVE, exc))
     try:
         validate(doc)
     except ValueError as exc:
-        err(6, "live state failed schema validation (refusing to touch it): %s" % exc)
+        err(6, "ledger state at %s failed schema validation (refusing to touch it): %s" % (LIVE, exc))
     return doc
 
 
@@ -1188,7 +1191,7 @@ cmd_init() {
     if [ -e "$SNAPSHOT" ]; then
         snap_existed=1
         if [ "$force" -ne 1 ]; then
-            die 7 "committed run file already exists for run_id '$run_id' ($SNAPSHOT_REL); choose a new run_id or pass --force"
+            die 7 "committed run file already exists for run_id '$run_id' ($SNAPSHOT_REL) — possibly a prior delivery's audit record; choose a new run_id or pass --force"
         fi
     fi
     # Route evidence (D-006 Phase 5b): warn by default when absent;
@@ -1368,12 +1371,15 @@ cmd_check_snapshot() {
                 fi
                 ;;
         esac
+        # ?* (not *): a case glob's * matches the empty string, which would
+        # accept the dotfile basenames '.yaml'/'.yml' the kernel can never
+        # author (review round 2: security).
         case "$rel" in
             "$RUNS_REL"/*/*)
                 echo "INVALID: --file must not be nested — the kernel only authors $RUNS_REL/<run_id>.yaml (got: $file)"
                 exit 1
                 ;;
-            "$RUNS_REL"/*.yaml | "$RUNS_REL"/*.yml) ;;
+            "$RUNS_REL"/?*.yaml | "$RUNS_REL"/?*.yml) ;;
             *)
                 echo "INVALID: --file must name a run snapshot at $RUNS_REL/<run_id>.yaml (got: $file)"
                 exit 1
@@ -1400,12 +1406,15 @@ cmd_check_snapshot() {
         SNAPSHOT="${candidates[0]}"
         SNAPSHOT_REL="${SNAPSHOT#"$TOP"/}"
     fi
-    # "Committed snapshot" is the contract: an existing-but-untracked run file
-    # is a hand-placed artifact, not a record (review round: logic F5). A
+    # "Committed snapshot" is the contract: the file must exist in a COMMIT at
+    # HEAD, not merely the index (git add alone must not satisfy the gate) and
+    # not as a hand-placed working-tree artifact. cat-file with a rev:path is
+    # literal — no pathspec globbing, so an untracked 'rea?.yaml' can never
+    # ride a tracked sibling (review rounds: logic F5, security r2 Low). A
     # missing file falls through to gate_verdict's MISSING instead.
     if [ -f "$SNAPSHOT" ] &&
-        ! git -C "$TOP" ls-files --error-unmatch -- "$SNAPSHOT_REL" >/dev/null 2>&1; then
-        echo "INVALID: run snapshot exists but is not tracked by git: $SNAPSHOT_REL"
+        ! git -C "$TOP" cat-file -e "HEAD:$SNAPSHOT_REL" 2>/dev/null; then
+        echo "INVALID: run snapshot exists in the working tree but not in any commit at HEAD: $SNAPSHOT_REL"
         exit 1
     fi
     out="$(gate_verdict "$gate" snapshot)"

@@ -178,11 +178,13 @@ if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" 
     # legacy shared docs/executions/state.yaml (frozen historical record).
     # Case-insensitive: APFS is case-insensitive, so a case-variant spelling
     # writes the real file.
-    # runs/ matches ANY depth (.+): the kernel only authors flat files, so a
-    # nested runs/ yaml is by definition hand-written — exactly what this rule
-    # blocks; the block set must never be narrower than what the CI gate could
-    # be asked to read (review round: security H1).
-    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)docs/executions/runs/.+\.ya?ml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
+    # runs/ matches ANY depth and ANY basename prefix (.*, not .+ — a dotfile
+    # basename like '.yaml' IS the extension, leaving nothing for .+ to eat):
+    # the kernel only authors flat non-dotfile files, so anything else under
+    # runs/ is by definition hand-written — exactly what this rule blocks; the
+    # block set must never be narrower than what the CI gate could be asked to
+    # read (review rounds: security H1, security r2).
+    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)docs/executions/runs/.*\.ya?ml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
         printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/close) instead of editing it directly.\n' "$file_path" >&2
         exit 2
     fi

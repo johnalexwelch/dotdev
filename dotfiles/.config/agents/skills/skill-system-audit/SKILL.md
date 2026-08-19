@@ -140,7 +140,11 @@ gh pr list --state merged --search "merged:>=$SINCE" --json number,headRefName \
         # file are UNSTAMPED, full stop.
         head_sha=$(git rev-parse FETCH_HEAD)
         base_sha=$(git merge-base "$head_sha" origin/main)
-        run_files=$(git diff --name-only "$base_sha" "$head_sha" -- 'docs/executions/runs/*.yaml' 'docs/executions/runs/*.yml')
+        # :(glob) pathspecs keep '*' from crossing '/' — nested run files are
+        # never kernel-authored and must not enter the loop. Non-squash-merged
+        # heads (merge-base == head, empty diff) read UNSTAMPED — the
+        # conservative direction; verify those by hand.
+        run_files=$(git diff --name-only "$base_sha" "$head_sha" -- ':(glob)docs/executions/runs/*.yaml' ':(glob)docs/executions/runs/*.yml')
         if [ -z "$run_files" ] && ! git cat-file -e "$head_sha:docs/executions/runs" 2>/dev/null; then
             run_files="docs/executions/state.yaml"
         fi
