@@ -160,7 +160,7 @@ verdict_line="$(printf '%s\n' "$out" | tail -n 1)"
 # newlines before any log/annotation write so it can never smuggle a forged
 # verdict line or a GitHub workflow command (::stop-commands::) into the
 # audit surface (security S6).
-out_1line="$(printf '%s' "$out" | tr '\n' ' ')"
+out_1line="$(printf '%s' "$out" | tr '\n\r' '  ')"
 
 if [ "$status" -eq 0 ]; then
     # Kernel PASS only: the OVERRIDDEN render must never be reachable on a

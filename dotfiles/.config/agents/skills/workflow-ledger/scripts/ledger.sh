@@ -358,7 +358,10 @@ def op_check_info(argv):
         return
     override = stamp.get("override") or {}
     print("exists=1")
-    print("head_sha=" + str(stamp.get("head_sha", "")))
+    # head_sha is untrusted snapshot text too — same newline escape as the
+    # reason below (a multi-line sha then fails cat-file → STALE, fail-closed,
+    # without emitting extra key=value lines).
+    print("head_sha=" + str(stamp.get("head_sha", "")).replace("\n", "\\n"))
     print("override=" + ("1" if override.get("active") else "0"))
     # The reason is untrusted snapshot text: escape newlines so it can never
     # emit extra key=value lines or a second verdict-shaped output line
