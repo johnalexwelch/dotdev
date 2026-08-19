@@ -2,7 +2,7 @@
 name: humanizer
 model: sonnet
 reasoning: high
-description: Remove signs of AI-generated writing from text. Detects 29 patterns (significance inflation, promotional language, AI vocabulary, em dash overuse, rule of three, filler phrases, etc.) and rewrites them. Based on Wikipedia's "Signs of AI writing" guide. Use when editing text to make it sound more natural, or say "humanize", "de-AI", "make it sound human".
+description: Remove signs of AI-generated writing from text. Detects 29 patterns (significance inflation, promotional language, AI vocabulary, em dash overuse, rule of three, filler phrases, etc.) and rewrites them. Based on Wikipedia's "Signs of AI writing" guide. Use when editing text to make it sound more natural, or say "humanize", "de-AI", "make it sound human". Exec mode adds executive-register sharpening for board/ELT/CEO/customer drafts — trigger on "make this exec-ready", "tighten for the board", or as the polish step after decision-memo or workflow-executive-doc.
 codex-compatible: true
 ---
 
@@ -36,3 +36,29 @@ The deterministic detector `scripts/check_tells.py` is not optional — it catch
 4. Return the draft, the tells found (script counts + judgment), and the final rewrite.
 
 > Trivial one-line edits can skip the script; anything longer runs both passes.
+
+## Exec mode
+
+For exec-bound drafts (board, ELT, CEO, customer; typical upstream producers: `decision-memo`, `workflow-executive-doc`, `strategic-analysis-review`), run the base passes above, then an **exec pass** that tunes for the voice that survives a 15-minute skim. Highest leverage: the opening leads with the answer, the close is the ask (not a summary), each heading answers "so what?". Then compress ~20% — never at the cost of a real caveat or a stated confidence basis. In exec mode the base exit gate (step 3) runs on the **post-exec, post-compression** text — exec rewrites and compression introduce tells just like any rewrite, so the text that ships is the text that gets scanned.
+
+Exec-register patterns (beyond the base 29):
+
+| Pattern | Fix |
+|---|---|
+| Passive verbs ("was conducted") | Active: "we did", "we will" |
+| Throat-clearing openers ("This memo explores…") | Cut. Lead with the answer. |
+| Adverbial hedging ("relatively", "somewhat", "potentially") | Specify or cut |
+| Sentence soup (40+ words) | Break headline sentences to ≤25 words |
+| Bullet bloat (5+ in a row) | Compress to 3, or convert to prose |
+| Defensive scaffolding ("of course", "it's worth acknowledging") | Cut unless load-bearing |
+| Conclusion that restates the start | Replace with the ask or implication |
+| Headline buried in paragraph 3 | Move to paragraph 1, sentence 1 |
+| Symmetric weighting ("on one hand… on the other…") | Take a position, or cut the framing |
+| "We" with no actor | Name the team/person/function when it matters |
+
+Exec-mode rules — these keep the mode consistent:
+
+- **Sharpen, don't reorganize.** MAY relocate a buried headline to the top or turn a summary-conclusion into the ask. MAY NOT merge, reorder, split, or drop sections or change the argument flow (Pyramid/SCQA) unless asked — a `decision-memo` structure was deliberate. Same skeleton, sharper muscle.
+- **No headline, no fabrication.** If the draft has no clear recommendation/headline at all, halt and ask or route to `decision-memo`; never invent one.
+- Keep real uncertainty ("medium confidence, because X") and load-bearing caveats (regulatory/governance/risk) even when they cost words; only cut confidence claims with no stated basis. Match the author's tone.
+- Output adds a change log after the cleaned text: headline moves, word delta, passives→active count, hedges cut.

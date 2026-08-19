@@ -2,7 +2,7 @@
 name: deep-research
 model: sonnet
 reasoning: medium
-description: "AFK background research against external sources (web, official docs, API references, GitHub repos). Produces a cited markdown summary as a linked asset. Complements repo-audit (internal) — deep-research handles everything outside the working directory. Triggers: \"research this\", \"investigate\", \"what does the ecosystem say about\", \"find out how X works\"."
+description: "AFK background research against external sources (web, official docs, API references, GitHub repos). Produces a cited markdown summary as a linked asset. Complements repo-audit (internal) — deep-research handles everything outside the working directory. Triggers: \"research this\", \"investigate\", \"what does the ecosystem say about\", \"find out how X works\". Distinct from meta-skills:deep-research by engine: this one is Claude-native AFK web research with a cited markdown asset; the meta-skills twin drives the OpenAI Deep Research API — choose by engine."
 codex-compatible: true
 ---
 
