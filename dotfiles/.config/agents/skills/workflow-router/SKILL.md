@@ -101,8 +101,9 @@ Skill-specific rules (extend the step-ledger protocol):
 - Do not dispatch before the ledger shows route confirmation and target preflight complete or not applicable.
 - **Persist the ledger via the kernel.** In a project repo, after route
   confirmation run `workflow-ledger/scripts/ledger.sh init <run_id> --workflow
-  <target> --kind <k> --steps <csv>` and `ledger.sh set <step> <status>` at each
-  transition. Never hand-write `docs/executions/state.yaml` or the live state —
+  <target> --kind <k> --steps <csv> --route "<classification>|<selected-flow>|confirmed"`
+  (route evidence from the confirmed ROUTE_CARD — init warns without it) and
+  `ledger.sh set <step> <status>` at each transition. Never hand-write `docs/executions/state.yaml` or the live state —
   they are script-owned (a guard hook blocks direct Edit/Write). The
   `WORKFLOW_STEPS` table above is a render of the ledger (`ledger.sh show`),
   not the durable record.
