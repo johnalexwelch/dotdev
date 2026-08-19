@@ -1,136 +1,33 @@
-run_id: 2026-08-19-reland-170-draft-finalize
+run_id: 2026-08-19-guard-rule3-tokenizer
 workflow: workflow-deliver
-kind: bug
+kind: feature
 budget: one-reviewer
-initialized_epoch: 1787151325
-status: done
-next: ''
-updated: '2026-08-19T17:17:08.207438+00:00'
+initialized_epoch: 1787149953
+status: active
+next: preflight
+updated: '2026-08-19T14:32:33.862266+00:00'
 steps:
-- id: diagnose
-  required: true
-  status: pending
-  evidence: ''
-- id: fix
-  required: true
-  status: pending
-  evidence: ''
 - id: preflight
   required: true
-  status: completed
-  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> fix/reland-170-draft-finalize @ .claude/worktrees/reland-170-draft-finalize; WORKFLOW_BASE_GATE resolved_base=origin/main fallback_reason=origin/staging_absent fetched=true; graphify: not_available_with_reason: no graphify-out/graph.json in repo; context: user brief is a complete execution spec (payload commits 617a85a,c8f15e0,a303da4,bea36c3 verified unreachable from origin/main; buggy line confirmed at ledger.sh:1056 on main; test-ledger.sh has zero draft coverage)'
+  status: pending
+  evidence: ''
 - id: triage
   required: true
-  status: completed
-  evidence: 'AFK-safe: explicit payload (4 commits), captured red repro, acceptance = suite green + PR open non-merged; no human-only decisions beyond draft-vs-ready at finalize (user pre-authorized non-draft PR)'
+  status: pending
+  evidence: ''
 - id: implement
   required: true
-  status: completed
-  evidence: "4 cherry-picks from lost PR #170 (-x recorded): dd84409 red test (adapted to batch-#8 sanitized mock names, amended), 3332f21 kernel fix, 63e8d20+f64aab1 docs siblings; suite 159/0 at HEAD; repro red(2)->green(0); tdd: ran (red-first \u2014 draft assertions verified FAIL before fix commit)"
+  status: pending
+  evidence: ''
 - id: review
   required: true
-  status: completed
-  evidence: profile=full (computed floor full); 4 required lanes + documentation conditional, all Opus, all APPROVE at 6fe2aa3; 3 substantive rounds (R2 docs REQUEST_CHANGES F1 no_pr-stamps-clean fixed R3) + 3 base-refresh rounds (#179/#180/#181 merges under peer-session merge hold); lane files run-scoped at /tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/
-- id: qa
-  required: true
-  status: completed
-  evidence: 'user-journey-qa not triggered: workflow-kernel/tooling change; no frontend, user-facing behavior, or auth/nav/payment surface; bug was agent-observed (ledger stamp refusal), not user-reported UX'
+  status: pending
+  evidence: ''
 - id: finalize
   required: true
-  status: completed
-  evidence: "PR #184 draft, CI 7/7 green at 6ead074, verify-local PASS at 441f4d4, finalize stamped against the draft PR via the re-landed kernel (pr_state=draft recorded) \u2014 first stamped run since #169 needing no scratch-checkout workaround; policy human-only, not merged per instruction"
-stamps:
-  diagnose:
-    head_sha: 8a012f5e82fcd08f5d990dd69433c54040207601
-    timestamp: '2026-08-19T14:59:13.469510+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      repro_exit: '2'
-      repro_tail: 'warning: You appear to have cloned an empty repository. stamp fi...[truncated]'
-    attested:
-      root_cause: "checked_finalize() in ledger.sh requires forge pr-state strictly 'open'; the delivery convention (human-only policy) keeps PRs draft through the stamp, so every stamped run deadlocks at finalize. PR #170 fixed this (accept draft alongside open, record actual state) but merged into stacked parent feat/phase3-review-finalize after that parent landed via #169 \u2014 ec61612 is unreachable from origin/main, so the fix was lost. Re-land = cherry-pick 617a85a (red test), c8f15e0 (fix), a303da4+bea36c3 (sibling docs) adapted to the #174-hardened kernel."
-      repro_cmd: bash /tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/repro-draft-finalize.sh
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  fix:
-    head_sha: f64aab1989e986a86d7f2159846f0167b4e3e0e2
-    timestamp: '2026-08-19T15:03:34.084479+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      repro_exit: '0'
-      regression_test: test/test-ledger.sh
-    attested:
-      rationale: 'Re-applied PR #170''s F3 fix to the #174-hardened kernel: checked_finalize accepts pr-state open OR draft (actual state recorded in checked fields); merged/closed still refuse. Test adapted to batch-#8 sanitized flat mock filenames (old nested path would have fake-passed via the leftover ''none'' lookup). Docs siblings re-landed: finalize SKILL.md stale ''Known collision'' note replaced with draft-stamps-normally, verdict-token underscores in 21 reviewer-brief files.'
-      regression_test: test/test-ledger.sh
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  review:
-    head_sha: f1270e2d163da8709cc85984aada36db09847a45
-    timestamp: '2026-08-19T17:15:21.816853+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      lane_security_sha256: 4d9a2e58b268786f47f53e64d44fe1f954583bb69d409f1139fd66b12ac29c7b
-      lane_security_lines: '62'
-      lane_security_verdict: APPROVE
-      lane_security_model: claude-opus-5
-      lane_logic_sha256: 3d169025005f62e0b7f3acd7eb24b3f17be4046c3d2a6e460745789524d315db
-      lane_logic_lines: '67'
-      lane_logic_verdict: APPROVE
-      lane_logic_model: claude-opus-5
-      lane_tests_sha256: 61b08429f1b59709ecd40c3be10131e02afe0102973b2910747dab498fda6d59
-      lane_tests_lines: '81'
-      lane_tests_verdict: APPROVE
-      lane_tests_model: claude-opus-5
-      lane_style_sha256: 511b1d78ef3c5a0331e498e41551414c79baea0ed18a8390dc864127bdaafecb
-      lane_style_lines: '211'
-      lane_style_verdict: APPROVE
-      lane_style_model: claude-opus-5
-      review_floor: full
-      worktree_verify: pass
-    attested:
-      verdict: approve
-      review_profile: full
-      lanes: logic=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/logic-review.md,security=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/security-review.md,style=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/style-review.md,tests=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/tests-review.md,documentation=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/documentation-review.md
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  finalize:
-    head_sha: 7dadcea93e22e427e3194599b9db5374bf7303f1
-    timestamp: '2026-08-19T17:17:08.207276+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      snapshot_current: '1'
-      ci: green
-      pr_state: open
-      threads_resolved: 'yes'
-    attested:
-      post_mortem: not_applicable
-      describe_pr: in_pr_body
-      pr_number: '184'
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
+  status: pending
+  evidence: ''
+stamps: {}
 overrides: []
-branch: fix/reland-170-draft-finalize
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: 7dadcea93e22e427e3194599b9db5374bf7303f1
-verify_local:
-  head_sha: 7dadcea93e22e427e3194599b9db5374bf7303f1
-  passed: true
-  results:
-  - cmd: ./test/run-tests.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
-    exit: 0
+branch: feat/guard-rule3-tokenizer
+worktree: /Users/alexwelch/dotdev-worktrees/guard-rule3-tokenizer
