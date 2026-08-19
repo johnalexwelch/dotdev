@@ -64,7 +64,10 @@ hooks=("${resolved[@]}")
 # calling json_bash_jq(...) or json_bash(...) in test-guard-rules.sh.
 extract_from_tests() {
     local src="$SCRIPT_DIR/test-guard-rules.sh"
-    [ -f "$src" ] || { echo "cannot find $src" >&2; return 1; }
+    [ -f "$src" ] || {
+        echo "cannot find $src" >&2
+        return 1
+    }
     grep -E 'run_hook .*json_bash(_jq)? ' "$src" |
         sed -E 's/^.*json_bash(_jq)? "\$[A-Za-z_]+" //' |
         sed -E 's/\)"[[:space:]]*$//' |
