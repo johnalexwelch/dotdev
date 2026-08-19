@@ -6,13 +6,15 @@
 #
 # Requires: Claude Code CLI, gh CLI (authenticated), Chrome.
 
-set -uo pipefail
-
 # Stream Deck invokes scripts without an interactive shell — load deck config
-# from untracked ~/.streamdeck and pin PATH explicitly.
+# from untracked ~/.streamdeck and pin PATH explicitly. Sourced before
+# `set -u` so an unset reference in the hand-authored file degrades instead
+# of aborting.
 # shellcheck disable=SC1090
 [[ -f "$HOME/.streamdeck" ]] && source "$HOME/.streamdeck"
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+
+set -uo pipefail
 
 # Single status slot shared by all deck agent keys — last writer wins.
 # Private per-user $TMPDIR, not world-writable /tmp.
@@ -65,7 +67,10 @@ notify "Reviewing $SLUG…"
 
 # No --bare: your coding-a2a skills need plugin discovery.
 # dontAsk + an explicit allowlist: nothing outside this list can run.
+# --strict-mcp-config with no --mcp-config: user-scope MCP servers never
+# load — this review needs only gh/git, so fail closed on everything else.
 if claude -p "/coding-a2a:workflow-review $URL" \
+    --strict-mcp-config \
     --permission-mode dontAsk \
     --allowedTools "Read,Grep,Glob,Bash(gh pr view *),Bash(gh pr diff *),Bash(gh pr checks *),Bash(git diff *),Bash(git log *)" \
     --output-format json \

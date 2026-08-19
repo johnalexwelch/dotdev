@@ -77,16 +77,42 @@ elif case == "title_time_not_start":
     raw = "@@EVT@@Retro 09:30 recap\n    2026-08-19 at 14:00 - 15:00\n"
     parsed = nm.parse_events(raw, "work")
     assert parsed[0]["start"].hour == 14, parsed[0]["start"]
+elif case == "notify_passes_argv_not_source":
+    # Pins the RCE fix: a calendar title must travel as an argv element, never
+    # be interpolated into the AppleScript source. Reverting notify() to an
+    # f-string fails this. We capture the osascript argv instead of running it.
+    captured = {}
+    nm.subprocess.run = lambda cmd, **kw: captured.setdefault("cmd", cmd)
+    payload = 'x" & (do shell script "touch /tmp/pwned") & "'
+    nm.notify(payload, "Meeting")
+    cmd = captured["cmd"]
+    assert cmd[0] == "osascript", cmd
+    # The payload must appear verbatim as its own argv element after `--`,
+    # and must NOT be embedded inside any `-e` AppleScript source line.
+    assert payload in cmd, cmd
+    assert "--" in cmd and cmd.index(payload) > cmd.index("--"), cmd
+    assert not any(payload in part for part in cmd[: cmd.index("--")]), cmd
+elif case == "notes_time_no_start":
+    # An all-day event's notes ("agenda 09:00") must not fabricate a start —
+    # a truthy start would slip it past the all-day filter in all_events().
+    raw = "@@EVT@@All-hands OOO\n    2026-08-19\n    notes: agenda 09:00 intro, 10:30 demo\n"
+    parsed = nm.parse_events(raw, "work")
+    assert parsed[0]["start"] is None, parsed[0]["start"]
 elif case == "env_loader":
     import os
     from pathlib import Path
     (Path(os.environ["HOME"]) / ".streamdeck").write_text(
-        'export CAL_WORK="FromFile"\nCAL_PERSONAL=AlsoFromFile\n')
-    os.environ.pop("CAL_WORK", None)
-    os.environ.pop("CAL_PERSONAL", None)
+        'export CAL_WORK="FromFile"\n'
+        'CAL_PERSONAL=AlsoFromFile\n'
+        'export ICALBUDDY="/opt/x/icalBuddy"  # trailing comment\n'
+        'MEETING_DOCS=/bare/path.tsv  # comment on bare value\n')
+    for key in ("CAL_WORK", "CAL_PERSONAL", "ICALBUDDY", "MEETING_DOCS"):
+        os.environ.pop(key, None)
     nm._load_streamdeck_env()
     assert os.environ["CAL_WORK"] == "FromFile"
     assert os.environ["CAL_PERSONAL"] == "AlsoFromFile"
+    assert os.environ["ICALBUDDY"] == "/opt/x/icalBuddy", os.environ["ICALBUDDY"]
+    assert os.environ["MEETING_DOCS"] == "/bare/path.tsv", os.environ["MEETING_DOCS"]
 else:
     raise SystemExit(f"unknown case {case}")
 PYEOF
@@ -99,6 +125,8 @@ run_case "DOC_RE stays host-anchored" PYRUN doc_re_anchored
 run_case "map: '<> tom' does not false-match 'Custom Report Review'" PYRUN map_no_false_match
 run_case "personal events are masked and get no prep doc" PYRUN personal_masked
 run_case "time in title does not beat the datetime line" PYRUN title_time_not_start
+run_case "notify passes title as argv, never AppleScript source (RCE)" PYRUN notify_passes_argv_not_source
+run_case "time in notes does not give an all-day event a start" PYRUN notes_time_no_start
 run_case "streamdeck env loader fills unset CAL_* vars" PYRUN env_loader
 
 echo "next-meeting: $PASS passed, $FAIL failed"

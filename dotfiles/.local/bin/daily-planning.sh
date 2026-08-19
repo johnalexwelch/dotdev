@@ -8,14 +8,15 @@
 #
 # Requires: Sunsama desktop app, Claude Code CLI on PATH.
 
-set -uo pipefail
-
 # Stream Deck invokes scripts without an interactive shell, so ~/.zshrc (and
 # the env.zsh it sources) never runs. Load deck config from untracked
-# ~/.streamdeck and pin PATH explicitly.
+# ~/.streamdeck and pin PATH explicitly. Sourced before `set -u` so an unset
+# reference in the hand-authored file degrades instead of aborting.
 # shellcheck disable=SC1090
 [[ -f "$HOME/.streamdeck" ]] && source "$HOME/.streamdeck"
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH"
+
+set -uo pipefail
 
 REPO_DIR="${DOJO_REPO_DIR:-$HOME/dojo}" # any dir with your Claude setup
 OUT_DIR="$HOME/Documents/daily-briefs"
@@ -38,13 +39,23 @@ notify() {
 # --- 1. Start the triage agent in the background --------------------------
 # NOTE: no --bare. Bare mode skips skill/plugin discovery, which would make
 # /morning-triage unavailable. Slower startup is the price of your skills.
-# The digest reads attacker-authored text (email, Slack), so the agent runs
-# with mutating tools denied: prompt injection can at worst shape the digest,
-# never execute code or write files. MCP readers stay available.
+#
+# Confinement, fail-closed: the digest reads attacker-authored text (email,
+# Slack), so --strict-mcp-config keeps user-scope MCP servers (Gmail send,
+# Slack send, Drive share, Playwright exec, ...) from loading at all — only
+# servers named in the operator-authored triage config load (none when the
+# file is absent, so the digest degrades rather than gaining tools), and
+# --disallowedTools denies the built-in mutating tools. To give the digest
+# its readers, create ~/.config/streamdeck/triage-mcp.json naming ONLY
+# read-oriented servers.
+TRIAGE_MCP="$HOME/.config/streamdeck/triage-mcp.json"
+MCP_ARGS=(--strict-mcp-config)
+[[ -f "$TRIAGE_MCP" ]] && MCP_ARGS+=(--mcp-config "$TRIAGE_MCP")
 (
     echo "running" >"$STATUS_FILE"
     if cd "$REPO_DIR" 2>/dev/null && command -v claude >/dev/null 2>&1; then
         claude -p "/morning-triage" \
+            "${MCP_ARGS[@]}" \
             --permission-mode dontAsk \
             --disallowedTools "Bash,Write,Edit,NotebookEdit" \
             --output-format json \
@@ -68,7 +79,7 @@ notify() {
 
 # --- 2. Put you in Sunsama's daily planning view --------------------------
 open -a "Sunsama" || {
-    notify "Sunsama not installed"
+    notify "Sunsama not found — digest continues in the background"
     exit 1
 }
 sleep 1.2

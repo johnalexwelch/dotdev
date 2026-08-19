@@ -1,4 +1,5 @@
 #!/bin/bash
+set -uo pipefail
 # agent-status.sh
 # Prints one word: idle | running | done | failed
 # Point a Stateful Executor key at this with a 15s poll and set matchers on
