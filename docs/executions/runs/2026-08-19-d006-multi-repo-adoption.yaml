@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: docs
 budget: one-reviewer
 initialized_epoch: 1787171183
-status: active
-next: preflight
-updated: '2026-08-19T20:55:36.770975+00:00'
+status: done
+next: ''
+updated: '2026-08-19T20:55:45.379421+00:00'
 steps:
 - id: preflight
   required: true
@@ -71,7 +71,7 @@ overrides: []
 route: governance decision record|workflow-deliver|confirmed
 branch: docs/d006-multi-repo-adoption
 worktree: /Users/alexwelch/wt/dotdev/d006-multi-repo-adoption
-last_seen_sha: 9c631b500936a580c020403a2961682a24fe9d34
+last_seen_sha: a749769fa7b19e6bf2a260f623c880336e8b43fc
 verify_local:
   head_sha: 9c631b500936a580c020403a2961682a24fe9d34
   passed: true
