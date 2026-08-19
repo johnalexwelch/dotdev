@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152956
 status: active
 next: ''
-updated: '2026-08-19T15:57:33.722772+00:00'
+updated: '2026-08-19T16:07:28.397812+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: 'finalize stamped at 02eb394; PR #183 open non-draft, CI all green, verify-local PASS; NOT merged per work order'
 stamps:
   review:
-    head_sha: 66596c121373c4cb97143f336f73fb020367098f
-    timestamp: '2026-08-19T15:55:49.966999+00:00'
+    head_sha: 3952a170e042b7e2319d1e498e88bf7fbba6f2e0
+    timestamp: '2026-08-19T16:07:28.397608+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -44,7 +44,7 @@ stamps:
       verdict: approve
       review_profile: fast
       lanes: integrated=/tmp/integrated-review-v1seam.md
-      reviewed_sha: '0dca090 transferred: post-merge combined row re-evaluated, full eval 45/45=100% at merged wording; conflict resolution preserved both #180 escalation sentence and #183 signals'
+      reviewed_sha: '0dca090 transferred: post-#178-merge, three-dot scope unchanged (router+snapshot only), eval 45/45 at this wording'
     override:
       active: false
       reason: ''
@@ -70,7 +70,7 @@ stamps:
 overrides: []
 branch: fix/router-v1-vs-feature-seam
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
-last_seen_sha: fa9467505b72f1fa70b9a900f592e0e4db7f4c70
+last_seen_sha: 27fcf639e6e92e5b70570ddd2b4ff2929e112380
 verify_local:
   head_sha: fa9467505b72f1fa70b9a900f592e0e4db7f4c70
   passed: true
