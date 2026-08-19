@@ -141,7 +141,7 @@ If the PR has been open >24 hours or has accumulated >5 review comments:
 
 Gate: `ledger.sh stamp finalize --attest post_mortem=<...> describe_pr=<...> pr_number=<n>` — the kernel checks review-gate freshness, clean tree, a green `verify-local` record at HEAD, and (via `forge.sh`) CI green, PR state, and threads resolved; it resolves the PR itself and refuses a mismatched attested `pr_number`. A stamp that won't write means finalization isn't done — fix the reported failure, never hand-edit state.
 
-Draft PRs stamp normally: the forge check accepts `pr-state` of `open` or `draft` and records the actual state in the stamp's checked fields (Phase 3 review F3, resolved), so the `human-only` default path needs no override. `merged` and `closed` still refuse the stamp. Never mark a human-only PR ready just to change its state — the stamp does not require it.
+Draft PRs stamp normally: the forge check accepts `pr-state` of `open` or `draft` and records the actual state in the stamp's checked fields (Phase 3 review F3, resolved), so the `human-only` default path needs no override. Any other forge-reported state (`merged`, `closed`, an error) still refuses the stamp — though an already-merged or closed PR is usually invisible to the open-PR lookup and records `forge=no_pr` instead. Never mark a human-only PR ready just to change its state — the stamp does not require it.
 
 Then act per policy:
 
