@@ -73,6 +73,33 @@ jobs:
           cp -R "$GITHUB_WORKSPACE/dotdev" "$HOME/dotdev"
           cd "$HOME/dotdev"
           DRY_RUN=1 bash install.sh
+  finalize-stamp:
+    # D-006 Phase 5a — server-side finalize-stamp gate. Closes the auto-merge
+    # bypass observed on PR #167: server-side merges never consult the local
+    # merge-gate hook, so a PR could land without a fresh finalize stamp.
+    # NON-BLOCKING during the soak week: the check step carries
+    # continue-on-error, so failures are loud in the step summary but do not
+    # brick PRs. Planned flip (recorded follow-up, same pattern as
+    # routing-eval.yml): drop continue-on-error and mark the job required in
+    # branch protection after the soak week.
+    name: Finalize stamp
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # PR head, not the merge ref: stamp freshness is defined against the
+          # PR head; full history is needed for ancestry + diff-tree freshness.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Check finalize stamp (soak week — non-blocking)
+        continue-on-error: true
+        env:
+          # Passed via env, not inline interpolation: head refs are
+          # attacker-controlled text and must never be spliced into the script.
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: ./scripts/finalize-stamp-check.sh --base "$BASE_SHA" --head-ref "$HEAD_REF"
   secrets:
     name: Secret scan
     runs-on: ubuntu-latest

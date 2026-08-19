@@ -214,8 +214,10 @@ run_ledger "$repoC" check-snapshot finalize
 assert_status "stale overridden stamp exits 1" 1 "$STATUS"
 assert_contains "stale override says OVERRIDE_STALE with reason" "$OUT" "OVERRIDE_STALE"
 
+# A hex sha absent from history (all-zeros would YAML-parse as int 0 and hit
+# the schema check instead — a different, also-failing path).
 repoD=$(new_repo cs_bogus_sha)
-write_snapshot "$repoD" "0000000000000000000000000000000000000000"
+write_snapshot "$repoD" "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 commit_snapshot_only "$repoD"
 run_ledger "$repoD" check-snapshot finalize
 assert_status "stamp sha not in history exits 1" 1 "$STATUS"

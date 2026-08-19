@@ -25,6 +25,7 @@ ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [
 ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, fresh (see Freshness)
+ledger.sh check-snapshot <gate>   # CI mode: same check against the committed snapshot (no live state); used by the finalize-stamp CI job
 ledger.sh reconcile [--apply]     # ledger vs git ground truth; prints true frontier
 ledger.sh preflight --skill <name>
 ledger.sh review-floor [--base <ref>]   # prints fast|standard|full — the minimum profile; a path-pattern hit appends +security (floor is then at least standard, e.g. standard+security)

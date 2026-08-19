@@ -14,6 +14,7 @@
 #   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 #   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 #   ledger.sh check <gate>
+#   ledger.sh check-snapshot <gate>   (CI mode: committed snapshot, no live state)
 #   ledger.sh reconcile [--apply]
 #   ledger.sh preflight --skill <name>
 #   ledger.sh review-floor [--base <ref>]
@@ -1164,6 +1165,49 @@ cmd_check() {
     exit "$status"
 }
 
+# CI-side gate check against the COMMITTED snapshot — no live state required
+# (D-006 Phase 5a: server-side merge gates run on a fresh checkout where the
+# git-dir ledger does not exist). The snapshot is untrusted input here: the
+# state engine schema-validates it (malformed = exit 6, same as live state)
+# and freshness is the same content-verified fresh_since used by `check`, so
+# the freshness rule keeps a single implementation. Deliberately skips the
+# live-vs-snapshot drift comparison (`snapshot_match`) — there is no live
+# state to compare against on CI; drift detection stays a local concern.
+cmd_check_snapshot() {
+    [ $# -ge 1 ] || usage
+    local gate="$1" info status c_exists c_sha c_override c_reason
+    if [ ! -f "$SNAPSHOT" ]; then
+        echo "MISSING: no committed snapshot at $SNAPSHOT_REL"
+        exit 1
+    fi
+    LIVE="$SNAPSHOT"
+    info="$(py check_info "$gate")"
+    status=$?
+    [ "$status" -eq 0 ] || exit "$status"
+    c_exists="$(sed -n 's/^exists=//p' <<<"$info")"
+    c_sha="$(sed -n 's/^head_sha=//p' <<<"$info")"
+    c_override="$(sed -n 's/^override=//p' <<<"$info")"
+    c_reason="$(sed -n 's/^reason=//p' <<<"$info")"
+    if [ "$c_exists" != "1" ]; then
+        echo "MISSING: no '$gate' stamp in committed snapshot"
+        exit 1
+    fi
+    if ! fresh_since "$c_sha"; then
+        if [ "$c_override" = "1" ]; then
+            echo "OVERRIDE_STALE: override on '$gate' expired — non-ledger commits exist after its stamp ($c_sha); recorded reason: $c_reason"
+            exit 1
+        fi
+        echo "STALE: non-ledger commits exist after the '$gate' stamp ($c_sha)"
+        exit 1
+    fi
+    if [ "$c_override" = "1" ]; then
+        echo "OVERRIDDEN: $c_reason"
+        exit 0
+    fi
+    echo "OK: '$gate' snapshot stamp fresh at $c_sha"
+    exit 0
+}
+
 cmd_reconcile() {
     local apply=0
     while [ $# -gt 0 ]; do
@@ -1351,6 +1395,7 @@ main() {
         set) cmd_set "$@" ;;
         stamp) cmd_stamp "$@" ;;
         check) cmd_check "$@" ;;
+        check-snapshot) cmd_check_snapshot "$@" ;;
         reconcile) cmd_reconcile "$@" ;;
         preflight) cmd_preflight "$@" ;;
         review-floor) cmd_review_floor "$@" ;;
