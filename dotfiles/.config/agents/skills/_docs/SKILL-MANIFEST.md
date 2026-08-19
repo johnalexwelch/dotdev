@@ -36,7 +36,7 @@ Active skills:
 - `grill-with-docs`
 - `handoff`
 - `humanizer`
-- `humanizer-exec`
+- `humanizer-exec` *(tombstone redirect since 2026-08-19 — folded into `humanizer` exec mode, consolidation batch 2; directory removed once callers are rewired)*
 - `implement`
 - `improve-codebase-architecture`
 - `incident-retro`
@@ -64,7 +64,7 @@ Active skills:
 - `setup-worktree`
 - `slack-update`
 - `sql-review`
-- `stage-v1-concept`
+- `stage-v1-concept` *(tombstone redirect since 2026-08-19 — folded into `v1-workflow` Step 2.25, consolidation batch 2; directory removed once callers are rewired)*
 - `strategic-analysis-review`
 - `tdd`
 - `to-issues`

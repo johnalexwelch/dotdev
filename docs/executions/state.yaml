@@ -1,57 +1,57 @@
-run_id: 2026-08-19-planning-lane-consolidation
+run_id: 2026-08-19-skills-consolidation-batch2
 workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
-initialized_epoch: 1787152418
-status: done
+initialized_epoch: 1787152878
+status: active
 next: ''
-updated: '2026-08-19T16:30:09.908747+00:00'
+updated: '2026-08-19T16:38:05.306406+00:00'
 steps:
 - id: preflight
   required: true
   status: completed
-  evidence: 'WORKTREE_BASELINE_GATE verify PASS (descends from origin/main @2be79e6); evidence base re-verified in skill-invocations.log: design-plan 1, execute-phase 0, execute-prd 1; graphify: not_available_with_reason: no graphify-out/graph.json in repo; open-PR collision check: PR #179 (workflows.md route map) open -> workflows.md skipped for followup'
+  evidence: 'worktree cut from origin/main (WORKTREE_BASELINE_GATE: origin/main -> feat/skills-consolidation-batch2); required tools gh/git present; brief is the Alex-approved batch-2 list'
 - id: triage
   required: true
   status: completed
-  evidence: 'Alex-approved consolidation plan (2026-08-19) is the work item; acceptance criteria explicit in brief: to-prd migration mode, 2 tombstones, router rewire, caller rewires, golden check, decision-log+catalog; AFK-safe'
+  evidence: "5 items well-formed, Alex-approved per-item; conflict lane checked: planning-lane owns design-plan/execute-phase/to-prd/execute-prd/router refactor rows/reference-workflows.md \u2014 none touched by this batch"
 - id: implement
   required: true
   status: completed
-  evidence: "commit f8b910a: 27 files, +128/-430; to-prd migration mode, 2 tombstones, router rewire, 15 caller files rewired, lint exemptions, catalogs+decision-log; lint-skill-suite failures=0, lint-skill-refs dangling=0, routing-eval --dry-run green (44 cases, all routes present); tdd: not_applicable_with_reason: prose/markdown skill corpus change \u2014 determinism via lint suite + routing-eval dry-run, no executable behavior added"
+  evidence: "commit b77cc54: 16 files, +168/-819; herdr 673->162 total, humanizer exec-mode section, 3 tombstones (#164 pattern), callers rewired (workflow-executive-doc, grill-with-docs), catalog+decision-log updated; lint-skill-refs 0 dangling, lint-skill-suite failures=0, skills-index regenerated; tdd: not_applicable_with_reason: prose skill/docs change, no executable behavior \u2014 lints are the verification"
 - id: review
   required: true
   status: completed
-  evidence: 'round 2: 4/4 lanes APPROVE at 98ac025 (all opus, reviewed_sha match at dispatch); post-review merge of origin/main (aebf173) verified content-identical to reviewed diff excluding docs/executions/state.yaml bookkeeping (sorted +/- line-set diff empty); routing-eval dry-run green at 45 cases, lint failures=0 post-merge'
+  evidence: 'full profile, 4 opus lanes (security/logic/tests/style), 11 rounds, all APPROVE at a1171f0; 12 findings: 10 fixed, 2 deferred with named follow-ups'
 - id: qa
   required: true
   status: completed
-  evidence: "user-journey-qa trigger conditions absent: no frontend, no user-facing product behavior, no auth/navigation/payment flows \u2014 markdown skill corpus + lint/test change; skip-with-reason per workflow-deliver Step 5"
+  evidence: 'not applicable: prose-only skill markdown, no user-facing runtime behavior; lint/eval gate set is the verification'
 - id: finalize
   required: true
   status: completed
-  evidence: 'PR #186 open non-draft; stamp finalize at 68c6bdd (kernel: review freshness, clean tree, verify-local PASSED, forge state); do-not-merge per brief'
+  evidence: 'PR #188 non-draft, MERGEABLE; verify-local PASSED at fb04a2b; not merged per instruction'
 stamps:
   review:
-    head_sha: f55e96b94d5dbae46f46ffcab70d50e2e4bc65f7
-    timestamp: '2026-08-19T16:28:33.899201+00:00'
+    head_sha: c7ffbcb663942bb4c6515ad1b8343378a04c7c18
+    timestamp: '2026-08-19T16:36:28.460396+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: 1c1f79c3ee94f2c6bd2054479a30d5ce1e7f2e295f9100b0c94a089ae4623b0b
-      lane_security_lines: '45'
+      lane_security_sha256: d478681b107f2b30a8e4dfc68a646e7de1dbe2ad98de385978644c89d3452173
+      lane_security_lines: '231'
       lane_security_verdict: APPROVE
       lane_security_model: claude-opus-5[1m]
-      lane_logic_sha256: 29ffd19d965838f8384fc0f6450f919f3b74a427879433bd2507d19b34958939
-      lane_logic_lines: '60'
-      lane_logic_verdict: REQUEST_CHANGES
+      lane_logic_sha256: 053d4636d10d646d6ffbefb7eafee4d53904af38b9bd69abd38bb3962fd79106
+      lane_logic_lines: '121'
+      lane_logic_verdict: APPROVE
       lane_logic_model: claude-opus-5[1m]
-      lane_tests_sha256: da8a0ef9585e18c80f7c9a89db67635b9f848d0685d618e4ce7e0e3cd96937f1
-      lane_tests_lines: '192'
-      lane_tests_verdict: REQUEST_CHANGES
+      lane_tests_sha256: 725a846db1b66b2c9f3570c2b7232838aaf1348201bf112da486f5978b1249a5
+      lane_tests_lines: '58'
+      lane_tests_verdict: APPROVE
       lane_tests_model: claude-opus-5[1m]
-      lane_style_sha256: 9f8a6d6ac784bc066a5b4d5edc9de9a7a3e97fd44ac789fe4b9658e563901027
-      lane_style_lines: '84'
+      lane_style_sha256: 3e1a29f5e75457b5ecec8be1d5a5fb1f012becf22d3acacdbc0c0c4cf4953cc6
+      lane_style_lines: '91'
       lane_style_verdict: APPROVE
       lane_style_model: claude-opus-5[1m]
       review_floor: full
@@ -59,14 +59,14 @@ stamps:
     attested:
       verdict: approve
       review_profile: full
-      lanes: logic=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/logic-review.md,security=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/security-review.md,style=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/style-review.md,tests=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/tests-review.md
+      lanes: logic=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/logic-review.md,security=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/security-review.md,style=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/style-review.md,tests=/tmp/ledger-lanes-2026-08-19-skills-consolidation-batch2/tests-review.md
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
-    timestamp: '2026-08-19T16:30:09.908583+00:00'
+    head_sha: a97765e776e6f64828430e6e83b456766e78f85f
+    timestamp: '2026-08-19T16:38:05.306263+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -77,17 +77,17 @@ stamps:
     attested:
       post_mortem: not_applicable
       describe_pr: in_pr_body
-      pr_number: '186'
+      pr_number: '188'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-branch: feat/planning-lane-consolidation
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/planning-lane-consolidation
-last_seen_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
+branch: feat/skills-consolidation-batch2
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/skills-consolidation-batch2
+last_seen_sha: a97765e776e6f64828430e6e83b456766e78f85f
 verify_local:
-  head_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
+  head_sha: a97765e776e6f64828430e6e83b456766e78f85f
   passed: true
   results:
   - cmd: ./test/run-tests.sh
