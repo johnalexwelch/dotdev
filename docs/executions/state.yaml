@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: done
 next: ''
-updated: '2026-08-19T16:57:42.803041+00:00'
+updated: '2026-08-19T16:59:34.588691+00:00'
 steps:
 - id: diagnose
   required: true
@@ -103,18 +103,18 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
-    timestamp: '2026-08-19T16:05:28.830409+00:00'
+    head_sha: b4d18c259a16c1cd76f7753964438799bd90b1ad
+    timestamp: '2026-08-19T16:59:34.588353+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
       snapshot_current: '1'
       ci: green
-      pr_state: draft
+      pr_state: open
       threads_resolved: 'yes'
     attested:
-      post_mortem: 'not_applicable_with_reason: single-issue re-land; provenance and diagnosis recorded in _docs/decision-log.md F3-resolution entry and this run''s diagnose/fix stamps'
-      describe_pr: 'body_file=docs/executions/.pr-bodies/2026-08-19-pr-reland-170-draft-finalize.md; mode=issue_only; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason: no graph.json; applied_to_pr=true'
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
       pr_number: '184'
     override:
       active: false
@@ -123,9 +123,9 @@ stamps:
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: f0a92885e5a39c77d6a577d4a53dbdef621429be
+last_seen_sha: b4d18c259a16c1cd76f7753964438799bd90b1ad
 verify_local:
-  head_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
+  head_sha: b4d18c259a16c1cd76f7753964438799bd90b1ad
   passed: true
   results:
   - cmd: ./test/run-tests.sh
