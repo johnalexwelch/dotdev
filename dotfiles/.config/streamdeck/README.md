@@ -6,8 +6,10 @@ session (Aug 2026) around the actual calendar and agent workflows.
 The Stream Deck app's own data (`~/Library/Application Support/com.elgato.StreamDeck/`)
 is **not** stow-managed — profiles are built and maintained in the app.
 This directory documents the design and tracks the plugin set
-(`plugins.json`). The previous profiles here targeted a prior employer's
-stack and a 5-row device; they were removed — git history is the archive.
+(`plugins.json`); plugins install by name from the Stream Deck app's
+Marketplace pane. The previous profiles here targeted a prior employer's
+stack and a 5-row device; they were removed from the tree (note: they remain
+in git history, and this repo is public).
 
 ## Design principles (decided, don't re-litigate)
 
@@ -28,28 +30,50 @@ stack and a 5-row device; they were removed — git history is the archive.
 
 ## Scripts
 
-Deck-invoked scripts live in `dotfiles/.local/bin/` (stowed onto `$PATH`):
+> **Pending:** none of these files exist in the repo yet. They were authored
+> in the Cowork session and still need to be exported from it. Run
+> `next-meeting.py debug` first — its icalBuddy parsing was never run against
+> real output.
+
+Deck-invoked scripts will live in `~/.local/bin/` (stowed from
+`dotfiles/.local/bin/`, on `$PATH`):
 
 | Script | Does |
 |---|---|
 | `next-meeting.py` | `join` / `doc` / `both` / `debug` — reads icalBuddy, opens conference link and/or prep doc |
-| `meeting-docs.tsv` | meeting-title → prep-doc URL map (data file, sits next to the script) |
 | `daily-planning.sh` | fires `/morning-triage` headless, opens Sunsama planning view |
 | `pr-review-agent.sh` | reads frontmost Chrome tab, runs a read-only PR review agent |
 | `agent-status.sh` | prints agent state for the Stateful Executor polling key |
 
-> **Pending:** the script files were authored in the Cowork session and still
-> need to be exported from it into `dotfiles/.local/bin/`. Run
-> `next-meeting.py debug` first — its icalBuddy parsing was never run against
-> real output.
+`meeting-docs.tsv` (meeting-title → prep-doc URL map) contains internal
+meeting titles and doc URLs, and this repo is **public** — it stays
+untracked. Place it at `~/.config/streamdeck/meeting-docs.tsv` (a
+`.gitignore` entry guards the repo-side path against accidental commits).
+
+## Environment variables
+
+Set in `dotfiles/.config/zsh/configs/env.zsh`:
+
+- `DOJO_REPO_DIR` — repo the deck's agent scripts (`pr-review-agent.sh`,
+  `daily-planning.sh`) run against.
+- `DOJO_NOTES_DIR` — Obsidian vault where prep docs land (aliases
+  `BRAIN_VAULT`).
+
+`CAL_WORK` / `CAL_PERSONAL` (icalBuddy calendar names) are host-specific and
+may reveal account addresses, so they live in untracked `~/.streamdeck`,
+sourced by env.zsh's credential loop.
 
 ## Calendar source
 
 icalBuddy reads Calendar.app's local store. Google accounts get enabled as a
 background mirror in **System Settings → Internet Accounts → Google →
-Calendars**; Calendar.app itself is never opened. After enabling, fill
-`CAL_WORK` / `CAL_PERSONAL` in `dotfiles/.config/zsh/configs/env.zsh` using
-names from `icalBuddy calendars`.
+Calendars**; Calendar.app itself is never opened. After enabling, list names
+with `icalBuddy calendars` and write them to `~/.streamdeck`:
+
+```sh
+export CAL_WORK="<work calendar name>"
+export CAL_PERSONAL="<personal calendar name>"
+```
 
 ## Permissions (TCC)
 

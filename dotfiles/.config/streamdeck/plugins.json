@@ -1,6 +1,6 @@
 {
   "device": "Stream Deck MK.2 (15-key, 3x5)",
-  "note": "Documentation of plugin state, not consumed by the Stream Deck app. Live app data lives in ~/Library/Application Support/com.elgato.StreamDeck/ and is not stow-managed.",
+  "note": "Documentation of plugin state, not consumed by the Stream Deck app. Live app data lives in ~/Library/Application Support/com.elgato.StreamDeck/ and is not stow-managed. Stock bundled plugins (e.g. com.elgato.tutorial) are omitted. All plugins install by name from the Stream Deck app's Marketplace pane.",
   "installed_plugins": [
     {
       "name": "Zoom Plugin",
