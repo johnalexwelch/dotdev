@@ -83,6 +83,7 @@ present); rules 2/2b and 3 fire everywhere.
 | **Guard rule 2 (+2b) — script-owned files** | Direct Edit/Write to `state.yaml` (live or snapshot) or `.worktree-baseline.*.state` sidecars → blocked | None — use `ledger.sh` / `worktree-baseline.sh`; the files are the kernel's, not yours |
 | **Guard rule 3 — stderr suppression** | `2>/dev/null` (or `&>`) attached to a mutating `git`/`gh`/`tea`/`git-forge` segment → blocked | None — re-run without suppression; failures must be visible |
 | **Guard rule 4 — entry enforcement** | Tracked-code edit with no active ledger run → warn (`LEDGER_ENTRY_ENFORCE=block` escalates to exit 2) | Enter the system: route via `workflow-router` / `ledger.sh init` |
+| **Ledger `init` — route evidence** | `init` without `--route "<classification>\|<selected-flow>\|confirmed"` → WARNING (`LEDGER_REQUIRE_ROUTE=block` escalates to exit 11); a malformed route is schema-invalid (exit 6) | None by override — pass `--route` from the confirmed ROUTE_CARD (`workflow-router` does this at ledger-persist) |
 | **Ledger `diagnose`** (kind=bug) | `stamp diagnose` refuses unless `repro_cmd` runs now and exits non-zero (captured) | `--override --reason` for irreproducible bugs, user-instructed |
 | **Ledger `fix`** (kind=bug) | `stamp fix` refuses unless the same repro now exits 0 and a regression test exists | `--override --reason`, user-instructed |
 | **Ledger `review`** | `stamp review` refuses unless: worktree verifies, chosen profile ≥ `review-floor`, every lane file exists (run-scoped path, fresh mtime) with `verdict:` line, per-lane model ≥ floor | `--override --reason`, user-instructed; escalating above floor is always legal |
@@ -97,7 +98,7 @@ its golden set). Representative lanes:
 
 - **Ambiguous feature idea** → `workflow-feature` (default planning-tier entry; `wayfinder` only for efforts too big/foggy for a single session)
 - **V1 product idea** → `v1-workflow` (gated pipeline; owns grill → design → issues)
-- **Refactor-scale / migration** → `design-plan` → `execute-phase` — a specialized lane, never the default product flow
+- **Refactor-scale / migration** → `to-prd` (migration mode) → `to-issues` → `triage` → `execute-prd` — a specialized lane, never the default product flow
 - **Repo evidence** → `repo-audit`, findings routed onward (roadmap / to-prd / to-issues) — never a standalone loop
 - **Roadmap / sequencing** → `workflow-roadmap`
 - **Review-only requests** → `workflow-review` (code) or the artifact-specific adapters (`sql-review`, `clarity-review`, …)
@@ -110,6 +111,10 @@ its golden set). Representative lanes:
 - `workflow-build-one` and `workflow-debug` → **`workflow-deliver`** with
   `kind=feature` / `kind=bug` (D-006 #11). The router carries legacy-name
   redirect rows; any doc or prompt naming the old skills means deliver.
+- `design-plan` → **`to-prd` migration mode**; `execute-phase` →
+  **`execute-prd`** against the migration-mode parent tree (a lone slice is
+  `workflow-deliver`). D-006 planning-lane consolidation, 2026-08-19; the
+  router carries legacy-name redirect rows for both.
 - The **"Audit Loop"** is not a routable workflow. The router owns the
   translation rule (`workflow-router/SKILL.md` § Audit Loop Retirement Rule).
 - Prose gate blocks (`WORKFLOW_REVIEW_GATE`, `WORKFLOW_FINALIZE_GATE`) are

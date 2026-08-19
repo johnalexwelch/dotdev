@@ -74,12 +74,15 @@ Claude: [preflight: branch feat/phase-1-dark-mode, no PR exists]
 
 ## Larger Delivery Loop
 
+Refactor-scale lane (D-006 planning-lane consolidation, 2026-08-19; the
+`/design-plan` → `/execute-phase` pair it replaces is retired):
+
 ```text
 /repo-audit (optional)
      |
-/design-plan (audit OR brief mode)
+/to-prd (migration mode) -> /to-issues -> /triage
      |
-/execute-phase ({refactor,fix,feat}/phase-* branches)
+/execute-prd (per-child worktrees via workflow-deliver)
      |
 /workflow-review (risk-sized independent review evidence)
      |

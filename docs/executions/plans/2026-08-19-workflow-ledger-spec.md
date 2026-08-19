@@ -34,6 +34,7 @@ updated: <ISO-8601>
 steps:
   - {id: <step>, required: true|false, status: pending|active|completed|skipped|blocked|failed, evidence: ""}
 tdd: {decision: ran|not_applicable, evidence: ""}   # optional until set
+route: <classification>|<selected-flow>|confirmed   # optional (Phase 5b): route evidence from workflow-router's confirmed ROUTE_CARD; malformed → exit 6
 stamps:
   <gate>:                                # gate ∈ diagnose|fix|review|finalize
     head_sha: <sha>
@@ -50,10 +51,11 @@ overrides: []                            # audit trail of every --override
 
 Exit 10 (added by the R1/R2 batch, item #2) is environment breakage — no python3 with PyYAML, a misconfigured `LEDGER_PYTHON`, not inside a git repo, git HEAD/snapshot-commit failures — distinct from gate-unmet exit 1 so the merge-gate hook warn-permits it (with 6 and 9) instead of blocking as if the gate were unmet.
 
-### `ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>]`
+### `ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--route "<classification>|<selected-flow>|confirmed"]`
 
 - Creates live state, all steps `pending`; `kind: bug` MUST auto-insert required `diagnose` and `fix` steps if absent from `--steps`.
 - Writes + commits the snapshot. Exit 0. Existing `status: active` run → exit 7 (refuse; `--force` overwrites with an `overrides[]` audit entry).
+- **Route evidence (Phase 5b).** `--route` records the top-level `route:` field. Absent → init succeeds but MUST print `WARNING: no route evidence — invoke workflow-router`; `LEDGER_REQUIRE_ROUTE=block` escalates absence to exit 11, no write (same warn-then-flip pattern as `LEDGER_ENTRY_ENFORCE`). Malformed route (not three pipe-separated segments ending in literal `confirmed`) → exit 6, no write — enforced at init and by schema validation on every load.
 
 ### `ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]`
 

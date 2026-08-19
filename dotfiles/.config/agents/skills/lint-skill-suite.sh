@@ -77,10 +77,11 @@ contract_has_field() {
 needs_ledger() {
     case "$1" in
         workflow-ledger) return 1 ;; # kernel library, not an orchestrator (D-006 #12)
-        # Tombstone redirects to workflow-deliver (D-006 #11, Phase 2) — no steps
-        # to ledger. Remove these lines when Phase 4/5 deletes the directories.
-        workflow-build-one | workflow-debug) return 1 ;;
-        workflow-* | run-backlog | watch-ci | execute-prd | execute-phase) return 0 ;;
+        # Tombstone redirects (D-006 #11 Phase 2; planning-lane consolidation
+        # 2026-08-19) — no steps to ledger. Remove these lines when the later
+        # sweep deletes the directories.
+        workflow-build-one | workflow-debug | execute-phase) return 1 ;;
+        workflow-* | run-backlog | watch-ci | execute-prd) return 0 ;;
         *) return 1 ;;
     esac
 }
@@ -145,13 +146,17 @@ while IFS= read -r -d '' file; do
         fail "$skill lacks WORKFLOW_STEPS ledger"
     fi
 
-    # The needs_ledger tombstone exemption is valid only while these stay
-    # tombstones — a revived skill under either name must not silently escape
-    # the WORKFLOW_STEPS check (D-006 #11, Phase 2).
+    # Tombstone invariant: these names must stay disabled tombstones
+    # (D-006 #11 Phase 2; planning-lane consolidation 2026-08-19).
+    # workflow-build-one/workflow-debug/execute-phase also guard a
+    # needs_ledger exemption above; design-plan guards only the tombstone
+    # itself (it was never a ledgered orchestrator). The value is asserted,
+    # not just the key — `disable-model-invocation: false` would otherwise
+    # revive a tombstone while it still skips every check.
     case "$skill" in
-        workflow-build-one | workflow-debug)
-            if ! has_frontmatter_key "$file" disable-model-invocation; then
-                fail "$skill is exempted as a tombstone but lacks disable-model-invocation (revived? remove the needs_ledger exemption and restore WORKFLOW_STEPS)"
+        workflow-build-one | workflow-debug | execute-phase | design-plan)
+            if [ "$(frontmatter_value "$file" disable-model-invocation)" != "true" ]; then
+                fail "$skill is a tombstone but disable-model-invocation is not 'true' (revived? restore its full contract; ledgered orchestrators also need WORKFLOW_STEPS restored and the needs_ledger exemption removed)"
             fi
             ;;
     esac

@@ -39,13 +39,24 @@ Alex-approved per-item (2026-08-19). Evidence: `~/.claude/logs/skill-invocations
 | `deep-research` | Kept; description now names the engine boundary vs `meta-skills:deep-research` (Claude-native AFK web research vs OpenAI Deep Research API) | Resolved 2026-08-19 (seam sentence) |
 | `decision-memo` / `workflow-executive-doc` | Both kept; mirror seam sentences added (single decision → one-pager vs full memos/board docs); exec-doc polish step now explicitly runs `humanizer` exec mode and its decision sections compose `decision-memo` | Resolved 2026-08-19 (seam sentences) |
 
+### Planning-Lane Consolidation (Status: Resolved 2026-08-19)
+
+Executed per the D-006 planning-lane consolidation decision (Alex approval 2026-08-19; corrected-audit-rule preconditions met: invocation history greped 2026-08-19 — `design-plan` 1 invocation (2026-07-20), `execute-phase` 0, `execute-prd` 1 (2026-07-31) over the log's full span; replacement coverage stated below; rollback = tombstone revert, directories kept):
+
+| Skill | Successor | Rationale | Status |
+|-------|-----------|-----------|--------|
+| `design-plan` | `to-prd` migration mode | Two parallel planning formalisms (phased plan file vs. PRD + issue tree) for one job; post-#168 all slices route through `workflow-deliver`, so the distinct value (FIND-NN/REQ-NN anchors, phased sequencing, pilot/canary, rollback, sync gates) moved into `to-prd` as migration-mode deltas | Tombstone redirect 2026-08-19; directory (incl. `references/`) removed in a later sweep |
+| `execute-phase` | `execute-prd` (tree) / `workflow-deliver` (single slice) | Phase runner duplicated `execute-prd`'s dependency orchestration at a different altitude; zero invocations over the full log span | Tombstone redirect 2026-08-19; `references/` kept behind the tombstone for historical `.phase-runs/` artifact formats |
+
+`execute-prd` retained: it orchestrates dependency-ordered issue trees *above* the `workflow-deliver` unit loop — a different altitude, not a duplicate. An `execute-prd`/`run-backlog` merge is deferred pending boundary-confusion evidence.
+
 ### Consolidation Opportunities (Exploratory)
 
 These are **not** deprecated but may benefit from closer collaboration or refactoring:
 
 | Skill Group | Observation | Next Step |
 |-------------|-------------|----------|
-| Decision documentation | `decision-log` (log decisions) vs. `decision-memo` (shape for exec) vs. `design-plan` (roadmap-level decisions) | Partially resolved 2026-08-19 (batch 2): decision-memo ↔ workflow-executive-doc seam recorded in both descriptions. Remaining: is design-plan decision output always logged? |
+| Decision documentation | `decision-log` (log decisions) vs. `decision-memo` (shape for exec) | Partially resolved 2026-08-19 (batch 2): decision-memo ↔ workflow-executive-doc seam recorded in both descriptions. Remaining: is decision-memo always a follow-up to decision-log? (`design-plan` removed from this group — consolidated into `to-prd` migration mode 2026-08-19, see the Planning-Lane Consolidation table above) |
 | Audit/investigation | `repo-audit` (codebase evidence) vs. `improve-codebase-architecture` (deepening opportunities) vs. `deep-dive-review` (4-lens daily AFK) | Clarify entry points: when should each be invoked? Do they have non-overlapping gates? |
 | Council workflows | `analysis-council`, `metric-council`, `vendor-council`, `worldbuilding-council` (if future) | Common scaffold (council-scaffolding), but each domain has specific pressure scenarios. Current design is sound; monitor for shared-rule emergence. |
 | Product planning | `workflow-feature` (ambiguous idea → issues) vs. `workflow-roadmap` (multi-area sequencing) vs. `v1-workflow` (V1 full pipeline) | Clarify: does v1-workflow always use workflow-roadmap as step 3b, or is there a faster path? |
