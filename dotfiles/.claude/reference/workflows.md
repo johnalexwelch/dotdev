@@ -57,10 +57,10 @@ routing, so a misroute is recoverable (re-init `--kind bug`), not fatal.
 
 ## Three layers (D-006 #12)
 
-Every skill on this map's delivery spine carries a `layer:` tag (tagging is
-staged — touched skills first, per the D-006 Track C decision; untagged skills
-get a lint warn, tagged-but-violating skills a lint error from
-`lint-skill-suite.sh`). Determinism means something different at each altitude:
+Skills are being `layer:`-tagged incrementally (staged rollout — touched
+skills first, per the D-006 Track C decision; untagged skills get a lint warn,
+tagged-but-violating skills a lint error from `lint-skill-suite.sh`).
+Determinism means something different at each altitude:
 
 | Layer | Determinism comes from | Example skills |
 |---|---|---|
