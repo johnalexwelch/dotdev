@@ -90,9 +90,13 @@ jobs:
     #      refuse the warn-permit when LEDGER_PYTHON is set, or accept
     #      annotated-green explicitly.
     #   2. Self-graded gate: checker, kernel, AND this workflow file all come
-    #      from the PR head. Pin them outside PR control (base-ref script via
-    #      FINALIZE_CHECK_LEDGER_SH, reusable workflow or CODEOWNERS on
-    #      .github/workflows/**) before the check is load-bearing.
+    #      from the PR head, so a PR can grade itself. All three need pinning
+    #      outside PR control before the check is load-bearing, and they need
+    #      DIFFERENT mechanisms: FINALIZE_CHECK_LEDGER_SH pins only the kernel
+    #      (it sets LEDGER_SH); the checker itself must be run from a base-ref
+    #      copy (e.g. `git show origin/main:scripts/finalize-stamp-check.sh`),
+    #      and the workflow needs a reusable-workflow call from a base-pinned
+    #      caller or CODEOWNERS on .github/workflows/**.
     name: Finalize stamp
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'

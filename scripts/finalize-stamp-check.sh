@@ -30,8 +30,11 @@
 # merge-gate hook's posture (D-006 #5) — infra breakage is not a verdict.
 #
 # Usage: finalize-stamp-check.sh --base <ref-or-sha> [--head-ref <branch>]
-# Env:   FINALIZE_CHECK_LEDGER_SH — override the ledger.sh path (test seam;
-#        defaults to the repo-relative kernel next to this script).
+# Env:   FINALIZE_CHECK_LEDGER_SH — override the ledger.sh path. Test seam
+#        today; at the required-flip it also becomes the production seam for
+#        running a base-ref kernel. It pins ONLY the kernel — pinning this
+#        script and the workflow file needs separate mechanisms (see the
+#        flip preconditions in .github/workflows/ci.yml).
 # Exit codes:
 #   0  pass (stamp fresh, overridden, exempt-with-note, or kernel
 #      environment breakage warn-permitted with an ERROR note)
@@ -157,9 +160,9 @@ status=$?
 # resolver chatter) merged into $out must not break the match (security S2).
 verdict_line="$(printf '%s\n' "$out" | tail -n 1)"
 # $out is kernel output that interpolates untrusted snapshot text; collapse
-# newlines before any log/annotation write so it can never smuggle a forged
-# verdict line or a GitHub workflow command (::stop-commands::) into the
-# audit surface (security S6).
+# newlines AND carriage returns before any log/annotation write so it can
+# never smuggle a forged verdict line or a GitHub workflow command
+# (::stop-commands::) into the audit surface (security S6).
 out_1line="$(printf '%s' "$out" | tr '\n\r' '  ')"
 
 if [ "$status" -eq 0 ]; then
