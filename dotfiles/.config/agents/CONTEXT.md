@@ -34,10 +34,12 @@ worktree cut from a resolved base ref (never the primary checkout or local
 **Delivery Policy** (`REPO_DELIVERY_POLICY`): the repo-level rules a workflow
 must follow when shipping change — review profile, PR sizing, finalize gate.
 
-**State Cockpit** (`docs/executions/state.yaml`): the single machine-readable
-record of the active run, letting any agent resume where a prior session
-stopped. Schema owned by `_docs/state-cockpit.md`; do not duplicate it inline
-in skills.
+**State Cockpit** (workflow-ledger run state: git-dir live state plus the
+committed per-run snapshot `docs/executions/runs/<run_id>.yaml`): the single
+machine-readable record of the active run, letting any agent resume where a
+prior session stopped. Owned by `workflow-ledger`; do not duplicate its schema
+inline in skills. (`docs/executions/state.yaml` is the frozen pre-2026-08-19
+legacy record.)
 
 ## Relationships
 

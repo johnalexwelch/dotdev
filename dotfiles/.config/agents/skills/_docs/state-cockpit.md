@@ -1,6 +1,10 @@
-# State Cockpit — `docs/executions/state.yaml`
+# State Cockpit — `docs/executions/state.yaml` (legacy path)
 
 > Superseded by `workflow-ledger` (D-006); kept as a pointer until chain skills rewire (Phases 1–4).
+> 2026-08-19: the committed snapshot moved to per-run files at
+> `docs/executions/runs/<run_id>.yaml` (parallel worktrees did collide — see the
+> ponytail note below). `docs/executions/state.yaml` is now a frozen historical
+> record; everything below describes the pre-migration shape.
 
 Single machine-readable record of the active workflow run. Lets any agent
 resume exactly where a prior session stopped without replaying the transcript.

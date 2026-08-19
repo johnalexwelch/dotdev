@@ -18,7 +18,8 @@ Non-goals for Phase 0: HMAC signing, routing evals (Track B), any SKILL.md edits
 ## State model (D-006 #19)
 
 - **Live state**: `$(git rev-parse --git-dir)/ledger/state.yaml` — survives `reset --hard`/checkout; per-worktree automatically (worktree git-dirs are `.git/worktrees/<name>/`).
-- **Committed snapshot**: `docs/executions/state.yaml`, written **only** by `stamp` (and `init`/`close`), then committed `chore(ledger): <action> <target>`. Reviewers/PRs read this; `check` reads live state.
+- **Committed snapshot (per-run, 2026-08-19 addendum)**: `docs/executions/runs/<run_id>.yaml`, written **only** by `stamp` (and `init`/`close`), then committed `chore(ledger): <action> <target>`. Reviewers/PRs read this; `check` reads live state. One file per run: two concurrent runs never commit a shared path, so the cross-PR merge-conflict class on the old single snapshot (#167 twice, #174, #180, #181 within 24h — each forcing a keep-ours resolution plus a full restamp ceremony) is structurally impossible. The `run_id` doubles as the tracked filename, so `init` refuses path-hostile run_ids (separators, traversal, whitespace, hidden/empty → exit 6).
+- **Legacy record**: `docs/executions/state.yaml` (the pre-addendum shared snapshot) is frozen history — never written, read, or trusted by new runs, and it satisfies no gate. A tracked pointer replacement was weighed and rejected: any tracked file rewritten by every `init` re-creates the exact cross-PR conflict this addendum removes; locally the live state already carries `run_id`, and in CI the PR diff names the run file.
 - All writes schema-validated (python3 + yaml, as in `_docs/state-cockpit.md` self-check). A corrupt live file is exit 6, never silently rewritten.
 
 ### Schema
@@ -76,7 +77,7 @@ Transition rules (each MUST have a red test):
 
 ### `ledger.sh check <gate>`
 
-- Exit 0 iff: stamp exists AND (all checked passed OR override active) AND fresh: every commit after `head_sha` touches ONLY the snapshot file, verified by `git diff-tree` contents — never by commit subject (R1 MF1 content-verified refinement of D-006 #4; the stamp's own snapshot commit is the only exempt shape).
+- Exit 0 iff: stamp exists AND (all checked passed OR override active) AND fresh: every commit after `head_sha` touches ONLY the run's **own** snapshot file (`docs/executions/runs/<run_id>.yaml`), verified by `git diff-tree` contents — never by commit subject (R1 MF1 content-verified refinement of D-006 #4; the stamp's own snapshot commit is the only exempt shape). A commit touching a *different* run's file, or the legacy shared `state.yaml`, is NOT exempt and reads STALE.
 - Any commit after stamp → exit 1 `STALE`; missing stamp → exit 1 `MISSING`; fresh override → exit 0 but prints `OVERRIDDEN: <reason>`. A **stale** override → exit 1 `OVERRIDE_STALE: … recorded reason: <reason>` — freshness applies to overridden stamps too; the distinct prefix tells the operator a previously-authorized bypass expired rather than never existed.
 
 ### `ledger.sh reconcile [--apply]`
@@ -137,6 +138,11 @@ The mechanism is not what decides it: `eval "$CMD" 2>/dev/null` fails open while
 Unreachable because the suppressed segment is **not distinguishable by segmentation**: `./deploy.sh 2>/dev/null` (must block) and `bash test.sh 2>/dev/null && git push origin main` (must permit, batch #1) are both a suppressed, non-mutating-looking segment. Whether the suppressed command is bound to a mutation lives outside the command text — in a file, or a previously-defined alias — so no predicate over this text can see it. Narrower shapes *are* separable: a function defined and invoked in the same command can be caught by a scoped carrier (verified by the style lane), but that is one more carrier with the usual batch-#1 cost and it leaves the general class open. Closing this properly needs a tokenizer that tracks redirection scope. The load-bearing controls are the stamps and freshness rules, which do not depend on rule 3.
 4. **Entry enforcement — warn only in Phase 0** (PreToolUse Edit|Write, exit 0 + stderr): tracked-code file edit in a repo with `docs/executions/` and no live `status: active` run → warn "no active run — route via workflow-router or ledger.sh init". Escalation to exit 2 is a Phase 5 flip behind `LEDGER_ENTRY_ENFORCE=block`. Never fires on untracked files, non-opted-in repos, or `docs/executions/**` itself.
 
+### `ledger.sh check-snapshot <gate> [--file <path>]` (per-run addendum)
+
+- CI-mode verdict against a committed per-run snapshot. Resolution order: explicit `--file` (the CI script passes candidates from the PR diff) → the live run's file when live state exists → exactly one `docs/executions/runs/*.yaml` (zero → exit 1 `MISSING`; several → exit 1 asking for `--file`).
+- `scripts/finalize-stamp-check.sh` discovers candidates as the `docs/executions/runs/*.yaml` files changed vs the PR base (existing at HEAD) and passes iff at least one carries a fresh finalize stamp — a superseded force-re-init sibling may legitimately be stale. Zero candidates on a non-exempt diff is a FAIL. Kernel exit 10 keeps its warn-permit posture through the candidate loop.
+
 ## Test requirements (red-first; tmp-git-repo harness per `test/test-worktree-baseline.sh`)
 
 - Every exit code above has at least one asserting test (happy + refusal per subcommand).
@@ -147,6 +153,7 @@ Unreachable because the suppressed segment is **not distinguishable by segmentat
 - forge: mock-mode tests for all three ops on both forge types; `detect` on three remote shapes.
 - Hooks: run `workflow-guard.sh` with synthesized hook JSON on stdin; assert exit codes + messages for all 4 rules, including the entry-warn non-blocking behavior and the merge-gate pass-through when `check finalize` succeeds.
 - Tests MUST NOT touch network, `$HOME` state, or the real skills root (use `SKILLS_ROOT` env override in `preflight`).
+- Per-run snapshots (2026-08-19 addendum): init writes only `runs/<run_id>.yaml` (commit touches exactly that path; legacy `state.yaml` untouched, byte-identical when pre-existing); a commit touching a different run's file is STALE; two concurrent runs in two worktrees merge into the same base with no conflict; `check-snapshot --file` / single-file / multi-file resolution each asserted; `finalize-stamp-check.sh` candidate discovery (fresh candidate passes, stale sibling tolerated, zero candidates fails, legacy-shape `state.yaml` satisfies nothing); guard rule 2 blocks `docs/executions/runs/*.y(a)ml`; `worktree-baseline.sh cut` absolutizes a relative `--path`.
 
 ## R1/R2 should-fix batch (PR #160 review follow-ups)
 

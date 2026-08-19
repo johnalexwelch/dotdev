@@ -131,13 +131,21 @@ gh pr list --state merged --search "merged:>=$SINCE" --json number,headRefName \
             echo "PR #$pr: head unfetchable"
             continue
         }
-        git show "$(git rev-parse FETCH_HEAD):docs/executions/state.yaml" 2>/dev/null |
-            "${LEDGER_PYTHON:-python3}" -c '
+        # Per-run snapshots (2026-08-19): the PR's run files are the
+        # docs/executions/runs/*.yaml it changed vs its base. Pre-migration
+        # PRs fall back to the legacy shared state.yaml.
+        head_sha=$(git rev-parse FETCH_HEAD)
+        base_sha=$(git merge-base "$head_sha" origin/main)
+        run_files=$(git diff --name-only "$base_sha" "$head_sha" -- 'docs/executions/runs/*.yaml' 'docs/executions/runs/*.yml')
+        [ -n "$run_files" ] || run_files="docs/executions/state.yaml"
+        for f in $run_files; do
+            git show "$head_sha:$f" 2>/dev/null |
+                "${LEDGER_PYTHON:-python3}" -c '
 import sys, yaml
 pr = sys.argv[1]
 doc = yaml.safe_load(sys.stdin) or {}
 stamps = doc.get("stamps") or {}
-print(f"PR #{pr}:", "stamped" if "finalize" in stamps else "UNSTAMPED")
+print(f"PR #{pr} [{sys.argv[2]}]:", "stamped" if "finalize" in stamps else "UNSTAMPED")
 print(f"PR #{pr} route:", doc.get("route") or "ABSENT")
 for e in doc.get("overrides") or []:
     print(f"PR #{pr} overrides[]:", e)
@@ -145,7 +153,8 @@ for gate, s in stamps.items():
     o = (s or {}).get("override") or {}
     if o.get("active"):
         print(f"PR #{pr} {gate} override:", o.get("reason", ""))
-' "$pr"
+' "$pr" "$f"
+        done
     done
 ```
 

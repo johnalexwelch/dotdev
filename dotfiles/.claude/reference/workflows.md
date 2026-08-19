@@ -80,7 +80,7 @@ present); rules 2/2b and 3 fire everywhere.
 | Gate | Trigger | Escape |
 |---|---|---|
 | **Guard rule 1 — merge gate** | Any merge shape (`gh pr merge\|ready`, `tea`/`git-forge` merge, curl `/pulls/*/merge`) without a fresh finalize stamp → exit 2 | `stamp finalize --override --reason` on explicit user instruction; a broken kernel warns-and-permits (never bricks delivery) |
-| **Guard rule 2 (+2b) — script-owned files** | Direct Edit/Write to `state.yaml` (live or snapshot) or `.worktree-baseline.*.state` sidecars → blocked | None — use `ledger.sh` / `worktree-baseline.sh`; the files are the kernel's, not yours |
+| **Guard rule 2 (+2b) — script-owned files** | Direct Edit/Write to ledger state (git-dir live state, per-run snapshots `docs/executions/runs/*.yaml`, legacy `state.yaml`) or `.worktree-baseline.*.state` sidecars → blocked | None — use `ledger.sh` / `worktree-baseline.sh`; the files are the kernel's, not yours |
 | **Guard rule 3 — stderr suppression** | `2>/dev/null` (or `&>`) attached to a mutating `git`/`gh`/`tea`/`git-forge` segment → blocked | None — re-run without suppression; failures must be visible |
 | **Guard rule 4 — entry enforcement** | Tracked-code edit with no active ledger run → warn (`LEDGER_ENTRY_ENFORCE=block` escalates to exit 2) | Enter the system: route via `workflow-router` / `ledger.sh init` |
 | **Ledger `init` — route evidence** | `init` without `--route "<classification>\|<selected-flow>\|confirmed"` → WARNING (`LEDGER_REQUIRE_ROUTE=block` escalates to exit 11); a malformed route is schema-invalid (exit 6) | None by override — pass `--route` from the confirmed ROUTE_CARD (`workflow-router` does this at ledger-persist) |
