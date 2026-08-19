@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: feature
 budget: multi-lane
 initialized_epoch: 1787157126
-status: active
-next: finalize
-updated: '2026-08-19T19:03:16.895283+00:00'
+status: done
+next: ''
+updated: '2026-08-19T19:03:35.077984+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: "user-journey-qa not applicable: kernel/CI/hook tooling change, no user-facing surface or frontend code \u2014 trigger conditions absent"
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'finalize stamped at c7665c4: review fresh, tree clean, verify-local green, forge CI green / PR #191 open / threads resolved; PR left unmerged per instruction'
 stamps:
   review:
     head_sha: 43014c3607ac75bb558267b2118148cac8dcf73b
@@ -90,7 +90,7 @@ overrides:
 route: kernel feature|workflow-deliver|confirmed
 branch: feat/per-run-ledger-snapshots
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/per-run-snapshots
-last_seen_sha: c7665c4293a5d0e7be5b1380e432a385b4e3567b
+last_seen_sha: 3d85223bb70d99d5728af8743bb219905bcea20e
 verify_local:
   head_sha: c7665c4293a5d0e7be5b1380e432a385b4e3567b
   passed: true
