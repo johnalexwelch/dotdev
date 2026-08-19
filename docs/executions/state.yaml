@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152418
 status: done
 next: ''
-updated: '2026-08-19T16:28:33.899418+00:00'
+updated: '2026-08-19T16:30:09.908747+00:00'
 steps:
 - id: preflight
   required: true
@@ -65,8 +65,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
-    timestamp: '2026-08-19T16:15:45.093990+00:00'
+    head_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
+    timestamp: '2026-08-19T16:30:09.908583+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -75,8 +75,9 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
       pr_number: '186'
-      post_mortem: not_applicable_with_reason:single-unit-skill-change-no-phase-drift
     override:
       active: false
       reason: ''
@@ -84,9 +85,9 @@ stamps:
 overrides: []
 branch: feat/planning-lane-consolidation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/planning-lane-consolidation
-last_seen_sha: a7e156783885331443d5a294cff9041306a66cf1
+last_seen_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
 verify_local:
-  head_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
+  head_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
   passed: true
   results:
   - cmd: ./test/run-tests.sh
