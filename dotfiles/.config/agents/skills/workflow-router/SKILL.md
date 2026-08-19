@@ -253,9 +253,9 @@ Full one-line descriptions: `_docs/skills-index.md`. Global pointer (same list, 
 
 **Library/infra** (13) — shared scaffolding, reference protocols, and repo tooling; e.g. `/setup-worktree`: `council-scaffolding`, `describe-pr`, `docs-audit`, `git-guardrails`, `graph-first`, `herdr-launch`, `omc-reference`, `post-mortem`, `review-scaffolding`, `runbook-author`, `setup-skills`, `setup-worktree`, `watch-ci`
 
-**Knowledge/utility** (9) — general-purpose personal-knowledge and dev-utility skills; e.g. `/brain-ops`: `brain-ops`, `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `stage-v1-concept`, `wayfinder`, `zoom-out`
+**Knowledge/utility** (8) — general-purpose personal-knowledge and dev-utility skills; e.g. `/wayfinder`: `codebase-design`, `domain-modeling`, `humanizer-exec`, `implement`, `mock-data-generator`, `stage-v1-concept`, `wayfinder`, `zoom-out`
 
-**Retired** (2026-08-18, D-006 decision 14 — directories deleted, git history is the tombstone): `pr-responder` → `receive-review`, `pr-review` / `review` → `workflow-review`, `slop-cleaner` → `humanizer`, `v1-idea-grill` → `grill-with-docs`. If invoked by name, use the successor. `rowan` was excluded from this retirement: PR #149 (2026-08-14) revived it as the live knowledge-OS skill and deprecated `brain-ops` in its favor — the old "rowan → brain-ops" catalog rows were stale; direction flagged for Alex in `_docs/AUDIT_REPORT.md`.
+**Retired** (directories deleted, git history is the tombstone): 2026-08-18 D-006 decision 14 — `pr-responder` → `receive-review`, `pr-review` / `review` → `workflow-review`, `slop-cleaner` → `humanizer`, `v1-idea-grill` → `grill-with-docs`; 2026-08-18 corpus-optimization audit batch 1 (Alex-approved) — `brain-ops` → `rowan` (PR #149 had already deprecated brain-ops in rowan's favor; rowan is the live knowledge-OS skill). If a retired skill is invoked by name, use the successor.
 
 ## Human-Gate Taxonomy Preflight
 
