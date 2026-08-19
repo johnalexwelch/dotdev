@@ -647,6 +647,155 @@ assert_status "mutating brace group inside a substitution blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(for i in 1; do git push origin main; done 2>/dev/null)')"
 assert_status "mutating loop inside a substitution blocks" 2 "$STATUS"
 
+# --- Rule 3 tokenizer rebuild (PR #174 recorded decision) ---
+# The regex-over-lexically-split-segments model above is being replaced by a
+# python3 stdlib shell tokenizer that parses real shell grammar: quotes,
+# ordered-fd redirections, construct-scoped redirect attribution, command
+# substitution, arithmetic, process substitution, heredocs (bodies = data),
+# `exec` fd persistence, newlines as statement separators, and bounded
+# recursion into `eval "<literal>"` (current-shell scope) and
+# `bash|sh|zsh -c "<literal>"` (isolated scope). Declared boundary
+# (unchanged): name-binding indirection (functions, aliases, `./script.sh`,
+# `eval "$VAR"`, variable expansion carrying command text) stays OUT OF
+# SCOPE and fails open. Tokenizer errors and missing python3 fail CLOSED for
+# any command whose text could possibly match rule 3; a conservative
+# prefilter permits commands that provably cannot match without invoking
+# python3 at all.
+
+# N1: a quoted redirect-lookalike is a word, not redirect syntax (S9
+# quoted-literal residual); a bare 2>&1 alone is not suppression.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "see docs>/dev/null" 2>&1')"
+assert_status "quoted redirect-lookalike in a commit message is a word" 0 "$STATUS"
+
+# N2: a quoted argument is not a command (S13 mention over-block).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo "git push origin main" 2>/dev/null')"
+assert_status "quoted mention of a mutation is not the mutation" 0 "$STATUS"
+
+# N3: ordered fd semantics — fd2 dups the ORIGINAL (visible) stdout before
+# stdout moves to /dev/null, so stderr genuinely reaches the caller. Probed
+# locally: `bash -c 'echo err >&2' 2>&1 >/dev/null` prints err.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>&1 >/dev/null')"
+assert_status "fd2 dups original stdout before it moves; stderr visible" 0 "$STATUS"
+
+# N4: positional exec tracking — the push runs BEFORE the shell's stderr
+# moves. PR #174's "arming is order-insensitive" residual, now separable.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main && exec 2>/dev/null')"
+assert_status "push runs before the later exec redirect arms anything" 0 "$STATUS"
+
+# N5: a subshell's exec redirects the subshell only. Probed locally:
+# `( exec 2>/dev/null ); echo err >&2` prints err.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '( exec 2>/dev/null ); git push origin main')"
+assert_status "subshell exec does not leak into the parent shell" 0 "$STATUS"
+
+# N6: newlines are statement separators — the common multi-line Bash-tool
+# shape the old single-segment lexing over-blocked in other shapes.
+nl_cmd="$(printf 'bash test.sh 2>/dev/null\ngit push origin main')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$nl_cmd")"
+assert_status "newline-separated suppressed test then unsuppressed push permits" 0 "$STATUS"
+
+# N7: a heredoc body is data, not command text — mutation text inside a
+# heredoc body is out-of-scope per the declared boundary.
+heredoc_cmd="$(printf 'cat <<EOF 2>/dev/null\ngit push origin main\nEOF')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$heredoc_cmd")"
+assert_status "mutation text inside a heredoc body is data, not command" 0 "$STATUS"
+
+# Precision gains in the fail-closed/blocking direction: the old hook
+# permits some of these on an argv[0]-only or adjacency basis; pin the
+# tokenizer's closure so a future detector can never regress it.
+
+# N8: git global options before the subcommand no longer hide the push (old
+# adjacency regex failed open here).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git -C /tmp push origin main 2>/dev/null')"
+assert_status "git global option before the subcommand still blocks" 2 "$STATUS"
+
+# N9: a prefix word does not hide the mutation (matches old behavior;
+# pinned so an argv[0]-only detector can never regress it).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'env git push origin main 2>/dev/null')"
+assert_status "env-prefixed push still blocks" 2 "$STATUS"
+
+# N10: a LITERAL eval string is command text by definition — recursed in
+# the current-shell scope (old blocked via text presence; pinned so
+# quote-stripping doesn't fail it open).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'eval "git push origin main" 2>/dev/null')"
+assert_status "literal eval payload recurses and blocks" 2 "$STATUS"
+
+# N11: literal -c payloads recurse in an isolated scope — the inner push is
+# suppressed inside that scope.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'bash -c "git push origin main 2>/dev/null"')"
+assert_status "literal bash -c payload recurses and blocks" 2 "$STATUS"
+
+# N12: a heredoc attached to a suppressed mutation (outside the body) still
+# blocks — the boundary is the body, not any nearby redirect.
+heredoc2_cmd="$(printf 'git push origin main 2>/dev/null <<EOF\nnotes\nEOF')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$heredoc2_cmd")"
+assert_status "suppressed mutation with a trailing heredoc still blocks" 2 "$STATUS"
+
+# N13: backtick substitution parity with the $() pin above — a mutation
+# inside a substitution inherits the enclosing command's suppression.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo `git push origin main` 2>/dev/null')"
+assert_status "mutation inside a backtick substitution still blocks" 2 "$STATUS"
+
+# Boundary and regression pins: match current, deliberately-scoped behavior
+# so the tokenizer rebuild cannot silently drift it.
+
+# N14: name-binding indirection is the declared boundary (PR #174) — an
+# accepted fail-open regression, deliberately not chased.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'f() { git push origin main; }; f 2>/dev/null')"
+assert_status "function name-binding indirection stays out of scope" 0 "$STATUS"
+
+# N15: a variable redirect target is unknowable at guard time — fail-open
+# within the declared boundary.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>"$LOGFILE"')"
+assert_status "variable redirect target permits" 0 "$STATUS"
+
+# N16: a real-file target keeps output retrievable, so it is not
+# suppression.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main >push.log 2>&1')"
+assert_status "real-file redirect target permits" 0 "$STATUS"
+
+# N17: an arithmetic command statement parses cleanly; no suppression lands
+# on the push. ANOMALY (see lane summary): the current awk-lexer hook
+# actually returns exit 2 here today — its command-substitution masker
+# recognizes `$((...))`/`$(...)` but not bare `((...))`, so the literal `))`
+# survives as an unmatched terminator and arms the whole-command fallback.
+# The tokenizer-correct answer is 0; pinned as such rather than adjusted to
+# match today's accidental block.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '(( 1 > 0 )) 2>/dev/null && git push origin main')"
+assert_status "bare arithmetic command statement does not arm anything" 0 "$STATUS"
+
+# Fail-closed-on-tokenizer-error probes (mirror the broken-awk stub pattern
+# above, but for the python3 dependency the tokenizer introduces).
+mkdir -p "$TMPDIR_BASE/broken-python-bin"
+printf '#!/usr/bin/env bash\nexit 127\n' >"$TMPDIR_BASE/broken-python-bin/python3"
+chmod +x "$TMPDIR_BASE/broken-python-bin/python3"
+
+# N18: a command whose text COULD match rule 3 must fail CLOSED when the
+# tokenizer errors or python3 is missing — never silently permit a mutation
+# just because the parser broke.
+OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'git push origin main 2>/dev/null')" |
+    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
+        PATH="$TMPDIR_BASE/broken-python-bin:$PATH" bash "$GUARD" 2>&1)"
+STATUS=$?
+assert_status "broken python3 fails closed on a candidate command" 2 "$STATUS"
+assert_contains "broken python3 block names the tokenizer" "$OUT" "tokenizer"
+
+# N19: the conservative prefilter must permit commands that provably cannot
+# match rule 3 WITHOUT invoking python3 at all — a broken interpreter must
+# not brick every git command, only the ones rule 3 could ever care about.
+OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'git status 2>/dev/null')" |
+    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
+        PATH="$TMPDIR_BASE/broken-python-bin:$PATH" bash "$GUARD" 2>&1)"
+STATUS=$?
+assert_status "prefilter permits a non-mutating command despite broken python3" 0 "$STATUS"
+
+# N20: no mutation verb text at all — the prefilter permits without ever
+# touching python3.
+OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'ls /dev/null && echo hi')" |
+    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
+        PATH="$TMPDIR_BASE/broken-python-bin:$PATH" bash "$GUARD" 2>&1)"
+STATUS=$?
+assert_status "prefilter permits a mutation-verb-free command" 0 "$STATUS"
+
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)
 
