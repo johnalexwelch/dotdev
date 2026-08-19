@@ -187,6 +187,7 @@ Report every figure as `N commits on <ref> since <absolute timestamp>`, naming t
 ```bash
 SINCE="2026-08-12 17:00"   # absolute window open; never "7 days ago"
 for repo in "$@"; do
+    git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || continue   # skip non-repos
     # Guard the fetch. An unreachable remote (VPN down, SSO expired, remote
     # renamed) exits non-zero and leaves the tracking refs at whatever they
     # held — the exact under-count the fetch exists to prevent, and the as-of
