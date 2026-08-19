@@ -5,7 +5,7 @@ budget: multi-lane
 initialized_epoch: 1787157126
 status: active
 next: finalize
-updated: '2026-08-19T18:57:32.435820+00:00'
+updated: '2026-08-19T19:03:16.895283+00:00'
 steps:
 - id: preflight
   required: true
@@ -22,7 +22,7 @@ steps:
 - id: review
   required: true
   status: completed
-  evidence: profile=full (floor=full), 5 Opus lanes x 3 rounds, unanimous APPROVE at 3832585; stamp recorded lane digests
+  evidence: full profile, 5 Opus lanes x3 rounds unanimous APPROVE at 3832585 + config-delta lane APPROVE at 5330acd; rebase onto 3227cfe verified content-identical by range-diff (12/12, one context-label diff) + verify-local green at 43014c3
 - id: qa
   required: true
   status: completed
@@ -65,6 +65,24 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: c7665c4293a5d0e7be5b1380e432a385b4e3567b
+    timestamp: '2026-08-19T19:03:16.895040+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '191'
+      describe_pr: PR body updated with review-round summary pending
+      post_mortem: 'decision-log addendum: per-run committed snapshots (2026-08-19)'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides:
 - action: force-init
   reason: --force re-init over prior run 2026-08-19-per-run-snapshots
@@ -72,9 +90,9 @@ overrides:
 route: kernel feature|workflow-deliver|confirmed
 branch: feat/per-run-ledger-snapshots
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/per-run-snapshots
-last_seen_sha: 43014c3607ac75bb558267b2118148cac8dcf73b
+last_seen_sha: c7665c4293a5d0e7be5b1380e432a385b4e3567b
 verify_local:
-  head_sha: 43014c3607ac75bb558267b2118148cac8dcf73b
+  head_sha: c7665c4293a5d0e7be5b1380e432a385b4e3567b
   passed: true
   results:
   - cmd: ./test/run-tests.sh
