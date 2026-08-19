@@ -330,6 +330,16 @@ cmd_cut() {
 
     [ -n "$branch" ] && [ -n "$path" ] || usage
 
+    # Absolutize a relative --path up front: everything downstream (sidecar
+    # WT_PATH, gate lines, verify from another cwd) needs one canonical
+    # spelling. A verbatim relative path pushed agents toward hand-patching
+    # sidecars after the fact (the forged-baseline-adjacent pattern; #171
+    # made verify recompute ground truth, so cut just does this itself).
+    case "$path" in
+        /*) ;;
+        *) path="$PWD/$path" ;;
+    esac
+
     if [ -e "$path" ]; then
         die 3 "path already exists: $path"
     fi
@@ -360,6 +370,10 @@ cmd_cut() {
     if ! git worktree add -b "$branch" "$path" "$git_base_ref" >/dev/null 2>&1; then
         die 9 "git worktree add failed for branch '$branch' at '$path' from '$git_base_ref'."
     fi
+
+    # The directory exists now: collapse any lexical dot-dot segments from
+    # the up-front join so the recorded WT_PATH and gate lines are canonical.
+    path="$(cd "$path" && pwd)"
 
     copy_env_files "$source_root" "$path"
 

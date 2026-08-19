@@ -4,7 +4,11 @@
 # Moves workflow enforcement from prose the model complies with to a script
 # the model cannot silently bypass. Live state lives in the git-dir (survives
 # reset --hard, naturally per-worktree); stamp/init/close also write a
-# committed snapshot at docs/executions/state.yaml for the PR-visible record.
+# committed PER-RUN snapshot at docs/executions/runs/<run_id>.yaml for the
+# PR-visible record. Per-run files mean two concurrent runs never commit a
+# shared path — the cross-PR state.yaml merge-conflict class (#167/#174/
+# #180/#181) is structurally impossible. docs/executions/state.yaml is a
+# frozen legacy record: never written or read by new runs.
 #
 # Spec: docs/executions/plans/2026-08-19-workflow-ledger-spec.md
 # Authority: _docs/decision-log.md § D-006 (+ addenda).
@@ -15,7 +19,9 @@
 #   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 #   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 #   ledger.sh check <gate>
-#   ledger.sh check-snapshot <gate>   (CI mode: committed snapshot, no live state)
+#   ledger.sh check-snapshot <gate> [--file <path>]   (CI mode: committed per-run
+#             snapshot, no live state; --file names the run file — without it,
+#             the live run's file, else exactly one docs/executions/runs/*.yaml)
 #   ledger.sh reconcile [--apply]
 #   ledger.sh preflight --skill <name>
 #   ledger.sh review-floor [--base <ref>]
@@ -47,10 +53,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SKILLS_ROOT="${SKILLS_ROOT:-$(cd "$SCRIPT_DIR/../.." && pwd)}"
 FORGE_SH="$SCRIPT_DIR/forge.sh"
 BASELINE_SH="$SKILLS_ROOT/setup-worktree/scripts/worktree-baseline.sh"
-SNAPSHOT_REL="docs/executions/state.yaml"
+RUNS_REL="docs/executions/runs"
 
 TOP=""
 LIVE=""
+# Per-run committed snapshot: resolved to $RUNS_REL/<run_id>.yaml by
+# set_snapshot_rel before any use (init's argv, the live run's run_id, or
+# check-snapshot's --file / single-file fallback). Never a shared path.
+SNAPSHOT_REL=""
 SNAPSHOT=""
 PYBIN=""
 FAILURES=""
@@ -73,7 +83,28 @@ require_repo() {
     local gitdir
     gitdir="$(git rev-parse --absolute-git-dir 2>/dev/null)" || die 10 "cannot resolve the git dir"
     LIVE="$gitdir/ledger/state.yaml"
+}
+
+set_snapshot_rel() {
+    # The run_id becomes a tracked filename: refuse path-hostile shapes
+    # (separators, traversal, hidden/empty) rather than writing outside
+    # $RUNS_REL or committing a surprise path.
+    case "$1" in
+        */* | *..* | '' | .* | *[[:space:]]*)
+            die 6 "run_id unusable as a snapshot filename: '$1'"
+            ;;
+    esac
+    SNAPSHOT_REL="$RUNS_REL/$1.yaml"
     SNAPSHOT="$TOP/$SNAPSHOT_REL"
+}
+
+# Resolve the committed snapshot path from the live run's run_id — the
+# common case for every command that operates on the active run.
+resolve_snapshot_from_live() {
+    local run_id
+    run_id="$(py get run_id)" || exit $?
+    [ -n "$run_id" ] || die 6 "live state has no run_id"
+    set_snapshot_rel "$run_id"
 }
 
 # The default `python3` on some machines (mise/pyenv shims, brew) lacks PyYAML;
@@ -620,13 +651,18 @@ commit_snapshot() {
     py set_meta last_seen_sha "$(git -C "$TOP" rev-parse HEAD)" || exit $?
 }
 
-# Fresh iff every commit after the recorded sha touches ONLY the snapshot
-# file (verified by contents via diff-tree, never by subject — subjects are
-# attacker-controlled). Also requires sha to be an ancestor of HEAD: a HEAD
-# moved backwards (reset) must read STALE, not fresh.
+# Fresh iff every commit after the recorded sha touches ONLY this run's own
+# snapshot file (verified by contents via diff-tree, never by subject —
+# subjects are attacker-controlled). Exactly the run's own file: a commit
+# touching a DIFFERENT run's snapshot, or the legacy shared state.yaml, is a
+# real commit and reads STALE. Also requires sha to be an ancestor of HEAD:
+# a HEAD moved backwards (reset) must read STALE, not fresh.
 fresh_since() {
     local sha="$1" commits c paths
     [ -n "$sha" ] || return 1
+    # Never compare against an unresolved (empty) snapshot path — an empty
+    # exemption would make empty commits exempt by accident.
+    [ -n "$SNAPSHOT_REL" ] || return 1
     git -C "$TOP" cat-file -e "${sha}^{commit}" 2>/dev/null || return 1
     git -C "$TOP" merge-base --is-ancestor "$sha" HEAD 2>/dev/null || return 1
     commits="$(git -C "$TOP" log --format=%H "${sha}..HEAD" 2>/dev/null)" || return 1
@@ -1125,6 +1161,7 @@ cmd_init() {
         esac
     done
     [ -n "$workflow" ] && [ -n "$kind" ] && [ -n "$steps" ] || usage
+    set_snapshot_rel "$run_id"
     # Route evidence (D-006 Phase 5b): warn by default when absent;
     # LEDGER_REQUIRE_ROUTE=block escalates to a refusal (exit 11) — the same
     # warn-then-flip pattern as entry enforcement (LEDGER_ENTRY_ENFORCE).
@@ -1208,6 +1245,7 @@ cmd_stamp() {
 
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
     py get run_id >/dev/null || exit $?
+    resolve_snapshot_from_live
 
     local provenance="agent" head_sha
     [ "$human" -eq 1 ] && provenance="human"
@@ -1246,23 +1284,71 @@ cmd_stamp() {
 cmd_check() {
     [ $# -ge 1 ] || usage
     local out status
+    # Missing live state renders MISSING inside gate_verdict; only resolve
+    # the run's snapshot path when there is a live run to resolve from.
+    if [ -f "$LIVE" ]; then
+        resolve_snapshot_from_live
+    fi
     out="$(check_gate "$1")"
     status=$?
     printf '%s\n' "$out"
     exit "$status"
 }
 
-# CI-side gate check against the COMMITTED snapshot — no live state required
-# (D-006 Phase 5a: server-side merge gates run on a fresh checkout where the
-# git-dir ledger does not exist). Shares the whole verdict shell with `check`
-# via gate_verdict (snapshot mode): same schema validation on the untrusted
-# snapshot (malformed = exit 6), same content-verified fresh_since, same
-# message strings — minus the live-vs-snapshot drift compare, which needs
-# live state that CI lacks.
+# CI-side gate check against a COMMITTED per-run snapshot — no live state
+# required (D-006 Phase 5a: server-side merge gates run on a fresh checkout
+# where the git-dir ledger does not exist). Resolution order: an explicit
+# --file (the CI script passes candidates it discovered in the PR diff);
+# else the live run's file when live state exists; else exactly one
+# docs/executions/runs/*.yaml (zero → MISSING, several → ask for --file).
+# Shares the whole verdict shell with `check` via gate_verdict (snapshot
+# mode): same schema validation on the untrusted snapshot (malformed =
+# exit 6), same content-verified fresh_since, same message strings — minus
+# the live-vs-snapshot drift compare, which needs live state that CI lacks.
 cmd_check_snapshot() {
     [ $# -ge 1 ] || usage
-    local out status
-    out="$(gate_verdict "$1" snapshot)"
+    local gate="$1" file="" out status
+    shift
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --file)
+                file="$2"
+                shift 2
+                ;;
+            *) usage ;;
+        esac
+    done
+    if [ -n "$file" ]; then
+        case "$file" in
+            /*)
+                SNAPSHOT="$file"
+                SNAPSHOT_REL="${file#"$TOP"/}"
+                ;;
+            *)
+                SNAPSHOT_REL="$file"
+                SNAPSHOT="$TOP/$file"
+                ;;
+        esac
+    elif [ -f "$LIVE" ]; then
+        resolve_snapshot_from_live
+    else
+        local candidates=() f
+        for f in "$TOP/$RUNS_REL"/*.yaml "$TOP/$RUNS_REL"/*.yml; do
+            [ -f "$f" ] || continue
+            candidates+=("$f")
+        done
+        if [ "${#candidates[@]}" -eq 0 ]; then
+            echo "MISSING: no committed run snapshot under $RUNS_REL/"
+            exit 1
+        fi
+        if [ "${#candidates[@]}" -gt 1 ]; then
+            echo "AMBIGUOUS: ${#candidates[@]} run snapshots under $RUNS_REL/ — pass --file <path> to name the run under check"
+            exit 1
+        fi
+        SNAPSHOT="${candidates[0]}"
+        SNAPSHOT_REL="${SNAPSHOT#"$TOP"/}"
+    fi
+    out="$(gate_verdict "$gate" snapshot)"
     status=$?
     printf '%s\n' "$out"
     exit "$status"
@@ -1280,6 +1366,7 @@ cmd_reconcile() {
         esac
     done
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
+    resolve_snapshot_from_live
     local last head drift next_step branch rec_branch rec_wt pending_step truth=""
     last="$(py get last_seen_sha)" || exit $?
     head="$(git -C "$TOP" rev-parse HEAD)"
@@ -1440,6 +1527,7 @@ cmd_show() {
 
 cmd_close() {
     local run_id
+    resolve_snapshot_from_live
     run_id="$(py close)" || exit $?
     commit_snapshot close "$run_id"
     echo "closed run $run_id"

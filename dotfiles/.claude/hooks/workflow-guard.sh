@@ -172,9 +172,12 @@ rule3_tokenizer_blocks() {
 
 if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" ]; } && [ -n "$file_path" ]; then
     # Rule 2: ledger state files are script-owned; direct edits are blocked.
+    # Covers the git-dir live state, the per-run committed snapshots
+    # (docs/executions/runs/<run_id>.yaml — the current record), and the
+    # legacy shared docs/executions/state.yaml (frozen historical record).
     # Case-insensitive: APFS is case-insensitive, so a case-variant spelling
     # writes the real file.
-    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
+    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)docs/executions/runs/[^/]+\.ya?ml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
         printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/close) instead of editing it directly.\n' "$file_path" >&2
         exit 2
     fi
