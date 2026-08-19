@@ -717,7 +717,9 @@ export LEDGER_ALLOW_FORGE_MOCK=1
 # --- finalize accepts a draft PR (Phase 3 review F3) ---
 # Default REPO_DELIVERY_POLICY (human-only) keeps the PR draft through the
 # stamp, and forge.sh maps isDraft to "draft" — so draft must stamp like open
-# (recording the actual state), while merged/closed still refuse.
+# (recording the actual state), while any other reported state still refuses.
+# (A real merged/closed PR usually resolves to no_pr at the open-PR lookup;
+# the refusal cases below cover the forge answering a non-open/draft state.)
 run_ledger "$wt1" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$lane1"
 assert_status "review re-stamp for draft-PR test exits 0" 0 "$STATUS"
@@ -740,7 +742,18 @@ printf 'closed\n' >"$FORGE_MOCK_DIR/forgejo-pr-state-7"
 run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
     --attest describe_pr=done
 assert_status "finalize stamp still refuses a closed PR" 2 "$STATUS"
-assert_contains "closed refusal names the state" "$OUT" "closed"
+assert_contains "closed refusal names the state" "$OUT" "is not open or draft: closed"
+
+printf 'merged\n' >"$FORGE_MOCK_DIR/forgejo-pr-state-7"
+run_ledger "$wt1" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize stamp still refuses a merged PR" 2 "$STATUS"
+assert_contains "merged refusal names the state" "$OUT" "is not open or draft: merged"
+
+# Restore the pre-block mock invariant (lookup answers none, no PR-7 files).
+printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature_review_gate"
+rm -f "$FORGE_MOCK_DIR/forgejo-ci-status-7" "$FORGE_MOCK_DIR/forgejo-pr-state-7" \
+    "$FORGE_MOCK_DIR/forgejo-threads-resolved-7"
 
 run_ledger "$wt1" close
 assert_status "close exits 0" 0 "$STATUS"
