@@ -2,7 +2,7 @@
 name: repo-audit
 model: opus
 reasoning: high
-description: Map-reduce, evidence-based state-of-the-repo investigation. Use to get an honest picture of where a repo (or monorepo subtree) actually is — feeds workflow-roadmap, to-prd, to-issues, triage, or refactor-scale design-plan. Triggers on "audit the repo", "/repo-audit", "what's the real state of this codebase".
+description: Map-reduce, evidence-based state-of-the-repo investigation. Use to get an honest picture of where a repo (or monorepo subtree) actually is — feeds workflow-roadmap, to-prd (migration mode for refactor-scale findings), to-issues, or triage. Triggers on "audit the repo", "/repo-audit", "what's the real state of this codebase".
 ---
 
 # /repo-audit — Map-Reduce State-of-the-Repo Investigation
@@ -21,7 +21,7 @@ Requires: git
 Side effects: writes the audit and intermediate fact-packs; fact-packs are deleted by default
 Human gates: none by default; halt if required repo context or evidence paths are unavailable
 
-Feeds: workflow-roadmap, to-prd, to-issues, triage, design-plan.
+Feeds: workflow-roadmap, to-prd (migration mode for refactor-scale findings), to-issues, triage.
 
 ## Step 0 — Preflight
 

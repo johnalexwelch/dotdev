@@ -37,7 +37,7 @@ Don't sanitize. Drift isn't failure — it's information.>
 <Findings and tasks still open. Include FIND-NN not yet addressed, skipped or deferred phases, and §9 Open questions from the plan that did not get answered.>
 
 ## What I'd change in the next plan
-<Concrete lessons about the plan itself. Feeds the next /design-plan invocation.>
+<Concrete lessons about the plan itself. Feeds the next /to-prd migration-mode invocation.>
 
 ## Recommendations for next audit
 <What to look for in the next /repo-audit cycle. Usually re-audit areas where NEW-NN findings clustered, run a scoped audit if drift concentrated in one path, or add focus=<slug>.>

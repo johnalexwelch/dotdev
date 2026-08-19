@@ -89,10 +89,10 @@ Spawn a single `Agent` (general-purpose) subagent with this prompt:
 > <Priority-ordered list. Each item: what to do, which FIND-NN it
 > addresses, rough effort, vertical slice path, and recommended next
 > workflow. Prefer `workflow-roadmap`, `grill-with-docs`, `to-prd`,
-> `to-issues`, or `triage`. Recommend `design-plan` only for repo-wide
-> refactors, migrations, or multi-phase remediation that cannot yet be
-> expressed as independently verifiable vertical issue slices. No more
-> than 8 items — action list, not wishlist.>
+> `to-issues`, or `triage`. Recommend `to-prd` **migration mode** for
+> repo-wide refactors, migrations, or multi-phase remediation that cannot
+> yet be expressed as independently verifiable vertical issue slices. No
+> more than 8 items — action list, not wishlist.>
 >
 > ## Open questions / unverified claims
 > <Anything the evidence-validation pass couldn't confirm. Also anything
@@ -208,8 +208,9 @@ Skip the canvas when running headless (Codex AFK, CI, non-IDE context).
   - Product/feature gaps: `workflow-roadmap` → `grill-with-docs` →
     `decision-log` → `to-prd` → `to-issues` → `triage`.
   - Clear implementation slices: `to-issues` or `triage` directly.
-  - Refactor-scale or migration work that needs phases: `design-plan`
-    → `execute-phase` → `workflow-review` → `post-mortem` →
-    `workflow-finalize`.
+  - Refactor-scale or migration work that needs phases: `to-prd`
+    (migration mode — FIND-NN anchors, parent + ordered children) →
+    `to-issues` → `triage` → `execute-prd`; each child carries the
+    normal review/finalize gates.
   `/repo-audit` supplies evidence and `FIND-NN` IDs. It does not choose
-  the old phase-execution lane by default.
+  the migration lane by default.

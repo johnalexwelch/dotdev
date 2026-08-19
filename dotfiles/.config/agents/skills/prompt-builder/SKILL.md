@@ -59,7 +59,7 @@ Based on issue labels and content:
 | Label: `needs-human-review` or explicit gate | Check gate type (see `_docs/human-gate-taxonomy.md`): maintainer/operator (types 1–3) requires `ready-for-human`; reviewer-validation (type 4) allows AFK with `needs-human-review` + validation steps in `workflow-finalize` |
 | Label: `frontend` | Include user-journey-qa step |
 | Acceptance criteria are test-expressible | Use TDD approach |
-| Issue references a design plan phase | Use execute-phase with the plan |
+| Issue is a child of a migration-mode PRD parent (or references a legacy design-plan phase) | Use execute-prd with the parent issue tree |
 | Issue is a refactor with no behavior change | Use normal profile, focus on test preservation |
 | No test runner detected | Flag as blocker; prompt should request setup info |
 

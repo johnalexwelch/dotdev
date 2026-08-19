@@ -2,14 +2,14 @@
 name: setup-worktree
 model: haiku
 reasoning: medium
-description: "Create an isolated git worktree from the resolved workflow base branch for a plan phase, issue, or workflow run; defaults path ~/wt/<repo>/phase-<N>/, derives the branch, auto-copies .env*/.tool-versions etc. Used before workflow execution and at human-gate halts."
+description: "Create an isolated git worktree from the resolved workflow base branch for an issue, workflow run, or legacy plan phase; derives the branch and path, auto-copies .env*/.tool-versions etc. Used before workflow execution (workflow-deliver, execute-prd) and at human-gate halts."
 disable-model-invocation: true
 triggers:
   - "/setup-worktree"
   - "setup worktree"
   - "create worktree"
   - "isolated checkout"
-persona: Staff Engineer setting up an isolated review checkout for a plan phase
+persona: Staff Engineer setting up an isolated checkout for a workflow run or review
 inputs:
   - name: plan_path
     type: string
@@ -65,10 +65,10 @@ Human gates: none
 
 ## Context
 
-Typical workflows: on-demand side-car (when /execute-phase or /workflow-finalize halts at a human gate, for isolated branch review, or for workflow-autonomous-backlog issue execution)
-Pairs well with: execute-phase, workflow-finalize, watch-ci, design-plan, workflow-autonomous-backlog, run-backlog
+Typical workflows: on-demand side-car (when /workflow-finalize or a legacy /execute-phase chain halts at a human gate, for isolated branch review, or for workflow-autonomous-backlog issue execution)
+Pairs well with: workflow-deliver, execute-prd, workflow-finalize, watch-ci, workflow-autonomous-backlog, run-backlog
 
-# /setup-worktree — Isolated Checkout for a Plan Phase
+# /setup-worktree — Isolated Checkout for a Workflow Run
 
 ## Purpose
 
@@ -88,7 +88,7 @@ standalone, on-demand side-car for halted human gates.
 - Record `WORKFLOW_BASE_GATE` with the preferred base, resolved base, fallback reason, and `fetched: true`.
 - Resolve inputs into a concrete `(branch, path, setup_command)` triple:
   - **If `branch` and `path` both set:** use them.
-  - **Else if `plan_path` and `phase` set** (most common caller from `/execute-phase` halt):
+  - **Else if `plan_path` and `phase` set** (legacy caller: a halted `/execute-phase` chain — the lane is retired per D-006 planning-lane consolidation 2026-08-19, but existing plans/phase branches may still need side-car worktrees):
     - Open the plan, find `### §5.<N> Phase <N>`, extract the phase slug from the header text after `Phase <N> —` (lowercase, non-alphanum → `-`, trim, cap 40 chars — same derivation `/execute-phase` uses).
     - `branch = refactor/phase-<N>-<phase-slug>`
     - `path = ~/wt/<repo-dirname>/phase-<N>/` where `<repo-dirname>` is the **stable** repo name, worktree- and subdir-safe: `agd=$(git rev-parse --absolute-git-dir); basename "${agd%%/.git*}"`. Do NOT use `basename $(git rev-parse --show-toplevel)` — run from inside an existing worktree it yields a transient slug, nesting new worktrees under it instead of the repo.
@@ -171,7 +171,7 @@ Side effects (new worktree dir, new branch, copied files). No markdown output fi
 
 ## Example Invocation
 
-From a halted `/execute-phase` chain (Phase 2 blocked on a `[human]` task):
+From a halted legacy `/execute-phase` chain (Phase 2 blocked on a `[human]` task):
 
 ```
 User: /setup-worktree phase=2
@@ -252,14 +252,17 @@ Claude: [git fetch origin --prune]
 
 ## Pairing with the core loop
 
-`/setup-worktree` is the side-car, not a core-loop member. Core loop:
+`/setup-worktree` is the side-car, not a core-loop member. Core loop
+(refactor-scale; D-006 planning-lane consolidation 2026-08-19):
 
 ```
-/repo-audit (optional — brief-mode skips this)
+/repo-audit (optional — a settled brief skips this)
      ↓
-/design-plan (audit-mode OR brief-mode)
+/to-prd (migration mode: FIND-NN/REQ-NN anchors, parent + ordered children)
      ↓
-/execute-phase ({refactor,fix,feat}/phase-* branches)
+/to-issues → /triage
+     ↓
+/execute-prd (per-child worktrees via workflow-deliver)
      ↓
 /workflow-review (risk-sized independent review evidence)
      ↓
@@ -271,11 +274,9 @@ Claude: [git fetch origin --prune]
 [human merge]
 ```
 
-When `/execute-phase` halts at a `[human]` gate, users optionally
-invoke `/setup-worktree phase=<N>` to resolve the gate in an isolated
-checkout, then re-invoke `/execute-phase phase=<N>` (either in the
-worktree or after merging the worktree branch into the primary
-checkout's HEAD) to resume the chain. `/setup-worktree` is also
+When a legacy `/execute-phase` chain halts at a `[human]` gate, users
+optionally invoke `/setup-worktree phase=<N>` to resolve the gate in an
+isolated checkout, then resume from the phase branch. `/setup-worktree` is also
 useful for reviewing a completed phase branch in parallel with
 continued work on main, or for resolving CI failures from
 `/watch-ci` in isolation when the auto-fix loop halts.

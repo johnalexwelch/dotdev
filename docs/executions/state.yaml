@@ -1,60 +1,72 @@
-run_id: 2026-08-19-phase5b-route-evidence
-workflow: workflow-skill
+run_id: 2026-08-19-planning-lane-consolidation
+workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
-initialized_epoch: 1787152447
+initialized_epoch: 1787152418
 status: done
 next: ''
-updated: '2026-08-19T16:23:33.526452+00:00'
+updated: '2026-08-19T16:30:09.908747+00:00'
 steps:
-- id: red-tests
+- id: preflight
   required: true
   status: completed
-  evidence: red suite committed 155/175 -> commit test(workflow-ledger)
+  evidence: 'WORKTREE_BASELINE_GATE verify PASS (descends from origin/main @2be79e6); evidence base re-verified in skill-invocations.log: design-plan 1, execute-phase 0, execute-prd 1; graphify: not_available_with_reason: no graphify-out/graph.json in repo; open-PR collision check: PR #179 (workflows.md route map) open -> workflows.md skipped for followup'
+- id: triage
+  required: true
+  status: completed
+  evidence: 'Alex-approved consolidation plan (2026-08-19) is the work item; acceptance criteria explicit in brief: to-prd migration mode, 2 tombstones, router rewire, caller rewires, golden check, decision-log+catalog; AFK-safe'
 - id: implement
   required: true
   status: completed
-  evidence: 'commits 34f9a6a 4236141 a967f4f : tests+impl+docs; 175/175 green'
-- id: docs
-  required: true
-  status: completed
-  evidence: 'SKILL.md x3, spec, decision-log Phase 5b entry w/ flip preconditions; PR #182'
-- id: verify
-  required: true
-  status: completed
-  evidence: verify-local PASSED at df95818
+  evidence: "commit f8b910a: 27 files, +128/-430; to-prd migration mode, 2 tombstones, router rewire, 15 caller files rewired, lint exemptions, catalogs+decision-log; lint-skill-suite failures=0, lint-skill-refs dangling=0, routing-eval --dry-run green (44 cases, all routes present); tdd: not_applicable_with_reason: prose/markdown skill corpus change \u2014 determinism via lint suite + routing-eval dry-run, no executable behavior added"
 - id: review
   required: true
   status: completed
-  evidence: integrated lane approve (model opus, /tmp/phase5b-182-integrated-review.md); stamp review at 0c7d78b
+  evidence: 'round 2: 4/4 lanes APPROVE at 98ac025 (all opus, reviewed_sha match at dispatch); post-review merge of origin/main (aebf173) verified content-identical to reviewed diff excluding docs/executions/state.yaml bookkeeping (sorted +/- line-set diff empty); routing-eval dry-run green at 45 cases, lint failures=0 post-merge'
+- id: qa
+  required: true
+  status: completed
+  evidence: "user-journey-qa trigger conditions absent: no frontend, no user-facing product behavior, no auth/navigation/payment flows \u2014 markdown skill corpus + lint/test change; skip-with-reason per workflow-deliver Step 5"
 - id: finalize
   required: true
   status: completed
-  evidence: 'stamp finalize at 1737389 (CI green, PR #182 open, threads resolved); PR left unmerged per instruction'
+  evidence: 'PR #186 open non-draft; stamp finalize at 68c6bdd (kernel: review freshness, clean tree, verify-local PASSED, forge state); do-not-merge per brief'
 stamps:
   review:
-    head_sha: ac6a3fb4c536da6dc222e40ce8e9efcccdaf1646
-    timestamp: '2026-08-19T16:16:04.926757+00:00'
+    head_sha: f55e96b94d5dbae46f46ffcab70d50e2e4bc65f7
+    timestamp: '2026-08-19T16:28:33.899201+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 0440149aa08571a384185e166ebc56cfc286d51057130e167d5ba3eed6df6586
-      lane_integrated_lines: '162'
-      lane_integrated_verdict: approve
-      lane_integrated_model: opus
-      review_floor: fast
+      lane_security_sha256: 1c1f79c3ee94f2c6bd2054479a30d5ce1e7f2e295f9100b0c94a089ae4623b0b
+      lane_security_lines: '45'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5[1m]
+      lane_logic_sha256: 29ffd19d965838f8384fc0f6450f919f3b74a427879433bd2507d19b34958939
+      lane_logic_lines: '60'
+      lane_logic_verdict: REQUEST_CHANGES
+      lane_logic_model: claude-opus-5[1m]
+      lane_tests_sha256: da8a0ef9585e18c80f7c9a89db67635b9f848d0685d618e4ce7e0e3cd96937f1
+      lane_tests_lines: '192'
+      lane_tests_verdict: REQUEST_CHANGES
+      lane_tests_model: claude-opus-5[1m]
+      lane_style_sha256: 9f8a6d6ac784bc066a5b4d5edc9de9a7a3e97fd44ac789fe4b9658e563901027
+      lane_style_lines: '84'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5[1m]
+      review_floor: full
       worktree_verify: pass
     attested:
       verdict: approve
-      review_profile: fast
-      lanes: integrated=/tmp/phase5b-182-integrated-review.md
+      review_profile: full
+      lanes: logic=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/logic-review.md,security=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/security-review.md,style=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/style-review.md,tests=/tmp/ledger-lanes-2026-08-19-planning-lane-consolidation/tests-review.md
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: f4b41a90a847fbcb524c7043a9b684a610341704
-    timestamp: '2026-08-19T16:23:33.526279+00:00'
+    head_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
+    timestamp: '2026-08-19T16:30:09.908583+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -65,21 +77,17 @@ stamps:
     attested:
       post_mortem: not_applicable
       describe_pr: in_pr_body
-      pr_number: '182'
+      pr_number: '186'
     override:
       active: false
       reason: ''
       timestamp: ''
-overrides:
-- action: force-init
-  reason: --force re-init over prior run 2026-08-19-phase5b-route-evidence
-  timestamp: '2026-08-19T15:14:07.111041+00:00'
-route: skill/kernel change|workflow-skill|confirmed
-branch: feat/d006-phase5b-route-evidence
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
-last_seen_sha: f4b41a90a847fbcb524c7043a9b684a610341704
+overrides: []
+branch: feat/planning-lane-consolidation
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/planning-lane-consolidation
+last_seen_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
 verify_local:
-  head_sha: f4b41a90a847fbcb524c7043a9b684a610341704
+  head_sha: 7cd2db3ff514cc1c316dfb04dcfb62394facfee3
   passed: true
   results:
   - cmd: ./test/run-tests.sh
