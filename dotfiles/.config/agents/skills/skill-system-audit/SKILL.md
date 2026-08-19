@@ -178,11 +178,11 @@ for gate, s in stamps.items():
 
 - **Local branch instead of remote-tracking ref.** `git log main` counts the checkout, not what landed. chorus's local `main` was 102 commits behind `origin/main`; the local count read 7 against a true 13. Never strip the `origin/` prefix off the resolved ref.
 - **No fetch.** A remote-tracking ref last updated days ago under-counts by however much has landed since, and reports it as fact.
-- **Assuming the default branch is `main`.** `taro`'s `origin/HEAD` is `origin/staging`; counting `main` gave 2 where the gated branch had 30. Treat `origin/HEAD` as the suggestion and confirm it against the repo's actual convention.
+- **Assuming the default branch is `main`.** `taro`'s `origin/HEAD` is `origin/staging`; counting `main` gave 2 where the gated branch had 30. Treat `origin/HEAD` as the suggestion and confirm it against the repo's actual convention — it is a clone-time cache, so it can also name a branch the remote has since stopped defaulting to, which is the last silent door in this class and the one no guard closes.
 - **`--all` when the claim is about gates.** All-refs counts bot branches and every local worktree: dotdev read 38 on its default branch and 449 across all refs as of 2026-08-19 17:00 (all-refs drifts every time any worktree commits — 451 within the hour, which is why an all-refs figure needs an as-of stamp to mean anything). Use `--all` only for "how much agent activity happened", and label it that way.
 - **Relative windows.** `--since="7 days ago"` is unreproducible; a later re-run cannot tell drift from error. Record an absolute boundary.
 
-Getting this wrong is not a rounding error. The same audit, same window, ranked its repos ml-models 20 / delphi 9 / chorus 7 / taro 2 on local branches — and taro 30 / ml-models 20 / chorus 13 / delphi 10 once the refs were fetched and resolved correctly. The leader changed, and the repo the audit had dismissed as negligible was the most active one. Report every figure as `N commits on <ref> since <absolute timestamp>`, naming the ref.
+Report every figure as `N commits on <ref> since <absolute timestamp>`, naming the ref.
 
 ```bash
 SINCE="2026-08-12 17:00"   # absolute window open; never "7 days ago"
