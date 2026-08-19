@@ -21,6 +21,10 @@ regex = '''-----BEGIN ((RSA|DSA|EC|PGP|OPENSSH) )?PRIVATE KEY( BLOCK)?-----'''
 tags = ["key", "private"]
 severity = "HIGH"
 
+[[rules.allowlists]]
+description = "Audit/remediation records quote the private-key header string as evidence; no key material (see DL-0018)"
+paths = ['''docs/audits/.*\.md''']
+
 [[rules]]
 id = "certificate"
 description = "Certificate"
