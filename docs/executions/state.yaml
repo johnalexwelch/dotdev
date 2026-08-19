@@ -4,21 +4,21 @@ kind: feature
 budget: one-reviewer
 initialized_epoch: 1787150233
 status: active
-next: preflight
-updated: '2026-08-19T14:37:13.363889+00:00'
+next: review
+updated: '2026-08-19T17:42:14.698728+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'worktree cut via worktree-baseline.sh (WORKFLOW_BASE_GATE resolved_base=origin/main fallback origin/staging_absent; WORKTREE_BASELINE_GATE origin/main -> feat/guard-rule3-tokenizer @ ~/dotdev-worktrees/guard-rule3-tokenizer); ledger preflight workflow-deliver OK (gh, git present); graphify: not_available_with_reason: no graphify-out/graph.json in repo; prompt-builder skipped: work-order carried complete context (PR #174 body, shipped hook, 69-shape matrix, D-006 kernel entries all read)'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'work-order is AFK-safe: acceptance criteria explicit (69-shape matrix outcomes preserved except enumerated flips: S9 quoted-literal, S13 text-presence over-blocks, arithmetic/paren shapes, ${VAR}-before-redirect; each flip enumerated in PR body with probe); constraints explicit (python3 stdlib only, 5s budget, fail-open only within declared name-binding boundary, fail-closed on tokenizer errors); no human-only decisions'
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'two-lane TDD held: test-author commits 911f62e+58a955b (test/ only, 16 red), implementer commits edfaf4f+589ae61 (zero test-file diff, checked via git diff --stat); suite 153/0 green, all 13 repo suites green via run-tests.sh; latency 64-130ms vs 5s budget; two-hook differential 15/115 DIFF rows all enumerated flips (F1-F8, N1-N5, N8, N17), none unexplained; tdd: ran (red-first, two lanes, separate contexts)'
 - id: review
   required: true
   status: pending
@@ -31,10 +31,43 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: 2a00da1c191f8123277fb47a655681f0dce806a8
+    timestamp: '2026-08-19T17:42:14.698513+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 2f2d4e10a7cb190d6ba4b5573f343395bfa65418132e4a58f7b3ef6c81b1d704
+      lane_security_lines: '222'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5
+      lane_logic_sha256: 94c75a8ae794a3bc44cbe5a446bbfba7ddb559fd4a979e3a99943e52c48b07f0
+      lane_logic_lines: '198'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-opus-5
+      lane_tests_sha256: 5faf6a9a3f52e7063cd5d00d6ec148f769b1a4574f840e543ef901c05939efdc
+      lane_tests_lines: '223'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-5
+      lane_style_sha256: 2c010bf871720e9e3a8f8806b85e3afb97da3f1bc047dceb1bfa00d857f2f6e0
+      lane_style_lines: '183'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      review_profile: full
+      verdict: APPROVE
+      lanes: security=/tmp/ledger-lanes-2026-08-19-guard-rule3-tokenizer/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-guard-rule3-tokenizer/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-guard-rule3-tokenizer/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-guard-rule3-tokenizer/style-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides:
 - action: force-init
   reason: --force re-init over prior run 2026-08-19-guard-rule3-tokenizer
   timestamp: '2026-08-19T14:37:13.253891+00:00'
 branch: feat/guard-rule3-tokenizer
 worktree: /Users/alexwelch/dotdev-worktrees/guard-rule3-tokenizer
+last_seen_sha: 0dce430d507ad653329525af5baa1326d0fe9dbb
