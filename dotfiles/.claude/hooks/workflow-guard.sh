@@ -98,30 +98,39 @@ _guard_rule3_tokenizer_path() {
 # optionally-spaced - (the fd-close operand may be spaced: `2>& -`).
 #
 # Both clauses run against a NORMALIZED copy of the command with backslash,
-# single-quote, double-quote, and newline characters deleted (round-1
-# security/logic/style lanes). Why: the tokenizer matches QUOTE-REMOVED
-# word values and joins backslash-newline continuations, so a quote-split
-# spelling (`pu"sh"`, `2>/dev/nul"l"`, `2>&"-"`) or a continuation-split
-# one is a real candidate the raw text does not show. Deleting those four
-# characters mirrors every transformation the tokenizer's matcher performs
-# — it decodes nothing else (no ANSI-C $'\x..' escapes, no path
-# normalization; neither does the tokenizer) — and deleting can only CREATE
-# grep matches, never destroy one (no pattern below contains any deleted
-# character), so the normalized grep matches a superset of the raw one.
+# single-quote, double-quote, dollar, and newline characters deleted
+# (round-1 + round-2 security/logic/style lanes). Why: the tokenizer
+# matches QUOTE-REMOVED word values, folds ANSI-C ($'…') and locale ($"…")
+# wrappers into those values, and joins backslash-newline continuations —
+# so a quote-split (`pu"sh"`, `2>&"-"`), ANSI-C-split (`p$'ush'`,
+# `2>&$'-'`), or continuation-split spelling is a real candidate the raw
+# text does not show. Deleting those five characters mirrors each of those
+# transformations, and deleting can only CREATE grep matches, never
+# destroy one (no pattern below contains any deleted character), so the
+# normalized grep matches a superset of the raw one. Deleting `$` also
+# strips genuine expansions (`$VAR`) — again only widening the match set.
 #
 # Conservativeness, stated precisely: every mutation pattern the tokenizer
 # recognizes contains one of the clause-(i) verbs as a substring of a
 # quote-removed word value, and every NULL/CLOSED fd classification
 # requires a quote-removed `/dev/null` target or a `-` dup operand after
-# an `&` operator — all of which survive in the normalized text. Known
-# residual: none identified; if the tokenizer's detector ever grows a
-# spelling these clauses cannot see (e.g. decoding ANSI-C escapes), this
-# prefilter must be revisited IN THE SAME CHANGE. The payoff: python3 is
-# never invoked for commands failing either clause, so a broken/missing
-# interpreter cannot brick delivery for the vast majority of Bash calls.
+# an `&` operator — all of which survive in the normalized text.
+#
+# Residual, MEASURED (round 2, after adding `$` to the deletion set): the
+# tokenizer does NOT decode ANSI-C escape SEQUENCES — probed directly:
+# an escape-encoded dup operand and escape-encoded /dev/null spellings
+# (hex `\x2d`-style and octal `\055`-style dash; `\x2f`/`\057`-encoded
+# slashes and letters in the target) all PERMIT at the tokenizer too, so
+# both layers are consistent and the value-level residual search came up
+# empty. Escape DECODING is therefore the first place a future gap would
+# open: if the tokenizer ever decodes `$'\x..'` escapes, those spellings
+# become detector-visible while staying prefilter-invisible — revisit this
+# prefilter IN THE SAME CHANGE. The payoff: python3 is never invoked for
+# commands failing either clause, so a broken/missing interpreter cannot
+# brick delivery for the vast majority of Bash calls.
 rule3_prefilter_candidate() {
     local normalized
-    normalized="$(tr -d "\\\\\"'\n" <<<"$cmd")"
+    normalized="$(tr -d "\\\\\"'\$\n" <<<"$cmd")"
     grep -Eiq '(push|commit|merge|rebase|create|edit|close|ready|api)' <<<"$normalized" &&
         grep -Eq '/dev/null|&[[:space:]]*-' <<<"$normalized"
 }

@@ -92,14 +92,18 @@ DESIGN NOTES (why, not just what):
   attaches to the statement) and ``coproc`` (a prefix word; the command
   after it is scanned by the any-position mutation matcher anyway).
 
-* Arithmetic backtrack (round-1 security lane, High): bash backtracks a
-  failed arithmetic parse at command position to a NESTED SUBSHELL, so
-  ``((cmd) redirect)`` really executes. Any ``((``-span whose content
-  carries an unquoted ``)`` therefore gets an ADDITIVE second reading as a
-  subshell (parse errors from that reading are discarded; it can only ever
-  add a block, never a permit), and the same additive reading applies to
-  ``$((``-spans re-read as command substitution. Genuine nested-paren
-  arithmetic finds no mutation in the second reading and stays permitted.
+* Arithmetic backtrack (round-1 security lane High; ``$((`` capture fixed
+  in round 2): bash backtracks a failed arithmetic parse to a NESTED
+  SUBSHELL, so ``((cmd) redirect)`` and ``$((cmd) redirect)`` really
+  execute. Both spellings are captured the same way -- consume one paren,
+  scan the OUTER paren at depth 1, keep the body VERBATIM as the
+  subshell reading (a fixed two-char strip is only correct when the
+  closers are adjacent; on a backtracked span it severed the redirect) --
+  and any span whose closers are non-adjacent or whose arithmetic content
+  carries an unquoted ``)`` gets an ADDITIVE second reading as that
+  subshell (parse errors from the re-read are discarded; it can only ever
+  add a block, never a permit). Genuine nested-paren arithmetic finds no
+  mutation in the second reading and stays permitted.
 
 * ``|&`` (round-1 logic lane): the implicit ``2>&1`` lands AFTER the
   node's own redirect list (bash manual), so a piped-to-``|&`` node's
@@ -322,9 +326,20 @@ class Scanner:
         (paramexp) -- we never need the variable name, only the fact that
         an expansion is present."""
         if self.peek(1) == "(" and self.peek(2) == "(":
-            self.i += 3
-            content = self.scan_balanced_parens(2)
-            word.add_expansion("arith", content)
+            # Capture the span the way _parse_arith_command does: consume
+            # only '$(' and scan the OUTER paren at depth 1, keeping the
+            # body verbatim as the nested-subshell reading (`$(( X ))` ==
+            # `$( ( X ) )`). A fixed depth-2 read stripping two trailing
+            # characters is only correct when the closers are adjacent --
+            # on a backtracked span it truncated the payload mid-token and
+            # severed the redirect, so the additive re-read saw a mutation
+            # with no suppression (round-2 security lane, High). The
+            # genuine-arithmetic interpretation needs no content at all
+            # (data); the walker gates the additive subshell re-read on
+            # _arith_content_has_close_paren.
+            self.i += 2
+            body = self.scan_balanced_parens(1)
+            word.add_expansion("arith", body)
             return
         if self.peek(1) == "(":
             self.i += 2
@@ -1639,7 +1654,11 @@ def _walk_word_expansions(
         for kind, content in w.segs:
             if kind in RECURSABLE_KINDS:
                 _recurse_text(content, Scope(dict(eff), []), depth)
-            elif kind == "arith" and _contains_unquoted_close_paren(content):
+            elif kind == "arith" and _arith_content_has_close_paren(content):
+                # `content` is the $((-span's outer-subshell body (see
+                # consume_dollar), so the gate is the same one the
+                # command-position path uses -- non-adjacent closers or a
+                # stray ')' in the arithmetic content.
                 _recurse_text_tolerant(content, Scope(dict(eff), []), depth)
 
 
