@@ -1,69 +1,57 @@
-run_id: 2026-08-19-streamdeck-integration
+run_id: 2026-08-19-router-v1-feature-seam
 workflow: workflow-deliver
-kind: feature
+kind: skill
 budget: one-reviewer
-initialized_epoch: 1787151568
+initialized_epoch: 1787152956
 status: active
-next: review
-updated: '2026-08-19T15:53:58.479341+00:00'
+next: ''
+updated: '2026-08-19T16:09:02.539073+00:00'
 steps:
 - id: preflight
   required: true
   status: completed
-  evidence: 'worktree-baseline verify PASS: clean, descends from origin/main'
-- id: triage
-  required: true
-  status: completed
-  evidence: acceptance = handoff Integration-work items 1-7; scripts+CAL values blocked on human steps, recorded in PR body
+  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> fix/router-v1-vs-feature-seam @ .claude/worktrees/router-v1-vs-feature-seam; router-only scope, golden-routes.yaml untouched'
 - id: implement
   required: true
   status: completed
-  evidence: 'commits bd1ed69+a858ae5 on PR #178, pre-commit all-files 13 Passed exit 0'
+  evidence: V1 row + ambiguous-feature row signal sharpened; V1-vs-feature boundary sentence added after classification table; v1-workflow description checked clean (no internal-tooling phrasing)
+- id: eval
+  required: true
+  status: completed
+  evidence: 'routing-eval full run vs #181 45-case golden set: total 45 pass 45 fail 0 pass-rate 100% RESULT: PASS; case 45 PASS (workflow-feature) + 3/3 single-case probes; dry-run schema OK'
 - id: review
   required: true
-  status: active
-  evidence: ''
+  status: completed
+  evidence: 'review stamp: fast profile, integrated lane APPROVE (/tmp/integrated-review-v1seam.md, model sonnet)'
 - id: finalize
   required: true
-  status: active
-  evidence: ''
+  status: completed
+  evidence: 'finalize stamped at 02eb394; PR #183 open non-draft, CI all green, verify-local PASS; NOT merged per work order'
 stamps:
   review:
-    head_sha: c4d2821459df8e5e6b923b0bfb7686c15fb62297
-    timestamp: '2026-08-19T15:53:44.694234+00:00'
+    head_sha: 3952a170e042b7e2319d1e498e88bf7fbba6f2e0
+    timestamp: '2026-08-19T16:07:28.397608+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: ad890467fccf56025fda10bc056e78617eababa1cb0077c00b963c5f3ecbe3ca
-      lane_security_lines: '270'
-      lane_security_verdict: APPROVE
-      lane_security_model: claude-opus-5
-      lane_logic_sha256: 4cc7c5bc9e7586c4484e4fc4137d57c1c106dcbd8771c8e485d5a9c5d9cc1388
-      lane_logic_lines: '184'
-      lane_logic_verdict: APPROVE
-      lane_logic_model: claude-opus-5
-      lane_tests_sha256: 5d6a08e12f3cc7382954e08611dc2520355844e0c5ea00f778d0cb720cfd9b35
-      lane_tests_lines: '202'
-      lane_tests_verdict: APPROVE
-      lane_tests_model: claude-opus-5
-      lane_style_sha256: 9a7d32f185e711232b13d08d86380a61b8a86a34d7d06944abc8e5b7077f0192
-      lane_style_lines: '322'
-      lane_style_verdict: APPROVE
-      lane_style_model: claude-opus-5
-      review_floor: full
+      lane_integrated_sha256: 0053f5e6cebdae557c1abdecf59bbc53379abfc0e1a9be3c1b7bc60e66059799
+      lane_integrated_lines: '41'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: sonnet
+      review_floor: fast
       worktree_verify: pass
     attested:
-      review_profile: full
-      computed_floor: full
-      model_floor: opus
-      lanes: security=/tmp/ledger-lanes-2026-08-19-streamdeck-integration/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-streamdeck-integration/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-streamdeck-integration/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-streamdeck-integration/style-review.md
+      verdict: approve
+      review_profile: fast
+      lanes: integrated=/tmp/integrated-review-v1seam.md
+      reviewed_sha: '0dca090 transferred: post-#178-merge, three-dot scope unchanged (router+snapshot only), eval 45/45 at this wording'
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: da73c57340a01da38a93ebad4fa8f120106aad60
-    timestamp: '2026-08-19T15:53:58.479146+00:00'
+    head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
+    timestamp: '2026-08-19T16:09:02.538854+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -72,19 +60,19 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
-      post_mortem: 'not_applicable_with_reason: routine single-slice config/docs delivery, no design plan or phase runs'
-      describe_pr: body_file=docs/executions/.pr-bodies/2026-08-19-pr-178.md; mode=issue_only; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason(no graphify-out in repo); applied_to_pr=true
-      pr_number: '178'
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
+      pr_number: '183'
     override:
       active: false
       reason: ''
       timestamp: ''
 overrides: []
-branch: claude/stream-deck-dotdev-integration-7f788b
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/stream-deck-dotdev-integration-7f788b
-last_seen_sha: da73c57340a01da38a93ebad4fa8f120106aad60
+branch: fix/router-v1-vs-feature-seam
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
+last_seen_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
 verify_local:
-  head_sha: c4d2821459df8e5e6b923b0bfb7686c15fb62297
+  head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
   passed: true
   results:
   - cmd: ./test/run-tests.sh
