@@ -1,0 +1,34 @@
+run_id: 2026-08-19-d006-multi-repo-adoption
+workflow: workflow-deliver
+kind: docs
+budget: one-reviewer
+initialized_epoch: 1787171183
+status: active
+next: preflight
+updated: '2026-08-19T20:26:23.140731+00:00'
+steps:
+- id: preflight
+  required: true
+  status: pending
+  evidence: ''
+- id: triage
+  required: true
+  status: pending
+  evidence: ''
+- id: implement
+  required: true
+  status: pending
+  evidence: ''
+- id: review
+  required: true
+  status: pending
+  evidence: ''
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps: {}
+overrides: []
+route: governance decision record|workflow-deliver|confirmed
+branch: docs/d006-multi-repo-adoption
+worktree: /Users/alexwelch/wt/dotdev/d006-multi-repo-adoption
