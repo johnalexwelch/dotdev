@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152447
 status: done
 next: ''
-updated: '2026-08-19T16:16:04.926956+00:00'
+updated: '2026-08-19T16:23:33.526452+00:00'
 steps:
 - id: red-tests
   required: true
@@ -53,8 +53,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 1737389829c421ee2815c45f0276cb5ad2559519
-    timestamp: '2026-08-19T15:57:12.972432+00:00'
+    head_sha: f4b41a90a847fbcb524c7043a9b684a610341704
+    timestamp: '2026-08-19T16:23:33.526279+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -63,9 +63,9 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
       pr_number: '182'
-      describe_pr: done
-      post_mortem: Phase 5b landed route enforcement at 3 layers; upstream moved 3x mid-gate (merged forward each time); lane ran 4 rounds incl. reverted-tuple control run
     override:
       active: false
       reason: ''
@@ -77,9 +77,9 @@ overrides:
 route: skill/kernel change|workflow-skill|confirmed
 branch: feat/d006-phase5b-route-evidence
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
-last_seen_sha: 578eede7e7ab24983bbe1a66ea4ec910dd66f04a
+last_seen_sha: f4b41a90a847fbcb524c7043a9b684a610341704
 verify_local:
-  head_sha: ac6a3fb4c536da6dc222e40ce8e9efcccdaf1646
+  head_sha: f4b41a90a847fbcb524c7043a9b684a610341704
   passed: true
   results:
   - cmd: ./test/run-tests.sh
