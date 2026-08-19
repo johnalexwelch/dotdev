@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152044
 status: active
-next: review
-updated: '2026-08-19T15:13:24.792325+00:00'
+next: finalize
+updated: '2026-08-19T15:15:51.119035+00:00'
 steps:
 - id: baseline
   required: true
@@ -17,8 +17,8 @@ steps:
   evidence: 3 SKILL.md edits committed 73fa139; lints 0 failures; tests 65/65
 - id: review
   required: true
-  status: active
-  evidence: ''
+  status: completed
+  evidence: integrated lane APPROVE (sonnet, fast floor); stamp review recorded
 - id: finalize
   required: true
   status: pending
@@ -43,7 +43,33 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 024650a875a95100c2b08759d5c0e2477d35361b
+    timestamp: '2026-08-19T15:15:51.118872+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: open
+      threads_resolved: 'yes'
+    attested:
+      pr_number: '180'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: feat/grill-wayfinder-escalation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/grill-wayfinder-escalation
-last_seen_sha: 2cc15b602408d3915f2e63c27e4111dfa6f7f6a7
+last_seen_sha: 024650a875a95100c2b08759d5c0e2477d35361b
+verify_local:
+  head_sha: 024650a875a95100c2b08759d5c0e2477d35361b
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
