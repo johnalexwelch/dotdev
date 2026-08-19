@@ -294,6 +294,9 @@ for bad in '../evil' 'a/b' '.hidden' 'run*id' 'run?id' 'with space' ''; do
 done
 assert_contains "run_id refusal names the reason" "$OUT" \
     "unusable as a snapshot filename"
+run_ledger "$repoA" init 'run*id' --workflow workflow-deliver \
+    --kind feature --steps "plan" --force
+assert_contains "charset refusal names the allowlist" "$OUT" "allowed: A-Za-z0-9._-"
 assert_file_contains "refused run_ids write nothing (demo3 still live)" \
     "$stateA" "run_id: 2026-08-19-demo3"
 
@@ -313,7 +316,7 @@ run_ledger "$repoCol" init 2026-08-19-col --workflow workflow-deliver \
     --kind feature --steps "impl" --force
 assert_status "collision re-init with --force exits 0" 0 "$STATUS"
 assert_file_contains "forced collision re-init leaves an overrides audit entry" \
-    "$(live_state "$repoCol")" "force"
+    "$(live_state "$repoCol")" "existing committed run file"
 
 # --- set: transition rules ---
 run_ledger "$repoA" set nosuchstep completed --evidence "x"

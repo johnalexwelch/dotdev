@@ -294,7 +294,8 @@ assert_contains "missing --file verdict names the requested path" "$OUT" \
     "docs/executions/runs/absent-run.yaml"
 
 # --file is shape-validated like a kernel-authored run file: nested paths,
-# out-of-repo paths, and the legacy shared path are all refused (INVALID).
+# out-of-repo paths, dotfile-shaped basenames, and the legacy shared path are
+# all refused (INVALID).
 run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/nested/x.yaml
 assert_status "nested --file path rejected" 1 "$STATUS"
 assert_contains "nested --file rejection says INVALID" "$OUT" "INVALID"
@@ -303,6 +304,24 @@ assert_status "--file outside the repo rejected" 1 "$STATUS"
 assert_contains "outside --file rejection says INVALID" "$OUT" "INVALID"
 run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/state.yaml
 assert_status "--file naming the legacy path rejected" 1 "$STATUS"
+assert_contains "legacy --file rejection says INVALID" "$OUT" "INVALID"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/.yaml
+assert_status "dotfile-shaped --file basename rejected" 1 "$STATUS"
+assert_contains "dotfile --file rejection says INVALID" "$OUT" "INVALID"
+
+# "Committed snapshot" means in a COMMIT: an untracked run file is refused,
+# and staging alone (git add, no commit) must not satisfy the check either —
+# nor may an untracked name reach a tracked sibling via pathspec globbing.
+printf 'stray: true\n' >"$repoMulti/docs/executions/runs/stray-run.yaml"
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/stray-run.yaml
+assert_status "untracked run file rejected" 1 "$STATUS"
+assert_contains "untracked rejection says INVALID" "$OUT" "INVALID"
+git -C "$repoMulti" add -- docs/executions/runs/stray-run.yaml
+run_ledger "$repoMulti" check-snapshot finalize --file docs/executions/runs/stray-run.yaml
+assert_status "staged-but-uncommitted run file rejected" 1 "$STATUS"
+assert_contains "staged-only rejection says INVALID" "$OUT" "INVALID"
+git -C "$repoMulti" rm -q --cached -- docs/executions/runs/stray-run.yaml
+rm -f "$repoMulti/docs/executions/runs/stray-run.yaml"
 
 # The legacy shared snapshot satisfies nothing: a repo whose ONLY committed
 # snapshot is a fresh old-style state.yaml has no run file to check.
@@ -457,6 +476,20 @@ git -C "$repoNest" commit -q -m "chore(ledger): stamp finalize" \
 run_check "$repoNest" --base "$baseNest" --head-ref feat/nested
 assert_status "nested run file is not an accepted candidate" 1 "$STATUS"
 assert_contains "nested-only diff fails as zero candidates" "$OUT" "docs/executions/runs"
+assert_contains "zero-candidate diagnosis names the ignored nested path count" "$OUT" "nested"
+
+# Dotfile-shaped candidate (.yaml as the whole basename): the accept arm must
+# not match an empty prefix (review round 2: security).
+repoDotf=$(new_repo gate_dotfile)
+baseDotf=$(git -C "$repoDotf" rev-parse HEAD)
+echo "work" >"$repoDotf/src/feature.py"
+commit_all "$repoDotf" "feat: work"
+write_snapshot "$repoDotf" "$(git -C "$repoDotf" rev-parse HEAD)" false "" tmp-dotf
+mv "$repoDotf/docs/executions/runs/tmp-dotf.yaml" "$repoDotf/docs/executions/runs/.yaml"
+git -C "$repoDotf" add -f -- docs/executions/runs/.yaml
+git -C "$repoDotf" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/runs/.yaml
+run_check "$repoDotf" --base "$baseDotf" --head-ref feat/dotfile
+assert_status "dotfile-shaped run file is not an accepted candidate" 1 "$STATUS"
 
 # Unresolvable merge-base: the fallback enumerates the run files present at
 # HEAD and runs the same candidate loop — resolvable and fail-closed, instead

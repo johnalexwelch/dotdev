@@ -194,7 +194,7 @@ assert_status "merge blocked once the override is stale" 2 "$STATUS"
 assert_contains "stale-override block prints OVERRIDE_STALE" "$OUT" "OVERRIDE_STALE"
 assert_contains "stale-override block carries the recorded reason" "$OUT" "guard bypass test"
 
-# --- Rule 2: state.yaml write block ---
+# --- Rule 2: ledger state write block ---
 opted_state=$(new_repo state_block opted)
 
 run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/state.yaml")"
@@ -238,6 +238,14 @@ assert_contains "nested block says script-owned" "$OUT" "script-owned"
 
 run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/a/b/c.yml")"
 assert_status "deeply nested runs .yml path blocked" 2 "$STATUS"
+
+# Dotfile-shaped basenames: '.yaml'/'.yml' ARE the whole basename, which a
+# `.+\.ya?ml` regex cannot match while case-glob accept sides match the empty
+# prefix — the block set must cover them (review round 2: security).
+run_hook "$opted_state" "$(json_file_tool Write "$opted_state" "$opted_state/docs/executions/runs/.yaml")"
+assert_status "dotfile-shaped runs snapshot (.yaml) blocked" 2 "$STATUS"
+run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/.yml")"
+assert_status "dotfile-shaped runs snapshot (.yml) blocked" 2 "$STATUS"
 
 run_hook "$opted_state" "$(json_file_tool Edit "$opted_state" "$opted_state/docs/executions/runs/README.md")"
 assert_status "runs/README.md (migration note) not blocked" 0 "$STATUS"
