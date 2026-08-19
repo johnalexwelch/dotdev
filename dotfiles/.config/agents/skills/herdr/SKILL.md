@@ -68,9 +68,9 @@ herdr pane report-metadata "$HERDR_PANE_ID" \
 ## Wait for output or agent status
 
 ```bash
-herdr pane wait-output --match "ready on port 3000" --timeout 30000 1-3   # options first, PANE_ID last
-herdr pane wait-output --regex "server.*ready" --timeout 30000 1-3        # --regex PATTERN replaces --match
-herdr agent wait 1-1 --until done --timeout 60000                        # --until, repeatable; exit 1 on timeout
+herdr pane wait-output --match "ready on port 3000" --timeout 30000 1-3   # pane wait-output: options first, PANE_ID last
+herdr pane wait-output --regex "server.*ready" --timeout 30000 1-3       # --regex PATTERN replaces --match
+herdr agent wait 1-1 --until done --timeout 60000                        # agent wait: TARGET first; --until repeatable
 ```
 
 `pane wait-output --source recent` (the default source) matches against unwrapped recent text, so soft wrapping never breaks matches; inspect that same transcript with `pane read --source recent-unwrapped`. Use `pane read` for output that already exists, `pane wait-output` for output you expect next. Without `--until`, `agent wait` matches idle/done/blocked; without `--timeout`, both wait indefinitely.
@@ -132,7 +132,7 @@ herdr pane run <PR_VIEW_PANE> "gh pr view <pr_number>"
 **ci** — watch the run:
 
 ```bash
-herdr tab create --workspace <workspace_id> --label "ci"            # parse CI_PANE (root pane of the new tab)
+herdr tab create --workspace <workspace_id> --label "ci"             # parse CI_PANE (root pane of the new tab)
 herdr pane run <CI_PANE> "gh run watch <run_id> --exit-status"       # omit run_id to auto-pick latest
 ```
 
