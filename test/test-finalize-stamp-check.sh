@@ -436,7 +436,8 @@ resolve_py() {
 
 PYBIN=$(resolve_py)
 if [ -n "$PYBIN" ]; then
-    OUT="$("$PYBIN" - "$CI_YML" <<'PYEOF' 2>&1
+    OUT="$(
+        "$PYBIN" - "$CI_YML" <<'PYEOF' 2>&1
 import sys
 import yaml
 
@@ -466,7 +467,7 @@ assert marker not in str(check.get("run", "")), (
 )
 print("WIRING_OK")
 PYEOF
-)"
+    )"
     STATUS=$?
     assert_status "ci.yml parses and wires the finalize-stamp job" 0 "$STATUS"
     assert_contains "ci.yml wiring assertions all hold" "$OUT" "WIRING_OK"
