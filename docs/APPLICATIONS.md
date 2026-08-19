@@ -69,18 +69,10 @@
 
 ### Stream Deck
 
-- Profiles:
-  - Development
-  - Meetings
-  - Content Creation
-- Key Mappings:
-  - Build & Test
-  - Git commands
-  - App switching
-- Integrations:
-  - Zoom controls
-  - Spotify
-  - Home automation
+- Stream Deck MK.2 (15-key, 3×5); profiles are built and maintained in the
+  Stream Deck app itself (app data is not stow-managed)
+- Design record, plugin set, and script inventory:
+  [`dotfiles/.config/streamdeck/README.md`](../dotfiles/.config/streamdeck/README.md)
 
 ## Security Tools
 
