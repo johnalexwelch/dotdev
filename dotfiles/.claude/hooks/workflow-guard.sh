@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # workflow-guard.sh — PreToolUse/PostToolUse guard rails for delivery workflows.
-# D-006 additions: merge gate (ledger check finalize), state.yaml write block,
+# D-006 additions: merge gate (ledger check finalize), ledger state write
+# block (git-dir live state, per-run snapshots, legacy state.yaml),
 # worktree-baseline sidecar write block, stderr-suppression block on mutating
 # forge/git commands, and entry enforcement (warn-only in Phase 0;
 # LEDGER_ENTRY_ENFORCE=block escalates).
@@ -177,7 +178,11 @@ if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" 
     # legacy shared docs/executions/state.yaml (frozen historical record).
     # Case-insensitive: APFS is case-insensitive, so a case-variant spelling
     # writes the real file.
-    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)docs/executions/runs/[^/]+\.ya?ml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
+    # runs/ matches ANY depth (.+): the kernel only authors flat files, so a
+    # nested runs/ yaml is by definition hand-written — exactly what this rule
+    # blocks; the block set must never be narrower than what the CI gate could
+    # be asked to read (review round: security H1).
+    if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)docs/executions/runs/.+\.ya?ml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
         printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/close) instead of editing it directly.\n' "$file_path" >&2
         exit 2
     fi

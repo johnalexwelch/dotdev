@@ -160,68 +160,111 @@ else
 fi
 
 # The gate: a per-run committed snapshot changed by THIS PR must carry a
-# fresh finalize stamp. Candidates are the docs/executions/runs/*.yaml files
-# in the diff vs base that still exist at HEAD — a delivery's own stamps are
-# by construction commits on its branch, so its run file is always in the
-# diff. At least one candidate must pass `check-snapshot finalize --file`
-# (a superseded force-re-init sibling may legitimately be stale). Zero
-# candidates on a non-exempt diff = the delivery never stamped. When the
-# diff itself could not be computed, fall back to the kernel's own
-# resolution (live run or a single runs/*.yaml) — conservative, never a
-# silent pass.
+# fresh finalize stamp. Candidates are the FLAT docs/executions/runs/*.yaml
+# files in the diff vs base that still exist at HEAD — a delivery's own
+# stamps are by construction commits on its branch, so its run file is always
+# in the diff. Nested runs/ paths are never candidates: the kernel cannot
+# author one (run_ids reject separators), and bash case globs cross '/', so
+# an unqualified runs/*.yaml arm would accept a hand-written nested file the
+# write-block guard is also asked to cover (review round: security H1 /
+# logic F1). At least one candidate must pass `check-snapshot finalize
+# --file` (a superseded force-re-init sibling may legitimately be stale).
+# Zero candidates on a non-exempt diff = the delivery never stamped. When
+# the diff itself could not be computed (no merge-base, failed diff), the
+# fallback enumerates the flat run files present at HEAD and runs the same
+# loop — resolvable and fail-closed, never the kernel's single-file tier,
+# which reads AMBIGUOUS forever once run files accumulate (logic F2).
 candidates=()
+deleted_candidates=0
 if [ "$diff_ok" -eq 1 ]; then
+    candidate_source="changed vs base $BASE"
     while IFS= read -r path; do
         [ -n "$path" ] || continue
         case "$path" in
+            docs/executions/runs/*/*) ;;
             docs/executions/runs/*.yaml | docs/executions/runs/*.yml)
-                [ -f "$TOP/$path" ] || continue
-                candidates+=("$path")
+                if [ -f "$TOP/$path" ]; then
+                    candidates+=("$path")
+                else
+                    deleted_candidates=$((deleted_candidates + 1))
+                fi
                 ;;
         esac
     done <<<"$changed"
+else
+    candidate_source="present at HEAD (diff vs base unavailable)"
+    for f in "$TOP"/docs/executions/runs/*.yaml "$TOP"/docs/executions/runs/*.yml; do
+        [ -f "$f" ] || continue
+        candidates+=("${f#"$TOP"/}")
+    done
 fi
 
 out=""
 status=1
-if [ "$diff_ok" -ne 1 ]; then
-    out="$(bash "$LEDGER_SH" check-snapshot finalize 2>&1)"
-    status=$?
-elif [ "${#candidates[@]}" -eq 0 ]; then
-    out="no run snapshot (docs/executions/runs/*.yaml) changed vs base $BASE — the delivery never stamped, or the run file was not committed"
+malformed=""
+if [ "${#candidates[@]}" -eq 0 ]; then
+    out="no run snapshot (docs/executions/runs/*.yaml) ${candidate_source} — the delivery never stamped, or the run file was not committed"
+    if [ "$deleted_candidates" -gt 0 ]; then
+        out="$out, or every changed run file was deleted at HEAD ($deleted_candidates skipped)"
+    fi
     status=1
 else
-    # First passing candidate wins; a kernel environment breakage (exit 10)
-    # outranks plain failures so the warn-permit posture survives the loop.
+    # Scan every candidate (no early break) so schema-invalid siblings are
+    # collected even when another candidate passes. Precedence: any pass wins;
+    # else kernel environment breakage (exit 10) outranks plain failures so
+    # the warn-permit posture survives the loop. Exit 6 (corrupt snapshot) is
+    # tracked separately — a corrupt PR-visible record must never merge
+    # unannotated (logic F4).
+    pass_out=""
     env_out=""
     env_seen=0
     fail_out=""
     for cand in "${candidates[@]}"; do
         cand_out="$(bash "$LEDGER_SH" check-snapshot finalize --file "$cand" 2>&1)"
         cand_status=$?
-        if [ "$cand_status" -eq 0 ]; then
-            out="$cand_out"
-            status=0
-            break
-        fi
-        if [ "$cand_status" -eq 10 ] && [ "$env_seen" -eq 0 ]; then
-            env_seen=1
-            env_out="$cand_out"
-        fi
+        case "$cand_status" in
+            0)
+                [ -n "$pass_out" ] || pass_out="$cand_out"
+                continue
+                ;;
+            6)
+                malformed="${malformed:+$malformed, }$cand"
+                ;;
+            10)
+                if [ "$env_seen" -eq 0 ]; then
+                    env_seen=1
+                    env_out="$cand_out"
+                fi
+                ;;
+        esac
         fail_out="${fail_out}candidate $cand: $(printf '%s\n' "$cand_out" | tail -n 1)"$'\n'
     done
-    if [ "$status" -ne 0 ]; then
-        if [ "$env_seen" -eq 1 ]; then
-            out="$env_out"
-            status=10
-        else
-            out="${fail_out%$'\n'}"
-            status=1
-        fi
+    if [ -n "$pass_out" ]; then
+        out="$pass_out"
+        status=0
+    elif [ "$env_seen" -eq 1 ]; then
+        out="$env_out"
+        status=10
+    else
+        out="${fail_out%$'\n'}"
+        status=1
     fi
 fi
-# The kernel's verdict is the LAST line — stderr noise (python warnings,
-# resolver chatter) merged into $out must not break the match (security S2).
+
+# Schema-invalid siblings stay loud even on PASS ($malformed is single-line —
+# candidate paths come from diff/glob lines, no embedded newlines survive the
+# read loop).
+if [ -n "$malformed" ] && [ "$status" -eq 0 ]; then
+    verdict "note: schema-invalid run snapshot(s) in this PR (kernel exit 6): $malformed — corrupt PR-visible record; fix before merge"
+    echo "::warning::schema-invalid run snapshot(s): $malformed"
+fi
+
+# The kernel's verdict is the LAST line on the single-check paths — stderr
+# noise (python warnings, resolver chatter) merged into $out must not break
+# the match (security S2). On the aggregate multi-candidate FAIL path $out is
+# script-synthesized ("candidate <path>: <kernel tail>" lines) and is never
+# verdict-matched: verdict_line is only consumed under status 0, where $out
+# is raw kernel output for the passing candidate.
 verdict_line="$(printf '%s\n' "$out" | tail -n 1)"
 # $out is kernel output that interpolates untrusted snapshot text; collapse
 # newlines AND carriage returns before any log/annotation write so it can

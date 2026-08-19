@@ -31,14 +31,17 @@
 #
 # Exit codes (the API — tests assert them):
 #   0  success / check passed
-#   1  check failed (MISSING|STALE), reconcile drift, preflight missing tool,
+#   1  check failed (MISSING|STALE), check-snapshot resolution refusals
+#      (AMBIGUOUS, INVALID), reconcile drift, preflight missing tool,
 #      verify-local command failure, usage errors
 #   2  stamp refused: one or more checked fields failed
 #   3  set refused: required step cannot be skipped
 #   4  set refused: terminal status without evidence/reason; override without --reason
 #   5  unknown step / unknown skill / unknown gate
-#   6  corrupt or schema-invalid state (never silently rewritten)
-#   7  init refused: an active run already exists (use --force)
+#   6  corrupt or schema-invalid state (never silently rewritten); a run_id
+#      unusable as a snapshot filename
+#   7  init refused: an active run already exists, or a committed run file
+#      for the run_id already exists (use --force)
 #   8  stamp refused: non-reviewer-validation gate type without --human
 #   9  verify-local: no docs/executions/ci-commands.yaml manifest (NO_MANIFEST)
 #  10  environment breakage (no python3 with PyYAML; misconfigured
@@ -86,12 +89,17 @@ require_repo() {
 }
 
 set_snapshot_rel() {
-    # The run_id becomes a tracked filename: refuse path-hostile shapes
-    # (separators, traversal, hidden/empty) rather than writing outside
-    # $RUNS_REL or committing a surprise path.
+    # The run_id becomes a tracked filename AND a git pathspec (commit_snapshot
+    # passes it to `git add/commit --`): allowlist the charset rather than
+    # denylist shapes — glob metacharacters would otherwise sweep sibling runs'
+    # files into this run's ledger commits (review round: security L2), and
+    # separators/traversal would write outside $RUNS_REL.
     case "$1" in
-        */* | *..* | '' | .* | *[[:space:]]*)
+        '' | .* | *..*)
             die 6 "run_id unusable as a snapshot filename: '$1'"
+            ;;
+        *[!A-Za-z0-9._-]*)
+            die 6 "run_id unusable as a snapshot filename: '$1' (allowed: A-Za-z0-9._-)"
             ;;
     esac
     SNAPSHOT_REL="$RUNS_REL/$1.yaml"
@@ -304,7 +312,7 @@ def split_kv(items):
 
 
 def op_init(argv):
-    run_id, workflow, kind, steps_csv, budget, force, route = argv
+    run_id, workflow, kind, steps_csv, budget, force, route, snap_existed = argv
     force = force == "1"
     if route and not ROUTE_RE.match(route):
         err(
@@ -343,6 +351,16 @@ def op_init(argv):
             {
                 "action": "force-init",
                 "reason": "--force re-init over %s" % prior_note,
+                "timestamp": now(),
+            }
+        )
+    # Overwriting an existing committed run file (same run_id) is audited the
+    # same way — the bash layer already refused it without --force.
+    if force and snap_existed == "1":
+        overrides.append(
+            {
+                "action": "force-init",
+                "reason": "--force re-init over existing committed run file for %s" % run_id,
                 "timestamp": now(),
             }
         )
@@ -1162,6 +1180,17 @@ cmd_init() {
     done
     [ -n "$workflow" ] && [ -n "$kind" ] && [ -n "$steps" ] || usage
     set_snapshot_rel "$run_id"
+    # A committed run file with this run_id is a prior delivery's PR-visible
+    # audit record; overwriting it silently would rewrite history through the
+    # script itself (review round: security L3). Refuse without --force; a
+    # forced overwrite is recorded in overrides[] like any force-init.
+    local snap_existed=0
+    if [ -e "$SNAPSHOT" ]; then
+        snap_existed=1
+        if [ "$force" -ne 1 ]; then
+            die 7 "committed run file already exists for run_id '$run_id' ($SNAPSHOT_REL); choose a new run_id or pass --force"
+        fi
+    fi
     # Route evidence (D-006 Phase 5b): warn by default when absent;
     # LEDGER_REQUIRE_ROUTE=block escalates to a refusal (exit 11) — the same
     # warn-then-flip pattern as entry enforcement (LEDGER_ENTRY_ENFORCE).
@@ -1171,7 +1200,7 @@ cmd_init() {
         fi
         printf 'WARNING: no route evidence — invoke workflow-router (recording init without route:)\n' >&2
     fi
-    py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" "$route" || exit $?
+    py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" "$route" "$snap_existed" || exit $?
     # Ground-truth anchors for reconcile (batch #6): where the run lives.
     py set_meta branch "$(git -C "$TOP" branch --show-current 2>/dev/null)" || exit $?
     py set_meta worktree "$TOP" || exit $?
@@ -1319,16 +1348,39 @@ cmd_check_snapshot() {
         esac
     done
     if [ -n "$file" ]; then
+        # --file is shape-validated exactly like a kernel-authored run file:
+        # a single path segment under $RUNS_REL with a .ya?ml extension,
+        # inside THIS repo. Everything else is INVALID — --file must never be
+        # a validator-free door into the kernel (review round: security H1).
+        local rel="$file" top_phys file_dir file_base
         case "$file" in
             /*)
-                SNAPSHOT="$file"
-                SNAPSHOT_REL="${file#"$TOP"/}"
-                ;;
-            *)
-                SNAPSHOT_REL="$file"
-                SNAPSHOT="$TOP/$file"
+                # Canonicalize both sides physically: on macOS the caller's
+                # spelling and $TOP can differ via /var -> /private/var.
+                top_phys="$(cd "$TOP" && pwd -P)" || die 10 "cannot resolve the repo root physically"
+                file_dir="$(cd "$(dirname "$file")" 2>/dev/null && pwd -P)" || file_dir=""
+                file_base="$(basename "$file")"
+                if [ -n "$file_dir" ] && [ "$file_dir" = "$top_phys/$RUNS_REL" ]; then
+                    rel="$RUNS_REL/$file_base"
+                else
+                    echo "INVALID: --file must name a run snapshot inside this repo at $RUNS_REL/<run_id>.yaml (got: $file)"
+                    exit 1
+                fi
                 ;;
         esac
+        case "$rel" in
+            "$RUNS_REL"/*/*)
+                echo "INVALID: --file must not be nested — the kernel only authors $RUNS_REL/<run_id>.yaml (got: $file)"
+                exit 1
+                ;;
+            "$RUNS_REL"/*.yaml | "$RUNS_REL"/*.yml) ;;
+            *)
+                echo "INVALID: --file must name a run snapshot at $RUNS_REL/<run_id>.yaml (got: $file)"
+                exit 1
+                ;;
+        esac
+        SNAPSHOT_REL="$rel"
+        SNAPSHOT="$TOP/$rel"
     elif [ -f "$LIVE" ]; then
         resolve_snapshot_from_live
     else
@@ -1347,6 +1399,14 @@ cmd_check_snapshot() {
         fi
         SNAPSHOT="${candidates[0]}"
         SNAPSHOT_REL="${SNAPSHOT#"$TOP"/}"
+    fi
+    # "Committed snapshot" is the contract: an existing-but-untracked run file
+    # is a hand-placed artifact, not a record (review round: logic F5). A
+    # missing file falls through to gate_verdict's MISSING instead.
+    if [ -f "$SNAPSHOT" ] &&
+        ! git -C "$TOP" ls-files --error-unmatch -- "$SNAPSHOT_REL" >/dev/null 2>&1; then
+        echo "INVALID: run snapshot exists but is not tracked by git: $SNAPSHOT_REL"
+        exit 1
     fi
     out="$(gate_verdict "$gate" snapshot)"
     status=$?
