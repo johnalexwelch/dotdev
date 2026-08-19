@@ -231,6 +231,26 @@ run_relay --handoff "$HANDOFF" --repo "$REPO"
 assert_status "RELAY_WORKDIR override works end-to-end" 0 "$STATUS"
 assert_file "leg transcript lands inside RELAY_WORKDIR" "$WORKDIR/leg-1.jsonl"
 assert_file "resolved leg argv is recorded for audit" "$WORKDIR/leg-1.argv"
+# The audit record must match what the leg actually received, not a
+# hand-maintained copy that can drift (line 1 of the record is the program).
+assert_equal "recorded argv matches the argv the leg received" \
+    "$(cat "$CASE_DIR/argv-1")" "$(tail -n +2 "$WORKDIR/leg-1.argv")"
+
+new_case
+seed_handoff
+leg_writes 1 complete
+RELAY_CLAUDE_ARGS="--permission-mode acceptEdits" run_relay --handoff "$HANDOFF" --repo "$REPO"
+assert_status "RELAY_CLAUDE_ARGS run succeeds" 0 "$STATUS"
+assert_contains "RELAY_CLAUDE_ARGS is word-split into the leg argv" \
+    "$(cat "$CASE_DIR/argv-1")" "acceptEdits"
+
+new_case
+seed_handoff
+leg_writes 1 complete
+: >"$REPO/glob-bait.txt"
+RELAY_CLAUDE_ARGS="--settings *" run_relay --handoff "$HANDOFF" --repo "$REPO"
+assert_contains "RELAY_CLAUDE_ARGS is not glob-expanded against the repo" \
+    "$(cat "$CASE_DIR/argv-1")" "*"
 
 new_case
 seed_handoff
@@ -421,6 +441,39 @@ mark_ledger_done "$REPO"
 run_relay --handoff "$HANDOFF" --repo "$REPO"
 assert_status "PRE-EXISTING ledger done does not end the loop (stale state)" 0 "$STATUS"
 assert_equal "pre-existing done: relay kept going to leg 2" 2 "$(invocations)"
+
+new_case
+seed_handoff
+leg_writes 1 halt-for-continuation "gate note: NEEDS_HUMAN"
+cat >"$CASE_DIR/leg-1.hook" <<EOF
+gitdir=\$(git -C "$REPO" rev-parse --absolute-git-dir)
+mkdir -p "\$gitdir/ledger"
+printf 'run_id: relay-test\nstatus: done\n' >"\$gitdir/ledger/state.yaml"
+EOF
+run_relay --handoff "$HANDOFF" --repo "$REPO"
+assert_status "a LIVE ledger flip cannot swallow a gate term -> 2, not 0" 2 "$STATUS"
+
+new_case
+seed_handoff
+# Every leg keeps saying halt-for-continuation, so ONLY the ledger path can
+# end this run with 0: leg 1 opens a new active run, leg 2 closes it. A latched
+# baseline (stale done at launch) would run to max-legs instead.
+leg_writes 1 halt-for-continuation
+leg_writes 2 halt-for-continuation
+leg_writes 3 halt-for-continuation
+cat >"$CASE_DIR/leg-1.hook" <<EOF
+gitdir=\$(git -C "$REPO" rev-parse --absolute-git-dir)
+mkdir -p "\$gitdir/ledger"
+printf 'run_id: NEW-RUN\nstatus: active\n' >"\$gitdir/ledger/state.yaml"
+EOF
+cat >"$CASE_DIR/leg-2.hook" <<EOF
+gitdir=\$(git -C "$REPO" rev-parse --absolute-git-dir)
+printf 'run_id: NEW-RUN\nstatus: done\n' >"\$gitdir/ledger/state.yaml"
+EOF
+mark_ledger_done "$REPO"
+run_relay --handoff "$HANDOFF" --repo "$REPO" --max-legs 4
+assert_status "ledger stop re-arms after a stale baseline (new run closes) -> 0" 0 "$STATUS"
+assert_equal "re-armed ledger stop ends at leg 2, not max-legs" 2 "$(invocations)"
 
 new_case
 seed_handoff
