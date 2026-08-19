@@ -2,10 +2,10 @@ run_id: 2026-08-19-guard-rule3-tokenizer
 workflow: workflow-deliver
 kind: feature
 budget: one-reviewer
-initialized_epoch: 1787149953
+initialized_epoch: 1787150233
 status: active
 next: preflight
-updated: '2026-08-19T14:32:33.862266+00:00'
+updated: '2026-08-19T14:37:13.363889+00:00'
 steps:
 - id: preflight
   required: true
@@ -23,11 +23,18 @@ steps:
   required: true
   status: pending
   evidence: ''
+- id: qa
+  required: true
+  status: pending
+  evidence: ''
 - id: finalize
   required: true
   status: pending
   evidence: ''
 stamps: {}
-overrides: []
+overrides:
+- action: force-init
+  reason: --force re-init over prior run 2026-08-19-guard-rule3-tokenizer
+  timestamp: '2026-08-19T14:37:13.253891+00:00'
 branch: feat/guard-rule3-tokenizer
 worktree: /Users/alexwelch/dotdev-worktrees/guard-rule3-tokenizer
