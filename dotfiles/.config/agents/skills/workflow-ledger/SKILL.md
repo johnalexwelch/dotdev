@@ -21,7 +21,7 @@ Full contract with exit codes and test-enforced refinements: `docs/executions/pl
 ## CLI
 
 ```
-ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--force]
+ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--route "<classification>|<selected-flow>|confirmed"] [--force]
 ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, fresh (see Freshness)
@@ -34,6 +34,8 @@ ledger.sh show | close
 ```
 
 Transition rules are code, not convention: required steps cannot be `skipped` (exit 3); `completed|skipped|blocked|failed` require evidence/reason (exit 4); `kind: bug` auto-inserts required `diagnose`/`fix` steps.
+
+**Route evidence (D-006 Phase 5b).** `init --route` records the confirmed ROUTE_CARD's classification and selected flow as a top-level `route:` field (workflow-router passes it at ledger-persist). Absent: init succeeds with a `WARNING: no route evidence — invoke workflow-router` line; `LEDGER_REQUIRE_ROUTE=block` escalates absence to a refusal (exit 11) — the same warn-then-flip pattern as entry enforcement. Malformed route strings (not `<classification>|<selected-flow>|confirmed`) are schema-invalid (exit 6) at init and on every load.
 
 ## Gates — checked vs attested
 

@@ -1,57 +1,60 @@
-run_id: 2026-08-19-router-v1-feature-seam
-workflow: workflow-deliver
+run_id: 2026-08-19-phase5b-route-evidence
+workflow: workflow-skill
 kind: skill
 budget: one-reviewer
-initialized_epoch: 1787152956
-status: active
+initialized_epoch: 1787152447
+status: done
 next: ''
-updated: '2026-08-19T16:09:02.539073+00:00'
+updated: '2026-08-19T16:23:33.526452+00:00'
 steps:
-- id: preflight
+- id: red-tests
   required: true
   status: completed
-  evidence: 'WORKTREE_BASELINE_GATE: origin/main -> fix/router-v1-vs-feature-seam @ .claude/worktrees/router-v1-vs-feature-seam; router-only scope, golden-routes.yaml untouched'
+  evidence: red suite committed 155/175 -> commit test(workflow-ledger)
 - id: implement
   required: true
   status: completed
-  evidence: V1 row + ambiguous-feature row signal sharpened; V1-vs-feature boundary sentence added after classification table; v1-workflow description checked clean (no internal-tooling phrasing)
-- id: eval
+  evidence: 'commits 34f9a6a 4236141 a967f4f : tests+impl+docs; 175/175 green'
+- id: docs
   required: true
   status: completed
-  evidence: 'routing-eval full run vs #181 45-case golden set: total 45 pass 45 fail 0 pass-rate 100% RESULT: PASS; case 45 PASS (workflow-feature) + 3/3 single-case probes; dry-run schema OK'
+  evidence: 'SKILL.md x3, spec, decision-log Phase 5b entry w/ flip preconditions; PR #182'
+- id: verify
+  required: true
+  status: completed
+  evidence: verify-local PASSED at df95818
 - id: review
   required: true
   status: completed
-  evidence: 'review stamp: fast profile, integrated lane APPROVE (/tmp/integrated-review-v1seam.md, model sonnet)'
+  evidence: integrated lane approve (model opus, /tmp/phase5b-182-integrated-review.md); stamp review at 0c7d78b
 - id: finalize
   required: true
   status: completed
-  evidence: 'finalize stamped at 02eb394; PR #183 open non-draft, CI all green, verify-local PASS; NOT merged per work order'
+  evidence: 'stamp finalize at 1737389 (CI green, PR #182 open, threads resolved); PR left unmerged per instruction'
 stamps:
   review:
-    head_sha: 3952a170e042b7e2319d1e498e88bf7fbba6f2e0
-    timestamp: '2026-08-19T16:07:28.397608+00:00'
+    head_sha: ac6a3fb4c536da6dc222e40ce8e9efcccdaf1646
+    timestamp: '2026-08-19T16:16:04.926757+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_integrated_sha256: 0053f5e6cebdae557c1abdecf59bbc53379abfc0e1a9be3c1b7bc60e66059799
-      lane_integrated_lines: '41'
-      lane_integrated_verdict: APPROVE
-      lane_integrated_model: sonnet
+      lane_integrated_sha256: 0440149aa08571a384185e166ebc56cfc286d51057130e167d5ba3eed6df6586
+      lane_integrated_lines: '162'
+      lane_integrated_verdict: approve
+      lane_integrated_model: opus
       review_floor: fast
       worktree_verify: pass
     attested:
       verdict: approve
       review_profile: fast
-      lanes: integrated=/tmp/integrated-review-v1seam.md
-      reviewed_sha: '0dca090 transferred: post-#178-merge, three-dot scope unchanged (router+snapshot only), eval 45/45 at this wording'
+      lanes: integrated=/tmp/phase5b-182-integrated-review.md
     override:
       active: false
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
-    timestamp: '2026-08-19T16:09:02.538854+00:00'
+    head_sha: f4b41a90a847fbcb524c7043a9b684a610341704
+    timestamp: '2026-08-19T16:23:33.526279+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -62,17 +65,21 @@ stamps:
     attested:
       post_mortem: not_applicable
       describe_pr: in_pr_body
-      pr_number: '183'
+      pr_number: '182'
     override:
       active: false
       reason: ''
       timestamp: ''
-overrides: []
-branch: fix/router-v1-vs-feature-seam
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
-last_seen_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
+overrides:
+- action: force-init
+  reason: --force re-init over prior run 2026-08-19-phase5b-route-evidence
+  timestamp: '2026-08-19T15:14:07.111041+00:00'
+route: skill/kernel change|workflow-skill|confirmed
+branch: feat/d006-phase5b-route-evidence
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/d006-phase5b
+last_seen_sha: f4b41a90a847fbcb524c7043a9b684a610341704
 verify_local:
-  head_sha: a0a00779c588a49a6fe187e0ac86cadba68f8007
+  head_sha: f4b41a90a847fbcb524c7043a9b684a610341704
   passed: true
   results:
   - cmd: ./test/run-tests.sh
