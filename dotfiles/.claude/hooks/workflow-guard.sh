@@ -57,12 +57,19 @@ is_merge_shape() {
 # DECLARED BOUNDARY (the goal is precision WITHIN this boundary, not closing
 # it — PR #174's recorded decision):
 #
-#   Rule 3 sees a mutation only when its text sits unquoted, as a command,
-#   in the same scope-chain as the suppression. Any mechanism that carries
-#   command text across that boundary — name binding (./deploy.sh, aliases,
-#   functions), parameter expansion, eval of a variable, a here-document
-#   body, a file read at runtime — is out of scope and FAILS OPEN.
-#   Tokenizer/parse errors FAIL CLOSED (block).
+#   Rule 3 sees a mutation only when its text sits as LITERAL
+#   (expansion-free) text in command position, in the same scope-chain as
+#   the suppression. Any mechanism that carries command text across that
+#   boundary — name binding (aliases, functions, a script invoked by name),
+#   parameter expansion, eval of a variable, a here-document body, a file
+#   read at runtime — is out of scope and FAILS OPEN. Tokenizer/parse
+#   errors FAIL CLOSED (block).
+#
+# "Literal (expansion-free)" is the round-1 fail-closed refinement of the
+# original "unquoted" criterion: quoting that preserves the execve (\git,
+# git "push") no longer blinds detection — words are judged by their
+# quote-removed value, and command names by basename. Only expansion-
+# carrying text (whose value is unknowable at guard time) fails open.
 #
 # See dotfiles/.claude/hooks/guard-rule3-tokenizer.py for the full spec and
 # test/test-guard-rules.sh's Rule 3 section for the acceptance matrix.
@@ -87,16 +94,36 @@ _guard_rule3_tokenizer_path() {
 # Conservative prefilter (latency + blast-radius control): rule 3 can only
 # ever match when the command contains BOTH (i) a mutation-verb substring —
 # push|commit|merge|rebase|create|edit|close|ready|api, case-insensitive —
-# AND (ii) suppression-capable text — /dev/null or &-. This is provably
-# conservative w.r.t. the tokenizer's detector: every mutation pattern it
-# recognizes contains one of those verb substrings, and every fd state it
-# ever classifies as NULL/CLOSED requires one of those two substrings to be
-# present somewhere in the command. Absent either, python3 is never invoked
-# — a broken/missing interpreter therefore cannot brick delivery for the
-# vast majority of Bash calls that could not possibly trip rule 3.
+# AND (ii) suppression-capable text — /dev/null, or & followed by an
+# optionally-spaced - (the fd-close operand may be spaced: `2>& -`).
+#
+# Both clauses run against a NORMALIZED copy of the command with backslash,
+# single-quote, double-quote, and newline characters deleted (round-1
+# security/logic/style lanes). Why: the tokenizer matches QUOTE-REMOVED
+# word values and joins backslash-newline continuations, so a quote-split
+# spelling (`pu"sh"`, `2>/dev/nul"l"`, `2>&"-"`) or a continuation-split
+# one is a real candidate the raw text does not show. Deleting those four
+# characters mirrors every transformation the tokenizer's matcher performs
+# — it decodes nothing else (no ANSI-C $'\x..' escapes, no path
+# normalization; neither does the tokenizer) — and deleting can only CREATE
+# grep matches, never destroy one (no pattern below contains any deleted
+# character), so the normalized grep matches a superset of the raw one.
+#
+# Conservativeness, stated precisely: every mutation pattern the tokenizer
+# recognizes contains one of the clause-(i) verbs as a substring of a
+# quote-removed word value, and every NULL/CLOSED fd classification
+# requires a quote-removed `/dev/null` target or a `-` dup operand after
+# an `&` operator — all of which survive in the normalized text. Known
+# residual: none identified; if the tokenizer's detector ever grows a
+# spelling these clauses cannot see (e.g. decoding ANSI-C escapes), this
+# prefilter must be revisited IN THE SAME CHANGE. The payoff: python3 is
+# never invoked for commands failing either clause, so a broken/missing
+# interpreter cannot brick delivery for the vast majority of Bash calls.
 rule3_prefilter_candidate() {
-    has '(push|commit|merge|rebase|create|edit|close|ready|api)' &&
-        has '(/dev/null|&-)'
+    local normalized
+    normalized="$(tr -d "\\\\\"'\n" <<<"$cmd")"
+    grep -Eiq '(push|commit|merge|rebase|create|edit|close|ready|api)' <<<"$normalized" &&
+        grep -Eq '/dev/null|&[[:space:]]*-' <<<"$normalized"
 }
 
 # Returns 0 (block) / 1 (permit) for a NORMAL tokenizer verdict, setting
@@ -109,7 +136,7 @@ rule3_tokenizer_blocks() {
     local tokenizer python_out python_status
     tokenizer="$(_guard_rule3_tokenizer_path)"
     if [ ! -f "$tokenizer" ]; then
-        printf 'Blocked: rule 3 tokenizer missing at %s -- failing closed.\n' "$tokenizer" >&2
+        printf 'Blocked: rule 3 tokenizer missing at %s -- failing closed. Restore it from the dotfiles repo (git checkout -- dotfiles/.claude/hooks/guard-rule3-tokenizer.py, or re-run the dotfiles deploy) to re-enable rule 3.\n' "$tokenizer" >&2
         exit 2
     fi
     set +e
@@ -125,7 +152,7 @@ rule3_tokenizer_blocks() {
             return 0
             ;;
         *)
-            printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\n' \
+            printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\nRule 3 blocks all candidate commands until this is fixed: check that python3 is on PATH and working, and report this command shape if the tokenizer itself errored.\n' \
                 "$python_status" "$python_out" >&2
             exit 2
             ;;

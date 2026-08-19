@@ -8,12 +8,27 @@ which the caller (workflow-guard.sh) must treat as FAIL CLOSED.
 
 DECLARED BOUNDARY (verbatim in spirit; do not narrow or widen silently):
 
-    Rule 3 sees a mutation only when its text sits unquoted, as a command,
-    in the same scope-chain as the suppression. Any mechanism that carries
-    command text across that boundary -- name binding (./deploy.sh,
-    aliases, functions), parameter expansion, eval of a variable, a
-    here-document body, a file read at runtime -- is out of scope and FAILS
-    OPEN. Tokenizer/parse errors FAIL CLOSED (block).
+    Rule 3 sees a mutation only when its text sits as LITERAL
+    (expansion-free) text in command position, in the same scope-chain as
+    the suppression. Any mechanism that carries command text across that
+    boundary -- name binding (aliases, functions, a script invoked by
+    name), parameter expansion, eval of a variable, a here-document body,
+    a file read at runtime -- is out of scope and FAILS OPEN.
+    Tokenizer/parse errors FAIL CLOSED (block).
+
+    "Literal (expansion-free)" is a round-1 fail-closed REFINEMENT of the
+    original "unquoted" criterion (security lane, High): quoting that does
+    not change the execve -- ``\\git push``, ``git "push"``, ``""git push``
+    -- must not blind the detector, so words are judged by their
+    quote-removed literal value, exactly as redirect targets already were
+    (the reason ``2>"/dev/null"`` blocks). Only a word carrying an
+    expansion segment has no knowable value and is disqualified. A quoted
+    MENTION still permits because its value is one multi-word string
+    ("git push origin main"), which can never equal the single word "git".
+    Command names are also compared by basename, so ``/usr/bin/git push``
+    and ``./git push`` are recognized (the boundary's name-binding items
+    all share the property that the mutation text is absent or
+    runtime-determined, which a path prefix is not).
 
 This module is a hand-rolled lexer + recursive-descent parser + fd-state
 walker, python3 stdlib only. No shell is invoked; nothing here executes the
@@ -55,13 +70,45 @@ DESIGN NOTES (why, not just what):
   a function body is name-binding indirection and stays out of scope by
   design (see N14 in test-guard-rules.sh).
 
-* Recovery over errors: an unterminated quote reads to end-of-input as a
-  literal word; an unmatched construct terminator is tolerated by simply
-  stopping the enclosing list. Only a handful of things ever raise
-  ``TokenizerError`` (see the bottom of the file) and none of them should
-  be reachable by ordinary shell text -- they exist as a last-resort fail
-  CLOSED backstop, not as validation.
+* Recovery WITHIN a construct, fail-closed at the top: an unterminated
+  quote reads to end-of-input as a literal word, and a missing construct
+  terminator is tolerated by stopping the enclosing list -- but any
+  NON-BLANK INPUT LEFT OVER after the top-level parse raises
+  ``TokenizerError`` (exit 3, fail closed). A silently truncated parse
+  would permit everything after the truncation point (round-1 logic lane);
+  the leftover check retires that class. Measured safe: a realistic
+  delivery corpus produces zero leftovers, so ordinary commands never
+  error.
+
+* Compound dispatch (audited against bash's compound-command grammar,
+  round-1 tests lane): RECOGNIZED as constructs -- subshell ``( )``, brace
+  group ``{ }``, ``if``/``elif``/``else``/``fi``, ``for``/``select``
+  (shared arm; both are ``[in words]; do body done``), ``while``/``until``,
+  ``case``/``esac``, arithmetic command ``(( ))`` (with the subshell
+  backtrack below), posix ``name()`` and ``function name [()]``
+  definitions (one shared code path, so definition-site redirects walk the
+  body identically). TREATED AS ORDINARY WORDS -- ``[[ ]]`` (its content
+  is a conditional expression, not commands; a redirect on it still
+  attaches to the statement) and ``coproc`` (a prefix word; the command
+  after it is scanned by the any-position mutation matcher anyway).
+
+* Arithmetic backtrack (round-1 security lane, High): bash backtracks a
+  failed arithmetic parse at command position to a NESTED SUBSHELL, so
+  ``((cmd) redirect)`` really executes. Any ``((``-span whose content
+  carries an unquoted ``)`` therefore gets an ADDITIVE second reading as a
+  subshell (parse errors from that reading are discarded; it can only ever
+  add a block, never a permit), and the same additive reading applies to
+  ``$((``-spans re-read as command substitution. Genuine nested-paren
+  arithmetic finds no mutation in the second reading and stays permitted.
+
+* ``|&`` (round-1 logic lane): the implicit ``2>&1`` lands AFTER the
+  node's own redirect list (bash manual), so a piped-to-``|&`` node's
+  effective fd2 is PIPE (visible) even when its own redirects nulled it --
+  while commands nested INSIDE such a construct keep their own private
+  suppression.
 """
+
+from __future__ import annotations
 
 import re
 import sys
@@ -114,8 +161,6 @@ class Word:
             return int(v)
         return None
 
-    def recursable_segments(self):
-        return [(k, t) for k, t in self.segs if k in RECURSABLE_KINDS]
 
 
 # --------------------------------------------------------------------------
@@ -219,8 +264,12 @@ class Scanner:
         return False
 
     def scan_balanced_parens(self, initial_depth):
-        """Scans forward, quote-aware, counting only unquoted '(' / ')',
-        until depth returns to 0. Strips exactly `initial_depth` trailing
+        """Scans forward, quote-aware AND comment-aware, counting only
+        unquoted '(' / ')', until depth returns to 0. A '#' at word start
+        (start-of-scan, or preceded by blank/operator) opens a comment to
+        end-of-line whose parens do not count -- so `$(echo hi # note )`
+        parses to the real closer instead of truncating at the commented
+        one (round-1 logic lane). Strips exactly `initial_depth` trailing
         close-parens from the returned content (the structural closers
         that brought depth to 0) -- e.g. depth=2 for `$((...))` strips the
         final `))`, depth=1 for `$(...)`/`<(...)` strips the final `)`.
@@ -229,9 +278,15 @@ class Scanner:
         start = self.i
         depth = initial_depth
         while self.i < self.n and depth > 0:
+            c = self.s[self.i]
+            if c == "#":
+                prev = self.s[self.i - 1] if self.i > start else ""
+                if prev == "" or prev in " \t\n;&|(":
+                    nl = self.s.find("\n", self.i)
+                    self.i = nl if nl != -1 else self.n
+                    continue
             if self._skip_quote_or_escape():
                 continue
-            c = self.s[self.i]
             if c == "(":
                 depth += 1
             elif c == ")":
@@ -570,6 +625,17 @@ def try_read_redirect(sc):
     if op in ("<<<",):
         return Redirect(fd if fd is not None else 0, op, target)
     if op in (">&", "<&"):
+        # Digit-less `>&word` is bash's legacy synonym of `&>word` (both
+        # streams to the file) whenever the operand is NOT purely numeric
+        # and not `-`; a numeric operand stays an fd-dup (`>&2`) and `-`
+        # stays a close (round-1 tests lane; the `>&2` discriminator pin).
+        # An expansion-bearing operand stays a dup-of-UNKNOWN -- visible
+        # either way, fail-open within the boundary. An explicit fd
+        # (`2>&1`) is never the synonym.
+        if op == ">&" and fd is None and target is not None:
+            lit = target.literal_value()
+            if lit is not None and not lit.isdigit() and lit != "-":
+                return Redirect(1, "&>", target)
         default_fd = 1 if op == ">&" else 0
         return Redirect(fd if fd is not None else default_fd, op, target)
     default_fd = 0 if c == "<" else 1
@@ -635,11 +701,15 @@ class BraceGroup:
 
 
 class ForLoop:
-    __slots__ = ("body", "redirects")
+    __slots__ = ("body", "redirects", "header_words")
 
-    def __init__(self, body, redirects):
+    def __init__(self, body, redirects, header_words=()):
         self.body = body
         self.redirects = redirects
+        # for/select header words (loop variable, `in` list): their
+        # substitutions are command text in the enclosing scope and must be
+        # walked, not discarded (round-1 logic lane finding 2).
+        self.header_words = header_words
 
 
 class WhileUntil:
@@ -660,18 +730,29 @@ class IfNode:
 
 
 class CaseNode:
-    __slots__ = ("arms", "redirects")
+    __slots__ = ("arms", "redirects", "header_words")
 
-    def __init__(self, arms, redirects):
+    def __init__(self, arms, redirects, header_words=()):
         self.arms = arms  # list[CommandList] (bodies only; patterns unused)
         self.redirects = redirects
+        # The case subject word -- walked like any other word (round-1
+        # logic lane finding 2).
+        self.header_words = header_words
 
 
 class ArithCommand:
-    __slots__ = ("redirects",)
+    __slots__ = ("redirects", "subshell_text", "backtrack")
 
-    def __init__(self, redirects):
+    def __init__(self, redirects, subshell_text="", backtrack=False):
         self.redirects = redirects
+        # The nested-subshell reading of the span (`(( X ))` re-read as
+        # `( ( X ) )` -- subshell_text is the outer subshell's body). When
+        # `backtrack` is set (the arithmetic content carries an unquoted
+        # `)`, so bash may have backtracked a failed arithmetic parse to a
+        # nested subshell), the walker gives the span an ADDITIVE second
+        # reading as that subshell (round-1 security lane finding 2).
+        self.subshell_text = subshell_text
+        self.backtrack = backtrack
 
 
 class FunctionDef:
@@ -701,7 +782,22 @@ class Parser:
 
     def parse_program(self):
         body = self.parse_command_list()
-        self.sc.skip_blanks_and_comments()
+        sc = self.sc
+        # Non-blank leftover input means the parse silently stopped early
+        # (stray `)`, `;;`, unattached keyword). Everything past that point
+        # would be unexamined, so fail CLOSED instead of permitting it
+        # (round-1 logic lane finding 3).
+        while True:
+            sc.skip_blanks_and_comments()
+            if not sc.at_end() and sc.peek() == "\n":
+                sc.consume_newline_and_heredocs()
+                continue
+            break
+        if not sc.at_end():
+            raise TokenizerError(
+                "unparsed trailing input at offset %d: %r"
+                % (sc.i, sc.s[sc.i:sc.i + 40])
+            )
         return body
 
     # --- lists / pipelines / and-or --------------------------------------
@@ -807,15 +903,24 @@ class Parser:
             if sc.peek(1) == "(":
                 return self._parse_arith_command()
             return self._parse_subshell()
-        kw = sc.peek_keyword("if", "for", "while", "until", "case", "{")
+        kw = sc.peek_keyword(
+            "if", "for", "select", "while", "until", "case", "function", "{"
+        )
         if kw == "if":
             return self._parse_if()
         if kw == "for":
-            return self._parse_for()
+            return self._parse_for(kwlen=3)
+        if kw == "select":
+            # `select name [in words]; do body; done` is structurally a
+            # for-loop (round-1 tests lane Must-fix): same header shape,
+            # same done-redirect coverage of the body.
+            return self._parse_for(kwlen=6)
         if kw in ("while", "until"):
             return self._parse_while(until=(kw == "until"))
         if kw == "case":
             return self._parse_case()
+        if kw == "function":
+            return self._parse_function_keyword()
         if kw == "{":
             return self._parse_brace_group()
         m = FUNC_DEF_RE.match(sc.s, sc.i)
@@ -824,14 +929,35 @@ class Parser:
             paren = name.index("(")
             name = name[:paren].rstrip()
             sc.i = m.end()
-            sc.skip_blanks_and_comments()
-            while sc.peek() == "\n":
-                sc.consume_newline_and_heredocs()
-                sc.skip_blanks_and_comments()
-            body = self.parse_command_or_construct()
-            redirects = self._read_trailing_redirects()
-            return FunctionDef(name, body, redirects)
+            return self._finish_function_def(name)
         return self.parse_simple_command()
+
+    def _parse_function_keyword(self):
+        """`function name { body }` / `function name() { body }` -- the
+        bash keyword spelling. Shares _finish_function_def with the posix
+        `name()` form so definition-site redirects walk the body
+        identically (round-1 tests lane)."""
+        sc = self.sc
+        sc.i += 8  # 'function'
+        sc.skip_blanks_and_comments()
+        name_word = sc.read_word()
+        name = name_word.literal_value() if name_word else None
+        if name is None:
+            name = ""
+        sc.skip_blanks_and_comments()
+        if sc.peek() == "(" and sc.peek(1) == ")":
+            sc.i += 2
+        return self._finish_function_def(name)
+
+    def _finish_function_def(self, name):
+        sc = self.sc
+        sc.skip_blanks_and_comments()
+        while sc.peek() == "\n":
+            sc.consume_newline_and_heredocs()
+            sc.skip_blanks_and_comments()
+        body = self.parse_command_or_construct()
+        redirects = self._read_trailing_redirects()
+        return FunctionDef(name, body, redirects)
 
     def _read_trailing_redirects(self):
         sc = self.sc
@@ -902,20 +1028,28 @@ class Parser:
 
     def _parse_arith_command(self):
         sc = self.sc
-        sc.i += 2
-        sc.scan_balanced_parens(2)
+        # Consume only the FIRST '(' and scan from the second with depth 1:
+        # that yields exactly the outer subshell's body under the
+        # backtracked reading (`(( X ))` == `( ( X ) )`), and it ends at
+        # the same closer the plain depth-2 arithmetic scan would.
+        sc.i += 1
+        subshell_text = sc.scan_balanced_parens(1)
         redirects = self._read_trailing_redirects()
-        return ArithCommand(redirects)
+        backtrack = _arith_content_has_close_paren(subshell_text)
+        return ArithCommand(redirects, subshell_text, backtrack)
 
-    def _parse_for(self):
+    def _parse_for(self, kwlen=3):
         sc = self.sc
-        sc.i += 3  # 'for'
+        sc.i += kwlen  # 'for' or 'select'
+        header_words = []
         sc.skip_blanks_and_comments()
         if sc.peek() == "(" and sc.peek(1) == "(":
             sc.i += 2
             sc.scan_balanced_parens(2)
         else:
-            sc.read_word()  # loop variable name
+            var_word = sc.read_word()  # loop variable name
+            if var_word is not None:
+                header_words.append(var_word)
             sc.skip_blanks_and_comments()
             if sc.peek_keyword("in"):
                 sc.i += 2
@@ -925,8 +1059,10 @@ class Parser:
                         break
                     if sc.peek_keyword("do"):
                         break
-                    if sc.read_word() is None:
+                    w = sc.read_word()
+                    if w is None:
                         break
+                    header_words.append(w)
         while True:
             sc.skip_blanks_and_comments()
             if sc.peek() == ";":
@@ -944,7 +1080,7 @@ class Parser:
         if sc.peek_keyword("done"):
             sc.i += 4
         redirects = self._read_trailing_redirects()
-        return ForLoop(body, redirects)
+        return ForLoop(body, redirects, header_words)
 
     def _parse_while(self, until):
         sc = self.sc
@@ -1004,7 +1140,9 @@ class Parser:
     def _parse_case(self):
         sc = self.sc
         sc.i += 4  # 'case'
-        sc.read_word()  # subject; value unused
+        sc.skip_blanks_and_comments()
+        subject = sc.read_word()
+        header_words = [subject] if subject is not None else []
         sc.skip_blanks_and_comments()
         if sc.peek_keyword("in"):
             sc.i += 2
@@ -1042,7 +1180,7 @@ class Parser:
             if sc.at_end():
                 break
         redirects = self._read_trailing_redirects()
-        return CaseNode(arms, redirects)
+        return CaseNode(arms, redirects, header_words)
 
 
 def _is_assignment_word(word):
@@ -1054,12 +1192,43 @@ def _is_assignment_word(word):
     return bool(ASSIGNMENT_RE.match(text))
 
 
+def _contains_unquoted_close_paren(text: str) -> bool:
+    """Quote-aware scan for a ')' outside quotes/escapes -- the gate that
+    decides whether an arithmetic span earns the additive nested-subshell
+    reading (see the module docstring)."""
+    sc = Scanner(text)
+    while sc.i < sc.n:
+        if sc._skip_quote_or_escape():
+            continue
+        if sc.s[sc.i] == ")":
+            return True
+        sc.i += 1
+    return False
+
+
+def _arith_content_has_close_paren(subshell_text: str) -> bool:
+    """Gate for the command-position `(( ))` backtrack. `subshell_text` is
+    the outer-subshell reading's body: `( 1 > 0 )` for `(( 1 > 0 ))`,
+    `(git push …) 2>/dev/null` for the backtracked shapes. Two signals of
+    a possible bash backtrack: (a) the body does not end exactly at a `)`
+    -- the two closers of a genuine `(( ))` are adjacent, so trailing text
+    or even a space between them means bash could not have read it as
+    arithmetic; (b) the arithmetic content (body minus its own wrapping
+    pair) still carries an unquoted ')'. Genuine flat arithmetic
+    (`(( 1 > 0 ))`) triggers neither; genuine nested-paren arithmetic
+    triggers (b), earning the harmless additive second reading that finds
+    no mutation."""
+    if not subshell_text.startswith("(") or not subshell_text.endswith(")"):
+        return True
+    return _contains_unquoted_close_paren(subshell_text[1:-1])
+
+
 # --------------------------------------------------------------------------
 # fd-state model. See the module docstring for the persistent/overlay design.
 # --------------------------------------------------------------------------
 
 
-def classify_target(word):
+def classify_target(word: Word | None) -> str:
     """VISIBLE targets return 'FILE' or 'UNKNOWN' (both permit); NULL and
     CLOSED are the two block-worthy states."""
     if word is None:
@@ -1074,7 +1243,7 @@ def classify_target(word):
     return "FILE"
 
 
-def apply_redirects(redirect_list, eff):
+def apply_redirects(redirect_list: list[Redirect], eff: dict[int, str]) -> None:
     """Applies a redirect list LEFT TO RIGHT onto `eff` (mutated in place),
     real dup semantics: >&N copies fd N's CURRENT value (a snapshot, not an
     alias), so order matters (`2>&1 >/dev/null` != `>/dev/null 2>&1`)."""
@@ -1098,8 +1267,8 @@ def apply_redirects(redirect_list, eff):
         # heredoc bodies are consumed as data by the lexer already -- no-op.
 
 
-def collect_touched_fds(redirect_list):
-    touched = set()
+def collect_touched_fds(redirect_list: list[Redirect]) -> set[int]:
+    touched: set[int] = set()
     for r in redirect_list:
         touched.update(r.touched_fds())
     return touched
@@ -1117,25 +1286,27 @@ class Scope:
 
     __slots__ = ("persistent", "overlays")
 
-    def __init__(self, persistent, overlays):
+    def __init__(
+        self, persistent: dict[int, str], overlays: list[list[Redirect]]
+    ) -> None:
         self.persistent = persistent
         self.overlays = overlays
 
-    def effective(self):
+    def effective(self) -> dict[int, str]:
         eff = dict(self.persistent)
         for rl in self.overlays:
             apply_redirects(rl, eff)
         return eff
 
-    def child_with_overlay(self, redirect_list):
+    def child_with_overlay(self, redirect_list: list[Redirect]) -> Scope:
         if not redirect_list:
             return self
         return Scope(self.persistent, self.overlays + [redirect_list])
 
-    def new_isolated(self, base_eff):
+    def new_isolated(self, base_eff: dict[int, str]) -> Scope:
         return Scope(dict(base_eff), [])
 
-    def exec_apply(self, redirect_list):
+    def exec_apply(self, redirect_list: list[Redirect]) -> None:
         """A real `exec` redirect: resolves dup sources against the current
         *overlaid* effective view (so it sees any already-active
         suppression correctly), but commits only the fds its own redirect
@@ -1159,22 +1330,24 @@ GIT_FORGE_MUTATING = {"merge", "create", "edit", "close"}
 API_MUTATING_VERBS = {"POST", "PATCH", "DELETE"}
 
 
-def _word_values(words):
-    """Per-word literal value, or None if quoted or expansion-bearing --
-    'a quoted word is never a command word' applies uniformly to every
+def _word_values(words: list[Word]) -> list[str | None]:
+    """Per-word QUOTE-REMOVED literal value, or None only when the word
+    carries an expansion (its value is unknowable at guard time). Quoting
+    that preserves the value must not blind detection -- `\\git push`,
+    `git "push"` execve the same mutation (round-1 security lane, High) --
+    so words are judged exactly like redirect targets already were. A
+    quoted MENTION (`echo "git push origin main"`) still yields ONE
+    multi-word value that matches nothing. Applies uniformly to every
     position in the sequence, not just the first."""
-    out = []
-    for w in words:
-        if w.quoted_any:
-            out.append(None)
-        else:
-            out.append(w.literal_value())
-    return out
+    return [w.literal_value() for w in words]
 
 
-def find_mutation(words):
+def find_mutation(words: list[Word]) -> str | None:
     """Returns a short description string for the first detected mutation
-    in this simple command's word list, or None."""
+    in this simple command's word list, or None. Command names compare by
+    BASENAME so `/usr/bin/git push` and `./git push` are recognized
+    (round-1 security lane, Medium) -- the mutation text is lexically
+    present there, not runtime-determined. Subcommands/verbs stay exact."""
     vals = _word_values(words)
     n = len(vals)
     i = 0
@@ -1183,7 +1356,7 @@ def find_mutation(words):
         if v is None:
             i += 1
             continue
-        lv = v.lower()
+        lv = v.lower().rsplit("/", 1)[-1]
         if lv == "git":
             j = i + 1
             while j < n and vals[j] is not None and vals[j].startswith("-"):
@@ -1246,16 +1419,16 @@ SHELL_NAMES = {"bash", "sh", "zsh"}
 RECURSION_DEPTH_LIMIT = 60
 
 
-def _first_word_value(cmd):
+def _first_word_value(cmd: SimpleCommand) -> str | None:
+    """Quote-removed literal value of the command word (None only when it
+    carries an expansion) -- same rationale as _word_values: `"exec"` and
+    `\\eval` are the builtins they spell (round-1 security lane, High)."""
     if not cmd.words:
         return None
-    w = cmd.words[0]
-    if w.quoted_any:
-        return None
-    return w.literal_value()
+    return cmd.words[0].literal_value()
 
 
-def _recurse_text(text, scope, depth):
+def _recurse_text(text: str, scope: Scope, depth: int) -> None:
     if depth > RECURSION_DEPTH_LIMIT:
         raise TokenizerError("recursion depth exceeded")
     parser = Parser(text)
@@ -1263,17 +1436,27 @@ def _recurse_text(text, scope, depth):
     walk_command_list(body, scope, depth + 1)
 
 
-def walk_command_list(clist, scope, depth=0):
+def _recurse_text_tolerant(text: str, scope: Scope, depth: int) -> None:
+    """Additive second reading (arithmetic backtrack): parse errors are
+    discarded -- a failed reading proves nothing -- but a BlockedFound
+    verdict propagates. This reading can only ever ADD a block."""
+    try:
+        _recurse_text(text, scope, depth)
+    except TokenizerError:
+        pass
+
+
+def walk_command_list(clist: CommandList, scope: Scope, depth: int = 0) -> None:
     for andor in clist.items:
         walk_and_or(andor, scope, depth)
 
 
-def walk_and_or(andor, scope, depth):
+def walk_and_or(andor: AndOr, scope: Scope, depth: int) -> None:
     for pipeline in andor.pipelines:
         walk_pipeline(pipeline, scope, depth)
 
 
-def walk_pipeline(pipeline, scope, depth):
+def walk_pipeline(pipeline: Pipeline, scope: Scope, depth: int) -> None:
     last = len(pipeline.commands) - 1
     for idx, cmd in enumerate(pipeline.commands):
         if idx == last:
@@ -1282,50 +1465,113 @@ def walk_pipeline(pipeline, scope, depth):
             eff = scope.effective()
             eff[1] = "PIPE"
             piped_scope = Scope(dict(eff), [])
-            walk_node(cmd, piped_scope, depth)
+            # `|&` merges the node's stderr into the pipe AFTER the node's
+            # own redirect list (bash manual; round-1 logic lane finding 5)
+            # -- so it is applied inside walk_node, post-redirect, not here.
+            stderr_piped = idx < len(pipeline.ops) and pipeline.ops[idx] == "|&"
+            walk_node(cmd, piped_scope, depth, stderr_piped=stderr_piped)
 
 
-def walk_node(node, scope, depth):
+def _piped_child(scope: Scope, redirects: list[Redirect]) -> Scope:
+    """Concrete child scope for a construct that is a |&'d pipeline
+    element: resolve the construct's own redirect list, then force fd2 to
+    the (visible) pipe. Commands INSIDE keep their own private redirects
+    on top of this. Concretizing is safe here because a non-last pipeline
+    element already runs in a fresh subshell-like scope."""
+    eff = scope.effective()
+    apply_redirects(redirects, eff)
+    eff[2] = "PIPE"
+    return Scope(dict(eff), [])
+
+
+def walk_node(
+    node: object, scope: Scope, depth: int, stderr_piped: bool = False
+) -> None:
     if isinstance(node, SimpleCommand):
-        walk_simple_command(node, scope, depth)
+        walk_simple_command(node, scope, depth, stderr_piped)
     elif isinstance(node, Subshell):
         eff = scope.effective()
         apply_redirects(node.redirects, eff)
+        if stderr_piped:
+            eff[2] = "PIPE"
         walk_command_list(node.body, Scope(dict(eff), []), depth)
     elif isinstance(node, BraceGroup):
-        walk_command_list(node.body, scope.child_with_overlay(node.redirects), depth)
+        child = (
+            _piped_child(scope, node.redirects)
+            if stderr_piped
+            else scope.child_with_overlay(node.redirects)
+        )
+        walk_command_list(node.body, child, depth)
     elif isinstance(node, ForLoop):
-        walk_command_list(node.body, scope.child_with_overlay(node.redirects), depth)
+        child = (
+            _piped_child(scope, node.redirects)
+            if stderr_piped
+            else scope.child_with_overlay(node.redirects)
+        )
+        _walk_word_expansions(node.header_words, child.effective(), depth)
+        walk_command_list(node.body, child, depth)
     elif isinstance(node, WhileUntil):
-        child = scope.child_with_overlay(node.redirects)
+        child = (
+            _piped_child(scope, node.redirects)
+            if stderr_piped
+            else scope.child_with_overlay(node.redirects)
+        )
         walk_command_list(node.cond, child, depth)
         walk_command_list(node.body, child, depth)
     elif isinstance(node, IfNode):
-        child = scope.child_with_overlay(node.redirects)
+        child = (
+            _piped_child(scope, node.redirects)
+            if stderr_piped
+            else scope.child_with_overlay(node.redirects)
+        )
         for cond, body in node.branches:
             if cond is not None:
                 walk_command_list(cond, child, depth)
             walk_command_list(body, child, depth)
     elif isinstance(node, CaseNode):
-        child = scope.child_with_overlay(node.redirects)
+        child = (
+            _piped_child(scope, node.redirects)
+            if stderr_piped
+            else scope.child_with_overlay(node.redirects)
+        )
+        _walk_word_expansions(node.header_words, child.effective(), depth)
         for arm in node.arms:
             walk_command_list(arm, child, depth)
     elif isinstance(node, ArithCommand):
-        pass  # data; no words, no traversal
+        # Genuine arithmetic is data (no words, no traversal) -- but when
+        # the span could be bash's backtracked nested subshell, give it the
+        # additive second reading (round-1 security lane finding 2).
+        if node.backtrack:
+            eff = scope.effective()
+            apply_redirects(node.redirects, eff)
+            if stderr_piped:
+                eff[2] = "PIPE"
+            _recurse_text_tolerant(node.subshell_text, Scope(dict(eff), []), depth)
     elif isinstance(node, FunctionDef):
         # Parsed and walked IN PLACE at the definition site -- never linked
         # to a later invocation (name-binding indirection stays out of
         # scope by design). Shares scope like a brace group.
         if node.body is not None:
-            walk_node(node.body, scope.child_with_overlay(node.redirects), depth)
+            child = (
+                _piped_child(scope, node.redirects)
+                if stderr_piped
+                else scope.child_with_overlay(node.redirects)
+            )
+            walk_node(node.body, child, depth)
     else:
         raise TokenizerError("unknown node type: %r" % (type(node),))
 
 
-def walk_simple_command(cmd, scope, depth):
+def walk_simple_command(
+    cmd: SimpleCommand, scope: Scope, depth: int, stderr_piped: bool = False
+) -> None:
     eff_enclosing = scope.effective()
     cmd_eff = dict(eff_enclosing)
     apply_redirects(cmd.redirects, cmd_eff)
+    if stderr_piped:
+        # The |& implicit 2>&1 lands after the command's own redirects, so
+        # a self-nulled fd2 is re-merged into the visible pipe.
+        cmd_eff[2] = "PIPE"
 
     reason = find_mutation(cmd.words)
     if reason is not None and cmd_eff.get(2, "VISIBLE") in ("NULL", "CLOSED"):
@@ -1342,7 +1588,10 @@ def walk_simple_command(cmd, scope, depth):
             child = scope.child_with_overlay(cmd.redirects)
             _recurse_text(payload, child, depth)
 
-    if first in SHELL_NAMES:
+    # Shell names compare by basename too (`/bin/bash -c '…'` carries the
+    # same literal payload) -- fail-closed direction, same rationale as
+    # find_mutation's basename comparison.
+    if first is not None and first.rsplit("/", 1)[-1] in SHELL_NAMES:
         payload = _literal_dash_c_payload(cmd.words[1:])
         if payload is not None:
             sub_scope = scope.new_isolated(cmd_eff)
@@ -1351,7 +1600,7 @@ def walk_simple_command(cmd, scope, depth):
     _walk_substitutions(cmd, cmd_eff, depth)
 
 
-def _literal_eval_payload(args):
+def _literal_eval_payload(args: list[Word]) -> str | None:
     parts = []
     for w in args:
         v = w.literal_value()
@@ -1361,10 +1610,17 @@ def _literal_eval_payload(args):
     return " ".join(parts)
 
 
-def _literal_dash_c_payload(args):
+DASH_C_CLUSTER_RE = re.compile(r"^-[a-z]*c$")
+
+
+def _literal_dash_c_payload(args: list[Word]) -> str | None:
+    """The `-c` payload word's literal value, or None. Clustered short
+    flags (`-ec`, `-lc`) carry the same fully-literal payload (round-1
+    logic lane finding 4); `--`-style long options are excluded by the
+    pattern."""
     for idx, w in enumerate(args):
         v = w.literal_value()
-        if v == "-c":
+        if v is not None and DASH_C_CLUSTER_RE.match(v):
             if idx + 1 < len(args):
                 payload = args[idx + 1].literal_value()
                 return payload  # None (has expansion) -> caller skips
@@ -1372,15 +1628,27 @@ def _literal_dash_c_payload(args):
     return None
 
 
-def _walk_substitutions(cmd, cmd_eff, depth):
+def _walk_word_expansions(
+    words: list[Word] | tuple, eff: dict[int, str], depth: int
+) -> None:
+    """Walk the recursable expansions (command/backtick/process
+    substitution) of `words` in a scope seeded from `eff`, plus the
+    additive arithmetic-backtrack reading for `$((`-spans that carry an
+    unquoted ')' (see the module docstring)."""
+    for w in words:
+        for kind, content in w.segs:
+            if kind in RECURSABLE_KINDS:
+                _recurse_text(content, Scope(dict(eff), []), depth)
+            elif kind == "arith" and _contains_unquoted_close_paren(content):
+                _recurse_text_tolerant(content, Scope(dict(eff), []), depth)
+
+
+def _walk_substitutions(cmd: SimpleCommand, cmd_eff: dict[int, str], depth: int) -> None:
     words = list(cmd.words) + list(cmd.assignments)
     for r in cmd.redirects:
         if r.target is not None:
             words.append(r.target)
-    for w in words:
-        for kind, content in w.recursable_segments():
-            sub_scope = Scope(dict(cmd_eff), [])
-            _recurse_text(content, sub_scope, depth)
+    _walk_word_expansions(words, cmd_eff, depth)
 
 
 # --------------------------------------------------------------------------
@@ -1388,11 +1656,11 @@ def _walk_substitutions(cmd, cmd_eff, depth):
 # --------------------------------------------------------------------------
 
 
-def _run(command_text):
+def _run(command_text: str) -> tuple[int, str | None]:
     """Returns (exit_code, message_or_None). Never raises -- every error
     path (parse error, recursion blowup, unexpected exception) is mapped to
     exit 3 here, per the fail-closed contract."""
-    persistent = {}
+    persistent: dict[int, str] = {}
     scope = Scope(persistent, [])
     try:
         parser = Parser(command_text)
@@ -1402,7 +1670,7 @@ def _run(command_text):
         return 1, e.reason
     except TokenizerError as e:
         return 3, "tokenizer error: %s" % e
-    except RecursionError as e:
+    except RecursionError:
         return 3, "tokenizer error: recursion depth exceeded"
     except Exception as e:  # noqa: BLE001 -- last-resort fail-closed backstop;
         # any bug in this hand-rolled parser must never silently permit a
@@ -1412,10 +1680,12 @@ def _run(command_text):
     return 0, None
 
 
-def main():
+def main() -> None:
     try:
         sys.setrecursionlimit(4000)
-    except Exception:  # noqa: BLE001 -- best-effort; not fatal if it fails.
+    except (ValueError, RecursionError):
+        # Best-effort headroom bump; the current limit still applies and a
+        # blowup still lands in _run's RecursionError -> exit 3 path.
         pass
     command_text = sys.stdin.read()
     code, message = _run(command_text)
