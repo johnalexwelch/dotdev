@@ -104,6 +104,8 @@ gh issue view <N> --repo <owner/slug> --json state,comments
 - Relentless interviewing until all decision branches resolved
 - Good for: new features, architectural decisions, refactoring plans, system design
 
+**Wayfinder escalation.** A full-mode grill can surface evidence that the effort demonstrably exceeds one session's resolution — the signal examples live in `workflow-feature`'s "Step 1 escalation: wayfinder handoff" clause, which owns them; this applies equally when the grill was invoked outside workflow-feature. When that evidence appears, halt the interview, present the escalation recommendation with the evidence, and on user confirmation hand off to `/wayfinder` chart mode, seeding it with the answers captured so far: `pending_decision_log_entries` and the open branches in `.grill-tree.md` become ticket candidates. Never escalate on a guess at grill start — only on accumulated mid-grill evidence, and only with the user's confirmation (wayfinder is explicit-invocation only).
+
 ### V1 product discovery mode
 
 Use when the user is turning a loose product idea into a scoped V1 concept.
