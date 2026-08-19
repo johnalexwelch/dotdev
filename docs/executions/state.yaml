@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: active
 next: diagnose
-updated: '2026-08-19T15:03:34.084649+00:00'
+updated: '2026-08-19T15:52:49.686451+00:00'
 steps:
 - id: diagnose
   required: true
@@ -25,12 +25,12 @@ steps:
   evidence: 'AFK-safe: explicit payload (4 commits), captured red repro, acceptance = suite green + PR open non-merged; no human-only decisions beyond draft-vs-ready at finalize (user pre-authorized non-draft PR)'
 - id: implement
   required: true
-  status: active
-  evidence: cherry-pick sequence started
+  status: completed
+  evidence: "4 cherry-picks from lost PR #170 (-x recorded): dd84409 red test (adapted to batch-#8 sanitized mock names, amended), 3332f21 kernel fix, 63e8d20+f64aab1 docs siblings; suite 159/0 at HEAD; repro red(2)->green(0); tdd: ran (red-first \u2014 draft assertions verified FAIL before fix commit)"
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: active
+  evidence: 5 Opus lanes dispatched (security, logic, tests, style, documentation) at HEAD 167f78f; run-scoped lane dir /tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/
 - id: qa
   required: true
   status: pending
@@ -70,7 +70,39 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  review:
+    head_sha: 6fe2aa33dc4b0a0c59819fffb1da6b3b54697cd1
+    timestamp: '2026-08-19T15:52:49.686269+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_security_sha256: 4d968c2fd3e3ca7a0999a16d5c767c8f37e76a003cc2cf8812c416d5a9a77e13
+      lane_security_lines: '49'
+      lane_security_verdict: APPROVE
+      lane_security_model: claude-opus-5
+      lane_logic_sha256: d02e859beb1d1d0967623ae81f90930c3778195c875a6802b0b96d7275fb3ea4
+      lane_logic_lines: '55'
+      lane_logic_verdict: APPROVE
+      lane_logic_model: claude-opus-5
+      lane_tests_sha256: 5495ce261bbad67ab97e67e1fc5f79a2394519350a5f8b86e95a34f5dd8f067f
+      lane_tests_lines: '75'
+      lane_tests_verdict: APPROVE
+      lane_tests_model: claude-opus-5
+      lane_style_sha256: 9e6a181dcfd294b542228828ec96ad201ef562fe33eae692ebe734402299323f
+      lane_style_lines: '123'
+      lane_style_verdict: APPROVE
+      lane_style_model: claude-opus-5
+      review_floor: full
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: full
+      lanes: security=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/security-review.md,logic=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/logic-review.md,tests=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/tests-review.md,style=/tmp/ledger-lanes-2026-08-19-reland-170-draft-finalize/style-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: 72589069dece5c5cb509863944fc755b7adc72cc
+last_seen_sha: 167f78f49df7bc04bfc6edbbafb579a84038c756
