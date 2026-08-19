@@ -127,6 +127,17 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[router] Delivery-shaped request (build/fix/change tracked code)? Invoke workflow-router first — ROUTE_CARD before dispatch.'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "*",
