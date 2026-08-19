@@ -186,9 +186,17 @@ Getting this wrong is not a rounding error. The same audit, same window, ranked 
 
 ```bash
 SINCE="2026-08-12 17:00"   # absolute window open; never "7 days ago"
-AS_OF="2026-08-19 17:00"   # when refs were fetched; report it with every figure
 for repo in "$@"; do
-    git -C "$repo" fetch -q --prune --all   # stale tracking refs under-count silently
+    # Guard the fetch. An unreachable remote (VPN down, SSO expired, remote
+    # renamed) exits non-zero and leaves the tracking refs at whatever they
+    # held — the exact under-count the fetch exists to prevent, and the as-of
+    # stamp below would then assert a freshness the fetch did not deliver.
+    git -C "$repo" fetch -q --prune --all || {
+        echo "$repo: fetch failed — figure withheld"
+        continue
+    }
+    as_of="$(date '+%Y-%m-%d %H:%M')"   # measured, not asserted: only reachable
+                                        # after a fetch that actually succeeded
     ref="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"
     ref="${ref:-origin/main}"  # assign-then-default: `| sed … || echo main` never
                                # fires, because sed exits 0 whatever git returned
@@ -201,11 +209,11 @@ for repo in "$@"; do
         continue
     }
     n="$(git -C "$repo" log "$ref" --since="$SINCE" --oneline | wc -l | tr -d ' ')"
-    echo "$repo: $n commits on $ref since $SINCE (refs as of $AS_OF)"
+    echo "$repo: $n commits on $ref since $SINCE (refs as of $as_of)"
 done
 ```
 
-Confirm the withheld repos are a short, explained list before reporting coverage — a sweep that silently measured 2 of 14 reads exactly like one that measured 14.
+Confirm the withheld repos are a short, explained list before reporting coverage — a sweep that silently measured 2 of 14 reads exactly like one that measured 14. One residual with no guard: a **shallow** clone under-counts silently (a fixture reads 2 against a truth of 5) because the history simply is not there. None of the audited repos is shallow today; check `git rev-parse --is-shallow-repository` before trusting a figure from an unfamiliar checkout.
 
 **Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
 
