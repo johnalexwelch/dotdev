@@ -44,7 +44,7 @@ Required evidence:
 - explicit user approval (or explicit user waiver)
 - at least one milestone that maps to this PRD scope
 
-If missing, stale, or out of scope, halt and route back to `workflow-roadmap` before continuing.
+If missing, stale, or out of scope, halt and route back to `workflow-roadmap` before continuing. **Migration mode:** this gate is satisfied differently — see `## Migration mode`; the user-approved repo-audit report or migration brief stands in for the roadmap artifact, and no `workflow-roadmap` detour is forced.
 
 0.5. Graphify knowledge graph gate (conditional, before codebase exploration):
 
@@ -175,10 +175,10 @@ Any further notes about the feature.
 
 Deltas on the product-mode process for refactor-scale work. The PRD template is the same; these change how it is filled and how children are cut.
 
-- **Roadmap gate**: satisfied by the repo-audit report or the user-approved migration brief itself — the scope is already decided; do not force a `workflow-roadmap` detour.
+- **Roadmap gate**: satisfied by the **user-approved** repo-audit report or migration brief itself — approval of the input artifact is required in both variants (an agent's own unapproved audit output does not self-satisfy the gate); the scope is already decided, so no `workflow-roadmap` detour is forced. Mirrored as the in-rule exception in `workflow-router`'s Roadmap Gate Rule.
 - **Anchors**: preserve `FIND-NN` / `REQ-NN` / ticket IDs verbatim from the audit or brief — never renumber. Implementation Decisions maps anchors → slices; every child issue cut by `to-issues` must cite the anchors it addresses.
 - **Phasing is issue ordering, not a phase runner**: sequencing lives as one parent PRD issue plus ordered child issues with explicit dependencies ("blocked by #N"). The tree is executed by `execute-prd`; there is no separate phase executor.
 - **Pilot/canary slice**: the first child proves the migration pattern on the narrowest real surface. Canary precedes any deletion; no file or behavior is deleted before its replacement is live and verified. Waiving the pilot requires stated reasoning in Implementation Decisions.
 - **Rollback expectation**: every child states its rollback (revert unit or recovery path); the PRD carries the overall rollback posture in Implementation Decisions.
-- **Sync gates are child issues**: human-only checkpoints (approvals, production verification, credential/custody actions) become explicit child issues marked for a human and ordered in the dependency chain — never silent assumptions inside an agent-executable slice.
+- **Sync gates are child issues**: human-only checkpoints (approvals, production verification, credential/custody actions) become explicit child issues marked for a human and ordered in the dependency chain — never silent assumptions inside an agent-executable slice. `execute-prd` skips a human gate and everything blocked behind it, so the parent tree needs a re-invocation after each gate clears; one run is not the whole migration.
 - **User stories**: the extensive-actor bar relaxes to affected-behavior coverage — enumerate the behaviors that must not regress.

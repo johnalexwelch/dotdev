@@ -356,16 +356,17 @@ workflow-review → workflow-finalize → cleanup-delivery
   - Product/feature gaps → feed into `workflow-roadmap`, then proceed through the default flow above
   - Already-clear vertical implementation slices → route to `to-issues` or `triage` directly
   - Repo-wide refactors, migrations, or multi-phase remediation → `to-prd` **migration mode** (FIND-NN/REQ-NN anchors, parent + ordered children, pilot/canary, rollback, sync-gate child issues) → `to-issues` → `triage` → `execute-prd`; each child carries the normal `workflow-review` and `workflow-finalize` gates
-- **Do not route audit findings straight to execution** — a human-approved roadmap or a migration-mode PRD with triaged children must exist first
+- **Do not route audit findings straight to execution** — a human-approved roadmap, or a migration-mode PRD built from a human-approved audit/brief with triaged children, must exist first
 - **Key constraint:** PRD/spec parent issues must not be labeled `ready-for-agent` (per `triage` skill) — only child implementation issues produced by `to-issues` and meeting all readiness criteria may receive `ready-for-agent`
 
 ## Roadmap Gate Rule
 
-For feature planning that will produce PRDs and implementation issues, require an approved `workflow-roadmap` artifact before dispatching `to-prd` or `to-issues`.
+For product/feature planning that will produce PRDs and implementation issues, require an approved `workflow-roadmap` artifact before dispatching `to-prd` (product mode) or `to-issues`.
 
 - If roadmap evidence exists and is in scope: proceed.
 - If roadmap is missing, stale, or out of scope: route to `workflow-roadmap` first and halt downstream dispatch until approved.
 - Only an explicit user waiver may bypass this gate.
+- **Migration-mode exception (in-rule, not a waiver):** `to-prd` migration mode satisfies this gate with its input artifact instead — a **human-approved** repo-audit report or migration brief, per the mode's own roadmap-gate delta (D-006 planning-lane consolidation, 2026-08-19). The scope there is already settled; do not force a `workflow-roadmap` detour.
 
 ### Roadmap Doc Invariant (drift guard)
 

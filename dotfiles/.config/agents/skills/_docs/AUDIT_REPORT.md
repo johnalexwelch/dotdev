@@ -43,7 +43,7 @@ These are **not** deprecated but may benefit from closer collaboration or refact
 
 | Skill Group | Observation | Next Step |
 |-------------|-------------|----------|
-| Decision documentation | `decision-log` (log decisions) vs. `decision-memo` (shape for exec) | Clarify scoping: is decision-memo always a follow-up to decision-log? (`design-plan` removed from this group — consolidated into `to-prd` migration mode 2026-08-19, see table below) |
+| Decision documentation | `decision-log` (log decisions) vs. `decision-memo` (shape for exec) | Clarify scoping: is decision-memo always a follow-up to decision-log? (`design-plan` removed from this group — consolidated into `to-prd` migration mode 2026-08-19, see the Planning-Lane Consolidation table above) |
 | Audit/investigation | `repo-audit` (codebase evidence) vs. `improve-codebase-architecture` (deepening opportunities) vs. `deep-dive-review` (4-lens daily AFK) | Clarify entry points: when should each be invoked? Do they have non-overlapping gates? |
 | Council workflows | `analysis-council`, `metric-council`, `vendor-council`, `worldbuilding-council` (if future) | Common scaffold (council-scaffolding), but each domain has specific pressure scenarios. Current design is sound; monitor for shared-rule emergence. |
 | Product planning | `workflow-feature` (ambiguous idea → issues) vs. `workflow-roadmap` (multi-area sequencing) vs. `v1-workflow` (V1 full pipeline) | Clarify: does v1-workflow always use workflow-roadmap as step 3b, or is there a faster path? |

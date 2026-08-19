@@ -27,6 +27,8 @@ Pairs well with: decision-log, to-prd, triage, setup-skills, implement
 
 Break a plan into independently-grabbable issues using vertical slices (tracer bullets).
 
+Anchor preservation: when the source PRD carries stable IDs (`FIND-NN`, `REQ-NN`, ticket slugs — e.g. a `to-prd` migration-mode PRD), copy each slice's anchors verbatim into its issue body and never renumber them.
+
 This is a hard constraint: implementation issues must be vertical slices of app behavior, not horizontal layers. Reject or rewrite issue breakdowns that produce separate tickets for only schema, only backend routes, only UI shell, only tests, or only refactoring unless that ticket is a complete, independently verifiable behavior slice.
 
 The issue tracker and triage label vocabulary should have been provided to you — run `/setup-skills` if not.

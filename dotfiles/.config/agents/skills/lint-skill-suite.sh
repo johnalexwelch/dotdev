@@ -146,14 +146,17 @@ while IFS= read -r -d '' file; do
         fail "$skill lacks WORKFLOW_STEPS ledger"
     fi
 
-    # The needs_ledger tombstone exemption is valid only while these stay
-    # tombstones — a revived skill under any of these names must not silently
-    # escape the WORKFLOW_STEPS check (D-006 #11 Phase 2; planning-lane
-    # consolidation 2026-08-19 for design-plan/execute-phase).
+    # Tombstone invariant: these names must stay disabled tombstones
+    # (D-006 #11 Phase 2; planning-lane consolidation 2026-08-19).
+    # workflow-build-one/workflow-debug/execute-phase also guard a
+    # needs_ledger exemption above; design-plan guards only the tombstone
+    # itself (it was never a ledgered orchestrator). The value is asserted,
+    # not just the key — `disable-model-invocation: false` would otherwise
+    # revive a tombstone while it still skips every check.
     case "$skill" in
         workflow-build-one | workflow-debug | execute-phase | design-plan)
-            if ! has_frontmatter_key "$file" disable-model-invocation; then
-                fail "$skill is exempted as a tombstone but lacks disable-model-invocation (revived? remove the needs_ledger exemption and restore WORKFLOW_STEPS)"
+            if [ "$(frontmatter_value "$file" disable-model-invocation)" != "true" ]; then
+                fail "$skill is a tombstone but disable-model-invocation is not 'true' (revived? restore its full contract; ledgered orchestrators also need WORKFLOW_STEPS restored and the needs_ledger exemption removed)"
             fi
             ;;
     esac

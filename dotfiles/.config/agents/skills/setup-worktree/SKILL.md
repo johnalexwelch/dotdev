@@ -2,14 +2,14 @@
 name: setup-worktree
 model: haiku
 reasoning: medium
-description: "Create an isolated git worktree from the resolved workflow base branch for a plan phase, issue, or workflow run; defaults path ~/wt/<repo>/phase-<N>/, derives the branch, auto-copies .env*/.tool-versions etc. Used before workflow execution and at human-gate halts."
+description: "Create an isolated git worktree from the resolved workflow base branch for an issue, workflow run, or legacy plan phase; derives the branch and path, auto-copies .env*/.tool-versions etc. Used before workflow execution (workflow-deliver, execute-prd) and at human-gate halts."
 disable-model-invocation: true
 triggers:
   - "/setup-worktree"
   - "setup worktree"
   - "create worktree"
   - "isolated checkout"
-persona: Staff Engineer setting up an isolated review checkout for a plan phase
+persona: Staff Engineer setting up an isolated checkout for a workflow run or review
 inputs:
   - name: plan_path
     type: string
@@ -68,7 +68,7 @@ Human gates: none
 Typical workflows: on-demand side-car (when /workflow-finalize or a legacy /execute-phase chain halts at a human gate, for isolated branch review, or for workflow-autonomous-backlog issue execution)
 Pairs well with: workflow-deliver, execute-prd, workflow-finalize, watch-ci, workflow-autonomous-backlog, run-backlog
 
-# /setup-worktree — Isolated Checkout for a Plan Phase
+# /setup-worktree — Isolated Checkout for a Workflow Run
 
 ## Purpose
 
