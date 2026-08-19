@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152418
-status: active
-next: finalize
-updated: '2026-08-19T16:15:45.094175+00:00'
+status: done
+next: ''
+updated: '2026-08-19T16:16:01.573700+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: "user-journey-qa trigger conditions absent: no frontend, no user-facing product behavior, no auth/navigation/payment flows \u2014 markdown skill corpus + lint/test change; skip-with-reason per workflow-deliver Step 5"
 - id: finalize
   required: true
-  status: active
-  evidence: 'PR-first: pushing and opening non-draft PR (ec61612 draft-acceptance fix not in base), then stamp finalize'
+  status: completed
+  evidence: 'PR #186 open non-draft; stamp finalize at 68c6bdd (kernel: review freshness, clean tree, verify-local PASSED, forge state); do-not-merge per brief'
 stamps:
   review:
     head_sha: 4438542b62f4d02f7aafd5d3430dd69d35968ad3
@@ -84,7 +84,7 @@ stamps:
 overrides: []
 branch: feat/planning-lane-consolidation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/planning-lane-consolidation
-last_seen_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
+last_seen_sha: 652b347d021e7052de6cf43b19876982cc72b6a8
 verify_local:
   head_sha: 68c6bdd24a571d9db83ddab6141e12629407cd2c
   passed: true
