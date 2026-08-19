@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152956
 status: active
 next: ''
-updated: '2026-08-19T15:55:49.967186+00:00'
+updated: '2026-08-19T15:57:33.722772+00:00'
 steps:
 - id: preflight
   required: true
@@ -50,8 +50,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 02eb3949de7189aaf16321799dbd3e00299b68d4
-    timestamp: '2026-08-19T15:35:52.203212+00:00'
+    head_sha: fa9467505b72f1fa70b9a900f592e0e4db7f4c70
+    timestamp: '2026-08-19T15:57:33.722624+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -60,9 +60,9 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
       pr_number: '183'
-      describe_pr: 'PR #183 body carries summary, seam definition, router-only scope note, and eval test plan'
-      post_mortem: 'seam sharpened via wording only; eval 45/45 (100%) vs #181 golden set incl case 45; #180 same-row conflict noted in PR body'
     override:
       active: false
       reason: ''
@@ -70,9 +70,9 @@ stamps:
 overrides: []
 branch: fix/router-v1-vs-feature-seam
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
-last_seen_sha: 419c206eb53efbce0a1a93e6a9cef1691c157ad1
+last_seen_sha: fa9467505b72f1fa70b9a900f592e0e4db7f4c70
 verify_local:
-  head_sha: 02eb3949de7189aaf16321799dbd3e00299b68d4
+  head_sha: fa9467505b72f1fa70b9a900f592e0e4db7f4c70
   passed: true
   results:
   - cmd: ./test/run-tests.sh
