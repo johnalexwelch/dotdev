@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: active
 next: diagnose
-updated: '2026-08-19T16:03:39.813866+00:00'
+updated: '2026-08-19T16:05:28.830634+00:00'
 steps:
 - id: diagnose
   required: true
@@ -102,7 +102,35 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  finalize:
+    head_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
+    timestamp: '2026-08-19T16:05:28.830409+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      snapshot_current: '1'
+      ci: green
+      pr_state: draft
+      threads_resolved: 'yes'
+    attested:
+      post_mortem: 'not_applicable_with_reason: single-issue re-land; provenance and diagnosis recorded in _docs/decision-log.md F3-resolution entry and this run''s diagnose/fix stamps'
+      describe_pr: 'body_file=docs/executions/.pr-bodies/2026-08-19-pr-reland-170-draft-finalize.md; mode=issue_only; issues=none; phase_evidence=not_applicable; graphify=not_available_with_reason: no graph.json; applied_to_pr=true'
+      pr_number: '184'
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: f71a69658875997b0c8eff05a7833a67724ec4a9
+last_seen_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
+verify_local:
+  head_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
