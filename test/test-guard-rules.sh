@@ -133,11 +133,6 @@ ledger_try() {
 echo "=== Workflow guard new-rule tests ==="
 echo ""
 
-# Stub bin used by the fail-closed probe: an awk that always fails.
-mkdir -p "$TMPDIR_BASE/broken-bin"
-printf '#!/usr/bin/env bash\nexit 127\n' >"$TMPDIR_BASE/broken-bin/awk"
-chmod +x "$TMPDIR_BASE/broken-bin/awk"
-
 # --- Rule 1: merge gate ---
 opted_gate=$(new_repo merge_gate opted)
 ledger_try "$opted_gate" init 2026-08-19-gate --workflow workflow-build-one \
@@ -267,9 +262,11 @@ assert_status "non-mutating git with 2>/dev/null allowed" 0 "$STATUS"
 run_hook "$plain_sup" "$(json_bash "$plain_sup" "git push origin main")"
 assert_status "mutating command without suppression allowed" 0 "$STATUS"
 
-# Rule 3 is segment-scoped (R1/R2 batch #1, bit us twice live): suppression
-# on a NON-mutating segment chained with a mutating one must pass; the block
-# fires only when 2>/dev/null attaches to the mutating segment itself.
+# Rule 3 is statement-scoped (R1/R2 batch #1, bit us twice live): suppression
+# on a NON-mutating statement chained with a mutating one must pass. The
+# tokenizer attributes each redirect to the statement carrying it, so the
+# block fires only when the suppression sits on the mutation's own scope
+# chain.
 run_hook "$plain_sup" "$(json_bash "$plain_sup" "bash test.sh 2>/dev/null && git push origin main")"
 assert_status "suppressed test segment before push allowed (&&)" 0 "$STATUS"
 
@@ -303,9 +300,9 @@ run_hook "$plain_sup" "$(json_bash "$plain_sup" "git merge feature-x 2>/dev/null
 assert_status "real git merge with suppression still blocked" 2 "$STATUS"
 
 # Compound-redirection shapes (logic lane): a suppression on a group, subshell,
-# loop, or conditional redirects everything inside it — lexical splitting must
-# not file it under the closing token's segment. Fail closed: these fall back
-# to whole-command semantics (the pre-batch behavior).
+# loop, or conditional redirects everything inside it. The tokenizer attributes
+# a construct's redirect list to the construct's whole body (construct-scoped
+# redirect attribution), so a mutation anywhere inside is suppressed and blocks.
 run_hook "$plain_sup" "$(json_bash "$plain_sup" "{ git push origin main; } 2>/dev/null")"
 assert_status "brace-group suppression over a push still blocked" 2 "$STATUS"
 
@@ -363,21 +360,27 @@ assert_status "command-substitution paren does not trip the fallback" 0 "$STATUS
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(basename $(pwd)) 2>/dev/null && git push origin main')"
 assert_status "nested command substitution does not trip the fallback" 0 "$STATUS"
 
-# A mutation INSIDE a substitution is still judged in its own segment: the
-# masking is used only to identify terminators, never to hide mutations.
+# A mutation INSIDE a substitution is still caught: substitution contents are
+# walked in the enclosing scope (post-redirect inheritance, PR #174 recorded
+# conservative choice), so the enclosing suppression covers the inner push.
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(git push origin main) 2>/dev/null')"
 assert_status "mutation inside a substitution stays blocked" 2 "$STATUS"
 
-# Negative coverage for the fail-closed fallback boundary (tests lane R2):
-# these benign compounds are DELIBERATELY blocked — a group redirect cannot
-# be attributed to one segment lexically, so the fallback errs toward
-# blocking. Pinned so the choice is visible if anyone narrows it later.
+# RECORDED FLIP (tokenizer rebuild, PR #174 recorded decision): the awk-lexer
+# branch could not attribute a construct's own redirect to the construct's
+# contents alone, so a group/conditional redirect fell back to whole-command
+# semantics and blocked these benign compounds. The tokenizer parses real
+# construct-scoped redirect attribution — the suppression on `{ … }`/`if…fi`
+# applies only inside that construct, and the push is a sibling segment with
+# its own (visible) stderr. PR #174 called this compound-fallback narrowing
+# "a visible choice" for whoever built the tokenizer to make explicitly; this
+# flip is that choice.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ npm run lint; } 2>/dev/null && git push origin main')"
-assert_status "benign brace group before a push blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "brace group scoped to its own contents; push unsuppressed" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then npm run lint; fi 2>/dev/null && git push origin main')"
-assert_status "benign conditional before a push blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "conditional scoped to its own contents; push unsuppressed" 0 "$STATUS"
 
 # Suppression spellings beyond 2>/dev/null (security lane R2). The first is
 # the most common idiom in shell and was missed on origin/main too.
@@ -486,15 +489,20 @@ assert_status "exec with a command word and no redirect permits" 0 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "refactor execution path"')"
 assert_status "execution is not the exec token" 0 "$STATUS"
 
-# Under the inverted burden, ANY exec token is a carrier — distinguishing
-# command-word from argument is the enumeration problem that produced three
-# fail-opens, so these over-block instead. Both match main, which blocked
-# them under whole-command semantics, so neither is a regression.
+# RECORDED FLIP (tokenizer rebuild, PR #174 recorded decision): the awk-lexer
+# branch treated ANY `exec` token as a carrier because it could not tell a
+# command-word `exec` from an argument or a quoted payload — the enumeration
+# problem that produced three fail-opens. The tokenizer knows command
+# position: `echo exec` puts `exec` in argument position, not command
+# position, so it is not the exec builtin at all. And `bash -c "exec
+# 2>/dev/null"` recurses the literal `-c` payload in an ISOLATED scope — the
+# inner exec redirects the child shell's stderr, never the outer shell's, so
+# the outer push stays unsuppressed.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo exec 2>/dev/null && git push origin main')"
-assert_status "exec as a bare argument blocks (over-block, matches main)" 2 "$STATUS"
+assert_status "exec as an echo argument is not the exec builtin" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'bash -c "exec 2>/dev/null"; git push origin main')"
-assert_status "exec in a quoted payload blocks (over-block, matches main)" 2 "$STATUS"
+assert_status "exec inside a -c payload redirects the child shell only" 0 "$STATUS"
 
 # The exclusion that keeps &> on its own branch must survive the widening.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main &>/dev/null')"
@@ -514,18 +522,16 @@ assert_status "escaped quote does not split the mutating segment" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "a \" | b" 2>/dev/null')"
 assert_status "escaped quote with a pipe stays one segment" 2 "$STATUS"
 
-# Rule 3 must fail CLOSED if the masking helper breaks (security lane R2
-# note): an empty mask previously emptied every segment and permitted.
-OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'git push origin main 2>/dev/null')" |
-    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
-        PATH="$TMPDIR_BASE/broken-bin:$PATH" bash "$GUARD" 2>&1)"
-STATUS=$?
-assert_status "broken awk fails closed (still blocks)" 2 "$STATUS"
+# (The old "broken awk fails closed" probe and its stub bin were deleted in
+# round-1 review closure — rule 3 no longer uses awk, so the probe had become
+# a vacuous duplicate of the plain block assertion; the REAL fail-closed
+# probe for the tokenizer dependency is N18 below. Style lane finding.)
 
-# The terminator detector must accept ANY redirect after the terminator, not
-# only 2>/&> — a construct suppressed via stdout-dup otherwise falls through
-# the fallback and its internal separators split the mutation into a segment
-# carrying no suppression of its own (security lane R2, second pass).
+# A construct suppressed via stdout-dup (a null stdout redirect plus 2>&1
+# after the closing token) is redirected just as thoroughly as one using 2>:
+# the tokenizer's ordered-fd model resolves the construct's own redirect list
+# before walking its body, so spelling parity holds (security lane R2,
+# second pass).
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } >/dev/null 2>&1')"
 assert_status "brace group suppressed via stdout-dup blocks" 2 "$STATUS"
 
@@ -535,41 +541,41 @@ assert_status "loop suppressed via stdout-dup blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then git push origin main; fi >/dev/null 2>&1')"
 assert_status "conditional suppressed via stdout-dup blocks" 2 "$STATUS"
 
-# Widening the alternation must not make a PAREN-FREE arithmetic expansion a
-# terminator. The masker's inner classes are [^()], so it collapses only
-# substitutions and arithmetic containing no literal parens — the pins below
-# fix the boundary so this one case is not read as general support.
+# Arithmetic expansion is parsed as real grammar: `$((…))` is an expansion
+# inside a word, never a construct terminator, so no suppression attaches to
+# the sibling push — paren-free and nested-paren alike (see the RECORDED
+# FLIP block below).
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((1+2)) >/dev/null 2>&1 && git push origin main')"
 assert_status "paren-free arithmetic expansion is not a terminator" 0 "$STATUS"
 
-# Beyond that boundary the masker leaves parens standing and the fallback
-# arms, blocking a benign command (tests lane R3). Every shape below is
-# fail-closed and pinned so the limitation is visible rather than inferred
-# from the happy case above. Provenance, corrected by the security lane in
-# R5: under the `2>/dev/null` spelling these were blocked on main too, so
-# that much is preserved behavior — but main never recognized
-# `>/dev/null 2>&1`, so the stdout-dup variants are NEW false positives
-# introduced by this batch, not inherited ones.
+# RECORDED FLIP (tokenizer rebuild, PR #174 recorded decision): the awk-lexer
+# branch masked command substitutions with a paren-balanced heuristic that
+# broke on nested parens, process substitution, and quotes inside a
+# substitution — so these benign shapes tripped the compound-fallback and
+# blocked. The tokenizer parses arithmetic expansion, process substitution,
+# and substitution contents as real shell grammar (quotes tracked by the
+# lexer, not paren-counted), so none of them can arm a fallback that no
+# longer exists as a heuristic. There is no paren-matching pass left to trip.
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(( (1+2)*3 )) 2>/dev/null && git push origin main')"
-assert_status "nested-paren arithmetic blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "arithmetic is parsed, not paren-matched; push unsuppressed" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'diff <(echo a) <(echo b) 2>/dev/null && git push origin main')"
-assert_status "process substitution blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "process substitutions are parsed words; push unsuppressed" 0 "$STATUS"
 
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(grep "x)y" f) 2>/dev/null && git push origin main')"
-assert_status "paren inside a quoted substitution arg blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "quotes inside a substitution are lexer-tracked, not paren-counted" 0 "$STATUS"
 
-# ...whereas a quoted paren NOT inside a substitution never arms: its closing
-# quote sits between the paren and the redirect (style lane R5 counterexample,
-# pinned so the two shapes are not conflated again).
+# ...and a quoted paren NOT inside a substitution never armed even the old
+# heuristic: its closing quote sits between the paren and the redirect
+# (style lane R5 counterexample, still true under the tokenizer).
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo "a)" 2>/dev/null && git push origin main')"
 assert_status "bare quoted paren does not arm the fallback" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'xs=(a b) 2>/dev/null; git push origin main')"
-assert_status "array assignment blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "array assignment is a statement; push is a sibling segment" 0 "$STATUS"
 
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) >/dev/null 2>&1 && git push origin main')"
@@ -624,11 +630,13 @@ assert_status "case statement suppressed as a whole blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } 2>&-')"
 assert_status "fd-close on a construct blocks" 2 "$STATUS"
 
-# A compound construct wrapped in a substitution must not lose its terminator
-# to the masker (security lane R5 — fail-open vs both main and 82b6249).
-# Terminator detection falls back to the unmasked view when a substitution
-# span is itself mutating; a benign span (see the $(date) pin above) does not
-# trigger that, so the batch #1 permits are untouched.
+# A compound construct wrapped in a substitution must still be seen
+# (security lane R5 — this shape failed open on both main and 82b6249 under
+# the retired masker, which swallowed the construct's terminator along with
+# the substitution). The tokenizer parses substitution contents as real
+# grammar and walks them in the enclosing scope, so the construct's own
+# suppression blocks — while benign spans (see the $(date) pin above) stay
+# permitted, preserving the batch #1 permits.
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(true; { git push origin main; } 2>/dev/null)')"
 assert_status "mutating brace group inside a substitution blocks" 2 "$STATUS"
@@ -636,6 +644,428 @@ assert_status "mutating brace group inside a substitution blocks" 2 "$STATUS"
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(for i in 1; do git push origin main; done 2>/dev/null)')"
 assert_status "mutating loop inside a substitution blocks" 2 "$STATUS"
+
+# --- Rule 3 tokenizer rebuild (PR #174 recorded decision) ---
+# The regex-over-lexically-split-segments model above is being replaced by a
+# python3 stdlib shell tokenizer that parses real shell grammar: quotes,
+# ordered-fd redirections, construct-scoped redirect attribution, command
+# substitution, arithmetic, process substitution, heredocs (bodies = data),
+# `exec` fd persistence, newlines as statement separators, and bounded
+# recursion into `eval "<literal>"` (current-shell scope) and
+# `bash|sh|zsh -c "<literal>"` (isolated scope). Declared boundary (refined
+# in round 1 — matches the hook header and tokenizer docstring): a mutation
+# is detected when its text is LITERAL (expansion-free) in command position,
+# judged by the quote-removed value with basename comparison — so
+# value-preserving quoting (`\git`, `git "push"`) and path prefixes
+# (`/usr/bin/git`) no longer hide it. What stays OUT OF SCOPE and fails
+# open: name-binding indirection where the text is absent or
+# runtime-determined (functions, aliases, `eval "$VAR"`, variable expansion
+# carrying command text). Tokenizer errors and missing python3 fail CLOSED
+# for rule 3 candidates; a conservative prefilter HEURISTIC (not a proof —
+# see N19 below) skips python3 for commands it can cheaply rule out.
+
+# N1: a quoted redirect-lookalike is a word, not redirect syntax (S9
+# quoted-literal residual); a bare 2>&1 alone is not suppression.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "see docs>/dev/null" 2>&1')"
+assert_status "quoted redirect-lookalike in a commit message is a word" 0 "$STATUS"
+
+# N2: a quoted argument is not a command (S13 mention over-block). It
+# permits because the quoted value is ONE word — `git push origin main` with
+# the spaces inside a single argument, which can never match the multi-word
+# mutation patterns — NOT because quoting exempts a word from matching. Any
+# quoting fix that compares quote-removed values must keep this green
+# (round-1 security lane, C-pin).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo "git push origin main" 2>/dev/null')"
+assert_status "quoted mention of a mutation is not the mutation" 0 "$STATUS"
+
+# N3: ordered fd semantics — fd2 dups the ORIGINAL (visible) stdout before
+# stdout moves to /dev/null, so stderr genuinely reaches the caller. Probed
+# locally: `bash -c 'echo err >&2' 2>&1 >/dev/null` prints err.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>&1 >/dev/null')"
+assert_status "fd2 dups original stdout before it moves; stderr visible" 0 "$STATUS"
+
+# N4: positional exec tracking — the push runs BEFORE the shell's stderr
+# moves. PR #174's "arming is order-insensitive" residual, now separable.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main && exec 2>/dev/null')"
+assert_status "push runs before the later exec redirect arms anything" 0 "$STATUS"
+
+# N5: a subshell's exec redirects the subshell only. Probed locally:
+# `( exec 2>/dev/null ); echo err >&2` prints err.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '( exec 2>/dev/null ); git push origin main')"
+assert_status "subshell exec does not leak into the parent shell" 0 "$STATUS"
+
+# N6: newlines are statement separators — the common multi-line Bash-tool
+# shape the old single-segment lexing over-blocked in other shapes.
+nl_cmd="$(printf 'bash test.sh 2>/dev/null\ngit push origin main')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$nl_cmd")"
+assert_status "newline-separated suppressed test then unsuppressed push permits" 0 "$STATUS"
+
+# N7: a heredoc body is data, not command text — mutation text inside a
+# heredoc body is out-of-scope per the declared boundary.
+heredoc_cmd="$(printf 'cat <<EOF 2>/dev/null\ngit push origin main\nEOF')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$heredoc_cmd")"
+assert_status "mutation text inside a heredoc body is data, not command" 0 "$STATUS"
+
+# Precision gains in the fail-closed/blocking direction: the old hook
+# permits some of these on an argv[0]-only or adjacency basis; pin the
+# tokenizer's closure so a future detector can never regress it.
+
+# N8: git global options before the subcommand no longer hide the push (old
+# adjacency regex failed open here).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git -C /tmp push origin main 2>/dev/null')"
+assert_status "git global option before the subcommand still blocks" 2 "$STATUS"
+
+# N9: a prefix word does not hide the mutation (matches old behavior;
+# pinned so an argv[0]-only detector can never regress it).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'env git push origin main 2>/dev/null')"
+assert_status "env-prefixed push still blocks" 2 "$STATUS"
+
+# N10: a LITERAL eval string is command text by definition — recursed in
+# the current-shell scope (old blocked via text presence; pinned so
+# quote-stripping doesn't fail it open).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'eval "git push origin main" 2>/dev/null')"
+assert_status "literal eval payload recurses and blocks" 2 "$STATUS"
+
+# N11: literal -c payloads recurse in an isolated scope — the inner push is
+# suppressed inside that scope.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'bash -c "git push origin main 2>/dev/null"')"
+assert_status "literal bash -c payload recurses and blocks" 2 "$STATUS"
+
+# N12: a heredoc attached to a suppressed mutation (outside the body) still
+# blocks — the boundary is the body, not any nearby redirect.
+heredoc2_cmd="$(printf 'git push origin main 2>/dev/null <<EOF\nnotes\nEOF')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$heredoc2_cmd")"
+assert_status "suppressed mutation with a trailing heredoc still blocks" 2 "$STATUS"
+
+# N13: backtick substitution parity with the $() pin above — a mutation
+# inside a substitution inherits the enclosing command's suppression.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo `git push origin main` 2>/dev/null')"
+assert_status "mutation inside a backtick substitution still blocks" 2 "$STATUS"
+
+# Boundary and regression pins: match current, deliberately-scoped behavior
+# so the tokenizer rebuild cannot silently drift it.
+
+# N14: name-binding indirection is the declared boundary (PR #174) — an
+# accepted fail-open regression, deliberately not chased.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'f() { git push origin main; }; f 2>/dev/null')"
+assert_status "function name-binding indirection stays out of scope" 0 "$STATUS"
+
+# N15: a variable redirect target is unknowable at guard time — fail-open
+# within the declared boundary.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>"$LOGFILE"')"
+assert_status "variable redirect target permits" 0 "$STATUS"
+
+# N16: a real-file target keeps output retrievable, so it is not
+# suppression.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main >push.log 2>&1')"
+assert_status "real-file redirect target permits" 0 "$STATUS"
+
+# N17: an arithmetic command statement parses cleanly; no suppression lands
+# on the push. ANOMALY (recorded in the red-phase lane summary): the retired
+# awk-lexer hook returned exit 2 here — its command-substitution masker
+# recognized `$((...))`/`$(...)` but not bare `((...))`, so the literal `))`
+# survived as an unmatched terminator and armed the whole-command fallback.
+# The tokenizer-correct answer is 0; pinned as such rather than adjusted to
+# match that accidental block.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '(( 1 > 0 )) 2>/dev/null && git push origin main')"
+assert_status "bare arithmetic command statement does not arm anything" 0 "$STATUS"
+
+# Fail-closed-on-tokenizer-error probes: a broken python3 stub prepended to
+# PATH simulates a missing/broken interpreter for the tokenizer dependency.
+mkdir -p "$TMPDIR_BASE/broken-python-bin"
+printf '#!/usr/bin/env bash\nexit 127\n' >"$TMPDIR_BASE/broken-python-bin/python3"
+chmod +x "$TMPDIR_BASE/broken-python-bin/python3"
+
+# N18: a command whose text COULD match rule 3 must fail CLOSED when the
+# tokenizer errors or python3 is missing — never silently permit a mutation
+# just because the parser broke.
+OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'git push origin main 2>/dev/null')" |
+    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
+        PATH="$TMPDIR_BASE/broken-python-bin:$PATH" bash "$GUARD" 2>&1)"
+STATUS=$?
+assert_status "broken python3 fails closed on a candidate command" 2 "$STATUS"
+assert_contains "broken python3 block names the tokenizer" "$OUT" "tokenizer"
+
+# N19: the prefilter is a conservative HEURISTIC (mutation-verb substring
+# plus suppression-capable text), not a proof: quote-split spellings of both
+# conjuncts used to slip past its raw-text grep until the hook normalized
+# quotes/escapes before grepping — the round-1 red pins below cover that gap.
+# What the heuristic buys: a broken interpreter must not brick every git
+# command, only genuine rule 3 candidates.
+OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'git status 2>/dev/null')" |
+    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
+        PATH="$TMPDIR_BASE/broken-python-bin:$PATH" bash "$GUARD" 2>&1)"
+STATUS=$?
+assert_status "prefilter permits a non-mutating command despite broken python3" 0 "$STATUS"
+
+# N20: no mutation verb text at all — the prefilter permits without ever
+# touching python3.
+OUT="$(cd "$plain_sup" && printf '%s' "$(json_bash_jq "$plain_sup" 'ls /dev/null && echo hi')" |
+    SKILLS_ROOT="$SKILLS_ROOT_REAL" LEDGER_ENTRY_ENFORCE="" \
+        PATH="$TMPDIR_BASE/broken-python-bin:$PATH" bash "$GUARD" 2>&1)"
+STATUS=$?
+assert_status "prefilter permits a mutation-verb-free command" 0 "$STATUS"
+
+# --- Round-1 review closure (4-lane review of 589ae61) ---
+# Red pins for the fail-open regressions the review found, over-block flips
+# the pipeline model owes, boundary/regression green pins, and tokenizer-
+# level pins for shapes the hook's prefilter short-circuits. Each cites the
+# lane that found it. Real-bash semantics for every pin were re-probed with
+# a stderr-marking stub before pinning (results in the lane summary).
+
+# RC1 (tests lane, Must-fix): `select` is a real bash compound; its
+# done-redirect covers the body (probed: body stderr genuinely suppressed).
+# Absent from the parser's construct dispatch it degraded FAIL-OPEN — an
+# unenumerated regression vs both base and origin/main that the test-derived
+# differential structurally could not see.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'select x in a; do git push origin main; break; done 2>/dev/null')"
+assert_status "select construct suppressed as a whole blocks" 2 "$STATUS"
+
+# RC2 (tests lane): a definition-site redirect applies at INVOCATION, so a
+# suppressed definition means every later call runs suppressed (probed). The
+# `function` keyword spelling failed open while its posix twin blocked —
+# pin BOTH so the two spellings can never diverge again.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'function f { git push origin main; } 2>/dev/null; f')"
+assert_status "function-keyword def-site suppression blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'f() { git push origin main; } 2>/dev/null; f')"
+assert_status "posix def-site suppression blocks (spelling-parity pin)" 2 "$STATUS"
+
+# RC3 (security lane, High): vacuous quoting — quoting that does not change
+# the execve — must not blind the detector. The tokenizer already computes
+# the quote-removed literal value for redirect targets (why 2>"/dev/null"
+# blocks); command words must get the same treatment. All five probed as
+# genuine suppressed executions in real bash.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '\git push origin main 2>/dev/null')"
+assert_status "backslash-escaped command word still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '""git push origin main 2>/dev/null')"
+assert_status "empty-quotes-prefixed command word still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git "push" origin main 2>/dev/null')"
+assert_status "quoted subcommand word still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '"exec" 2>/dev/null; git push origin main')"
+assert_status "quoted exec builtin still arms fd persistence" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "\"eval\" 'git push origin main 2>/dev/null'")"
+assert_status "quoted eval with a literal payload still recurses" 2 "$STATUS"
+
+# RC4 (security lane, High): bash backtracks a failed arithmetic parse at
+# command position to a nested subshell, so `((cmd) redirect)` really
+# executes with stderr hidden (probed both forms). The tokenizer must mirror
+# the fallback instead of discarding the span as arithmetic data.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '((git push origin main) 2>/dev/null)')"
+assert_status "arithmetic-backtracked subshell with inner suppression blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '((git push origin main) ) 2>/dev/null')"
+assert_status "arithmetic-backtracked subshell with outer suppression blocks" 2 "$STATUS"
+
+# ...and the control: GENUINE arithmetic stays arithmetic — the fallback must
+# not reintroduce the nested-paren over-block this rebuild removed. The
+# suppressed push after it blocks on its own statement.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '((1+1)); git push origin main 2>/dev/null')"
+assert_status "genuine arithmetic then suppressed push still blocks" 2 "$STATUS"
+
+# RC5 (security lane, Medium): path-qualified invocation carries the mutation
+# lexically, as a command, in the suppression's scope — the boundary items
+# all share the property that the text is ABSENT or runtime-determined,
+# which a path prefix is not. Base blocked both.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '/usr/bin/git push origin main 2>/dev/null')"
+assert_status "absolute-path git invocation still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" './git push origin main 2>/dev/null')"
+assert_status "relative-path git invocation still blocks" 2 "$STATUS"
+
+# RC6 (logic lane, Low): construct-header words (case subject, for word
+# list) must have their substitutions walked like any other word — a
+# mutation inside them is command text in the enclosing scope, not data.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'case $(git push origin main 2>/dev/null) in *) echo hi;; esac')"
+assert_status "suppressed mutation in a case subject blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'for x in $(git push origin main 2>/dev/null); do echo $x; done')"
+assert_status "suppressed mutation in a for word list blocks" 2 "$STATUS"
+
+# RC7 (logic lane, Low): clustered short flags — `-ec`, `-lc` — carry the
+# same fully-literal -c payload; recursion must not require the exact word
+# `-c`.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "sh -ec 'git push origin main 2>/dev/null'")"
+assert_status "clustered -ec flag payload recurses and blocks" 2 "$STATUS"
+
+# RC8 (logic lane, Medium): non-blank leftover input after the parse must
+# fail CLOSED (exit 3 -> hook exit 2), not silently permit everything after
+# the point the parser stopped. Reached via a `)` inside a comment within
+# $( … ): comment-blind paren scanning ends the substitution early, strands
+# the real `)`, and the old tolerate-and-truncate policy never examined the
+# suppressed push on the next line — valid, executing bash (probed).
+# shellcheck disable=SC2016
+trunc_cmd="$(printf 'X=$(echo hi # note )\n)\ngit push origin main 2>/dev/null')"
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "$trunc_cmd")"
+assert_status "comment-paren truncation fails closed on the trailing push" 2 "$STATUS"
+
+# RC9 (security+logic+style lanes): quote/escape-split spellings of the
+# prefilter's two conjuncts must still reach the tokenizer — the prefilter
+# greps raw text while the tokenizer compares quote-removed values, so
+# normalization must happen before the grep. All probed as genuine
+# suppressed executions in real bash.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>/dev/nul"l"')"
+assert_status "quote-split null target still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>&"-"')"
+assert_status "quote-split fd-close still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git pu"sh" origin main 2>/dev/null')"
+assert_status "quote-split mutation verb still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>& -')"
+assert_status "spaced fd-close operand still blocks" 2 "$STATUS"
+
+# RC10 (tests lane): `>&word` is the exact bash synonym of `&>word` (probed:
+# genuinely silent), and the branch's own coherence principle — pinning one
+# spelling while leaving its twin open is incoherent — applies verbatim.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main >&/dev/null')"
+assert_status "legacy ampersand-redirect synonym blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main >& /dev/null')"
+assert_status "spaced legacy ampersand-redirect synonym blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ git push origin main; } >&/dev/null')"
+assert_status "legacy ampersand-redirect on a construct blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec >&/dev/null; git push origin main')"
+assert_status "exec with the legacy ampersand-redirect blocks" 2 "$STATUS"
+
+# ...and the discriminator: `>&2` is a NUMERIC fd dup (stdout onto stderr,
+# both visible — probed), not the legacy file-redirect form. The `>&word`
+# fix must key on the operand being a non-numeric word.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main >&2')"
+assert_status "numeric fd dup via >&2 permits" 0 "$STATUS"
+
+# RC11 (tests lane G1/G2): fd-relay suppression through a third descriptor —
+# blocked by the tokenizer, failed open on base AND origin/main. Green pins
+# recording the flip so the precision gain can never silently regress.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 3>/dev/null 2>&3')"
+assert_status "same-command fd relay to null blocks (recorded flip)" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 3>/dev/null; git push origin main 2>&3')"
+assert_status "exec-persisted fd relay to null blocks (recorded flip)" 2 "$STATUS"
+
+# RC12 (logic lane, Low): `|&` pipes stderr INTO the pipeline — the implicit
+# 2>&1 lands AFTER the command's own redirects, so a previously-nulled fd2
+# is re-merged into a visible stream (zsh-probed: marker visible; local
+# bash 3.2 cannot parse |&). The acceptance criterion names |&; these flips
+# make the code and the criterion agree.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main 2>/dev/null |& cat')"
+assert_status "stderr re-merged into a visible pipe permits" 0 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'exec 2>/dev/null; git push origin main |& cat')"
+assert_status "exec-suppressed stderr re-merged by a pipe permits" 0 "$STATUS"
+
+# RC13 (tests lane): nested-subshell exec — an UNENUMERATED behavior flip
+# the review found by hand-probing (base blocked; the tokenizer correctly
+# permits, since a subshell's exec never leaks to the parent — the N5
+# principle one level deeper; probed: marker visible). Recorded here as a
+# green pin so the flip is enumerated, not accidental.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '( ( exec 2>/dev/null ) ); git push origin main')"
+assert_status "nested-subshell exec does not leak (recorded flip)" 0 "$STATUS"
+
+# Tokenizer-level pins (tests lane): the hook's prefilter short-circuits
+# shapes carrying no suppression-capable text, so their hook-level tests
+# pass without python3 ever running and pin nothing about tokenizer
+# semantics. These assert the tokenizer's own verdict directly (0 permit /
+# 1 block), bypassing the hook and its prefilter.
+TOKENIZER="$ROOT/dotfiles/.claude/hooks/guard-rule3-tokenizer.py"
+assert_tokenizer() {
+    local name="$1" expected="$2" payload="$3" actual
+    printf '%s' "$payload" | python3 -S "$TOKENIZER" >/dev/null 2>&1
+    actual=$?
+    assert_status "$name" "$expected" "$actual"
+}
+
+assert_tokenizer "tokenizer: construct to a real file is not suppression" 0 \
+    '{ git push origin main; } >push.log 2>&1'
+assert_tokenizer "tokenizer: 2>&1 into a visible pipe is not suppression" 0 \
+    'git push origin main 2>&1 | tee push.log'
+assert_tokenizer "tokenizer: exec to a real file is not suppression" 0 \
+    'exec 2>errors.log; git push origin main'
+# shellcheck disable=SC2016
+assert_tokenizer "tokenizer: variable redirect target permits" 0 \
+    'git push origin main 2>"$LOGFILE"'
+assert_tokenizer "tokenizer: real-file stdout-dup permits" 0 \
+    'git push origin main >push.log 2>&1'
+
+# --- Round-2 review closure (4-lane review of 3ed0755) ---
+# Security R2-1 (High): bash backtracks a failed `$((…))` arithmetic parse
+# to `$( (subshell) )` and RUNS it (re-probed: ran=yes, stderr hidden, bash
+# 3.2 + zsh). The round-1 fix covered command-position `((…))`; the
+# `$((`-span lexer path strips a fixed two trailing characters, which is
+# only correct when the closers are adjacent — a backtracked span gets
+# truncated mid-token, severing the redirect, so the additive re-read sees
+# a mutation with no suppression. These pins cover the MECHANISM's three
+# positions (word, assignment, bare statement) plus the inner-suppression
+# and exec variants — NOT an exhaustive shape list: some siblings (e.g. a
+# doubled-paren form) already block because the fixed strip happens to land
+# correctly there, so shape-by-shape pinning cannot witness this class.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((git push origin main) 2>/dev/null)')"
+assert_status "dollar-arith backtracked subshell in word position blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'x=$((git push origin main) 2>/dev/null)')"
+assert_status "dollar-arith backtracked subshell in an assignment blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '$((git push origin main) 2>/dev/null)')"
+assert_status "dollar-arith backtracked subshell at statement position blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((git push origin main 2>/dev/null) )')"
+assert_status "dollar-arith backtrack with inner suppression blocks" 2 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((exec 2>/dev/null; git push origin main) )')"
+assert_status "dollar-arith backtrack with exec suppression blocks" 2 "$STATUS"
+
+# ...controls: genuine dollar-arithmetic stays arithmetic (the additive
+# re-read must only ever add blocks, never permits), and the plain-`$(`
+# twin — already correct, its depth-1 strip is always right — is pinned so
+# fixing the `$((` sibling cannot regress it.
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(( (1+2)*3 )) && git status')"
+assert_status "genuine nested-paren dollar-arithmetic permits" 0 "$STATUS"
+
+# shellcheck disable=SC2016
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $( (git push origin main) 2>/dev/null )')"
+assert_status "explicit subshell in a plain substitution blocks (twin pin)" 2 "$STATUS"
+
+# Security R2-2 (Medium; logic + style concur): the tokenizer folds ANSI-C
+# ($'…') and locale ($"…") quoting into a word's literal value exactly like
+# ordinary quotes, but the prefilter's normalizer deletes quote characters
+# and NOT `$` — so a quote-split verb or operand skips python3 and the hook
+# permits what the tokenizer itself blocks. The prefilter comment's "Known
+# residual: none identified" is thereby falsified. All four re-probed as
+# genuine suppressed executions (ran=yes, stderr hidden).
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git p\$'ush' origin main 2>/dev/null")"
+assert_status "ANSI-C-split mutation verb still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git push origin main 2>&\$'-'")"
+assert_status "ANSI-C-quoted fd-close operand still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git push origin main 2>/dev/\$'null'")"
+assert_status "ANSI-C-split null target still blocks" 2 "$STATUS"
+
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "\$'git' p\$'ush' origin main 2>/dev/null")"
+assert_status "fully ANSI-C-split command and verb still block" 2 "$STATUS"
+
+# ...and the UNSPLIT ANSI-C verb already blocks: the raw verb text survives
+# the prefilter grep and the tokenizer folds the wrapper. Green pin so its
+# handling cannot drift while the split forms are fixed.
+run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" "git \$'push' origin main 2>/dev/null")"
+assert_status "unsplit ANSI-C verb blocks (drift pin)" 2 "$STATUS"
 
 # --- Rule 4: entry enforcement (warn-only in Phase 0) ---
 opted_entry=$(new_repo entry_warn opted)

@@ -4,3 +4,7 @@
 - ./test/run-tests.sh
 - ./dotfiles/.config/agents/skills/lint-skill-refs.sh
 - ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+# CI's Lint job runs the pinned pre-commit suite (shfmt, shellcheck, markdownlint,
+# yamlfmt, secret scans); without it here, verify-local can pass while CI fails
+# (observed on PR #192: shfmt drift in a new test script).
+- pre-commit run --all-files
