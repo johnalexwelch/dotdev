@@ -114,7 +114,7 @@ Compute and report all four metrics every run (D-006 #15). Recipes are commands,
 ./test/routing-eval.sh --model sonnet   # --dry-run for schema-only when no API key
 ```
 
-**Gate coverage + override rate** — one loop over merged PR heads computes both. Gate coverage: % of merged PRs since the last audit whose head snapshot carries a `stamps.finalize` entry; target 100%. Deps PRs are filtered in the loop; docs-only PRs (same classification as `scripts/finalize-stamp-check.sh`) must be excluded by hand before comparing to the 100% bar. Override rate: `overrides[]` entries plus active stamp overrides across the same heads, reasons verbatim; healthy ~0-2/month with real reasons — a spike means fix the gate, not the metric.
+**Gate coverage + override rate + route-evidence coverage** — one loop over merged PR heads computes all three. Route-evidence coverage (D-006 Phase 5b): % of merged runs whose snapshot carries a top-level `route:` field; trend toward 100% as runs init through workflow-router, and report it alongside gate coverage. Gate coverage: % of merged PRs since the last audit whose head snapshot carries a `stamps.finalize` entry; target 100%. Deps PRs are filtered in the loop; docs-only PRs (same classification as `scripts/finalize-stamp-check.sh`) must be excluded by hand before comparing to the 100% bar. Override rate: `overrides[]` entries plus active stamp overrides across the same heads, reasons verbatim; healthy ~0-2/month with real reasons — a spike means fix the gate, not the metric.
 
 ```bash
 SINCE=<last-audit-date>   # YYYY-MM-DD
@@ -138,6 +138,7 @@ pr = sys.argv[1]
 doc = yaml.safe_load(sys.stdin) or {}
 stamps = doc.get("stamps") or {}
 print(f"PR #{pr}:", "stamped" if "finalize" in stamps else "UNSTAMPED")
+print(f"PR #{pr} route:", doc.get("route") or "ABSENT")
 for e in doc.get("overrides") or []:
     print(f"PR #{pr} overrides[]:", e)
 for gate, s in stamps.items():

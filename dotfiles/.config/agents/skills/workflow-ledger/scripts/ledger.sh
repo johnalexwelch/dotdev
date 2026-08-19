@@ -10,7 +10,8 @@
 # Authority: _docs/decision-log.md § D-006 (+ addenda).
 #
 # Usage:
-#   ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--force]
+#   ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>]
+#             [--route "<classification>|<selected-flow>|confirmed"] [--force]
 #   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 #   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 #   ledger.sh check <gate>
@@ -37,6 +38,8 @@
 #  10  environment breakage (no python3 with PyYAML; misconfigured
 #      LEDGER_PYTHON; not inside a git repo; git HEAD/snapshot-commit
 #      failures) — distinct from gate-unmet 1 so hooks can warn-permit
+#  11  init refused: no route evidence under LEDGER_REQUIRE_ROUTE=block
+#      (default is a WARNING; same flip pattern as LEDGER_ENTRY_ENFORCE)
 
 set -uo pipefail
 
@@ -130,6 +133,12 @@ REDACT_PATTERNS = [
 # the full (redacted) tail lives only in git-dir live state (batch #4).
 SNAPSHOT_TAIL_CAP = 64
 
+# Route evidence from workflow-router's confirmed ROUTE_CARD (D-006 Phase 5b):
+# "<classification>|<selected-flow>|confirmed" — three pipe-separated segments,
+# the last a literal "confirmed". Optional top-level field; malformed is
+# schema-invalid (exit 6) at init and on every load.
+ROUTE_RE = re.compile(r"^[^|]+\|[^|]+\|confirmed$")
+
 
 def redact(text):
     if not isinstance(text, str):
@@ -218,6 +227,11 @@ def validate(doc):
             raise ValueError("bad provenance on %r" % (gate,))
     if not isinstance(doc.get("overrides", []), list):
         raise ValueError("overrides must be a list")
+    route = doc.get("route")
+    if route is not None and (not isinstance(route, str) or not ROUTE_RE.match(route)):
+        raise ValueError(
+            "bad route: %r (expected '<classification>|<selected-flow>|confirmed')" % (route,)
+        )
 
 
 def load():
@@ -259,8 +273,13 @@ def split_kv(items):
 
 
 def op_init(argv):
-    run_id, workflow, kind, steps_csv, budget, force = argv
+    run_id, workflow, kind, steps_csv, budget, force, route = argv
     force = force == "1"
+    if route and not ROUTE_RE.match(route):
+        err(
+            6,
+            "invalid route: %r (expected '<classification>|<selected-flow>|confirmed')" % (route,),
+        )
     prior_note = ""
     if os.path.exists(LIVE):
         old = None
@@ -314,6 +333,8 @@ def op_init(argv):
         "stamps": {},
         "overrides": overrides,
     }
+    if route:
+        doc["route"] = route
     save(doc)
 
 
@@ -459,6 +480,7 @@ def op_show(argv):
     print("run_id:   %s" % doc["run_id"])
     print("workflow: %s  kind: %s  budget: %s" % (doc["workflow"], doc["kind"], doc["budget"]))
     print("status:   %s  next: %s" % (doc["status"], doc.get("next") or "-"))
+    print("route:    %s" % (doc.get("route") or "(none — no route evidence)"))
     print("")
     print("steps:")
     for step in doc["steps"]:
@@ -492,7 +514,7 @@ def op_snapshot_match(argv):
     # ops that immediately re-commit the snapshot, so a mismatch means the
     # tracked file was rewritten out-of-band (a snapshot-only tamper commit is
     # freshness-exempt by design — this closes that hole). Prints 1 or 0.
-    keys = ("run_id", "workflow", "kind", "budget", "stamps", "overrides")
+    keys = ("run_id", "workflow", "kind", "budget", "route", "stamps", "overrides")
     live = cap_tails(load())
     try:
         with open(argv[0]) as fh:
@@ -1071,7 +1093,7 @@ checked_finalize() {
 
 cmd_init() {
     [ $# -ge 1 ] || usage
-    local run_id="$1" workflow="" kind="" steps="" budget="one-reviewer" force=0
+    local run_id="$1" workflow="" kind="" steps="" budget="one-reviewer" force=0 route=""
     shift
     while [ $# -gt 0 ]; do
         case "$1" in
@@ -1091,6 +1113,10 @@ cmd_init() {
                 budget="$2"
                 shift 2
                 ;;
+            --route)
+                route="$2"
+                shift 2
+                ;;
             --force)
                 force=1
                 shift
@@ -1099,7 +1125,16 @@ cmd_init() {
         esac
     done
     [ -n "$workflow" ] && [ -n "$kind" ] && [ -n "$steps" ] || usage
-    py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" || exit $?
+    # Route evidence (D-006 Phase 5b): warn by default when absent;
+    # LEDGER_REQUIRE_ROUTE=block escalates to a refusal (exit 11) — the same
+    # warn-then-flip pattern as entry enforcement (LEDGER_ENTRY_ENFORCE).
+    if [ -z "$route" ]; then
+        if [ "${LEDGER_REQUIRE_ROUTE:-}" = "block" ]; then
+            die 11 "no route evidence — invoke workflow-router (init refused under LEDGER_REQUIRE_ROUTE=block; pass --route \"<classification>|<selected-flow>|confirmed\")"
+        fi
+        printf 'WARNING: no route evidence — invoke workflow-router (recording init without route:)\n' >&2
+    fi
+    py init "$run_id" "$workflow" "$kind" "$steps" "$budget" "$force" "$route" || exit $?
     # Ground-truth anchors for reconcile (batch #6): where the run lives.
     py set_meta branch "$(git -C "$TOP" branch --show-current 2>/dev/null)" || exit $?
     py set_meta worktree "$TOP" || exit $?

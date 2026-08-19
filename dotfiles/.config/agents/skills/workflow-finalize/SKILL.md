@@ -54,8 +54,8 @@ WORKFLOW_STEPS:
 
 ### Step 0.5: Conditional Post-mortem Gate
 
-- Required before `describe-pr` for design-plan/execute-phase work, audit-derived refactors, multi-phase execution, significant drift, or `NEW-NN` findings.
-- The post-mortem output is consumed by `describe-pr`, so do not generate the PR body first for design-plan, audit-derived, or multi-phase work.
+- Required before `describe-pr` for migration-mode PRD work (or legacy design-plan/execute-phase branches), audit-derived refactors, multi-phase execution, significant drift, or `NEW-NN` findings.
+- The post-mortem output is consumed by `describe-pr`, so do not generate the PR body first for migration-mode, audit-derived, or multi-phase work.
 - Skip only for routine single-issue work with no meaningful drift, and record `not_applicable_with_reason` (it becomes the stamp's `post_mortem` attestation).
 
 ### Step 1: Describe PR (describe-pr)

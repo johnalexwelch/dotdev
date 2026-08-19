@@ -19,7 +19,7 @@ Verify that user-facing changes don't break critical user journeys. Uses Playwri
 - Auth, onboarding, payment, or navigation flows modified
 - Issue or PRD marks manual QA required
 - PRD includes user journey acceptance criteria
-- After execute-phase on frontend work
+- After execute-prd children land frontend work
 
 ## Project configuration
 

@@ -25,10 +25,10 @@ Active skills:
 - `decision-log`
 - `decision-memo`
 - `describe-pr`
-- `design-plan`
+- `design-plan` *(tombstone redirect since 2026-08-19 — folded into `to-prd` migration mode, D-006 planning-lane consolidation; directory removed in a later sweep)*
 - `diagnose`
 - `domain-modeling`
-- `execute-phase`
+- `execute-phase` *(tombstone redirect since 2026-08-19 — retired, phased work runs as a `to-prd` migration-mode parent via `execute-prd`, D-006 planning-lane consolidation; directory removed in a later sweep)*
 - `execute-prd`
 - `experiment-design`
 - `external-tool-compatibility`
@@ -36,7 +36,7 @@ Active skills:
 - `grill-with-docs`
 - `handoff`
 - `humanizer`
-- `humanizer-exec`
+- `humanizer-exec` *(tombstone redirect since 2026-08-19 — folded into `humanizer` exec mode, consolidation batch 2; directory removed once callers are rewired)*
 - `implement`
 - `improve-codebase-architecture`
 - `incident-retro`
@@ -64,7 +64,7 @@ Active skills:
 - `setup-worktree`
 - `slack-update`
 - `sql-review`
-- `stage-v1-concept`
+- `stage-v1-concept` *(tombstone redirect since 2026-08-19 — folded into `v1-workflow` Step 2.25, consolidation batch 2; directory removed once callers are rewired)*
 - `strategic-analysis-review`
 - `tdd`
 - `to-issues`

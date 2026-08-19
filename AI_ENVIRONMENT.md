@@ -481,7 +481,7 @@ cd ~/dotdev && bash install.sh
 2. **`config-init.sh`** — pre-creates `~/.config/{ghostty,lazygit,mcp,nvim,raycast,gh-dash,zsh,...}` so Stow can't tree-fold them
 3. **`github.sh`** — generates `~/.ssh/id_ed25519`, adds to agent + keychain, authenticates with `gh`
 4. **`gh-extensions.sh`** — installs `gh` CLI extensions
-5. **Application symlinks** — `~/.config/arc → ~/Library/Application Support/Arc` etc. (Arc, Cursor, StreamDeck)
+5. **Application symlinks** — `~/.config/arc → ~/Library/Application Support/Arc` etc. (Arc, Cursor; Stream Deck app data is deliberately not stow-managed)
 6. **macOS defaults** — `defaults.sh`, `finder.sh`, `dock.sh`, `spotlight.sh`, `terminal.sh`, `screen.sh`, `input_devices.sh`, `permissions.sh`
 7. **`stow`** — materializes all `dotfiles/` symlinks into `$HOME`
 8. **`ai-setup.sh`** — guardian clone + compile, gbrain clone, pi packages, `~/.claude/skills` symlink, pi checkpoint-prune LaunchAgent

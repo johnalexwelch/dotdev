@@ -83,7 +83,7 @@ Rank content by how immediately the agent needs it:
 
 1. **In-skill steps** — the ordered actions in SKILL.md. The primary tier when the skill has any.
 2. **In-skill reference** — definitions, rules, facts kept in SKILL.md, consulted on demand. Often a legitimately flat peer-set (every rule of a review on one rung) — fine, not a smell.
-3. **Disclosed reference** — pushed into a sibling file (`references/*.md`) and reached only when a **context pointer** in SKILL.md fires. This repo's convention: a `references/` subdirectory, one topic per file (see `design-plan/references/`, `okr-generator/references/okr-rubric.md`). Reserve a bare top-level file like a `GLOSSARY.md` for skills with no other companion files; once a skill has more than one disclosed file, put them all under `references/` for consistency.
+3. **Disclosed reference** — pushed into a sibling file (`references/*.md`) and reached only when a **context pointer** in SKILL.md fires. This repo's convention: a `references/` subdirectory, one topic per file (see `execute-prd/references/`, `okr-generator/references/okr-rubric.md`). Reserve a bare top-level file like a `GLOSSARY.md` for skills with no other companion files; once a skill has more than one disclosed file, put them all under `references/` for consistency.
 
 **Progressive disclosure** is the move down this ladder: out of SKILL.md, into a linked file, so the top stays legible. The test for what to push down is **branching** — inline what every branch needs, disclose what only some branches reach. A pointer's *wording*, not its target, decides whether the agent actually follows it: if must-have material behind a pointer keeps getting missed, sharpen the wording before pulling the content back inline.
 

@@ -192,13 +192,18 @@ Table requirements:
 
 ## Pairing with the core loop
 
+Legacy artifact map — `/design-plan` and `/execute-phase` are retired
+(D-006 planning-lane consolidation, 2026-08-19; successor lane:
+`to-prd` migration mode → `to-issues` → `triage` → `execute-prd`). The
+paths below remain valid evidence sources for historical branches only:
+
 ```
 /repo-audit     →  docs/audits/<date>-repo-audit.md          (FIND-NN; optional —
      ↓                                                        brief-mode skips this)
-/design-plan    →  docs/plans/<date>[-<slug>]-design.md      (audit OR brief mode)
+/design-plan    →  docs/plans/<date>[-<slug>]-design.md      (audit OR brief mode; legacy)
      ↓
 /execute-phase  →  docs/executions/.phase-runs/*.md          ({refactor,fix,feat}/
-     ↓                                                        phase-* branches)
+     ↓                                                        phase-* branches; legacy)
 /workflow-review → review synthesis with independent review evidence   (in-loop, risk-sized profile)
      ↓
 /post-mortem    →  docs/executions/<date>-post-mortem.md     (NEW-NN, drift)

@@ -171,6 +171,59 @@ assert_contains "fully tagged, rule-clean tree lints green" "$output" \
     "skill-suite lint: failures=0 warnings=0"
 
 echo ""
+echo "=== Tombstone revival check (D-006 #11; planning-lane consolidation 2026-08-19) ==="
+echo ""
+
+tombs="$TMPDIR_BASE/tombs"
+mkdir -p "$tombs"
+# Revived under a tombstoned name with no disable-model-invocation at all.
+make_skill "$tombs" execute-phase
+# Tombstoned name with the key present but not 'true' — the value-blind trap.
+mkdir -p "$tombs/design-plan"
+cat >"$tombs/design-plan/SKILL.md" <<'EOF'
+---
+name: design-plan
+disable-model-invocation: false
+description: test tombstone with false value
+---
+
+# design-plan — superseded
+EOF
+# Valid tombstone: key present and true.
+mkdir -p "$tombs/workflow-debug"
+cat >"$tombs/workflow-debug/SKILL.md" <<'EOF'
+---
+name: workflow-debug
+disable-model-invocation: true
+description: test tombstone
+---
+
+# workflow-debug — superseded
+EOF
+
+set +e
+output=$("$SCRIPT" "$tombs" 2>&1)
+status=$?
+set -e
+
+if [ "$status" -ne 0 ]; then
+    echo "  PASS: lint fails when tombstoned names are revived"
+    PASS=$((PASS + 1))
+else
+    echo "  FAIL: lint fails when tombstoned names are revived"
+    echo "    expected non-zero exit"
+    echo "    output was:"
+    echo "$output"
+    FAIL=$((FAIL + 1))
+fi
+assert_contains "revived tombstone without the key fails" "$output" \
+    "FAIL: execute-phase is a tombstone but disable-model-invocation is not 'true'"
+assert_contains "tombstone with disable-model-invocation: false fails" "$output" \
+    "FAIL: design-plan is a tombstone but disable-model-invocation is not 'true'"
+assert_not_contains "valid tombstone (true) does not fail" "$output" \
+    "FAIL: workflow-debug"
+
+echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"
 
