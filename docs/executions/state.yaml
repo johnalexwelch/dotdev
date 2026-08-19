@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152244
-status: active
-next: finalize
-updated: '2026-08-19T16:47:12.127845+00:00'
+status: done
+next: ''
+updated: '2026-08-19T16:47:26.051591+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: 'live 1-leg smoke: real claude leg (run smoke-112314) read the seed handoff, wrote DONE to /tmp/relay-smoke, rewrote handoff with exit_reason: complete; relay exited 0 with full ADHD summary; transcript /tmp/relay-smoke-112314/leg-1.jsonl (26 stream-json lines); RELAY_CLAUDE_ARGS=''--permission-mode acceptEdits --add-dir /tmp'''
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'PR #187 open non-draft (NOT merged per instruction); finalize stamped at 4ba3e7d; CI green (Lint, Test suite, Finalize stamp, Secret scan, Shell syntax, Stow/Install dry runs); verify-local PASS at 4ba3e7d; threads resolved (no review threads)'
 stamps:
   review:
     head_sha: 64b969a472bef46e59035735da19f5ae3e5ced8a
@@ -86,7 +86,7 @@ stamps:
 overrides: []
 branch: feat/relay-runner
 worktree: /Users/alexwelch/wt/dotdev/relay-runner
-last_seen_sha: 4ba3e7d2f4e8d072cc71536b735563b836a02ccb
+last_seen_sha: bed9d227b8c13c6814b8dbccfe10c3b4b4451c10
 verify_local:
   head_sha: 4ba3e7d2f4e8d072cc71536b735563b836a02ccb
   passed: true
