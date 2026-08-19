@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151325
 status: done
 next: ''
-updated: '2026-08-19T16:59:34.588691+00:00'
+updated: '2026-08-19T17:15:21.817051+00:00'
 steps:
 - id: diagnose
   required: true
@@ -71,25 +71,25 @@ stamps:
       reason: ''
       timestamp: ''
   review:
-    head_sha: 88d8d2a3fed3db3d1e2dc0c32c24b433e1e26cef
-    timestamp: '2026-08-19T16:57:42.802826+00:00'
+    head_sha: f1270e2d163da8709cc85984aada36db09847a45
+    timestamp: '2026-08-19T17:15:21.816853+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: ccd04fe2cf10090d94ad30b5a1949b4ae2d56ef7e31fb6e591636270aabef068
-      lane_security_lines: '56'
+      lane_security_sha256: 4d9a2e58b268786f47f53e64d44fe1f954583bb69d409f1139fd66b12ac29c7b
+      lane_security_lines: '62'
       lane_security_verdict: APPROVE
       lane_security_model: claude-opus-5
-      lane_logic_sha256: c30e07d747b40cdec3de78fad0f4e297a858038ac0ab1f46f85fcf7817421e59
-      lane_logic_lines: '61'
+      lane_logic_sha256: 3d169025005f62e0b7f3acd7eb24b3f17be4046c3d2a6e460745789524d315db
+      lane_logic_lines: '67'
       lane_logic_verdict: APPROVE
       lane_logic_model: claude-opus-5
-      lane_tests_sha256: 534e3affbc64ceb230bd2953022947fc85c9fe9f12092b18259a9e17038d72b4
-      lane_tests_lines: '75'
+      lane_tests_sha256: 61b08429f1b59709ecd40c3be10131e02afe0102973b2910747dab498fda6d59
+      lane_tests_lines: '81'
       lane_tests_verdict: APPROVE
       lane_tests_model: claude-opus-5
-      lane_style_sha256: 0f1520ba801c9f3806134a9b9e7d57ce39fdb2cd5498521d3bad436ad89ed836
-      lane_style_lines: '205'
+      lane_style_sha256: 511b1d78ef3c5a0331e498e41551414c79baea0ed18a8390dc864127bdaafecb
+      lane_style_lines: '211'
       lane_style_verdict: APPROVE
       lane_style_model: claude-opus-5
       review_floor: full
@@ -123,7 +123,7 @@ stamps:
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: b4d18c259a16c1cd76f7753964438799bd90b1ad
+last_seen_sha: 5b8fd1c608f3c977d1dd935f9d916b00d5de958e
 verify_local:
   head_sha: b4d18c259a16c1cd76f7753964438799bd90b1ad
   passed: true
