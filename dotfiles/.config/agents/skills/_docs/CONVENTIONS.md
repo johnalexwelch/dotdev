@@ -27,6 +27,10 @@ Do **not** rely on flow-arrow prose (`grill-with-docs → to-prd → to-issues`)
 
 **Current coverage:** the lint only sees the explicit form (rule 1). Orchestrators still using arrow-only references are not yet checked — converting them to explicit refs (and linking their targets) is incremental cleanup the lint will drive.
 
+## Output contract
+
+User-facing skill output follows the ADHD communication contract (`~/.claude/output-styles/adhd.md`, canonical rules in the `i-have-adhd` skill); machine-facing artifacts (PR bodies, lane reviews, ledger evidence, handoffs targeted at agents) keep their own contracts and are exempt.
+
 ## Run-scoped artifact paths (D-006 Phase 5a)
 
 Multi-agent runs MUST use run-scoped paths for shared artifacts — lane review files, probe scripts, PR-body drafts, anything one agent writes for another to read. Canonical shape (or a scratchpad subdirectory keyed by run id):

@@ -181,3 +181,4 @@ After drafting, verify:
 - [ ] Concrete examples included, not just abstract rules
 - [ ] `references/` pointers are one level deep and worded so the agent actually follows them
 - [ ] Guidance form matches the failure type (see Match the form to the failure); for discipline/shaping skills, wording micro-tested against a no-guidance control (see `references/testing.md`)
+- [ ] User-facing skill output follows the ADHD communication contract (`~/.claude/output-styles/adhd.md`); machine-facing artifacts (PR bodies, lane reviews, ledger evidence, agent-targeted handoffs) keep their own contracts and are exempt
