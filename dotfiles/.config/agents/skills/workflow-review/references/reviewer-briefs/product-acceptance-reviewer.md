@@ -29,4 +29,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` for unmet acceptance criteria.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` for unmet acceptance criteria.

@@ -30,4 +30,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` for missing docs that would cause user/operator misuse.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` for missing docs that would cause user/operator misuse.

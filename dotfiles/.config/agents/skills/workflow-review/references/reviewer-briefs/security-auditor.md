@@ -30,4 +30,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` for exploitable or plausibly exploitable issues. Use `NEEDS HUMAN` for policy/privacy decisions.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` for exploitable or plausibly exploitable issues. Use `NEEDS_HUMAN` for policy/privacy decisions.

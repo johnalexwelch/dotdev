@@ -27,4 +27,4 @@ Diff:
 <diff>
 ```
 
-Return the shared reviewer output contract. Use `REQUEST CHANGES` when a failure mode introduced by the PR would be materially hard to diagnose.
+Return the shared reviewer output contract. Use `REQUEST_CHANGES` when a failure mode introduced by the PR would be materially hard to diagnose.
