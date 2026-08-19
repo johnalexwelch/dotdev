@@ -178,8 +178,12 @@ for gate, s in stamps.items():
 
 ```bash
 # Default branch (the gate-relevant figure). Repeat per repo; name the branch.
-git -C "$repo" log "$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||' || echo main)" \
-    --since="7 days ago" --oneline | wc -l
+# Assign then default: `... | sed ... || echo main` does NOT work, because `||`
+# binds to the whole pipeline and sed exits 0 even when symbolic-ref failed —
+# the fallback never fires and `git log ""` dies with "ambiguous argument".
+branch="$(git -C "$repo" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')"
+branch="${branch:-main}"
+git -C "$repo" log "$branch" --since="7 days ago" --oneline | wc -l
 # All refs, only when the question is total agent activity — label it as such.
 git -C "$repo" log --all --since="7 days ago" --oneline | wc -l
 ```
