@@ -104,7 +104,61 @@ Use a simple rating:
 
 Load `references/gap-patterns.md` and always check for every numbered pattern in that checklist.
 
-### 5. Output
+### 5. D-006 scoreboard (metrics)
+
+Compute and report all four metrics every run (D-006 #15). Recipes are commands, run from the repo root of the opted-in repo (dotdev unless the audit is scoped elsewhere).
+
+**Golden-eval pass rate** — bar: >= 95%. Compare against the baseline history in `docs/executions/plans/` (`2026-08-19-router-eval-baseline.md`) and report the delta.
+
+```bash
+./test/routing-eval.sh --model sonnet   # --dry-run for schema-only when no API key
+```
+
+**Gate coverage** — % of merged PRs since the last audit whose head snapshot carries a `stamps.finalize` entry. Target 100%; deps and docs-only PRs are exempt, mirroring the finalize-stamp CI job (`scripts/finalize-stamp-check.sh`).
+
+```bash
+SINCE=<last-audit-date>   # YYYY-MM-DD
+gh pr list --state merged --search "merged:>=$SINCE" --json number --jq '.[].number' |
+    while read -r pr; do
+        git fetch -q origin "pull/$pr/head" || {
+            echo "PR #$pr: head unfetchable"
+            continue
+        }
+        if git show "$(git rev-parse FETCH_HEAD):docs/executions/state.yaml" 2>/dev/null |
+            grep -qE '^  finalize:'; then
+            echo "PR #$pr: stamped"
+        else
+            echo "PR #$pr: UNSTAMPED"
+        fi
+    done
+```
+
+**Override rate** — count `overrides[]` entries plus active stamp overrides across the same merged head snapshots, reasons listed verbatim. Healthy: ~0-2/month with real reasons; a spike means fix the gate, not the metric.
+
+```bash
+git show "$(git rev-parse FETCH_HEAD):docs/executions/state.yaml" >/tmp/audit-snap.yaml
+python3 - /tmp/audit-snap.yaml <<'PY'
+import sys, yaml
+doc = yaml.safe_load(open(sys.argv[1])) or {}
+for e in doc.get("overrides") or []:
+    print("overrides[]:", e)
+for gate, s in (doc.get("stamps") or {}).items():
+    o = (s or {}).get("override") or {}
+    if o.get("active"):
+        print(gate, "override:", o.get("reason", ""))
+PY
+```
+
+**Corpus lint** — both linters clean; report the layer-rule warning count as a trend (untagged skills stay warn-level until tagged).
+
+```bash
+./dotfiles/.config/agents/skills/lint-skill-refs.sh
+./dotfiles/.config/agents/skills/lint-skill-suite.sh   # count warn lines for the layer trend
+```
+
+Report raw numbers, the bar, and the delta vs the previous audit in the scorecard.
+
+### 6. Output
 
 Return:
 
