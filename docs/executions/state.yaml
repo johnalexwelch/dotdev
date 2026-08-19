@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: bug
 budget: one-reviewer
 initialized_epoch: 1787151325
-status: active
-next: diagnose
-updated: '2026-08-19T16:05:28.830634+00:00'
+status: done
+next: ''
+updated: '2026-08-19T16:05:43.329808+00:00'
 steps:
 - id: diagnose
   required: true
@@ -37,8 +37,8 @@ steps:
   evidence: 'user-journey-qa not triggered: workflow-kernel/tooling change; no frontend, user-facing behavior, or auth/nav/payment surface; bug was agent-observed (ledger stamp refusal), not user-reported UX'
 - id: finalize
   required: true
-  status: active
-  evidence: workflow-finalize started
+  status: completed
+  evidence: "PR #184 draft, CI 7/7 green at 6ead074, verify-local PASS at 441f4d4, finalize stamped against the draft PR via the re-landed kernel (pr_state=draft recorded) \u2014 first stamped run since #169 needing no scratch-checkout workaround; policy human-only, not merged per instruction"
 stamps:
   diagnose:
     head_sha: 8a012f5e82fcd08f5d990dd69433c54040207601
@@ -123,7 +123,7 @@ stamps:
 overrides: []
 branch: fix/reland-170-draft-finalize
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/reland-170-draft-finalize
-last_seen_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
+last_seen_sha: 91c97e773dbf26008960e4ffb581e8582d7587fa
 verify_local:
   head_sha: 441f4d43922f0738b92f56a685f0bc4a161466dc
   passed: true
