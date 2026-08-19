@@ -22,13 +22,13 @@ Re-lands PR #170's fix, which was lost off `main`: #170 (`fix(workflow-ledger): 
 
 - `bash test/test-ledger.sh` → **161 passed / 0 failed** at HEAD (red-first verified: 157/2 at the test commit, exactly the two draft assertions).
 - Diagnose repro (kind=bug ledger run `2026-08-19-reland-170-draft-finalize`): scripted fixture drives `stamp finalize` against a forge-mocked draft PR — exit 2 (`PR #7 is not open: draft`) pre-fix, exit 0 post-fix; captured/re-run by the kernel's diagnose/fix gates.
-- Independent review: profile `full`, 5 Opus lanes (security, logic, tests, style, documentation), 6 rounds — R1 all-APPROVE with adopted should-fixes, R2 docs `REQUEST_CHANGES` (refusal-by-another-route wording) fixed and re-verified clause-by-clause against `ledger.sh:1057-1066`, final all-APPROVE at HEAD.
+- Independent review: profile `full`, 5 Opus lanes (security, logic, tests, style, documentation — the kernel stamp records the four canonical lane keys; documentation was a conditional addition), 7 rounds — R1 all-APPROVE with adopted should-fixes, R2 docs `REQUEST_CHANGES` (refusal-by-another-route wording) fixed and re-verified clause-by-clause against `ledger.sh:1057-1066`, final all-APPROVE at HEAD.
 
 ## Issue disposition
 
 | Issue | Disposition |
 |---|---|
-| _none referenced_ | Work originates from PR #170's loss (no tracking issue); provenance recorded in `_docs/decision-log.md` § "D-006 Phase 3 F3 follow-up resolved" |
+| *none referenced* | Work originates from PR #170's loss (no tracking issue); provenance recorded in `_docs/decision-log.md` § "D-006 Phase 3 F3 follow-up resolved" |
 
 Follow-ups filed as task chips (not issues): `worktree-baseline.sh cut` records a relative `--path` verbatim, making `verify` fail from inside the worktree (hit live this run); per-run ledger snapshot paths (chipped by the peer session as the systemic fix for cross-PR `state.yaml` conflicts).
 
