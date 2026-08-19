@@ -3,21 +3,25 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 status: active
-next: preflight
-updated: '2026-08-18T23:53:18.867653+00:00'
+next: review
+updated: '2026-08-19T00:09:26.940868+00:00'
 steps:
 - id: preflight
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'worktree-baseline.sh cut: origin/main -> chore/retire-brain-ops @ .claude/worktrees/retire-brain-ops
+    (WORKTREE_BASELINE_GATE emitted)'
 - id: triage
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: kind=skill retirement; Alex approval 2026-08-18 (corpus-optimization-audit
+    batch 1, docs/executions/plans/2026-08-18-corpus-optimization-audit.md sec 2.1/6);
+    zero brain-ops entries in ~/.claude/logs/skill-invocations.log full span 2026-07-20..2026-08-18
 - id: implement
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'commit be31056: delete brain-ops dir + 6 catalog/doc updates; lint-skill-refs
+    dangling=0; lint-skill-suite failures=0; run-tests.sh exit=0 all sub-suites Failed:0'
 - id: review
   required: true
   status: pending
@@ -30,5 +34,27 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  review:
+    head_sha: be3105625c025fd910249825ce40dc310575878d
+    timestamp: '2026-08-19T00:09:26.940658+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      lane_integrated_sha256: 77d58ca3726ec64b860f08b14c21d04d514433a94ea379a8c5f26f7450b5c6f6
+      lane_integrated_lines: '38'
+      lane_integrated_verdict: APPROVE
+      lane_integrated_model: sonnet
+      review_floor: fast
+      worktree_verify: pass
+    attested:
+      verdict: APPROVE
+      review_profile: fast
+      model_floor: sonnet
+      lanes: integrated=/tmp/2026-08-18-retire-brain-ops-integrated-review.md
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
+last_seen_sha: 7a014824bef286cf2d19aa5d3a26909db948b9a9
