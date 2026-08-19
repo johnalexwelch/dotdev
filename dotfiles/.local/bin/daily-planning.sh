@@ -47,7 +47,9 @@ notify() {
 # file is absent, so the digest degrades rather than gaining tools), and
 # --disallowedTools denies the built-in mutating tools. To give the digest
 # its readers, create ~/.config/streamdeck/triage-mcp.json naming ONLY
-# read-oriented servers.
+# read-oriented servers. WebFetch/WebSearch are also denied — a triage
+# digest needs no arbitrary web GET, and they are an exfil channel for the
+# email/Slack text the agent just read.
 TRIAGE_MCP="$HOME/.config/streamdeck/triage-mcp.json"
 MCP_ARGS=(--strict-mcp-config)
 [[ -f "$TRIAGE_MCP" ]] && MCP_ARGS+=(--mcp-config "$TRIAGE_MCP")
@@ -57,7 +59,7 @@ MCP_ARGS=(--strict-mcp-config)
         claude -p "/morning-triage" \
             "${MCP_ARGS[@]}" \
             --permission-mode dontAsk \
-            --disallowedTools "Bash,Write,Edit,NotebookEdit" \
+            --disallowedTools "Bash,Write,Edit,NotebookEdit,WebFetch,WebSearch" \
             --output-format json \
             --max-turns 40 \
             --max-budget-usd 2.00 \

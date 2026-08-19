@@ -9,14 +9,14 @@ Lands the five Stream Deck deck-invoked scripts into stowed `dotfiles/.local/bin
 - `pr-review-agent.sh` — reads the frontmost Chrome tab, runs a read-only `claude -p "/coding-a2a:workflow-review"` with a hard tool allowlist and budget cap; review → `~/Documents/pr-reviews/`
 - `agent-status.sh` — prints `idle|running|done|failed` for the Stateful Executor polling key; `--clear` resets
 - `pr-review-count.sh` — open review-requested PR count for key 15, routed deterministically to the work account via `DOJO_REPO_DIR`
-- `test/test-next-meeting.sh` — 8 hermetic cases over `next-meeting.py`'s format-independent layer
+- `test/test-next-meeting.sh` — 9 hermetic cases over `next-meeting.py`'s format-independent layer (including a mutation-verified RCE regression pin on `notify()`)
 
 ## How I implemented it
 
 Started from the handoff scripts, then reworked them through two review rounds (4-lane full profile, Opus). Key deltas from the handoff originals:
 
 - **RCE closed (security, proven PoC):** every `notify()` passes text as `argv` to `osascript` — a calendar-invite title interpolated into AppleScript source was arbitrary code execution
-- **Agent confinement, fail-closed (security round 2 — a deny-list alone left ~40 user-scope MCP servers auto-approved, senders and code executors included, probed under the exact flags):** both agent scripts run `claude` with `--strict-mcp-config`, so user-scope MCP servers never load under a deck press; `daily-planning.sh` additionally denies built-in `Bash,Write,Edit,NotebookEdit` and loads readers only from operator-authored `~/.config/streamdeck/triage-mcp.json` when present; `pr-review-agent.sh` keeps its explicit allowlist
+- **Agent confinement, fail-closed (security round 2 — a deny-list alone left ~40 user-scope MCP servers auto-approved, senders and code executors included, probed under the exact flags):** both agent scripts run `claude` with `--strict-mcp-config`, so user-scope MCP servers never load under a deck press; `daily-planning.sh` additionally denies built-in `Bash,Write,Edit,NotebookEdit,WebFetch,WebSearch` (the last two are a GET-exfil channel for the email/Slack text the digest reads) and loads readers only from operator-authored `~/.config/streamdeck/triage-mcp.json` when present; `pr-review-agent.sh` keeps its explicit allowlist
 - **Deck-invoke env (logic, proven):** Stream Deck never sources `.zshrc`, so config-needing scripts source untracked `~/.streamdeck` themselves and pin `PATH`; `next-meeting.py` parses the same file (quoted/bare values, trailing comments, 4-key whitelist, env wins); fallbacks point at dirs that exist (`~/dojo`)
 - **Event picking:** `None`-start events sort last; all-day events are filtered from `running` (they suppressed the 20-minute lookahead); start comes only from a line carrying both date and time, so neither a "09:30" in the title nor "agenda 09:00" in the notes fabricates one
 - **URL anchoring:** `CONF_RE` host-anchored like `DOC_RE` (`https://evil.tld/meet.google.com/x` no longer reaches `open`); numeric-PR guard + slug slash check in `pr-review-agent.sh`

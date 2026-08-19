@@ -1,5 +1,4 @@
 #!/bin/bash
-set -uo pipefail
 # agent-status.sh
 # Prints one word: idle | running | done | failed
 # Point a Stateful Executor key at this with a 15s poll and set matchers on
@@ -7,6 +6,8 @@ set -uo pipefail
 # visible instead of invisible.
 #
 # Press-to-clear: run with `--clear` to reset to idle after you've seen it.
+
+set -uo pipefail
 
 # Private per-user $TMPDIR, not world-writable /tmp. Must match the path the
 # writer scripts (daily-planning.sh, pr-review-agent.sh) use.
