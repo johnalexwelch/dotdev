@@ -369,15 +369,20 @@ assert_status "nested command substitution does not trip the fallback" 0 "$STATU
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(git push origin main) 2>/dev/null')"
 assert_status "mutation inside a substitution stays blocked" 2 "$STATUS"
 
-# Negative coverage for the fail-closed fallback boundary (tests lane R2):
-# these benign compounds are DELIBERATELY blocked — a group redirect cannot
-# be attributed to one segment lexically, so the fallback errs toward
-# blocking. Pinned so the choice is visible if anyone narrows it later.
+# RECORDED FLIP (tokenizer rebuild, PR #174 recorded decision): the awk-lexer
+# branch could not attribute a construct's own redirect to the construct's
+# contents alone, so a group/conditional redirect fell back to whole-command
+# semantics and blocked these benign compounds. The tokenizer parses real
+# construct-scoped redirect attribution — the suppression on `{ … }`/`if…fi`
+# applies only inside that construct, and the push is a sibling segment with
+# its own (visible) stderr. PR #174 called this compound-fallback narrowing
+# "a visible choice" for whoever built the tokenizer to make explicitly; this
+# flip is that choice.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" '{ npm run lint; } 2>/dev/null && git push origin main')"
-assert_status "benign brace group before a push blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "brace group scoped to its own contents; push unsuppressed" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'if true; then npm run lint; fi 2>/dev/null && git push origin main')"
-assert_status "benign conditional before a push blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "conditional scoped to its own contents; push unsuppressed" 0 "$STATUS"
 
 # Suppression spellings beyond 2>/dev/null (security lane R2). The first is
 # the most common idiom in shell and was missed on origin/main too.
@@ -486,15 +491,20 @@ assert_status "exec with a command word and no redirect permits" 0 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git commit -m "refactor execution path"')"
 assert_status "execution is not the exec token" 0 "$STATUS"
 
-# Under the inverted burden, ANY exec token is a carrier — distinguishing
-# command-word from argument is the enumeration problem that produced three
-# fail-opens, so these over-block instead. Both match main, which blocked
-# them under whole-command semantics, so neither is a regression.
+# RECORDED FLIP (tokenizer rebuild, PR #174 recorded decision): the awk-lexer
+# branch treated ANY `exec` token as a carrier because it could not tell a
+# command-word `exec` from an argument or a quoted payload — the enumeration
+# problem that produced three fail-opens. The tokenizer knows command
+# position: `echo exec` puts `exec` in argument position, not command
+# position, so it is not the exec builtin at all. And `bash -c "exec
+# 2>/dev/null"` recurses the literal `-c` payload in an ISOLATED scope — the
+# inner exec redirects the child shell's stderr, never the outer shell's, so
+# the outer push stays unsuppressed.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo exec 2>/dev/null && git push origin main')"
-assert_status "exec as a bare argument blocks (over-block, matches main)" 2 "$STATUS"
+assert_status "exec as an echo argument is not the exec builtin" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'bash -c "exec 2>/dev/null"; git push origin main')"
-assert_status "exec in a quoted payload blocks (over-block, matches main)" 2 "$STATUS"
+assert_status "exec inside a -c payload redirects the child shell only" 0 "$STATUS"
 
 # The exclusion that keeps &> on its own branch must survive the widening.
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'git push origin main &>/dev/null')"
@@ -543,33 +553,33 @@ assert_status "conditional suppressed via stdout-dup blocks" 2 "$STATUS"
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $((1+2)) >/dev/null 2>&1 && git push origin main')"
 assert_status "paren-free arithmetic expansion is not a terminator" 0 "$STATUS"
 
-# Beyond that boundary the masker leaves parens standing and the fallback
-# arms, blocking a benign command (tests lane R3). Every shape below is
-# fail-closed and pinned so the limitation is visible rather than inferred
-# from the happy case above. Provenance, corrected by the security lane in
-# R5: under the `2>/dev/null` spelling these were blocked on main too, so
-# that much is preserved behavior — but main never recognized
-# `>/dev/null 2>&1`, so the stdout-dup variants are NEW false positives
-# introduced by this batch, not inherited ones.
+# RECORDED FLIP (tokenizer rebuild, PR #174 recorded decision): the awk-lexer
+# branch masked command substitutions with a paren-balanced heuristic that
+# broke on nested parens, process substitution, and quotes inside a
+# substitution — so these benign shapes tripped the compound-fallback and
+# blocked. The tokenizer parses arithmetic expansion, process substitution,
+# and substitution contents as real shell grammar (quotes tracked by the
+# lexer, not paren-counted), so none of them can arm a fallback that no
+# longer exists as a heuristic. There is no paren-matching pass left to trip.
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(( (1+2)*3 )) 2>/dev/null && git push origin main')"
-assert_status "nested-paren arithmetic blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "arithmetic is parsed, not paren-matched; push unsuppressed" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'diff <(echo a) <(echo b) 2>/dev/null && git push origin main')"
-assert_status "process substitution blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "process substitutions are parsed words; push unsuppressed" 0 "$STATUS"
 
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(grep "x)y" f) 2>/dev/null && git push origin main')"
-assert_status "paren inside a quoted substitution arg blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "quotes inside a substitution are lexer-tracked, not paren-counted" 0 "$STATUS"
 
-# ...whereas a quoted paren NOT inside a substitution never arms: its closing
-# quote sits between the paren and the redirect (style lane R5 counterexample,
-# pinned so the two shapes are not conflated again).
+# ...and a quoted paren NOT inside a substitution never armed even the old
+# heuristic: its closing quote sits between the paren and the redirect
+# (style lane R5 counterexample, still true under the tokenizer).
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo "a)" 2>/dev/null && git push origin main')"
 assert_status "bare quoted paren does not arm the fallback" 0 "$STATUS"
 
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'xs=(a b) 2>/dev/null; git push origin main')"
-assert_status "array assignment blocks (fail-closed, pinned)" 2 "$STATUS"
+assert_status "array assignment is a statement; push is a sibling segment" 0 "$STATUS"
 
 # shellcheck disable=SC2016
 run_hook "$plain_sup" "$(json_bash_jq "$plain_sup" 'echo $(date) >/dev/null 2>&1 && git push origin main')"
