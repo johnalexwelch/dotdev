@@ -18,10 +18,15 @@
 # parser — it assumes the command argument is the LAST quoted argument on
 # the line and does not handle a payload containing its own quote-type
 # escaped the same as the wrapper (e.g. a single-quoted payload containing
-# an escaped single quote via '\''). Lines it cannot confidently parse are
-# silently skipped, so --from-tests is a coverage aid, not a source of
-# truth — cross-check against test-guard-rules.sh itself for anything that
-# looks missing.
+# an escaped single quote via '\''). Payloads passed through a variable
+# (`"$var"`) cannot be recovered textually and are emitted as loud SKIP
+# rows rather than tested as literal strings.
+#
+# SCOPE LIMITATION: a test-derived matrix can only witness regressions on
+# shapes the test file already contains — it is NOT evidence of no behavior
+# change elsewhere (round-1 tests lane: the `select` fail-open produced no
+# DIFF row because no select shape existed in the corpus). Pair --from-tests
+# runs with a hand-authored shape corpus when making differential claims.
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -42,12 +47,18 @@ if [ "${#hooks[@]}" -eq 0 ]; then
     echo "usage: $0 [--from-tests] HOOK_A [HOOK_B ...] [< shapes.txt]" >&2
     exit 1
 fi
+# Resolve hooks to absolute paths NOW: run_one cd's into a temp dir, where a
+# relative path would silently resolve to nothing and yield 127 columns that
+# read as real verdicts (round-1 style lane footgun).
+resolved=()
 for h in "${hooks[@]}"; do
     if [ ! -f "$h" ]; then
         echo "hook script not found: $h" >&2
         exit 1
     fi
+    resolved+=("$(cd "$(dirname "$h")" && pwd)/$(basename "$h")")
 done
+hooks=("${resolved[@]}")
 
 # Best-effort extraction of command-argument payloads from run_hook lines
 # calling json_bash_jq(...) or json_bash(...) in test-guard-rules.sh.
@@ -87,6 +98,14 @@ main() {
         [ -n "$line" ] || continue
         case "$line" in
             \#*) continue ;;
+            \$*)
+                # Variable-reference payload from --from-tests: untestable
+                # textually — emit a loud SKIP row, never a fake verdict.
+                local skiprow=""
+                for _ in "${hooks[@]}"; do skiprow="${skiprow}SKIP"$'\t'; done
+                printf '%sSKIP\t%s\n' "$skiprow" "$line"
+                continue
+                ;;
         esac
         local codes=() first="" diff="" code
         for h in "${hooks[@]}"; do
