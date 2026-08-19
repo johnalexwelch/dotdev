@@ -1,86 +1,33 @@
-run_id: 2026-08-19-workflows-route-map
+run_id: 2026-08-19-router-v1-feature-seam
 workflow: workflow-deliver
-kind: docs
+kind: skill
 budget: one-reviewer
-initialized_epoch: 1787151917
-status: done
-next: ''
-updated: '2026-08-19T15:12:06.638546+00:00'
+initialized_epoch: 1787152956
+status: active
+next: preflight
+updated: '2026-08-19T15:22:36.956397+00:00'
 steps:
 - id: preflight
   required: true
-  status: completed
-  evidence: 'worktree re-cut via worktree-baseline.sh (absolute path; prior sidecar had relative WT_PATH); sources: router/deliver/ledger SKILL.md, D-006, CONVENTIONS; PR #170 merged'
-- id: triage
-  required: true
-  status: completed
-  evidence: docs rewrite task well-formed; requirements enumerated by requester
+  status: pending
+  evidence: ''
 - id: implement
   required: true
-  status: completed
-  evidence: 'workflows.md rewritten as route map (commits 3def5d3..c483cc9 after rebase onto 2be79e6): spine diagram, 3-layer table, gates table, tombstones; tdd: not_applicable_with_reason: prose reference doc, no executable behavior'
+  status: pending
+  evidence: ''
+- id: eval
+  required: true
+  status: pending
+  evidence: ''
 - id: review
   required: true
-  status: completed
-  evidence: 'fast profile (floor=fast); integrated lane, 3 rounds: R1 REQUEST_CHANGES (3 findings fixed), R2 REQUEST_CHANGES (1 finding fixed), R3 APPROVE; re-attested at 46c23cc post-rebase/re-init (reviewed file byte-identical, verified)'
-- id: qa
-  required: true
-  status: completed
-  evidence: 'not triggered: docs-only change to a reference markdown file; no frontend, user journey, or runtime behavior to QA'
+  status: pending
+  evidence: ''
 - id: finalize
   required: true
-  status: completed
-  evidence: 'draft PR #179 opened; finalize stamped with audited override per documented draft-PR collision (only failing checked field was pr-state=draft; CI green, verify-local PASS, review fresh); no merge per instruction'
-stamps:
-  review:
-    head_sha: 46c23ccc056bf0777545674b649ecf0ea2d7993a
-    timestamp: '2026-08-19T15:08:44.950612+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked:
-      lane_integrated_sha256: 66214631cd263d01931ed332ed8b732ad8c9ea4afa3306bd90715080f9ee8260
-      lane_integrated_lines: '38'
-      lane_integrated_verdict: APPROVE
-      lane_integrated_model: sonnet
-      review_floor: fast
-      worktree_verify: pass
-    attested:
-      review_profile: fast
-      verdict: APPROVE
-      lanes: integrated=/tmp/ledger-lanes-2026-08-19-workflows-route-map/integrated-review.md
-    override:
-      active: false
-      reason: ''
-      timestamp: ''
-  finalize:
-    head_sha: 13d7f0817576f7d8d3c78294468003b372eb302c
-    timestamp: '2026-08-19T15:11:55.597347+00:00'
-    gate_type: reviewer-validation
-    provenance: agent
-    checked: {}
-    attested:
-      pr_number: '179'
-      describe_pr: done
-      post_mortem: not_applicable
-    override:
-      active: true
-      reason: "human-only policy keeps PR draft; documented Step 8 draft-PR collision (PR #170 fix not on origin/main \u2014 merge commit ec61612 not an ancestor; reland branch unmerged); CI green on PR #179, verify-local PASSED at HEAD, review stamp fresh; workaround pre-authorized by dispatching instruction"
-      timestamp: '2026-08-19T15:11:55.597510+00:00'
-overrides:
-- gate: finalize
-  reason: "human-only policy keeps PR draft; documented Step 8 draft-PR collision (PR #170 fix not on origin/main \u2014 merge commit ec61612 not an ancestor; reland branch unmerged); CI green on PR #179, verify-local PASSED at HEAD, review stamp fresh; workaround pre-authorized by dispatching instruction"
-  timestamp: '2026-08-19T15:11:55.597513+00:00'
-  head_sha: 13d7f0817576f7d8d3c78294468003b372eb302c
-branch: docs/workflows-route-map
-worktree: /Users/alexwelch/dotdev/.claude/worktrees/workflows-route-map
-last_seen_sha: 34cc1411be7382e7eb59e42453569a46f5e18a08
-verify_local:
-  head_sha: 46c23ccc056bf0777545674b649ecf0ea2d7993a
-  passed: true
-  results:
-  - cmd: ./test/run-tests.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
-    exit: 0
-  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
-    exit: 0
+  status: pending
+  evidence: ''
+stamps: {}
+overrides: []
+branch: fix/router-v1-vs-feature-seam
+worktree: /Users/alexwelch/dotdev/.claude/worktrees/router-v1-vs-feature-seam
