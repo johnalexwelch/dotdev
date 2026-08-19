@@ -3,9 +3,9 @@ workflow: workflow-deliver
 kind: skill
 budget: one-reviewer
 initialized_epoch: 1787151724
-status: active
-next: finalize
-updated: '2026-08-19T15:17:29.617038+00:00'
+status: done
+next: ''
+updated: '2026-08-19T15:17:54.150869+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,8 +29,8 @@ steps:
   evidence: "full routing eval run (sonnet judge): total 45 pass 43 fail 2 pass-rate 95% RESULT: PASS (>=95%). Case 45 FAIL expected=workflow-feature got=v1-workflow \u2014 recorded as Phase-next router-confusability signal per dispatch instructions, not a reason to change expected_route. Other fail: case 4 handoff->direct, pre-existing, untouched by this change. Dry-run schema gate PASS (45 cases)."
 - id: finalize
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'PR #181 open, non-draft (pre-authorized route for the draft-PR stamp collision; policy human-only, NOT merged); CI 8/8 green incl. Router golden eval; verify-local PASSED at 51cfee8; finalize stamp written at 51cfee8'
 stamps:
   review:
     head_sha: ed28f5d8e9e2a624ff73b5c425e079644b59dd63
@@ -73,7 +73,7 @@ stamps:
 overrides: []
 branch: test/golden-case-45-ml-cookiecutter
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/golden-case-45-ml-cookiecutter
-last_seen_sha: 51cfee8fbb14503638d5e4a54838a25b19e96113
+last_seen_sha: 5fc233d83c71aee2118fa96fb0e58d55f532fd7e
 verify_local:
   head_sha: 51cfee8fbb14503638d5e4a54838a25b19e96113
   passed: true
