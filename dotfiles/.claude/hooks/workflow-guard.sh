@@ -153,18 +153,31 @@ substitution_spans() {
     printf '%s' "$spans"
 }
 
-# Rule 3 core. The burden is INVERTED (coordinator design call, R8): when a
-# command contains both a mutation and suppression, it blocks unless
-# segmentation can prove they are independent. The earlier shape — block only
-# when a recognized carrier links the two — made every gap in the carrier
-# enumeration a fail-open, and eight review rounds showed that enumeration is
-# open-ended: three fail-opens shipped to declared freezes (construct
-# redirect, bare exec, opener-prefixed exec), each found by measuring against
-# main rather than by the suite. Provable independence is a small closed set;
-# carriers are not. So misses now land fail-closed, the direction D-006 #5
-# permits this guard to err. The recorded path to narrowing the resulting
-# over-blocks is a tokenizer that tracks redirection scope, never a further
-# widening of the predicate.
+# Rule 3 core. This is a CARRIER MODEL, not an inverted burden: `whole` starts
+# at 0 and the final loop still requires per-segment suppression unless a
+# recognized carrier (construct redirect, or an `exec` token alongside
+# suppression) arms it. Misses in the carrier set therefore land FAIL-OPEN.
+# An earlier revision of this comment claimed the opposite; it was wrong, and
+# the security lane's R9 pass caught it. Saying so here because a control
+# whose description overstates its guarantee is its own defect — the next
+# maintainer reads it and stops looking.
+#
+# INDIRECTION BOUNDARY — declared scope, not an oversight. Suppression that
+# reaches a mutation through NAME BINDING is out of scope for a lexical
+# tripwire: `./deploy.sh 2>/dev/null`, `f() { git push; }; f 2>/dev/null`,
+# aliases. The security lane proved this cannot be closed lexically:
+#
+#     f() { git push origin main; }; f 2>/dev/null    must BLOCK
+#     bash test.sh 2>/dev/null && git push origin main  must PERMIT (batch #1)
+#
+# The two are lexically identical — mutation in one segment, suppression in
+# another, no carrier token in either. Only whether the suppressed segment
+# invokes a name bound to the mutation separates them, and that is name
+# binding, not lexing. So no lexical predicate can block the first and permit
+# the second: a true inversion would block every batch #1 chain, which is the
+# behavior item #1 deliberately removed. Closing this class needs a tokenizer
+# that tracks redirection scope; adding carrier #11 buys bounded shapes at the
+# price of batch-#1 regressions and never closes it.
 #
 # Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
 # Suppression on a test/lint segment chained before a push must not block
@@ -234,9 +247,12 @@ has_suppressed_mutating_segment() {
     # present somewhere. Without that conjunct an `exec` token alone blocks a
     # mutation, and the emitted message tells the operator to remove a
     # suppression that isn't there: unactionable, and `docker exec` is as
-    # common as delivery commands get (style lane R8). With it, the retained
-    # over-blocks are `echo exec 2>/dev/null` and `bash -c "exec 2>/dev/null"`
-    # — both of which main blocked too — and misses land fail-closed.
+    # common as delivery commands get (style and tests lanes, R8, converging
+    # on the same one-line remedy). With it, the retained over-blocks are
+    # `echo exec 2>/dev/null` and `bash -c "exec 2>/dev/null"` — both of which
+    # main blocked too. Shapes NOT retained, all of which main permits:
+    # docker/kubectl exec chains, `exec` in a commit message or comment, and
+    # an exec redirecting to a real file.
     if grep -Eqw 'exec' <<<"$masked" && seg_has_suppression "$masked"; then
         whole=1
     fi
