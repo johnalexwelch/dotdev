@@ -37,20 +37,274 @@ existing_issue_text() {
     gh issue view "$issue" --json title,body --jq '.title + "\n" + (.body // "")' 2>/dev/null || true
 }
 
+# `merge` must be the whole token: `-` is a word boundary, so `merge\b`
+# alone false-positives on non-mutating `gh pr merge-queue status`.
 is_merge_shape() {
-    has '\bgh[[:space:]]+pr[[:space:]]+(merge|ready)\b' ||
-        has '\btea[[:space:]]+pr[[:space:]]+merge\b' ||
-        has '\bgit-forge\b[^|;&]*\bmerge\b' ||
+    has '\bgh[[:space:]]+pr[[:space:]]+(merge|ready)($|[^[:alnum:]_-])' ||
+        has '\btea[[:space:]]+pr[[:space:]]+merge($|[^[:alnum:]_-])' ||
+        has '\bgit-forge\b[^|;&]*\bmerge($|[^[:alnum:]_-])' ||
         has '\bcurl\b[^|;&]*/pulls/[^[:space:]]*/merge'
 }
 
-is_mutating_forge_cmd() {
-    has '\bgit[[:space:]]+(push|commit|merge|rebase)\b' ||
-        has '\bgh[[:space:]]+pr[[:space:]]+(create|edit|close|merge|ready)\b' ||
-        has '\bgh[[:space:]]+issue[[:space:]]+edit\b' ||
-        has '\bgh[[:space:]]+api\b[^|;&]*-X[[:space:]]+(POST|PATCH|DELETE)\b' ||
-        has '\btea[[:space:]]+pr[[:space:]]+(create|edit|close|merge)\b' ||
-        has '\bgit-forge\b[^|;&]*\b(merge|create|edit|close)\b'
+# Segment-scoped: takes one command segment as $1 (rule 3 splits compound
+# commands on &&, ||, ;, | and evaluates each segment on its own).
+is_mutating_forge_segment() {
+    local seg="$1"
+    grep -Eiq '\bgit[[:space:]]+(push|commit|merge|rebase)($|[^[:alnum:]_-])' <<<"$seg" ||
+        grep -Eiq '\bgh[[:space:]]+pr[[:space:]]+(create|edit|close|merge|ready)($|[^[:alnum:]_-])' <<<"$seg" ||
+        grep -Eiq '\bgh[[:space:]]+issue[[:space:]]+edit\b' <<<"$seg" ||
+        grep -Eiq '\bgh[[:space:]]+api\b[^|;&]*-X[[:space:]]+(POST|PATCH|DELETE)\b' <<<"$seg" ||
+        grep -Eiq '\btea[[:space:]]+pr[[:space:]]+(create|edit|close|merge)($|[^[:alnum:]_-])' <<<"$seg" ||
+        grep -Eiq '\bgit-forge\b[^|;&]*\b(merge|create|edit|close)($|[^[:alnum:]_-])' <<<"$seg"
+}
+
+# Neutralizes separators (| ; &) INSIDE quoted spans so lexical splitting
+# cannot file a suppression under a different segment than its mutation
+# (security-lane closure: quoted `|`/`;` in commit messages). Also unfolds
+# backslash-newline continuations first, and honors backslash escapes inside
+# double-quoted spans so an escaped quote does not desynchronize the tracker
+# and leave a real separator unmasked (security lane R2).
+mask_quoted_separators() {
+    local unfolded="${1//\\$'\n'/ }"
+    awk '
+    BEGIN { q = "" }
+    {
+        line = $0
+        n = length(line)
+        out = ""
+        for (i = 1; i <= n; i++) {
+            c = substr(line, i, 1)
+            # Inside a double-quoted span a backslash escapes the next
+            # character (including a quote); single quotes take no escapes.
+            if (q == "\"" && c == "\\" && i < n) {
+                out = out c substr(line, i + 1, 1)
+                i++
+                continue
+            }
+            if (q != "") {
+                if (c == q) q = ""
+                else if (c == "|" || c == ";" || c == "&") c = " "
+            } else if (c == "\x27" || c == "\"") {
+                q = c
+            }
+            out = out c
+        }
+        print out
+    }' <<<"$unfolded"
+}
+
+# Suppression spellings that hide stderr from the caller:
+#   2>/dev/null, 2>>/dev/null, &>/dev/null (spaces and quotes tolerated),
+#   2>&- (close), and `>/dev/null … 2>&1` — the most common idiom of all,
+#   which matched on neither this branch nor main until the security lane's
+#   R2 pass. A bare 2>&1 is NOT suppression: it merges stderr into a stream
+#   the caller still sees, so it counts only alongside a /dev/null stdout.
+seg_has_suppression() {
+    local seg="$1"
+    grep -Eq "2>>?\|?[[:space:]]*['\"]?/dev/null|&>\|?[[:space:]]*['\"]?/dev/null|2>&-" <<<"$seg" && return 0
+    # Branch 2: stdout to /dev/null combined with a stderr merge. The leading
+    # class excludes `&` (so `&>` stays on branch 1, which already handles it)
+    # and `>` (so the second `>` of `>>` cannot start a match) — but NOT
+    # whitespace: `cmd>/dev/null 2>&1` is valid bash and really does suppress,
+    # and anchoring on whitespace let it through (style lane R5).
+    grep -Eq '2>&1' <<<"$seg" &&
+        grep -Eq "(^|[^&>])[0-9]*>>?\|?[[:space:]]*['\"]?/dev/null" <<<"$seg"
+}
+
+# Blanks out command substitutions (`$( … )`, innermost-first so nesting
+# collapses, plus backticks) so their closing paren is not mistaken for a
+# subshell/group terminator (tests lane R2). Used ONLY for terminator
+# detection — segment mutation matching always runs on the unmasked text, so
+# a mutation inside a substitution is still caught in its own segment.
+#
+# LIMITATION (tests lane R3, sharpened by the style lane in R5): the inner
+# classes are `[^()]`, so this masks only substitutions and arithmetic whose
+# contents carry no literal paren. Nested-paren arithmetic, process
+# substitution `<( … )`, array assignment, and a quoted paren INSIDE a
+# substitution (`$(grep "x)y" f)`) leave parens standing, arm the fallback,
+# and block a benign command — all fail-closed, all pinned in
+# test-guard-rules.sh so the boundary stays visible. A quoted paren on its
+# own (`echo "a)" …`) does NOT arm: the closing quote sits between it and the
+# redirect, so the terminator pattern cannot match. Fixing the real ones
+# needs a paren-matching pass, not a wider character class.
+mask_command_substitutions() {
+    local s="$1" prev=""
+    # Arithmetic expansion first: its `))` is not a subshell close, and the
+    # substitution pattern below cannot consume it (nested parens).
+    s="$(sed -E 's/\$\(\([^()]*\)\)/__ARITH__/g' <<<"$s")"
+    while [ "$s" != "$prev" ]; do
+        prev="$s"
+        s="$(sed -E 's/\$\([^()]*\)/__SUBST__/g' <<<"$s")"
+    done
+    printf '%s' "${s//\`/ }"
+}
+
+# Prints the text of every `$( … )` span, innermost-first. Used to decide
+# whether masking substitutions would hide a compound construct that mutates
+# (security lane R5): a construct wrapped in a substitution otherwise loses
+# its terminator and the fallback never arms.
+substitution_spans() {
+    local s="$1" prev="" spans=""
+    s="$(sed -E 's/\$\(\([^()]*\)\)/__ARITH__/g' <<<"$s")"
+    while [ "$s" != "$prev" ]; do
+        prev="$s"
+        spans="${spans}$(grep -oE '\$\([^()]*\)' <<<"$s")"$'\n'
+        s="$(sed -E 's/\$\([^()]*\)/__SUBST__/g' <<<"$s")"
+    done
+    printf '%s' "$spans"
+}
+
+# Rule 3 core. This is a CARRIER MODEL, not an inverted burden: `whole` starts
+# at 0 and the final loop still requires per-segment suppression unless a
+# recognized carrier (construct redirect, or an `exec` token alongside
+# suppression) arms it. Misses in the carrier set therefore land FAIL-OPEN.
+# An earlier revision of this comment claimed the opposite; it was wrong, and
+# the security lane's R9 pass caught it. Saying so here because a control
+# whose description overstates its guarantee is its own defect — the next
+# maintainer reads it and stops looking.
+#
+# VISIBILITY BOUNDARY — an ACCEPTED FAIL-OPEN REGRESSION vs main, declared
+# deliberately. Stated as a principle, not a list, because an open set
+# written as a closed list is the documentation-layer version of the mistake
+# the carrier model made in code (security lane R10):
+#
+#   Rule 3 sees a mutation only when its TEXT APPEARS IN THE SAME SEGMENT as
+#   the suppression — quoted or not, as a command or as an argument. Anything
+#   that keeps the text out of that segment is out of scope and FAILS OPEN:
+#   name binding, expansion from a variable, a here-document, a file read at
+#   runtime.
+#
+# Stated that way because the mechanism is not what decides it (style lane
+# R9): `eval "$CMD" 2>/dev/null` fails open while `eval "git push …"
+# 2>/dev/null` blocks — same mechanism, opposite outcome, and only text
+# presence separates them. It also surfaces the over-block direction a
+# maintainer should know: a mere MENTION of a mutating command in a suppressed
+# segment blocks, so `echo "git push origin main" 2>/dev/null` is refused.
+#
+# main blocked several of these under whole-command semantics, so giving them
+# up IS a regression — named as such because this branch's own rule is that a
+# fail-open regression gets fixed. The exception is taken because the class is
+# unreachable lexically, not because it is cheap.
+#
+# Why unreachable: the suppressed segment and the mutating one are not
+# distinguishable BY SEGMENTATION —
+#
+#     f() { git push origin main; }; f 2>/dev/null      must BLOCK  (main: 2)
+#     bash test.sh 2>/dev/null && git push origin main  must PERMIT (main: 2)
+#
+# Measured across main and HEAD, these two did not merely fail to separate —
+# they moved BLOCKED -> PERMITTED together. The fail-open and the batch-#1
+# permit are one change seen from two sides, so item #1 cannot be delivered
+# while that class stays closed. (`./deploy.sh 2>/dev/null` is NOT the example
+# to use here: main permits it too, since it carries no mutation text — it is
+# a never-covered gap, not the accepted regression this section is about.
+# Logic lane R5.) Narrower shapes ARE separable — a function defined and
+# invoked in the same command can be caught by a scoped carrier, verified by
+# the style lane — but that is carrier #11 with the usual costs and it leaves
+# the general class open. Closing this properly needs a tokenizer that tracks
+# redirection scope. The load-bearing controls are the stamps and freshness
+# rules, which do not depend on rule 3.
+#
+# Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
+# Suppression on a test/lint segment chained before a push must not block
+# (R1/R2 batch #1 — segment scoping; bit us twice live). Split order
+# matters: && and || before single | so pipes split last; a lone & (job
+# control) is never split so &>/dev/null stays intact inside its segment.
+# Compound-redirection shapes — a suppression after `}`, `)`, `done`, or
+# `fi` redirects every segment inside the construct — fall back to
+# whole-command semantics (fail closed; the pre-segmentation behavior).
+# Arming is decided per construct, from that construct's own redirect list.
+has_suppressed_mutating_segment() {
+    local masked terminator_view segs seg whole=0
+    masked="$(mask_quoted_separators "$cmd")"
+    # Fail CLOSED if a masking helper breaks: an empty mask would empty every
+    # segment and permit the command outright (security lane R2 note).
+    [ -n "$masked" ] || masked="$cmd"
+    # `>|` is force-clobber, not a pipe: normalize it away before splitting so
+    # segmentation does not cut a redirect in half and strand the suppression
+    # in a segment of its own (style lane R5).
+    masked="${masked//">|"/>}"
+    # Terminator detection runs on a substitution-masked view so a `$( … )`
+    # close-paren is not read as a subshell terminator (tests lane R2).
+    # Mutation matching below always uses the unmasked segments.
+    terminator_view="$(mask_command_substitutions "$masked")"
+    [ -n "$terminator_view" ] || terminator_view="$masked"
+    # ...unless masking would swallow a MUTATING construct along with its
+    # terminator, in which case judge terminators unmasked (security lane R5).
+    # A benign span never triggers this, so `echo $(date) 2>/dev/null && git
+    # push` still permits.
+    if is_mutating_forge_segment "$(substitution_spans "$masked")"; then
+        terminator_view="$masked"
+    fi
+    # `)` is an unambiguous terminator once substitutions are masked. `}`,
+    # `done`, `fi`, and `esac` are not: a brace group's `}` is always
+    # separator-preceded while a parameter expansion's `${VAR}` never is, and
+    # the word terminators appear as ordinary arguments. Requiring a preceding
+    # separator (or line start) keeps `mkdir -p ${DIR} <suppression> && git
+    # commit` and `echo done <suppression> && git push` out of the fallback —
+    # the batch #1 false-positive class (logic lane R2, security lane R5).
+    # ANY redirect after the terminator is a candidate — a construct
+    # suppressed via stdout-dup (`} >/dev/null 2>&1`) is redirected just as
+    # thoroughly as one using `2>` (security lane R2). What decides arming is
+    # whether the CONSTRUCT'S OWN redirect list is suppression, so a construct
+    # redirecting to a real file never arms the fallback, even when unrelated
+    # suppression appears elsewhere in the command. Testing the whole command
+    # here re-blocked a suppressed lint/test segment chained before a push —
+    # the exact class batch #1 exists to permit (style lane R4).
+    # The captured tail must swallow `2>&1` / `2>&-` / `&>` (whose `&` is part
+    # of the redirect) while still stopping at a `&&` that starts the next
+    # segment — hence `&` is admitted only before a digit, `-`, or `>`.
+    local redirect_lists
+    redirect_lists="$(grep -oE '(\)|(^|[;&|])[[:space:]]*(\}|done|fi|esac))[[:space:]]*([0-9]*>>?|&>)([^;&|]|&[0-9-]|&>)*' <<<"$terminator_view")"
+    while IFS= read -r seg; do
+        [ -n "$seg" ] || continue
+        if seg_has_suppression "$seg"; then
+            whole=1
+            break
+        fi
+    done <<<"$redirect_lists"
+
+    # `exec` redirects the CURRENT SHELL for every later segment. Deciding
+    # whether a given `exec` is a command word — rather than an argument or
+    # quoted text — is the same open-ended enumeration that produced three
+    # fail-opens across rounds R3–R7 (bare, then opener-prefixed, then
+    # assignment-prefixed). So any `exec` token counts as a carrier — but the
+    # carrier arms only when suppression is actually
+    # present somewhere. Without that conjunct an `exec` token alone blocks a
+    # mutation, and the emitted message tells the operator to remove a
+    # suppression that isn't there: unactionable, and `docker exec` is as
+    # common as delivery commands get (style and tests lanes, R8, converging
+    # on the same one-line remedy). With it, the retained over-blocks are
+    # `echo exec 2>/dev/null` and `bash -c "exec 2>/dev/null"` — both of which
+    # main blocked too — and the retained set is WIDER than those two, because
+    # `-`, `/` and `.` are word boundaries: a suppressed `docker exec` or
+    # `kubectl exec` chain, `pytest --exec-mode`, `ls /usr/lib/exec/`, and
+    # `cat notes-exec.txt` all block when chained with a mutation. Every one
+    # of those blocked on main too, so each is fail-closed and a "record"
+    # under this branch's rule, not a regression (logic lane R5).
+    #
+    # What the conjunct actually removed is the SUPPRESSION-FREE over-block:
+    # `docker exec … && git push` with no suppression anywhere, `exec` in a
+    # commit message or comment, and an exec redirecting to a real file — all
+    # of which main permits. It does not touch the suppressed variants.
+    if grep -Eqw 'exec' <<<"$masked" && seg_has_suppression "$masked"; then
+        whole=1
+    fi
+
+    segs="${masked//"&&"/$'\n'}"
+    segs="${segs//"||"/$'\n'}"
+    segs="${segs//";"/$'\n'}"
+    segs="${segs//"|"/$'\n'}"
+    while IFS= read -r seg; do
+        [ -n "$seg" ] || continue
+        if [ "$whole" -eq 0 ]; then
+            seg_has_suppression "$seg" || continue
+        fi
+        if is_mutating_forge_segment "$seg"; then
+            return 0
+        fi
+    done <<<"$segs"
+    return 1
 }
 
 # ---- Edit/Write rules (D-006 rules 2 and 4) ---------------------------------
@@ -106,7 +360,9 @@ if [ "$event" = "PreToolUse" ]; then
 
     # Rule 3: stderr suppression on mutating git/gh/tea/git-forge commands
     # hides failures the workflow depends on seeing (D-006, closes C36).
-    if has '2>/dev/null|&>/dev/null' && is_mutating_forge_cmd; then
+    # Evaluated per command segment: only a suppression attached to the
+    # MUTATING segment blocks.
+    if has_suppressed_mutating_segment; then
         printf 'Blocked: stderr suppression on a mutating git/gh/tea/git-forge command hides failures. Re-run it without 2>/dev/null (or &>/dev/null).\n' >&2
         exit 2
     fi
@@ -123,11 +379,12 @@ if [ "$event" = "PreToolUse" ]; then
             set -e
             if [ "$check_status" -ne 0 ]; then
                 # Block only on a working kernel's verdict (1 = gate unmet,
-                # 2 = checked fields failed). Kernel/env breakage (corrupt
-                # state 6, missing manifest 9, python/env errors) warns and
-                # permits — a broken kernel must never brick delivery, since
+                # 2 = checked fields failed). Kernel/env breakage — corrupt
+                # state (6), missing manifest (9), env breakage such as a
+                # missing PyYAML python (10), and anything else — warns and
+                # permits: a broken kernel must never brick delivery, since
                 # the --override recovery path runs through the same kernel
-                # (D-006 #5; review R1 should-fix).
+                # (D-006 #5; review R1 should-fix; batch #2).
                 case "$check_status" in
                     1 | 2)
                         printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
@@ -158,7 +415,7 @@ if has '\bgh[[:space:]]+pr[[:space:]]+(create|ready)\b'; then
     printf '[WORKFLOW GUARD] Also verify WORKFLOW_REVIEW_GATE and WORKFLOW_FINALIZE_GATE before completion.\n'
 fi
 
-if has '\bgh[[:space:]]+pr[[:space:]]+(merge|close)\b'; then
+if has '\bgh[[:space:]]+pr[[:space:]]+(merge|close)($|[^[:alnum:]_-])'; then
     printf '\n[WORKFLOW GUARD] PR merge/close detected. Inventory cleanup before deleting anything:\n'
     git status --short 2>/dev/null || true
     git worktree list --porcelain 2>/dev/null | sed -n '1,40p' || true

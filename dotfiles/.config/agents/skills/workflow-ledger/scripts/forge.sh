@@ -153,7 +153,14 @@ gh_threads_resolved() {
 
 fj_api() {
     [ -n "${FORGE_URL:-}" ] || die "FORGE_URL not set for Forgejo API access"
-    curl -sSf -H "Authorization: token ${FORGE_TOKEN:-}" "${FORGE_URL%/}/api/v1$1"
+    [ -n "${FORGE_TOKEN:-}" ] || die "FORGE_TOKEN not set for Forgejo API access (refusing to send an unauthenticated request)"
+    # The token travels via a curl config read from stdin (-K -), never argv,
+    # so it cannot leak through process listings (batch #5). curl config
+    # quoting: a token containing '"' or a newline would break the config
+    # line; forge tokens are URL-safe strings, so this is not reachable with
+    # a real token.
+    printf 'header = "Authorization: token %s"\n' "$FORGE_TOKEN" |
+        curl -sSf -K - "${FORGE_URL%/}/api/v1$1"
 }
 
 fj_ci_status() {
@@ -230,7 +237,10 @@ run_op() {
     forge="$(detect_forge)" || exit 1
     [ "$forge" != "none" ] || die "no origin remote; cannot dispatch $op"
     if [ -n "${FORGE_MOCK_DIR:-}" ]; then
-        local mock="$FORGE_MOCK_DIR/$forge-$op-$pr"
+        # Branch names may carry slashes (pr-for-branch feature/x); sanitize
+        # so mock answers are flat files, never nested dirs (batch #8).
+        local safe_pr="${pr//\//_}"
+        local mock="$FORGE_MOCK_DIR/$forge-$op-$safe_pr"
         [ -f "$mock" ] || die "mock answer missing: $mock"
         head -n 1 "$mock"
         return 0

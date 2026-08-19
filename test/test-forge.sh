@@ -65,6 +65,20 @@ assert_file_exists() {
     fi
 }
 
+assert_contains() {
+    local name="$1" haystack="$2" needle="$3"
+    if grep -Fq "$needle" <<<"$haystack"; then
+        echo "  PASS: $name"
+        PASS=$((PASS + 1))
+    else
+        echo "  FAIL: $name"
+        echo "    expected output to contain: $needle"
+        echo "    output was:"
+        echo "$haystack"
+        FAIL=$((FAIL + 1))
+    fi
+}
+
 # Run forge.sh from inside a repo; captures OUT and STATUS. Mock mode is
 # always on and FORGE_URL points at an .invalid host so any accidental
 # network path fails instead of leaving the sandbox.
@@ -212,6 +226,66 @@ assert_equal "forgejo pr-state prints merged" "merged" "$OUT"
 run_forge "$repo_fj" threads-resolved 7
 assert_status "forgejo threads-resolved exits 0" 0 "$STATUS"
 assert_equal "forgejo threads-resolved prints no" "no" "$OUT"
+
+# --- pr-for-branch: direct coverage (batch #8) ---
+printf '31\n' >"$MOCK_DIR/github-pr-for-branch-mybranch"
+printf 'none\n' >"$MOCK_DIR/forgejo-pr-for-branch-mybranch"
+
+run_forge "$repo_gh" pr-for-branch mybranch
+assert_status "github pr-for-branch exits 0" 0 "$STATUS"
+assert_equal "github pr-for-branch prints the PR number" "31" "$OUT"
+
+run_forge "$repo_fj" pr-for-branch mybranch
+assert_status "forgejo pr-for-branch exits 0" 0 "$STATUS"
+assert_equal "forgejo pr-for-branch prints none when no open PR" "none" "$OUT"
+
+# Slashed branch names must sanitize to flat mock filenames, not nested
+# directories (batch #8: feature/x previously required a feature/ subdir).
+printf '77\n' >"$MOCK_DIR/github-pr-for-branch-feature_login-flow"
+run_forge "$repo_gh" pr-for-branch feature/login-flow
+assert_status "slashed-branch pr-for-branch exits 0" 0 "$STATUS"
+assert_equal "slashed branch reads a sanitized flat mock filename" "77" "$OUT"
+
+# --- FORGE_TOKEN hygiene (batch #5) ---
+# Stub curl (PATH-prepended) records argv and stdin; every real-mode probe in
+# this section runs through it so no probe can leave the sandbox.
+STUB_BIN="$TMPDIR_BASE/stub-bin"
+mkdir -p "$STUB_BIN"
+cat >"$STUB_BIN/curl" <<STUB
+#!/usr/bin/env bash
+printf '%s\n' "\$@" >"$TMPDIR_BASE/curl-argv"
+[ -t 0 ] || cat >"$TMPDIR_BASE/curl-stdin"
+printf '{"merged":false,"draft":false,"state":"open"}'
+STUB
+chmod +x "$STUB_BIN/curl"
+
+# Runs forge.sh in real (non-mock) Forgejo mode behind the stub curl.
+run_forge_stubbed() {
+    local dir="$1" token="$2"
+    shift 2
+    OUT="$(cd "$dir" && PATH="$STUB_BIN:$PATH" FORGE_URL="https://forge.invalid" \
+        FORGE_TOKEN="$token" FORGE_SSH_CONFIG="$SSH_CFG" bash "$FORGE" "$@" 2>&1)"
+    STATUS=$?
+}
+
+# Empty FORGE_TOKEN must fail loudly BEFORE any request: the stub proves
+# curl is never invoked (tests-lane fix: the exit code alone was vacuous).
+rm -f "$TMPDIR_BASE/curl-argv"
+run_forge_stubbed "$repo_fj" "" ci-status 7
+assert_status "empty FORGE_TOKEN fails loudly (no unauthenticated call)" 1 "$STATUS"
+assert_contains "empty-token failure names FORGE_TOKEN" "$OUT" "FORGE_TOKEN"
+assert_equal "curl is never invoked on an empty token" "missing" \
+    "$([ -f "$TMPDIR_BASE/curl-argv" ] && echo present || echo missing)"
+
+# The token must never travel on curl argv (visible in process listings);
+# it goes via a curl config read from stdin.
+run_forge_stubbed "$repo_fj" "hunter2-token-value" pr-state 9
+assert_status "forgejo pr-state via stub curl exits 0" 0 "$STATUS"
+assert_equal "stub-backed pr-state prints open" "open" "$OUT"
+assert_equal "token never appears on curl argv" "0" \
+    "$(grep -c 'hunter2-token-value' "$TMPDIR_BASE/curl-argv")"
+assert_equal "token reaches curl via non-argv channel" "1" \
+    "$(grep -c 'hunter2-token-value' "$TMPDIR_BASE/curl-stdin" 2>/dev/null || echo 0)"
 
 echo ""
 echo "Passed: $PASS"

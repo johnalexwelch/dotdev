@@ -306,6 +306,52 @@ run_ledger "$repoA" reconcile --apply
 run_ledger "$repoA" reconcile
 assert_status "reconcile clean again after --apply" 0 "$STATUS"
 
+# --- reconcile ground truth: branch/worktree/pending-step comparisons (batch #6) ---
+repoG=$(new_repo reconcile_truth)
+run_ledger "$repoG" init 2026-08-18-truth --workflow workflow-deliver \
+    --kind feature --steps "impl"
+run_ledger "$repoG" reconcile
+assert_status "ground-truth fixture clean right after init" 0 "$STATUS"
+
+git -C "$repoG" checkout -q -b feature/elsewhere
+run_ledger "$repoG" reconcile
+assert_status "branch change since init is drift (exit 1)" 1 "$STATUS"
+assert_contains "branch drift names the recorded branch" "$OUT" "recorded 'main'"
+run_ledger "$repoG" reconcile --apply
+run_ledger "$repoG" reconcile
+assert_status "reconcile --apply adopts the new branch" 0 "$STATUS"
+
+echo "work" >>"$repoG/src/app.py"
+commit_all "$repoG" "feat: commits while step still pending"
+run_ledger "$repoG" reconcile
+assert_status "commit drift still exits 1" 1 "$STATUS"
+assert_contains "commit drift names the pending step" "$OUT" "impl"
+run_ledger "$repoG" reconcile --apply
+
+mv "$repoG" "${repoG}-moved"
+run_ledger "${repoG}-moved" reconcile
+assert_status "worktree path change is drift (exit 1)" 1 "$STATUS"
+# The needle must be the RECORDED (old) path phrase — the frontier line
+# always prints the current worktree, which contains the old path as a
+# substring (tests-lane vacuity fix). Symlink-agnostic: match the phrase
+# ending at the old basename, which the -moved path cannot produce.
+assert_contains "worktree drift names the recorded path" "$OUT" \
+    "reconcile_truth' but is running in"
+run_ledger "${repoG}-moved" reconcile --apply
+run_ledger "${repoG}-moved" reconcile
+assert_status "reconcile --apply adopts the new worktree path" 0 "$STATUS"
+
+# Pre-field (legacy) live states skip the new ground-truth comparisons
+# instead of erroring (tests-lane back-compat pin).
+repoL=$(new_repo legacy_fields)
+run_ledger "$repoL" init 2026-08-18-legacy --workflow workflow-deliver \
+    --kind feature --steps "impl"
+stateL=$(live_state "$repoL")
+sed -i.bak '/^initialized_epoch:/d; /^branch:/d; /^worktree:/d' "$stateL"
+rm -f "$stateL.bak"
+run_ledger "$repoL" reconcile
+assert_status "legacy state without new fields reconciles clean" 0 "$STATUS"
+
 # --- corrupt live state is exit 6, never silently rewritten ---
 repoH=$(new_repo corrupt_state)
 run_ledger "$repoH" init 2026-08-19-corrupt --workflow workflow-build-one \
@@ -317,6 +363,25 @@ assert_status "corrupt live state exits 6 on show" 6 "$STATUS"
 run_ledger "$repoH" set plan active
 assert_status "corrupt live state exits 6 on set" 6 "$STATUS"
 assert_file_contains "corrupt live state not silently rewritten" "$stateH" "::: not yaml ["
+
+# --- env breakage is exit 10, distinct from gate-unmet exit 1 (batch #2) ---
+repoEnv=$(new_repo env_error)
+run_ledger "$repoEnv" init 2026-08-18-env --workflow workflow-deliver \
+    --kind feature --steps "impl"
+assert_status "env fixture init exits 0" 0 "$STATUS"
+export LEDGER_PYTHON=/nonexistent-python-e93f
+run_ledger "$repoEnv" show
+assert_status "misconfigured LEDGER_PYTHON exits 10 on show" 10 "$STATUS"
+run_ledger "$repoEnv" check finalize
+assert_status "check with broken python env exits 10, not 1" 10 "$STATUS"
+unset LEDGER_PYTHON
+
+# Git/repo breakage is env-shaped too (style R1): running outside a git
+# repository is exit 10, not the gate-unmet/usage exit 1.
+norepo="$TMPDIR_BASE/norepo"
+mkdir -p "$norepo"
+run_ledger "$norepo" show
+assert_status "outside a git repository exits 10" 10 "$STATUS"
 
 # --- kind: bug template + diagnose/fix gates ---
 repoB=$(new_repo bug_template)
@@ -369,6 +434,40 @@ run_ledger "$repoB" stamp fix --attest regression_test=test/regress.sh \
 assert_status "stamp fix green repro + regression exits 0" 0 "$STATUS"
 run_ledger "$repoB" check fix
 assert_status "check fix fresh after stamp" 0 "$STATUS"
+
+# --- repro_tail redaction + snapshot cap (batch #4) ---
+repoRT=$(new_repo redact_tail)
+stateRT=$(live_state "$repoRT")
+run_ledger "$repoRT" init 2026-08-18-redact --workflow workflow-deliver \
+    --kind bug --steps "impl"
+cat >"$repoRT/leaky.sh" <<'LEAK'
+#!/usr/bin/env bash
+echo "token=supersecretvalue1234 ghp_ABCDEFGHIJKLMNOPQRSTuvwx" # pragma: allowlist secret
+printf 'x%.0s' $(seq 1 120)
+echo ""
+exit 1
+LEAK
+commit_all "$repoRT" "test: leaky red repro"
+run_ledger "$repoRT" stamp diagnose --attest repro_cmd="bash leaky.sh" \
+    --attest root_cause="token=attested-stays-verbatim by design"
+assert_status "diagnose stamp with leaky repro exits 0" 0 "$STATUS"
+# Attested values must stay verbatim (the fix gate re-executes repro_cmd);
+# redaction covers only script-captured checked values (tests-lane pin).
+assert_file_contains "attested values are not redacted" "$stateRT" \
+    "token=attested-stays-verbatim"
+assert_file_not_contains "live tail redacts the ghp_ token" "$stateRT" \
+    "ghp_ABCDEFGHIJKLMNOPQRSTuvwx" # pragma: allowlist secret
+assert_file_not_contains "live tail redacts the token= value" "$stateRT" \
+    "supersecretvalue1234"
+assert_file_contains "live tail carries a REDACTED marker" "$stateRT" "REDACTED"
+assert_file_not_contains "committed snapshot never carries the secret" \
+    "$repoRT/docs/executions/state.yaml" "supersecretvalue1234"
+long_run="$(printf 'x%.0s' $(seq 1 100))"
+assert_file_contains "live state keeps the full tail" "$stateRT" "$long_run"
+assert_file_not_contains "snapshot repro_tail is capped" \
+    "$repoRT/docs/executions/state.yaml" "$long_run"
+assert_file_contains "snapshot marks the truncation" \
+    "$repoRT/docs/executions/state.yaml" "truncated"
 
 # --- override flow ---
 run_ledger "$repoB" stamp diagnose --attest repro_cmd="bash repro.sh" \
@@ -475,8 +574,11 @@ git -C "$repoE" tag t3
 mkdir -p "$repoE/auth"
 echo "token = 'x'" >"$repoE/auth/token.py"
 commit_all "$repoE" "feat: touch auth path"
+# Pattern hits are security-flagged (batch #7): the floor word carries a
+# +security suffix so the flag is recorded, not silently dropped.
 run_ledger "$repoE" review-floor --base t3
-assert_equal "review-floor auth path pattern prints standard" "standard" "$OUT"
+assert_equal "review-floor auth path pattern prints standard+security" \
+    "standard+security" "$OUT"
 
 echo "frobnicate" >"$repoE/docs/executions/review-patterns.txt"
 commit_all "$repoE" "chore: add repo review-pattern override"
@@ -485,7 +587,8 @@ mkdir -p "$repoE/frobnicate"
 echo "hit" >"$repoE/frobnicate/x.txt"
 commit_all "$repoE" "feat: touch override pattern path"
 run_ledger "$repoE" review-floor --base t4
-assert_equal "review-floor repo override pattern prints standard" "standard" "$OUT"
+assert_equal "review-floor repo override pattern prints standard+security" \
+    "standard+security" "$OUT"
 
 # --- review gate in a baseline-cut worktree ---
 wt1=$(new_wt_fixture review_gate)
@@ -522,6 +625,17 @@ run_ledger "$wt1" stamp review --attest verdict=approve \
 assert_status "lane model below floor exits 2" 2 "$STATUS"
 assert_contains "below-floor failure names model" "$OUT" "model"
 
+# Lane freshness binding (batch #3, bit us twice live): a lane file whose
+# mtime predates this run's init is a stale artifact from an earlier
+# session and must not satisfy the stamp.
+printf 'model: opus\nverdict: approve\n' >"$lane1"
+touch -t 202001010000 "$lane1"
+run_ledger "$wt1" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$lane1" \
+    --attest model_floor=sonnet
+assert_status "lane file predating run init exits 2" 2 "$STATUS"
+assert_contains "stale lane failure says predates" "$OUT" "predates"
+
 printf 'model: opus\nverdict: approve\n' >"$lane1"
 run_ledger "$wt1" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$lane1" \
@@ -539,8 +653,9 @@ assert_status "verify-local passes in worktree" 0 "$STATUS"
 # has a file-path origin (detects as forgejo), so provide a mock lookup
 # answering "none" and the test sentinel that permits mock in stamps.
 FORGE_MOCK_DIR="$TMPDIR_BASE/review_gate/forge-mock"
-mkdir -p "$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature"
-printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature/review_gate"
+mkdir -p "$FORGE_MOCK_DIR"
+# Slashed branch names sanitize to flat mock filenames (batch #8).
+printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature_review_gate"
 export FORGE_MOCK_DIR
 export LEDGER_ALLOW_FORGE_MOCK=1
 
@@ -620,13 +735,131 @@ echo "token = 'changed'" >"$wt2/auth/token.py"
 commit_all "$wt2" "feat: auth-path change"
 
 run_ledger "$wt2" review-floor --base origin/main
-assert_equal "auth diff floor is standard in worktree" "standard" "$OUT"
+assert_equal "auth diff floor is standard+security in worktree" \
+    "standard+security" "$OUT"
 
 run_ledger "$wt2" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$lane2" \
     --attest model_floor=sonnet
 assert_status "chosen profile below floor exits 2" 2 "$STATUS"
 assert_contains "below-floor failure names profile" "$OUT" "profile"
+
+# Security-flagged floor requires a security lane even when the profile's
+# base lane set does not include one (batch #7).
+lane2_logic="$lanes2/logic-review.md"
+lane2_tests="$lanes2/tests-review.md"
+lane2_sec="$lanes2/security-review.md"
+printf 'model: opus\nverdict: approve\n' >"$lane2_logic"
+printf 'model: opus\nverdict: approve\n' >"$lane2_tests"
+run_ledger "$wt2" stamp review --attest verdict=approve \
+    --attest review_profile=standard \
+    --attest "lanes=logic=$lane2_logic,tests=$lane2_tests"
+assert_status "security-flagged floor without security lane exits 2" 2 "$STATUS"
+assert_contains "missing security lane is named" "$OUT" "security"
+
+printf 'model: opus\nverdict: approve\n' >"$lane2_sec"
+run_ledger "$wt2" stamp review --attest verdict=approve \
+    --attest review_profile=standard \
+    --attest "lanes=logic=$lane2_logic,tests=$lane2_tests,security=$lane2_sec"
+assert_status "security lane present satisfies the flagged floor" 0 "$STATUS"
+assert_file_contains "checked review_floor records the security flag" \
+    "$wt2/docs/executions/state.yaml" "standard+security"
+
+# The attested profile is exactly fast|standard|full (logic R1 must-fix): a
+# suffixed value like full+security must be rejected, not rank as full while
+# collapsing required_lanes to its default.
+run_ledger "$wt2" stamp review --attest verdict=approve \
+    --attest review_profile=full+security \
+    --attest "lanes=integrated=$lane2_logic,logic=$lane2_logic,tests=$lane2_tests,security=$lane2_sec"
+assert_status "suffixed attested review_profile is rejected" 2 "$STATUS"
+assert_contains "invalid profile failure names review_profile" "$OUT" "review_profile"
+
+# --- snapshot_current: committed snapshot must match live at finalize (batch #8) ---
+# A hand-crafted commit that touches ONLY the snapshot file is
+# freshness-exempt by design, so the PR-visible record could be rewritten
+# without staling any stamp. Finalize closes the hole by comparing the
+# committed snapshot's durable content (run identity, stamps, overrides)
+# against live state.
+wt3=$(new_wt_fixture snapshot_drift)
+lanes3="$TMPDIR_BASE/snapshot_drift/lanes"
+mkdir -p "$lanes3"
+lane3="$lanes3/integrated-review.md"
+printf 'none\n' >"$FORGE_MOCK_DIR/forgejo-pr-for-branch-feature_snapshot_drift"
+
+run_ledger "$wt3" init 2026-08-18-snap --workflow workflow-deliver \
+    --kind feature --steps "impl,review,finalize"
+# Give the run a long repro tail so the legacy-shape (uncapped byte-copy)
+# snapshot below exercises the cap-normalized comparison (logic R1).
+# shellcheck disable=SC2016 # the $(seq) must land literally in the script.
+printf '#!/usr/bin/env bash\nprintf "y%%.0s" $(seq 1 120)\nexit 1\n' >"$wt3/long.sh"
+commit_all "$wt3" "test: long-output red repro"
+run_ledger "$wt3" stamp diagnose --attest repro_cmd="bash long.sh" \
+    --attest root_cause="long tail fixture"
+assert_status "wt3 diagnose stamp exits 0" 0 "$STATUS"
+printf -- '- "true"\n' >"$wt3/docs/executions/ci-commands.yaml"
+echo "tweak" >>"$wt3/src/app.py"
+commit_all "$wt3" "feat: change under review"
+printf 'model: opus\nverdict: approve\n' >"$lane3"
+run_ledger "$wt3" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$lane3"
+assert_status "snapshot fixture review stamp exits 0" 0 "$STATUS"
+
+sed -i.bak 's/^run_id: .*/run_id: forged-run/' "$wt3/docs/executions/state.yaml"
+rm -f "$wt3/docs/executions/state.yaml.bak"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp review" -- docs/executions/state.yaml
+
+run_ledger "$wt3" check review
+assert_status "snapshot-only tamper commit keeps stamps fresh (the hole)" 0 "$STATUS"
+
+run_ledger "$wt3" verify-local
+assert_status "verify-local passes in snapshot fixture" 0 "$STATUS"
+run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize refuses a tampered committed snapshot" 2 "$STATUS"
+assert_contains "snapshot mismatch failure is the snapshot check itself" "$OUT" \
+    "does not match live ledger state"
+
+# Deliberate legacy-shape restore: a byte-copy of live state (pre-cap
+# snapshots were exactly this). snapshot_match must normalize both sides,
+# so benign version skew is never misdiagnosed as tampering (logic R1).
+cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- docs/executions/state.yaml
+run_ledger "$wt3" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "finalize passes on a legacy byte-copy snapshot of live" 0 "$STATUS"
+assert_file_contains "finalize records the snapshot_current checked field" \
+    "$wt3/docs/executions/state.yaml" "snapshot_current"
+
+# A tamper AFTER the finalize stamp is freshness-exempt (snapshot-only
+# commit), so `check finalize` itself must compare the snapshot (security
+# lane): stamps and overrides are the durable keys worth forging.
+run_ledger "$wt3" check finalize
+assert_status "check finalize OK after the finalize stamp" 0 "$STATUS"
+
+sed -i.bak 's/verdict: approve/verdict: forged/g' "$wt3/docs/executions/state.yaml"
+rm -f "$wt3/docs/executions/state.yaml.bak"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "post-stamp verdict tamper fails check finalize" 1 "$STATUS"
+assert_contains "post-stamp tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
+
+cp "$(live_state "$wt3")" "$wt3/docs/executions/state.yaml"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): restore snapshot" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "check finalize recovers after restore" 0 "$STATUS"
+
+sed -i.bak 's/^overrides: \[\]/overrides: [{gate: finalize, reason: forged-bypass}]/' \
+    "$wt3/docs/executions/state.yaml"
+rm -f "$wt3/docs/executions/state.yaml.bak"
+git -C "$wt3" add -- docs/executions/state.yaml
+git -C "$wt3" commit -q -m "chore(ledger): stamp finalize" -- docs/executions/state.yaml
+run_ledger "$wt3" check finalize
+assert_status "post-stamp overrides tamper fails check finalize" 1 "$STATUS"
+assert_contains "overrides tamper reads SNAPSHOT_DRIFT" "$OUT" "SNAPSHOT_DRIFT"
 
 echo ""
 echo "Passed: $PASS"
