@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152044
 status: active
 next: ''
-updated: '2026-08-19T15:39:45.465429+00:00'
+updated: '2026-08-19T15:41:18.434524+00:00'
 steps:
 - id: baseline
   required: true
@@ -46,8 +46,8 @@ stamps:
       reason: ''
       timestamp: ''
   finalize:
-    head_sha: 024650a875a95100c2b08759d5c0e2477d35361b
-    timestamp: '2026-08-19T15:15:51.118872+00:00'
+    head_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
+    timestamp: '2026-08-19T15:41:18.434335+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -56,6 +56,8 @@ stamps:
       pr_state: open
       threads_resolved: 'yes'
     attested:
+      post_mortem: not_applicable
+      describe_pr: in_pr_body
       pr_number: '180'
     override:
       active: false
@@ -64,9 +66,9 @@ stamps:
 overrides: []
 branch: feat/grill-wayfinder-escalation
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/grill-wayfinder-escalation
-last_seen_sha: 3cf7da506af3ef7120913530f7e965c44042216f
+last_seen_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
 verify_local:
-  head_sha: 024650a875a95100c2b08759d5c0e2477d35361b
+  head_sha: 7607d5ea8f2621a8f81e85e5a74a5efeb323dd1c
   passed: true
   results:
   - cmd: ./test/run-tests.sh
