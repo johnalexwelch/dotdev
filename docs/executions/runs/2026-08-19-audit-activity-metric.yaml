@@ -1,0 +1,34 @@
+run_id: 2026-08-19-audit-activity-metric
+workflow: workflow-deliver
+kind: skill
+budget: one-reviewer
+initialized_epoch: 1787174526
+status: active
+next: preflight
+updated: '2026-08-19T21:22:06.080177+00:00'
+steps:
+- id: preflight
+  required: true
+  status: pending
+  evidence: ''
+- id: triage
+  required: true
+  status: pending
+  evidence: ''
+- id: implement
+  required: true
+  status: pending
+  evidence: ''
+- id: review
+  required: true
+  status: pending
+  evidence: ''
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps: {}
+overrides: []
+route: measurement-definition fix|workflow-deliver|confirmed
+branch: fix/audit-activity-metric
+worktree: /Users/alexwelch/wt/dotdev/audit-activity-metric
