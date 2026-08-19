@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787151568
 status: active
 next: review
-updated: '2026-08-19T15:36:19.059935+00:00'
+updated: '2026-08-19T15:53:44.694419+00:00'
 steps:
 - id: preflight
   required: true
@@ -29,25 +29,25 @@ steps:
   evidence: ''
 stamps:
   review:
-    head_sha: a858ae5df5782e982b323264620c7605fd292c9e
-    timestamp: '2026-08-19T15:36:19.059771+00:00'
+    head_sha: c4d2821459df8e5e6b923b0bfb7686c15fb62297
+    timestamp: '2026-08-19T15:53:44.694234+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
-      lane_security_sha256: e7ff91e00c5bd661961789d1bba913e64ba6266b0e10146d29dec6eb1bc7bc9f
-      lane_security_lines: '165'
+      lane_security_sha256: ad890467fccf56025fda10bc056e78617eababa1cb0077c00b963c5f3ecbe3ca
+      lane_security_lines: '270'
       lane_security_verdict: APPROVE
       lane_security_model: claude-opus-5
-      lane_logic_sha256: ee126aed3339c0362802636b54ea86f5868d29fba3edba3c63313d6341a0a2a1
-      lane_logic_lines: '152'
+      lane_logic_sha256: 4cc7c5bc9e7586c4484e4fc4137d57c1c106dcbd8771c8e485d5a9c5d9cc1388
+      lane_logic_lines: '184'
       lane_logic_verdict: APPROVE
       lane_logic_model: claude-opus-5
-      lane_tests_sha256: 5d002673776f135b439a482d5e4f6a416ee5d625cc8343de7f4e92774a6a8367
-      lane_tests_lines: '139'
+      lane_tests_sha256: 5d6a08e12f3cc7382954e08611dc2520355844e0c5ea00f778d0cb720cfd9b35
+      lane_tests_lines: '202'
       lane_tests_verdict: APPROVE
       lane_tests_model: claude-opus-5
-      lane_style_sha256: d7f25000130722597cb317db6af9613c73a7e87881d2e7f40a924f58eb5e2c1c
-      lane_style_lines: '217'
+      lane_style_sha256: 9a7d32f185e711232b13d08d86380a61b8a86a34d7d06944abc8e5b7077f0192
+      lane_style_lines: '322'
       lane_style_verdict: APPROVE
       lane_style_model: claude-opus-5
       review_floor: full
@@ -64,4 +64,14 @@ stamps:
 overrides: []
 branch: claude/stream-deck-dotdev-integration-7f788b
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/stream-deck-dotdev-integration-7f788b
-last_seen_sha: 4fe9c343961b17b1cbd0a8dee4684c114e3767a7
+last_seen_sha: cc15b866cf50c1e2a4f1383a3a4c941f8e218e23
+verify_local:
+  head_sha: c4d2821459df8e5e6b923b0bfb7686c15fb62297
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
