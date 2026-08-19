@@ -153,6 +153,19 @@ substitution_spans() {
     printf '%s' "$spans"
 }
 
+# Rule 3 core. The burden is INVERTED (coordinator design call, R8): when a
+# command contains both a mutation and suppression, it blocks unless
+# segmentation can prove they are independent. The earlier shape — block only
+# when a recognized carrier links the two — made every gap in the carrier
+# enumeration a fail-open, and eight review rounds showed that enumeration is
+# open-ended: three fail-opens shipped to declared freezes (construct
+# redirect, bare exec, opener-prefixed exec), each found by measuring against
+# main rather than by the suite. Provable independence is a small closed set;
+# carriers are not. So misses now land fail-closed, the direction D-006 #5
+# permits this guard to err. The recorded path to narrowing the resulting
+# over-blocks is a tokenizer that tracks redirection scope, never a further
+# widening of the predicate.
+#
 # Rule 3 core: true iff some segment BOTH suppresses stderr and mutates.
 # Suppression on a test/lint segment chained before a push must not block
 # (R1/R2 batch #1 — segment scoping; bit us twice live). Split order
@@ -211,26 +224,23 @@ has_suppressed_mutating_segment() {
             break
         fi
     done <<<"$redirect_lists"
+
+    # `exec` redirects the CURRENT SHELL for every later segment. Deciding
+    # whether a given `exec` is a command word — rather than an argument or
+    # quoted text — is the same open-ended enumeration that produced three
+    # fail-opens across rounds R3–R7 (bare, then opener-prefixed, then
+    # assignment-prefixed). Under the inverted burden any `exec` token is a
+    # carrier and the command blocks. That over-blocks `echo exec …` and
+    # `bash -c "exec …"`, both of which main blocked too, so the over-block
+    # costs nothing against main and the misses land fail-closed.
+    if grep -Eqw 'exec' <<<"$masked"; then
+        whole=1
+    fi
+
     segs="${masked//"&&"/$'\n'}"
     segs="${segs//"||"/$'\n'}"
     segs="${segs//";"/$'\n'}"
     segs="${segs//"|"/$'\n'}"
-    # A redirection-only `exec` redirects the CURRENT SHELL for every later
-    # segment, so the suppression sits in a segment of its own with no
-    # terminator token for the arming logic above to hang on (logic lane R3;
-    # fail-open regression vs main). Requiring the redirect to come first
-    # excludes `exec cmd 2>/dev/null`, which replaces the shell so nothing
-    # later runs.
-    if [ "$whole" -eq 0 ]; then
-        while IFS= read -r seg; do
-            [ -n "$seg" ] || continue
-            if grep -Eq '^[[:space:]]*exec[[:space:]]+([0-9]*[<>]|&>)' <<<"$seg" &&
-                seg_has_suppression "$seg"; then
-                whole=1
-                break
-            fi
-        done <<<"$segs"
-    fi
     while IFS= read -r seg; do
         [ -n "$seg" ] || continue
         if [ "$whole" -eq 0 ]; then
