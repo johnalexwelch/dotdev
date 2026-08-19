@@ -4,8 +4,8 @@ kind: skill
 budget: one-reviewer
 initialized_epoch: 1787152244
 status: active
-next: review
-updated: '2026-08-19T16:25:47.294227+00:00'
+next: finalize
+updated: '2026-08-19T16:29:21.701305+00:00'
 steps:
 - id: preflight
   required: true
@@ -21,8 +21,8 @@ steps:
   evidence: commits b376e99 (red suite, 46 asserts) + 3dffe9b (relay.sh green + handoff Relay section + ledger CLI listing); test/run-tests.sh 65/65 PASS, shellcheck clean on both files, lint-skill-refs + lint-skill-suite exit 0; empty test-file diff between red and green commits (two-lane TDD shape); flags ground-truthed against claude 2.1.235
 - id: review
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'workflow-review full profile (floor=full): 4 lanes x opus, 5 rounds (R1 all REQUEST_CHANGES -> R4/R5 all APPROVE); final verdicts: security APPROVE@e37236b, logic APPROVE@1068b19, tests APPROVE@e37236b, style APPROVE@1068b19; reviewers re-verified fixes by re-running their own exploits/mutations; lane files /tmp/ledger-lanes-2026-08-19-relay-runner/; stamp written at 30efedd (digests of final lane files)'
 - id: qa
   required: true
   status: completed
@@ -33,8 +33,8 @@ steps:
   evidence: ''
 stamps:
   review:
-    head_sha: ae58d3cf7ee132c8328d4802195e6edeab5e10cf
-    timestamp: '2026-08-19T16:25:47.293975+00:00'
+    head_sha: 141d9c311af8d4844ab8b975698e46befd14b721
+    timestamp: '2026-08-19T16:29:21.701096+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -68,4 +68,14 @@ stamps:
 overrides: []
 branch: feat/relay-runner
 worktree: /Users/alexwelch/wt/dotdev/relay-runner
-last_seen_sha: ae58d3cf7ee132c8328d4802195e6edeab5e10cf
+last_seen_sha: 141d9c311af8d4844ab8b975698e46befd14b721
+verify_local:
+  head_sha: cacf057b76520862e9187662a85cbc7237d3ab73
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
