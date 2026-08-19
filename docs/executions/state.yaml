@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787152244
 status: active
 next: review
-updated: '2026-08-19T16:25:20.387045+00:00'
+updated: '2026-08-19T16:25:47.294227+00:00'
 steps:
 - id: preflight
   required: true
@@ -33,8 +33,8 @@ steps:
   evidence: ''
 stamps:
   review:
-    head_sha: 30efedd607baba766602412e80d559be1ac9686e
-    timestamp: '2026-08-19T16:25:20.386829+00:00'
+    head_sha: ae58d3cf7ee132c8328d4802195e6edeab5e10cf
+    timestamp: '2026-08-19T16:25:47.293975+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -68,4 +68,4 @@ stamps:
 overrides: []
 branch: feat/relay-runner
 worktree: /Users/alexwelch/wt/dotdev/relay-runner
-last_seen_sha: 30efedd607baba766602412e80d559be1ac9686e
+last_seen_sha: ae58d3cf7ee132c8328d4802195e6edeab5e10cf
