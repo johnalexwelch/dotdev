@@ -4,8 +4,8 @@ kind: feature
 budget: multi-lane
 initialized_epoch: 1787157126
 status: active
-next: review
-updated: '2026-08-19T18:33:35.836637+00:00'
+next: finalize
+updated: '2026-08-19T18:57:32.435820+00:00'
 steps:
 - id: preflight
   required: true
@@ -21,20 +21,20 @@ steps:
   evidence: "per-run snapshot kernel + consumers landed across 5 commits (rebased onto 4bb5a6b); tdd: ran \u2014 two-lane red-first, 66 red assertions across 4 suites then green (test-ledger 197/0, finalize-stamp-check 66/0, guard-rules 140/0, worktree-baseline 71/0); verify-local PASSED at 16a7674; shellcheck clean at CI severity"
 - id: review
   required: true
-  status: active
-  evidence: ''
+  status: completed
+  evidence: profile=full (floor=full), 5 Opus lanes x 3 rounds, unanimous APPROVE at 3832585; stamp recorded lane digests
 - id: qa
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "user-journey-qa not applicable: kernel/CI/hook tooling change, no user-facing surface or frontend code \u2014 trigger conditions absent"
 - id: finalize
   required: true
   status: pending
   evidence: ''
 stamps:
   review:
-    head_sha: 38325856f4ebdcd5b074143a11fd08fc6f44b8f1
-    timestamp: '2026-08-19T18:33:35.836434+00:00'
+    head_sha: 43014c3607ac75bb558267b2118148cac8dcf73b
+    timestamp: '2026-08-19T18:57:32.435619+00:00'
     gate_type: reviewer-validation
     provenance: agent
     checked:
@@ -50,8 +50,8 @@ stamps:
       lane_tests_lines: '48'
       lane_tests_verdict: APPROVE
       lane_tests_model: opus
-      lane_style_sha256: 4c08f605541e6401e51f7de7dae2e2d63d71fd7405a80e3a5db0f82fe8e086d5
-      lane_style_lines: '234'
+      lane_style_sha256: c85980b766658775c888d887c21382086cd544eaa0584843fc270af0cf2e8701
+      lane_style_lines: '253'
       lane_style_verdict: APPROVE
       lane_style_model: opus
       review_floor: full
@@ -72,9 +72,9 @@ overrides:
 route: kernel feature|workflow-deliver|confirmed
 branch: feat/per-run-ledger-snapshots
 worktree: /Users/alexwelch/dotdev/.claude/worktrees/per-run-snapshots
-last_seen_sha: 38325856f4ebdcd5b074143a11fd08fc6f44b8f1
+last_seen_sha: 43014c3607ac75bb558267b2118148cac8dcf73b
 verify_local:
-  head_sha: 38325856f4ebdcd5b074143a11fd08fc6f44b8f1
+  head_sha: 43014c3607ac75bb558267b2118148cac8dcf73b
   passed: true
   results:
   - cmd: ./test/run-tests.sh
@@ -82,4 +82,6 @@ verify_local:
   - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
     exit: 0
   - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
+  - cmd: pre-commit run --all-files
     exit: 0
