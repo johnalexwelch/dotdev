@@ -150,7 +150,7 @@ parse_exit_reason() {
 }
 
 # Reads the LIVE ledger state (<git-dir>/ledger/state.yaml — not the committed
-# snapshot at docs/executions/state.yaml).
+# per-run snapshot at docs/executions/runs/<run_id>.yaml).
 ledger_state_file() {
     local gitdir
     gitdir="$(git -C "$REPO" rev-parse --absolute-git-dir 2>/dev/null)" || return 1
