@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787228010
 status: active
 next: fix
-updated: '2026-08-20T12:21:44.396422+00:00'
+updated: '2026-08-20T12:32:30.012137+00:00'
 steps:
 - id: fix
   required: true
@@ -58,8 +58,35 @@ stamps:
       active: false
       reason: ''
       timestamp: ''
+  fix:
+    head_sha: 9978341d564b995af1e25772f8e7de0019d600f4
+    timestamp: '2026-08-20T12:32:30.012010+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '0'
+      regression_test: test/test-ledger.sh
+    attested:
+      regression_test: test/test-ledger.sh
+      rationale: verdict allowlist + unstamp/flush with publish_snapshot split; 281 pass 0 fail (baseline 222)
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: bug|workflow-deliver kind=bug|confirmed
 branch: fix/ledger-kernel-gaps
 worktree: /Users/alexwelch/wt/dotdev/ledger-kernel-gaps
-last_seen_sha: a9cb82ed64b80e9eee0560a166b10ddcb6a4f834
+last_seen_sha: ea75610a4f01425df7f727a86f31cffe9f27fc25
+verify_local:
+  head_sha: 9978341d564b995af1e25772f8e7de0019d600f4
+  passed: true
+  results:
+  - cmd: ./test/run-tests.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-refs.sh
+    exit: 0
+  - cmd: ./dotfiles/.config/agents/skills/lint-skill-suite.sh
+    exit: 0
+  - cmd: pre-commit run --all-files
+    exit: 0
