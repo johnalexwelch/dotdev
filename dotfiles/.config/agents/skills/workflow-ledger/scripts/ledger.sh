@@ -221,6 +221,13 @@ RUN_STATUSES = {"active", "paused", "done"}
 STEP_STATUSES = {"pending", "active", "completed", "skipped", "blocked", "failed"}
 TERMINAL = {"completed", "skipped", "blocked", "failed"}
 GATES = {"diagnose", "fix", "review", "finalize"}
+# The durable tuple: what live state and the committed snapshot must always
+# agree on. `steps` and meta keys change between snapshot commits
+# legitimately; these do not. Single source of truth for snapshot_match
+# (tamper detection) and durable_diff (flush's refusal) — a key added here
+# must not need a second edit elsewhere, which is exactly how a partial
+# rollback would reintroduce a divergence.
+DURABLE_KEYS = ("run_id", "workflow", "kind", "budget", "route", "stamps", "overrides")
 GATE_TYPES = {
     "reviewer-validation",
     "maintainer-decision",
@@ -596,6 +603,24 @@ def op_show(argv):
         )
 
 
+def _load_snapshot_view(path):
+    # Shared by snapshot_match and durable_diff so the two can never disagree
+    # about what "the durable tuple" means. Returns (live, snap) both
+    # cap_tails-normalized, or (live, None) when the snapshot is unreadable.
+    live = cap_tails(load())
+    try:
+        with open(path) as fh:
+            snap = yaml.safe_load(fh)
+    except (OSError, yaml.YAMLError):
+        return live, None
+    if not isinstance(snap, dict):
+        return live, None
+    # Normalize BOTH sides: pre-cap snapshots were byte-copies of live with
+    # uncapped tails — benign version skew must not read as tampering
+    # (logic lane, R1 should-fix).
+    return live, cap_tails(snap)
+
+
 def op_snapshot_match(argv):
     # Compares the committed snapshot's DURABLE content (run identity, stamps,
     # overrides) against live state (batch #8). Steps and meta keys change
@@ -603,24 +628,41 @@ def op_snapshot_match(argv):
     # ops that immediately re-commit the snapshot, so a mismatch means the
     # tracked file was rewritten out-of-band (a snapshot-only tamper commit is
     # freshness-exempt by design — this closes that hole). Prints 1 or 0.
-    keys = ("run_id", "workflow", "kind", "budget", "route", "stamps", "overrides")
-    live = cap_tails(load())
-    try:
-        with open(argv[0]) as fh:
-            snap = yaml.safe_load(fh)
-    except (OSError, yaml.YAMLError):
+    live, snap = _load_snapshot_view(argv[0])
+    if snap is None:
         print("0")
         return
-    if not isinstance(snap, dict):
-        print("0")
-        return
-    # Normalize BOTH sides: pre-cap snapshots were byte-copies of live with
-    # uncapped tails — benign version skew must not read as tampering
-    # (logic lane, R1 should-fix).
-    snap = cap_tails(snap)
-    live_view = {k: live.get(k) for k in keys}
-    snap_view = {k: snap.get(k) for k in keys}
+    live_view = {k: live.get(k) for k in DURABLE_KEYS}
+    snap_view = {k: snap.get(k) for k in DURABLE_KEYS}
     print("1" if live_view == snap_view else "0")
+
+
+def op_durable_diff(argv):
+    # Names the DURABLE keys that differ between live state and the snapshot
+    # at argv[0], one per line, nothing when they agree. `flush`'s remit is
+    # steps/meta, so a divergent durable key means live state carries
+    # something the kernel's stamp path never published — hand-tampered
+    # stamps, which `flush` used to launder into the committed record and
+    # thereby silence snapshot_current entirely (security R1 H1). An
+    # unreadable snapshot names no key: there is no committed record to
+    # launder into, and refusing there would brick a legitimate first publish.
+    live, snap = _load_snapshot_view(argv[0])
+    if snap is None:
+        return
+    for key in DURABLE_KEYS:
+        if live.get(key) != snap.get(key):
+            print(key)
+
+
+def op_step_status(argv):
+    # Prints the status of one step, empty when the step is absent. `unstamp`
+    # uses it to warn when the revoked gate's same-named step is still
+    # recorded completed (logic R1 L2).
+    doc = load()
+    for step in doc.get("steps") or []:
+        if isinstance(step, dict) and step.get("id") == argv[0]:
+            print(step.get("status", "") or "")
+            return
 
 
 def op_write_snapshot(argv):
@@ -666,6 +708,8 @@ HANDLERS = {
     "close": op_close,
     "show": op_show,
     "snapshot_match": op_snapshot_match,
+    "durable_diff": op_durable_diff,
+    "step_status": op_step_status,
     "write_snapshot": op_write_snapshot,
     "manifest": op_manifest,
 }
@@ -1345,16 +1389,49 @@ cmd_unstamp() {
 # Publish live state to the committed snapshot with NO gate semantics.
 # `set --evidence` corrections were unpublishable: commit_snapshot ran only
 # from init/stamp/close, so a run that found a false evidence string had to
-# pass a gate to ship the fix (or hand-edit a script-owned file). flush
-# neither reads nor writes stamps — it cannot create, refresh, or stale one
-# (a snapshot-only commit is content-exempt from freshness), and it leaves
-# last_seen_sha alone so it cannot launder drift.
+# pass a gate to ship the fix (or hand-edit a script-owned file).
+#
+# flush carries no gate authority in EITHER direction. It cannot create,
+# refresh, or stale a stamp, and it leaves last_seen_sha alone so it cannot
+# launder drift. It also cannot publish a stamp: `stamps`/`overrides` are in
+# the durable tuple, and flush REFUSES (exit 6) when live state and the
+# committed record disagree there, because the only ways that happens are a
+# hand-tampered live state or a kernel bug — and flush's old
+# write-all-of-live-state behavior made the first one canonical, flipping
+# check-snapshot from MISSING to OK and silencing snapshot_current in
+# `stamp finalize` altogether (security R1 H1).
+#
+# Refuse, do not repair: a flush that preserved the record's stamps and wrote
+# only steps/meta would make snapshot_match pass while live and committed
+# genuinely disagree, masking exactly what the tamper detector exists to see.
 cmd_flush() {
     [ $# -eq 0 ] || usage
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
-    local run_id
+    local run_id status divergent blob
     run_id="$(py get run_id)" || exit $?
     resolve_snapshot_from_live
+    # A closed run's audit record is finished. Re-publishing it under a
+    # no-gate command would reopen a settled record (tests R1 T10).
+    status="$(py get status)" || exit $?
+    if [ "$status" = "done" ]; then
+        die 1 "run $run_id is closed (status: done) — flush would rewrite a closed audit record"
+    fi
+    # Compare against the COMMITTED blob, not the working-tree snapshot:
+    # flush requires no clean tree, so a tampered live state paired with a
+    # matching hand-written worktree file would otherwise agree (security R1).
+    blob="$(mktemp)" || die 10 "cannot create a temporary file for the record comparison"
+    if git -C "$TOP" show "HEAD:$SNAPSHOT_REL" >"$blob" 2>/dev/null; then
+        divergent="$(py durable_diff "$blob")" || {
+            rm -f "$blob"
+            exit 6
+        }
+    else
+        divergent=""
+    fi
+    rm -f "$blob"
+    if [ -n "$divergent" ]; then
+        die 6 "live state and the committed record disagree on: $(echo "$divergent" | tr '\n' ' ')— flush publishes steps and metadata only, never gate state. Use 'ledger.sh stamp <gate>' to record a gate or 'ledger.sh unstamp <gate> --reason ...' to revoke one; if you did not edit live state by hand, this is corrupt state and must not be published."
+    fi
     publish_snapshot flush "$run_id"
     echo "flushed snapshot for run $run_id"
 }
