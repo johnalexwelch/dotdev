@@ -18,6 +18,11 @@
 #             [--route "<classification>|<selected-flow>|confirmed"] [--force]
 #   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 #   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
+#   ledger.sh unstamp <gate> --reason "..."   (revoke a stamp; audited in
+#             overrides[] and published to the snapshot. `set <step> <status>`
+#             where status is not `completed` revokes the same-named gate too)
+#   ledger.sh flush   (publish live state to the committed snapshot with no
+#             gate semantics — how a `set --evidence` correction ships)
 #   ledger.sh check <gate>
 #   ledger.sh check-snapshot <gate> [--file <path>]   (CI mode: committed per-run
 #             snapshot, no live state; --file names the run file — without it,
@@ -31,13 +36,15 @@
 #
 # Exit codes (the API — tests assert them):
 #   0  success / check passed
-#   1  check failed (MISSING|STALE), check-snapshot resolution refusals
+#   1  check failed (MISSING|STALE), unstamp of an unstamped gate,
+#      check-snapshot resolution refusals
 #      (AMBIGUOUS, INVALID), reconcile drift, preflight missing tool,
 #      verify-local command failure, usage errors
 #   2  stamp refused: one or more checked fields failed
 #   3  set refused: required step cannot be skipped
-#   4  set refused: terminal status without evidence/reason; override without --reason
-#   5  unknown step / unknown skill / unknown gate
+#   4  set refused: terminal status without evidence/reason; override or
+#      unstamp without --reason
+#   5  unknown step / unknown skill / unknown gate (stamp, unstamp)
 #   6  corrupt or schema-invalid state (never silently rewritten); a run_id
 #      unusable as a snapshot filename
 #   7  init refused: an active run already exists, or a committed run file
@@ -493,6 +500,36 @@ def op_write_stamp(argv):
     save(doc)
 
 
+def op_has_stamp(argv):
+    doc = load()
+    if argv[0] not in (doc.get("stamps") or {}):
+        sys.exit(1)
+
+
+def op_unstamp(argv):
+    gate, reason, head, action = argv[:4]
+    doc = load()
+    stamps = doc.get("stamps") or {}
+    if gate not in stamps:
+        err(1, "no %r stamp to revoke" % (gate,))
+    del stamps[gate]
+    doc["stamps"] = stamps
+    # Revocation is auditable, never silent: the removed stamp's own
+    # head_sha and gate_type would be lost otherwise, so record them
+    # alongside the reason. `action` distinguishes an explicit
+    # `unstamp` from the step-unwind coupling in `set`.
+    doc.setdefault("overrides", []).append(
+        {
+            "gate": gate,
+            "action": action,
+            "reason": reason,
+            "timestamp": now(),
+            "head_sha": head,
+        }
+    )
+    save(doc)
+
+
 def op_record_verify(argv):
     head, passed = argv[0], argv[1]
     rest = argv[2:]
@@ -621,6 +658,8 @@ HANDLERS = {
     "check_info": op_check_info,
     "diagnose_repro": op_diagnose_repro,
     "write_stamp": op_write_stamp,
+    "has_stamp": op_has_stamp,
+    "unstamp": op_unstamp,
     "record_verify": op_record_verify,
     "verify_info": op_verify_info,
     "reconcile_apply": op_reconcile_apply,
@@ -660,7 +699,7 @@ add_failure() {
 # not make that stamp stale; the exemption is verified by commit CONTENTS
 # (touches only the snapshot file), never by subject — a subject is
 # attacker-controlled (review R1 MF1, D-006 #4).
-commit_snapshot() {
+publish_snapshot() {
     local action="$1" target="$2"
     mkdir -p "$(dirname "$SNAPSHOT")"
     py write_snapshot "$SNAPSHOT" || exit $?
@@ -669,6 +708,16 @@ commit_snapshot() {
         git -C "$TOP" commit -q -m "chore(ledger): $action $target" -- "$SNAPSHOT_REL" ||
             die 10 "snapshot commit failed"
     fi
+}
+
+# Gate actions (init/stamp/close) also adopt HEAD as the ledger frontier.
+# Publishes that carry NO gate semantics (`flush`, `unstamp`) must not:
+# last_seen_sha drives reconcile's "commits outside the ledger" detection,
+# so advancing it there would launder real code commits into the ledger's
+# blind spot. Their own snapshot commit needs no exemption — that loop
+# already exempts commits touching exactly this run's snapshot file.
+commit_snapshot() {
+    publish_snapshot "$1" "$2"
     py set_meta last_seen_sha "$(git -C "$TOP" rev-parse HEAD)" || exit $?
 }
 
@@ -1248,6 +1297,66 @@ cmd_set() {
     done
     py set "$step" "$status" "$evidence" "$reason" || exit $?
     echo "step '$step' -> $status"
+
+    # A gate stamp may only stand while its same-named step is completed.
+    # Without this, `set review pending` unwound the step while
+    # stamps.review survived, and check_gate reads the stamp — so `check
+    # review` still returned OK after an explicit unwind. Revocation is
+    # recorded in overrides[] and published like any other, so the
+    # PR-visible record cannot disagree with live state.
+    case "$step" in
+        diagnose | fix | review | finalize)
+            if [ "$status" != "completed" ] && py has_stamp "$step"; then
+                resolve_snapshot_from_live
+                py unstamp "$step" "${reason:-${evidence:-step set to $status}}" \
+                    "$(git -C "$TOP" rev-parse HEAD)" "unstamp-via-set" || exit $?
+                publish_snapshot unstamp "$step"
+                printf "revoked '%s' stamp: its step is now %s\n" "$step" "$status" >&2
+            fi
+            ;;
+    esac
+}
+
+cmd_unstamp() {
+    [ $# -ge 1 ] || usage
+    local gate="$1" reason=""
+    shift
+    case "$gate" in
+        diagnose | fix | review | finalize) ;;
+        *) die 5 "unknown gate: $gate (expected diagnose|fix|review|finalize)" ;;
+    esac
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --reason)
+                reason="$2"
+                shift 2
+                ;;
+            *) usage ;;
+        esac
+    done
+    [ -n "$reason" ] || die 4 "unstamp requires a non-empty --reason"
+    [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
+    resolve_snapshot_from_live
+    py unstamp "$gate" "$reason" "$(git -C "$TOP" rev-parse HEAD)" unstamp || exit $?
+    publish_snapshot unstamp "$gate"
+    echo "revoked $gate stamp: $reason"
+}
+
+# Publish live state to the committed snapshot with NO gate semantics.
+# `set --evidence` corrections were unpublishable: commit_snapshot ran only
+# from init/stamp/close, so a run that found a false evidence string had to
+# pass a gate to ship the fix (or hand-edit a script-owned file). flush
+# neither reads nor writes stamps — it cannot create, refresh, or stale one
+# (a snapshot-only commit is content-exempt from freshness), and it leaves
+# last_seen_sha alone so it cannot launder drift.
+cmd_flush() {
+    [ $# -eq 0 ] || usage
+    [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
+    local run_id
+    run_id="$(py get run_id)" || exit $?
+    resolve_snapshot_from_live
+    publish_snapshot flush "$run_id"
+    echo "flushed snapshot for run $run_id"
 }
 
 cmd_stamp() {
@@ -1629,6 +1738,8 @@ main() {
         init) cmd_init "$@" ;;
         set) cmd_set "$@" ;;
         stamp) cmd_stamp "$@" ;;
+        unstamp) cmd_unstamp "$@" ;;
+        flush) cmd_flush "$@" ;;
         check) cmd_check "$@" ;;
         check-snapshot) cmd_check_snapshot "$@" ;;
         reconcile) cmd_reconcile "$@" ;;
