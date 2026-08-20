@@ -83,6 +83,20 @@ assert_contains() {
     fi
 }
 
+assert_not_contains() {
+    local name="$1" haystack="$2" needle="$3"
+    if grep -Fq "$needle" <<<"$haystack"; then
+        echo "  FAIL: $name"
+        echo "    output must NOT contain: $needle"
+        echo "    output was:"
+        echo "$haystack"
+        FAIL=$((FAIL + 1))
+    else
+        echo "  PASS: $name"
+        PASS=$((PASS + 1))
+    fi
+}
+
 assert_equal() {
     local name="$1" expected="$2" actual="$3"
     if [ "$expected" = "$actual" ]; then
@@ -1162,6 +1176,146 @@ assert_file_exists "merged main carries lane-a's run file" \
     "$(run_snap "$mergeX" 2026-08-19-lane-a)"
 assert_file_exists "merged main carries lane-b's run file" \
     "$(run_snap "$mergeX" 2026-08-19-lane-b)"
+
+# ============================================================================
+# Gap 1: the review gate's lane verdict is a CHECKED field, not a recorded one.
+# checked_review read each lane's `verdict:` line and recorded it, without ever
+# testing it — so an agent could attest `verdict=approve` over a lane file that
+# said REQUEST_CHANGES and the stamp was written. That violates D-006 #3 (a
+# stamp is writable only when every checked field passes).
+#
+# Needle discipline: every refusal is anchored on the whole discriminating
+# phrase `lane '<lane>' verdict '<v>'`. A bare lane word ("integrated",
+# "tests") is also a component of the lane FILE PATH, which other exit-2
+# refusals (missing lane file, stale lane file, below-floor model) echo — so a
+# bare needle would be satisfied by a refusal for an unrelated reason. Exit 2
+# is likewise shared, so each refusal also asserts the output is NOT the usage
+# text, and the negative snapshot assertion pins that a refused verdict never
+# reaches the PR-visible record.
+# ============================================================================
+echo ""
+echo "--- lane verdict is a checked field ---"
+
+wtV=$(new_wt_fixture verdict_gate)
+lanesV="$TMPDIR_BASE/verdict_gate/lanes"
+mkdir -p "$lanesV"
+laneV="$lanesV/integrated-review.md"
+laneV_logic="$lanesV/logic-review.md"
+laneV_tests="$lanesV/tests-review.md"
+
+run_ledger "$wtV" init 2026-08-20-verdict --workflow workflow-deliver \
+    --kind bug --steps "diagnose,fix,review,finalize"
+assert_status "verdict fixture inits" 0 "$STATUS"
+printf -- '- "true"\n' >"$wtV/docs/executions/ci-commands.yaml"
+echo "tweak" >>"$wtV/src/app.py"
+commit_all "$wtV" "fix: small change under review"
+snapV="$(run_snap "$wtV" 2026-08-20-verdict)"
+
+# The exact live scenario: the reviewer said REQUEST_CHANGES, the agent attests
+# approve. The lane file is the ground truth and must refuse the stamp.
+printf 'model: opus\nverdict: REQUEST_CHANGES\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "REQUEST_CHANGES lane refuses the review stamp" 2 "$STATUS"
+assert_contains "refusal names the lane and its rejecting verdict" "$OUT" \
+    "lane 'integrated' verdict 'REQUEST_CHANGES'"
+assert_not_contains "verdict refusal is not a usage error" "$OUT" "Usage:"
+run_ledger "$wtV" check review
+assert_status "check review MISSING after a refused stamp" 1 "$STATUS"
+assert_contains "the refused gate reads MISSING, not STALE" "$OUT" "MISSING"
+run_ledger "$wtV" check-snapshot review
+assert_status "check-snapshot review MISSING after a refused stamp" 1 "$STATUS"
+assert_contains "the record's refused gate reads MISSING, not STALE" "$OUT" \
+    "MISSING"
+assert_file_not_contains "refused verdict never reaches the committed snapshot" \
+    "$snapV" "REQUEST_CHANGES"
+
+printf 'model: opus\nverdict: NEEDS_HUMAN\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "NEEDS_HUMAN lane refuses the review stamp" 2 "$STATUS"
+assert_contains "NEEDS_HUMAN refusal names the lane and its verdict" "$OUT" \
+    "lane 'integrated' verdict 'NEEDS_HUMAN'"
+assert_not_contains "NEEDS_HUMAN refusal is not a usage error" "$OUT" "Usage:"
+
+# Fail CLOSED on an unrecognized verdict, exactly as an unrecognized model
+# ranks 0 and refuses: a denylist of rejection words would let a typo
+# ("aproved", "LGTM") through.
+printf 'model: opus\nverdict: LGTM\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "unrecognized lane verdict refuses the stamp" 2 "$STATUS"
+assert_contains "unrecognized-verdict refusal names the lane and value" "$OUT" \
+    "lane 'integrated' verdict 'LGTM'"
+
+printf 'model: opus\nverdict:\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "empty verdict value refuses the stamp" 2 "$STATUS"
+assert_contains "empty-verdict refusal reports the value as missing" "$OUT" \
+    "lane 'integrated' verdict 'missing'"
+
+# One approving lane cannot carry a rejecting sibling (multi-lane profile).
+printf 'model: opus\nverdict: APPROVE\n' >"$laneV_logic"
+printf 'model: opus\nverdict: REQUEST_CHANGES\n' >"$laneV_tests"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=standard \
+    --attest "lanes=logic=$laneV_logic,tests=$laneV_tests" \
+    --attest model_floor=opus
+assert_status "one REQUEST_CHANGES lane sinks a multi-lane stamp" 2 "$STATUS"
+assert_contains "multi-lane refusal names the rejecting lane and its verdict" \
+    "$OUT" "lane 'tests' verdict 'REQUEST_CHANGES'"
+run_ledger "$wtV" check review
+assert_status "check review still MISSING after the multi-lane refusal" 1 "$STATUS"
+
+# Accepted spellings. The contract token is APPROVE (reviewer-briefs.md
+# Shared Output Contract); existing lane fixtures and live reviews write
+# lowercase, and trailing whitespace / CRLF must not decide a gate.
+printf 'model: opus\nverdict: APPROVE\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "uppercase APPROVE stamps" 0 "$STATUS"
+run_ledger "$wtV" check review
+assert_status "check review OK after an approving stamp" 0 "$STATUS"
+run_ledger "$wtV" check-snapshot review
+assert_status "the approving stamp reaches the committed record" 0 "$STATUS"
+
+printf 'model: opus\nverdict: approve   \n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "lowercase approve with trailing spaces stamps" 0 "$STATUS"
+
+printf 'model: opus\r\nverdict: APPROVE\r\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "CRLF lane file stamps (verdict normalized)" 0 "$STATUS"
+
+# First `verdict:` line wins (the documented `head -1` rule, pinned
+# deliberately): a reviewer who QUOTES `verdict: REQUEST_CHANGES` in the prose
+# of an approving lane must not sink their own lane.
+printf 'model: opus\nverdict: APPROVE\nnotes: the brief says to write\nverdict: REQUEST_CHANGES\nwhen a finding blocks\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "first verdict line wins over a quoted rejection" 0 "$STATUS"
+
+# ... and the mirror image, which is what makes the rule above a rule rather
+# than an accident: a REJECTING header line is not rescued by an APPROVE
+# quoted later in the same file.
+printf 'model: opus\nverdict: REQUEST_CHANGES\nnotes: the template shows\nverdict: APPROVE\nas the passing token\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "a quoted APPROVE cannot rescue a rejecting header" 2 "$STATUS"
+assert_contains "the rescued-header refusal names the header verdict" "$OUT" \
+    "lane 'integrated' verdict 'REQUEST_CHANGES'"
 
 echo ""
 echo "Passed: $PASS"
