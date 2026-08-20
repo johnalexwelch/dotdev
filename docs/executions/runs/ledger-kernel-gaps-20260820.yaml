@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787228010
 status: active
 next: fix
-updated: '2026-08-20T12:32:30.012137+00:00'
+updated: '2026-08-20T12:32:39.437118+00:00'
 steps:
 - id: fix
   required: true
@@ -13,28 +13,28 @@ steps:
   evidence: ''
 - id: diagnose
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 'red repro captured: bash test/test-ledger.sh, 32 failing assertions'
 - id: red-tests
   required: true
   status: completed
   evidence: 32 red assertions committed at 4433225; suite 245 pass / 32 fail (baseline was 222/0)
 - id: fix-verdict
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "a5824d3 \u2014 verdict allowlist in checked_review"
 - id: fix-unstamp
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "5b3ce2d \u2014 cmd_unstamp + set step-unwind coupling"
 - id: fix-flush
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "5b3ce2d \u2014 cmd_flush + publish_snapshot split (no last_seen_sha advance)"
 - id: docs
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: "9978341 \u2014 SKILL.md, guard message, decision-log entry"
 - id: review
   required: true
   status: pending
@@ -77,7 +77,7 @@ overrides: []
 route: bug|workflow-deliver kind=bug|confirmed
 branch: fix/ledger-kernel-gaps
 worktree: /Users/alexwelch/wt/dotdev/ledger-kernel-gaps
-last_seen_sha: ea75610a4f01425df7f727a86f31cffe9f27fc25
+last_seen_sha: 02b563f7fa1ecdebb34a131edc0bb48c18dc2e02
 verify_local:
   head_sha: 9978341d564b995af1e25772f8e7de0019d600f4
   passed: true
