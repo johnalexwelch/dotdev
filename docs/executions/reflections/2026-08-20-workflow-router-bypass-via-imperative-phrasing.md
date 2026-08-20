@@ -20,10 +20,10 @@
 
 ## Corrections
 
-| # | What the user corrected | Root cause | Owning skill/file |
-|---|-------------------------|------------|-------------------|
-| 1 | Asked about missing route cards | Literal interpretation of "spin up sub-agents" | workflow-router |
-| 2 | Pointed out gate skipping | No self-check before mutating actions | workflow-router + orchestrator skills |
+| #   | What the user corrected         | Root cause                                     | Owning skill/file                     |
+| --- | ------------------------------- | ---------------------------------------------- | ------------------------------------- |
+| 1   | Asked about missing route cards | Literal interpretation of "spin up sub-agents" | workflow-router                       |
+| 2   | Pointed out gate skipping       | No self-check before mutating actions          | workflow-router + orchestrator skills |
 
 ## Lessons
 
