@@ -1,4 +1,5 @@
 # Session Reflection: ML Ops Fog Graduation
+
 **Date**: 2026-08-20
 **Goal**: Map E2E DS workflow, sharpen feature/label quality fog, graduate scaffold generator to Linear ticket
 
