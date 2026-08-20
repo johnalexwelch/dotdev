@@ -6,6 +6,12 @@ reasoning: medium
 description: Deliver one unit of work end-to-end (preflight → [diagnose if bug] → triage → implement → review → finalize) with kernel-enforced ledger gates; kind=bug templates required diagnose/fix steps. Use for a ready-for-agent issue, a bug report, a skill change, or a docs change; supersedes workflow-build-one and workflow-debug (D-006 #11).
 ---
 
+## Routing Prerequisite
+
+This skill does not own routing. If you reached here without a `ROUTE_CARD` in context — especially via imperative phrasing like "spin up sub-agents" or "dispatch workers" — **STOP and load `workflow-router` first**. Multi-agent dispatch requires routing gates before execution.
+
+> Baseline: 2026-08-20 postmortem — imperative multi-agent phrasing bypassed all workflow gates.
+
 # Workflow Deliver
 
 One delivery orchestrator for single-unit work. The router (or a batch driver) passes a `kind` — `bug|feature|skill|docs` — and `--kind bug` templates extra required steps into the ledger. This skill sequences; the gates are kernel calls (`workflow-ledger`), never prose checks.

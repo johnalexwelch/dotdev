@@ -7,6 +7,12 @@ description: "Execute a parent PRD issue tree end-to-end: orders children by dep
 codex-compatible: true
 ---
 
+## Routing Prerequisite
+
+This skill does not own routing. If you reached here without a `ROUTE_CARD` in context — especially via imperative phrasing like "spin up sub-agents" or "have agents refactor each module" — **STOP and load `workflow-router` first**. Multi-agent dispatch requires routing gates before execution.
+
+> Baseline: 2026-08-20 postmortem — imperative multi-agent phrasing bypassed all workflow gates.
+
 # Execute PRD
 
 ## Model selection

@@ -6,6 +6,12 @@ reasoning: medium
 description: AFK backlog orchestrator — batch-process ready-for-agent issues via Codex (default) or Claude, with repo-policy-controlled draft vs auto-merge delivery
 ---
 
+## Routing Prerequisite
+
+This skill does not own routing. If you reached here without a `ROUTE_CARD` in context — especially via imperative phrasing like "dispatch workers to handle these issues" or "batch process in parallel" — **STOP and load `workflow-router` first**. Multi-agent dispatch requires routing gates before execution.
+
+> Baseline: 2026-08-20 postmortem — imperative multi-agent phrasing bypassed all workflow gates.
+
 # Run Backlog
 
 ## Purpose

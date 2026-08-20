@@ -22,6 +22,41 @@ This skill is the **sole routing authority**. Per `docs/adr/0002-sole-routing-au
 - **Naming a skill is a load-and-gate instruction, not a verb.** When any goal, plan, prompt, or handoff names a workflow skill (e.g. `workflow-review`, `workflow-finalize`), load that skill's `SKILL.md` and follow it — including emitting its required gate block. A prose claim that the skill ran (or "basically ran") without its gate block present in the evidence means it did **not** run; treat it as unrun. Do not reconstruct a skill's intent from memory in place of loading it.
 - The router owns classification, confirmation, preflight, and learning notes. Target workflow skills own the actual workflow behavior. Do not copy target workflow procedures into this skill.
 
+## Pre-Dispatch Self-Check (Hard Gate)
+
+**Before ANY of these actions, verify a ROUTE_CARD was emitted in this session:**
+
+- Creating GitHub issues (`gh issue create`, `mcp github create_issue`)
+- Spawning subagents/workers (`subagent`, `taskflow` with agent phases)
+- Running taskflow with multiple phases or parallel execution
+- Committing code (`git commit`)
+- Creating or merging PRs (`gh pr create`, `gh pr merge`)
+- Running `workflow-deliver`, `execute-prd`, `run-backlog`
+- Closing issues (`gh issue close`, `issue_close`)
+
+**If no ROUTE_CARD exists in context → STOP and emit one before proceeding.**
+
+This gate catches the failure mode where imperative phrasing ("spin up sub-agents for X") bypasses routing entirely. The check is a reflex, not a research project: scan recent context for `ROUTE_CARD:`, and if absent, load this skill and emit one.
+
+> ponytail: Single grep-like check. Upgrade path: structured route-card registry if cross-session tracking needed.
+
+## Imperative Trigger Patterns (MUST Route, Never Execute Literally)
+
+These phrases trigger routing classification, not literal execution:
+
+| Phrase Pattern | Why It Routes | Classification |
+|----------------|---------------|----------------|
+| "spin up sub-agents for X" | Multi-agent dispatch = orchestration | team budget |
+| "dispatch workers to Y" | Parallel execution = orchestration | team budget |
+| "run agents across Z" | Fan-out = orchestration | team budget |
+| "parallelize work on W" | Concurrent execution = orchestration | team budget |
+| "have agents do X" | Delegation = orchestration | one-reviewer or team |
+| "batch process these issues" | AFK batch = orchestration | run-backlog |
+
+**Literal interpretation of these phrases is always wrong.** They describe WHAT to accomplish, not HOW to accomplish it. The router determines the how.
+
+> Baseline evidence: 2026-08-20 postmortem — "spin up sub-agents for each lane" executed literally, skipping all gates.
+
 ## Audit Loop Retirement Rule
 
 The old "Audit Loop" is not an execution route. If a prompt, transcript, repo doc, or agent memory says to run the Audit Loop, translate it into the workflow system:
