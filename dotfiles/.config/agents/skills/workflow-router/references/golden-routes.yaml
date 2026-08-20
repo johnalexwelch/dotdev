@@ -222,7 +222,7 @@ cases:
     expected_route: run-backlog
     source: synthetic
     notes: "2026-08-20 postmortem: adversarial neighbor for imperative multi-agent phrasing — parallel issue handling = run-backlog (team budget)"
-  - prompt: "Have agents refactor each module independently."
+  - prompt: "Execute PRD #42 — have agents handle each child issue."
     expected_route: execute-prd
     source: synthetic
-    notes: "2026-08-20 postmortem: adversarial neighbor for imperative multi-agent phrasing — multi-module refactor = execute-prd (team budget)"
+    notes: "2026-08-20 postmortem: adversarial neighbor for imperative multi-agent phrasing — PRD execution with multi-agent = execute-prd (team budget)"
