@@ -4,13 +4,13 @@ kind: bug
 budget: one-reviewer
 initialized_epoch: 1787228010
 status: active
-next: fix
-updated: '2026-08-20T12:32:39.437118+00:00'
+next: review
+updated: '2026-08-20T12:32:54.134632+00:00'
 steps:
 - id: fix
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: fix gate stamped at 9978341; repro green (281 pass / 0 fail)
 - id: diagnose
   required: true
   status: completed
