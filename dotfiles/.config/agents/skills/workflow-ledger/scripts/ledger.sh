@@ -1065,6 +1065,24 @@ checked_review() {
             continue
         fi
         verdict="$(sed -n 's/^verdict:[[:space:]]*//p' "$lane_file" | head -1)"
+        # The verdict is CHECKED, not attested: recording it without testing
+        # it let a REQUEST_CHANGES lane stamp clean whenever the agent
+        # attested approve — inverting D-006 #3 (a stamp is writable only
+        # when every checked field passes) and falsifying workflow-review's
+        # own "the stamp's checks refuse to record it regardless". Normalize
+        # first (CRLF lane files and trailing spaces must not decide a gate),
+        # then allowlist: the contract token set is
+        # APPROVE|REQUEST_CHANGES|NEEDS_HUMAN (workflow-review
+        # references/reviewer-briefs.md), and anything outside it refuses
+        # exactly as an unrecognized model ranks 0. A denylist of rejection
+        # words would pass a typo ("aproved") or a bare "LGTM".
+        case "$(printf '%s' "$verdict" | tr -d '\r' | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:]]*$//')" in
+            approve) ;;
+            *)
+                add_failure "lane '$lane' verdict '${verdict:-missing}' is not an approval (required: APPROVE)"
+                continue
+                ;;
+        esac
         CHECKED+=("lane_${lane}_sha256=$(file_sha256 "$lane_file")")
         CHECKED+=("lane_${lane}_lines=$(wc -l <"$lane_file" | tr -d ' ')")
         CHECKED+=("lane_${lane}_verdict=$verdict")
