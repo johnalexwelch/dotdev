@@ -1,0 +1,50 @@
+run_id: ledger-kernel-gaps-20260820
+workflow: workflow-deliver
+kind: bug
+budget: one-reviewer
+initialized_epoch: 1787228010
+status: active
+next: fix
+updated: '2026-08-20T12:13:30.867694+00:00'
+steps:
+- id: fix
+  required: true
+  status: pending
+  evidence: ''
+- id: diagnose
+  required: true
+  status: pending
+  evidence: ''
+- id: red-tests
+  required: true
+  status: pending
+  evidence: ''
+- id: fix-verdict
+  required: true
+  status: pending
+  evidence: ''
+- id: fix-unstamp
+  required: true
+  status: pending
+  evidence: ''
+- id: fix-flush
+  required: true
+  status: pending
+  evidence: ''
+- id: docs
+  required: true
+  status: pending
+  evidence: ''
+- id: review
+  required: true
+  status: pending
+  evidence: ''
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps: {}
+overrides: []
+route: bug|workflow-deliver kind=bug|confirmed
+branch: fix/ledger-kernel-gaps
+worktree: /Users/alexwelch/wt/dotdev/ledger-kernel-gaps
