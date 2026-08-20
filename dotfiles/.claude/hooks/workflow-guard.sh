@@ -185,7 +185,7 @@ if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" 
     # block set must never be narrower than what the CI gate could be asked to
     # read (review rounds: security H1, security r2).
     if grep -Eiq '(^|/)docs/executions/state\.yaml$|(^|/)docs/executions/runs/.*\.ya?ml$|(^|/)\.git(/.*)?/ledger/state\.yaml$' <<<"$file_path"; then
-        printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/close) instead of editing it directly.\n' "$file_path" >&2
+        printf 'Blocked: %s is script-owned; use ledger.sh (init/set/stamp/unstamp/flush/close) instead of editing it directly.\n' "$file_path" >&2
         exit 2
     fi
 

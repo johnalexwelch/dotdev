@@ -15,7 +15,7 @@ Full contract with exit codes and test-enforced refinements: `docs/executions/pl
 ## State model
 
 - **Live state**: `$(git rev-parse --git-dir)/ledger/state.yaml` — survives `reset --hard`; per-worktree automatically. Owned by `ledger.sh`; a hook blocks direct Edit/Write.
-- **Committed snapshot (per-run)**: `docs/executions/runs/<run_id>.yaml`, written and committed (`chore(ledger): …`) only by `init`/`stamp`/`close` — the PR-visible audit record. One file per run: concurrent runs never commit a shared path, which ends the cross-PR merge conflicts the old single snapshot caused (#167/#174/#180/#181).
+- **Committed snapshot (per-run)**: `docs/executions/runs/<run_id>.yaml`, written and committed (`chore(ledger): …`) only by `init`/`stamp`/`unstamp`/`flush`/`close` — the PR-visible audit record. One file per run: concurrent runs never commit a shared path, which ends the cross-PR merge conflicts the old single snapshot caused (#167/#174/#180/#181).
 - **Legacy record**: `docs/executions/state.yaml` is frozen history — never written or read by new runs, and it satisfies no gate.
 - Every write is schema-validated; corrupt state is exit 6, never silently rewritten.
 
@@ -25,6 +25,8 @@ Full contract with exit codes and test-enforced refinements: `docs/executions/pl
 ledger.sh init <run_id> --workflow <w> --kind <k> --steps <csv> [--budget <b>] [--route "<classification>|<selected-flow>|confirmed"] [--force]
 ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
+ledger.sh unstamp <gate> --reason "..."   # revoke a stamp (exit 1 if unstamped, 4 without a reason)
+ledger.sh flush                   # publish live state to the snapshot with no gate semantics
 ledger.sh check <gate>            # exit 0 iff stamped, checks passed/overridden, fresh (see Freshness)
 ledger.sh check-snapshot <gate> [--file <path>]   # CI mode: same stamp+freshness verdict against a committed per-run snapshot, minus the live-state drift compare; --file names the run file (the finalize-stamp CI job passes candidates from the PR diff), else the live run's file, else exactly one runs/*.yaml
 ledger.sh reconcile [--apply]     # ledger vs git ground truth; prints true frontier
@@ -40,6 +42,10 @@ relay.sh --handoff <file> [--max-legs N=5] [--repo <path>] [--stop-file <path>]
 
 Transition rules are code, not convention: required steps cannot be `skipped` (exit 3); `completed|skipped|blocked|failed` require evidence/reason (exit 4); `kind: bug` auto-inserts required `diagnose`/`fix` steps.
 
+**Revocation.** A gate stamp may only stand while its same-named step is `completed`: `set diagnose|fix|review|finalize <anything-else>` revokes that gate, and `unstamp <gate> --reason` is the explicit path. Both delete the stamp, append `{gate, action, reason, timestamp, head_sha}` to `overrides[]`, and publish — so `check <gate>` cannot keep returning OK after an unwind, in live state or in the PR-visible record. Revocation is not terminal: the gate can be re-earned by stamping again.
+
+**Publishing without a gate.** `flush` writes live state to the committed snapshot and commits it, with no gate semantics — it neither creates, refreshes, nor stales a stamp (a snapshot-only commit is freshness-exempt) and it leaves `last_seen_sha` alone, so it cannot launder drift out of `reconcile`. This is how a corrected `set --evidence` string ships; hand-editing the script-owned snapshot is not (a hook blocks it).
+
 **Route evidence (D-006 Phase 5b).** `init --route` records the confirmed ROUTE_CARD's classification and selected flow as a top-level `route:` field (workflow-router passes it at ledger-persist). Absent: init succeeds with a `WARNING: no route evidence — invoke workflow-router` line; `LEDGER_REQUIRE_ROUTE=block` escalates absence to a refusal (exit 11) — the same warn-then-flip pattern as entry enforcement. Malformed route strings (not `<classification>|<selected-flow>|confirmed`) are schema-invalid (exit 6) at init and on every load.
 
 ## Gates — checked vs attested
@@ -50,7 +56,7 @@ A stamp is writable only when every **checked** field passes at stamp time; **at
 |---|---|---|
 | `diagnose` | `repro_cmd` runs now and exits non-zero (captured) | root_cause, repro_cmd |
 | `fix` | same repro_cmd now exits 0; regression test file exists | rationale |
-| `review` | worktree verify; chosen profile ≥ `review-floor` — attest the bare word (`fast\|standard\|full`), never the printed `+security` token, which is refused; a `+security`-flagged floor adds a required security lane on top; every required lane file exists with `verdict:` line and an mtime no older than this run's init (a stale lane file from an earlier session is refused); per-lane `model:` ≥ floor; digests recorded | verdict, review_profile, lanes, model_floor |
+| `review` | worktree verify; chosen profile ≥ `review-floor` — attest the bare word (`fast\|standard\|full`), never the printed `+security` token, which is refused; a `+security`-flagged floor adds a required security lane on top; every required lane file exists with `verdict:` line and an mtime no older than this run's init (a stale lane file from an earlier session is refused); every lane verdict normalizes (CR/trailing space/case) to `approve` — `REQUEST_CHANGES`, `NEEDS_HUMAN`, and any unrecognized token refuse the stamp; per-lane `model:` ≥ floor; digests recorded | verdict, review_profile, lanes, model_floor |
 | `finalize` | `check review` fresh; `git status --porcelain` empty; `verify-local` passed at HEAD; committed snapshot's durable content (run identity, stamps, overrides) matches live state (`snapshot_current`; `check finalize` re-compares it, since a snapshot-only commit is freshness-exempt); via `forge.sh`: CI green, PR state (`open`\|`draft` passes), threads resolved (`no_pr` noted when no PR) | post_mortem, describe_pr, pr_number |
 
 **Freshness is strict, with one content-verified exemption**: `check` fails `STALE` on any commit after the stamp unless that commit touches *only* this run's own committed snapshot file, `docs/executions/runs/<run_id>.yaml` (verified via `git diff-tree` contents — never by commit subject, which is forgeable). A stamp's own snapshot commit is therefore exempt; nothing else is — a commit touching a different run's file or the legacy `state.yaml` reads STALE. **Overrides are audited, not prevented**: `--override --reason` stamps with a loud `OVERRIDDEN` marker and an `overrides[]` audit entry; use only on explicit user instruction. The same freshness rule applies: a stale override fails `check` with `OVERRIDE_STALE: … recorded reason: <reason>` — an expired authorization, distinguishable from a gate that never passed.
