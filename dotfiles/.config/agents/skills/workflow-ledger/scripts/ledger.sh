@@ -519,12 +519,17 @@ def op_unstamp(argv):
     stamps = doc.get("stamps") or {}
     if gate not in stamps:
         err(1, "no %r stamp to revoke" % (gate,))
+    revoked = stamps[gate] if isinstance(stamps[gate], dict) else {}
     del stamps[gate]
     doc["stamps"] = stamps
-    # Revocation is auditable, never silent: the removed stamp's own
-    # head_sha and gate_type would be lost otherwise, so record them
-    # alongside the reason. `action` distinguishes an explicit
-    # `unstamp` from the step-unwind coupling in `set`.
+    # Revocation supersedes a stamp; it must not destroy its identity
+    # (security R1 S2). `head_sha` is the revocation-time HEAD, so on its own
+    # it says nothing about which HEAD the gate was earned at, and `del`
+    # discards the `checked` map — including the lane_*_sha256 digests that
+    # were the only binding between a review stamp and the lane files it was
+    # earned from. Record all three so a revoke -> re-stamp cycle is
+    # diffable. `action` distinguishes an explicit `unstamp` from the
+    # step-unwind coupling in `set`.
     doc.setdefault("overrides", []).append(
         {
             "gate": gate,
@@ -532,6 +537,9 @@ def op_unstamp(argv):
             "reason": reason,
             "timestamp": now(),
             "head_sha": head,
+            "revoked_head_sha": revoked.get("head_sha", ""),
+            "gate_type": revoked.get("gate_type", ""),
+            "revoked_checked": revoked.get("checked") or {},
         }
     )
     save(doc)
@@ -743,15 +751,74 @@ add_failure() {
 # not make that stamp stale; the exemption is verified by commit CONTENTS
 # (touches only the snapshot file), never by subject — a subject is
 # attacker-controlled (review R1 MF1, D-006 #4).
-publish_snapshot() {
+# Returns non-zero instead of exiting, so a caller that must roll back can.
+try_publish_snapshot() {
     local action="$1" target="$2"
-    mkdir -p "$(dirname "$SNAPSHOT")"
-    py write_snapshot "$SNAPSHOT" || exit $?
-    git -C "$TOP" add -- "$SNAPSHOT_REL" || die 10 "git add failed for $SNAPSHOT_REL"
+    mkdir -p "$(dirname "$SNAPSHOT")" || return 1
+    py write_snapshot "$SNAPSHOT" || return 1
+    git -C "$TOP" add -- "$SNAPSHOT_REL" || return 1
     if ! git -C "$TOP" diff --quiet HEAD -- "$SNAPSHOT_REL" 2>/dev/null; then
         git -C "$TOP" commit -q -m "chore(ledger): $action $target" -- "$SNAPSHOT_REL" ||
-            die 10 "snapshot commit failed"
+            return 1
     fi
+}
+
+publish_snapshot() {
+    try_publish_snapshot "$1" "$2" || die 10 "snapshot publish failed for $SNAPSHOT_REL"
+}
+
+# Revocation, atomic in the SAFE direction (logic R1 H2). `py unstamp` used to
+# delete the live stamp BEFORE publishing, so a failed publish left live state
+# MISSING while the committed blob still carried a fresh stamp — and
+# scripts/finalize-stamp-check.sh reads only that blob, so CI returned
+# FINALIZE_STAMP_CHECK: PASS on a gate the operator had explicitly revoked.
+# A revocation that does not reach the record must not remove authority
+# either: on failure the stamp stands in live state, on disk, and in the
+# record alike.
+#
+# Whole-file restore, deliberately not a per-key rollback: `overrides` is
+# itself inside the durable tuple, so rolling back only `stamps` would leave
+# live and committed divergent on overrides — and cmd_flush's refusal would
+# then block the operator's recovery path on a divergence the kernel created.
+# A verbatim restore stays correct when a key is added to DURABLE_KEYS.
+# It covers the worktree snapshot FILE as well as live state: check-snapshot
+# reads that file, and a half-written record on disk is exactly the hazard.
+revoke_and_publish() {
+    local gate="$1" reason="$2" head="$3" action="$4"
+    local live_bak snap_bak snap_existed=0 rc=0
+    live_bak="$(mktemp)" || die 10 "cannot create a rollback file for the revocation"
+    snap_bak="$(mktemp)" || die 10 "cannot create a rollback file for the revocation"
+    cp "$LIVE" "$live_bak" || die 10 "cannot back up live state before the revocation"
+    if [ -f "$SNAPSHOT" ]; then
+        snap_existed=1
+        cp "$SNAPSHOT" "$snap_bak" || die 10 "cannot back up the run snapshot before the revocation"
+    fi
+
+    py unstamp "$gate" "$reason" "$head" "$action"
+    rc=$?
+    if [ "$rc" -ne 0 ]; then
+        rm -f "$live_bak" "$snap_bak"
+        exit "$rc"
+    fi
+
+    if try_publish_snapshot unstamp "$gate"; then
+        rm -f "$live_bak" "$snap_bak"
+        return 0
+    fi
+
+    cp "$live_bak" "$LIVE" || true
+    if [ "$snap_existed" -eq 1 ]; then
+        cp "$snap_bak" "$SNAPSHOT" || true
+    else
+        rm -f "$SNAPSHOT"
+    fi
+    # Realign the index too: a publish that failed at `commit` rather than at
+    # `add` left the revoked snapshot staged, which the operator's next commit
+    # would ship. Best-effort — it fails under the same breakage that failed
+    # the publish, and the file contents are the durable property.
+    git -C "$TOP" reset -q -- "$SNAPSHOT_REL" >/dev/null || true
+    rm -f "$live_bak" "$snap_bak"
+    die 10 "revocation of '$gate' did not apply: publishing the run snapshot failed, so the stamp still stands in live state and in the committed record. Fix the repository (a stale .git/index.lock is the usual cause) and re-run."
 }
 
 # Gate actions (init/stamp/close) also adopt HEAD as the ledger frontier.
@@ -1352,9 +1419,9 @@ cmd_set() {
         diagnose | fix | review | finalize)
             if [ "$status" != "completed" ] && py has_stamp "$step"; then
                 resolve_snapshot_from_live
-                py unstamp "$step" "${reason:-${evidence:-step set to $status}}" \
-                    "$(git -C "$TOP" rev-parse HEAD)" "unstamp-via-set" || exit $?
-                publish_snapshot unstamp "$step"
+                revoke_and_publish "$step" \
+                    "${reason:-${evidence:-step set to $status}}" \
+                    "$(git -C "$TOP" rev-parse HEAD)" "unstamp-via-set"
                 printf "revoked '%s' stamp: its step is now %s\n" "$step" "$status" >&2
             fi
             ;;
@@ -1381,8 +1448,7 @@ cmd_unstamp() {
     [ -n "$reason" ] || die 4 "unstamp requires a non-empty --reason"
     [ -f "$LIVE" ] || die 1 "no live ledger state (run ledger.sh init)"
     resolve_snapshot_from_live
-    py unstamp "$gate" "$reason" "$(git -C "$TOP" rev-parse HEAD)" unstamp || exit $?
-    publish_snapshot unstamp "$gate"
+    revoke_and_publish "$gate" "$reason" "$(git -C "$TOP" rev-parse HEAD)" unstamp
     echo "revoked $gate stamp: $reason"
 }
 
