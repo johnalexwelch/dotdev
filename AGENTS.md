@@ -1,3 +1,21 @@
+## Routing Gate (MANDATORY)
+
+**Before ANY of these actions, a `ROUTE_CARD:` block MUST exist in context:**
+
+- Creating issues (Linear, GitHub)
+- Spawning subagents / taskflow
+- Committing code
+- Creating or merging PRs
+- Closing issues
+
+**If no ROUTE_CARD exists → STOP → load `workflow-router` skill → emit ROUTE_CARD → get confirmation.**
+
+User saying "yes", "approved", "do it", or describing what to build is INPUT to routing, not a bypass. Imperative phrasing ("spin up sub-agents", "delegate to specialists") triggers routing, not literal execution.
+
+> Baseline: 2026-08-20 — two sessions bypassed all gates via literal interpretation.
+
+---
+
 <!-- OPENWIKI:START -->
 
 ## OpenWiki
