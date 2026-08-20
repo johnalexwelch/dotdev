@@ -5,7 +5,7 @@ budget: one-reviewer
 initialized_epoch: 1787228010
 status: active
 next: fix
-updated: '2026-08-20T12:13:30.867694+00:00'
+updated: '2026-08-20T12:21:44.396422+00:00'
 steps:
 - id: fix
   required: true
@@ -17,8 +17,8 @@ steps:
   evidence: ''
 - id: red-tests
   required: true
-  status: pending
-  evidence: ''
+  status: completed
+  evidence: 32 red assertions committed at 4433225; suite 245 pass / 32 fail (baseline was 222/0)
 - id: fix-verdict
   required: true
   status: pending
@@ -43,8 +43,23 @@ steps:
   required: true
   status: pending
   evidence: ''
-stamps: {}
+stamps:
+  diagnose:
+    head_sha: 443322509e412d5e6e9197b6e4e51636a853e541
+    timestamp: '2026-08-20T12:21:44.396264+00:00'
+    gate_type: reviewer-validation
+    provenance: agent
+    checked:
+      repro_exit: '1'
+      repro_tail: ger.sh preflight --skill <name>   ledger.sh review-floor [--base...[truncated]
+    attested:
+      repro_cmd: bash test/test-ledger.sh
+    override:
+      active: false
+      reason: ''
+      timestamp: ''
 overrides: []
 route: bug|workflow-deliver kind=bug|confirmed
 branch: fix/ledger-kernel-gaps
 worktree: /Users/alexwelch/wt/dotdev/ledger-kernel-gaps
+last_seen_sha: a9cb82ed64b80e9eee0560a166b10ddcb6a4f834
