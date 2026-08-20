@@ -1291,11 +1291,33 @@ run_ledger "$wtV" stamp review --attest verdict=approve \
     --attest model_floor=sonnet
 assert_status "lowercase approve with trailing spaces stamps" 0 "$STATUS"
 
+# A CRLF lane file stamps. Named for the mechanism that actually does the
+# work: POSIX [[:space:]] includes CR, so `sed 's/[[:space:]]*$//'` strips a
+# TRAILING CR on its own. The old name ("verdict normalized") claimed the
+# `tr -d '\r'` in the pipeline, which this fixture cannot detect the removal
+# of — deleting the tr leaves this assertion green (round-2 tests lane, and
+# its own round-1 fixture suggestion `APPROVE\r  ` does not discriminate
+# either, for the same reason).
 printf 'model: opus\r\nverdict: APPROVE\r\n' >"$laneV"
 run_ledger "$wtV" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$laneV" \
     --attest model_floor=sonnet
-assert_status "CRLF lane file stamps (verdict normalized)" 0 "$STATUS"
+assert_status "CRLF lane file stamps (trailing CR stripped by the sed)" 0 "$STATUS"
+
+# ...and the case that DOES discriminate `tr -d '\r'`, in the fail-open
+# direction: an EMBEDDED CR is not reachable by the trailing-whitespace strip,
+# so the tr is the only thing that can delete it — turning the non-contract
+# token AP<CR>PROVE into `approve` and stamping the gate. Refusal is the
+# contract: this function's whole job is to fail closed on anything that is not
+# the contract token, and no legitimate reviewer tool emits a CR mid-token.
+printf 'model: opus\nverdict: AP\rPROVE\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "an embedded CR in the verdict refuses the stamp" 2 "$STATUS"
+assert_contains "embedded-CR refusal names the lane and the raw value" "$OUT" \
+    "$(printf "lane 'integrated' verdict 'AP\rPROVE'")"
+assert_not_contains "embedded-CR refusal is not a usage error" "$OUT" "Usage:"
 
 # First `verdict:` line wins (the documented `head -1` rule, pinned
 # deliberately): a reviewer who QUOTES `verdict: REQUEST_CHANGES` in the prose
