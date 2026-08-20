@@ -1070,13 +1070,24 @@ checked_review() {
         # attested approve — inverting D-006 #3 (a stamp is writable only
         # when every checked field passes) and falsifying workflow-review's
         # own "the stamp's checks refuse to record it regardless". Normalize
-        # first (CRLF lane files and trailing spaces must not decide a gate),
-        # then allowlist: the contract token set is
+        # first (case, and trailing whitespace — POSIX [[:space:]] includes CR,
+        # so the sed also strips the trailing CR of a CRLF lane file), then
+        # allowlist: the contract token set is
         # APPROVE|REQUEST_CHANGES|NEEDS_HUMAN (workflow-review
         # references/reviewer-briefs.md), and anything outside it refuses
         # exactly as an unrecognized model ranks 0. A denylist of rejection
         # words would pass a typo ("aproved") or a bare "LGTM".
-        case "$(printf '%s' "$verdict" | tr -d '\r' | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:]]*$//')" in
+        #
+        # Deliberately NO `tr -d '\r'` here. It was unreachable on the only
+        # path it claimed to serve (the sed already strips a trailing CR) and
+        # fail-OPEN everywhere else: deleting every CR turned the non-contract
+        # token AP<CR>PROVE into `approve` and stamped the gate. An EMBEDDED CR
+        # must refuse — no reviewer tool emits one mid-token, and failing
+        # closed on anything that is not the contract token is this function's
+        # entire job. Found by mutation testing (removing the tr left the
+        # suite green, so the assertion named for it proved nothing).
+        # The refusal below reports the RAW value, so the CR stays visible.
+        case "$(printf '%s' "$verdict" | tr '[:upper:]' '[:lower:]' | sed 's/[[:space:]]*$//')" in
             approve) ;;
             *)
                 add_failure "lane '$lane' verdict '${verdict:-missing}' is not an approval (required: APPROVE)"
