@@ -83,6 +83,20 @@ assert_contains() {
     fi
 }
 
+assert_not_contains() {
+    local name="$1" haystack="$2" needle="$3"
+    if grep -Fq "$needle" <<<"$haystack"; then
+        echo "  FAIL: $name"
+        echo "    output must NOT contain: $needle"
+        echo "    output was:"
+        echo "$haystack"
+        FAIL=$((FAIL + 1))
+    else
+        echo "  PASS: $name"
+        PASS=$((PASS + 1))
+    fi
+}
+
 assert_equal() {
     local name="$1" expected="$2" actual="$3"
     if [ "$expected" = "$actual" ]; then
@@ -193,6 +207,27 @@ commit_all() {
     local dir="$1" msg="$2"
     git -C "$dir" add -A
     git -C "$dir" commit -q -m "$msg"
+}
+
+# Hand-tamper live state the way an agent with Bash access can: inject a
+# `stamps` entry the kernel's stamp path never validated or published.
+# Only matches an empty `stamps: {}` map, so the caller must assert the
+# injection landed before relying on it.
+inject_forged_stamp() {
+    local state="$1" gate="$2" head="$3" tmp="$1.forged"
+    awk -v gate="$gate" -v head="$head" -v q="'" '
+        /^stamps: \{\}$/ {
+            print "stamps:"
+            print "  " gate ":"
+            print "    head_sha: " q head q
+            print "    gate_type: reviewer-validation"
+            print "    provenance: agent"
+            print "    checked:"
+            print "      forged: " q "forged-by-hand" q
+            next
+        }
+        { print }
+    ' "$state" >"$tmp" && mv "$tmp" "$state"
 }
 
 new_repo() {
@@ -1196,29 +1231,38 @@ assert_status "verdict fixture inits" 0 "$STATUS"
 printf -- '- "true"\n' >"$wtV/docs/executions/ci-commands.yaml"
 echo "tweak" >>"$wtV/src/app.py"
 commit_all "$wtV" "fix: small change under review"
+stateV=$(live_state "$wtV")
+snapV="$(run_snap "$wtV" 2026-08-20-verdict)"
 
 # The exact live scenario: reviewer said REQUEST_CHANGES, agent attests
 # approve. The lane file is the ground truth and must refuse the stamp.
+#
+# R2 tests lane T6: a bare "integrated" / "REQUEST_CHANGES" needle also
+# matches the lane FILE PATH echoed by unrelated exit-2 refusals (missing or
+# stale lane file), so every verdict refusal greps the whole discriminating
+# phrase and asserts the refusal is not the usage text.
 printf 'model: opus\nverdict: REQUEST_CHANGES\n' >"$laneV"
 run_ledger "$wtV" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$laneV" \
     --attest model_floor=sonnet
 assert_status "REQUEST_CHANGES lane refuses the review stamp" 2 "$STATUS"
-assert_contains "refusal names the lane" "$OUT" "integrated"
-assert_contains "refusal names the offending verdict" "$OUT" "REQUEST_CHANGES"
+assert_contains "refusal names the lane and its rejecting verdict" "$OUT" \
+    "lane 'integrated' verdict 'REQUEST_CHANGES'"
+assert_not_contains "verdict refusal is not a usage error" "$OUT" "Usage:"
 run_ledger "$wtV" check review
 assert_status "check review MISSING after a refused stamp" 1 "$STATUS"
 run_ledger "$wtV" check-snapshot review
 assert_status "check-snapshot review MISSING after a refused stamp" 1 "$STATUS"
 assert_file_not_contains "refused verdict never reaches the committed snapshot" \
-    "$(run_snap "$wtV" 2026-08-20-verdict)" "REQUEST_CHANGES"
+    "$snapV" "REQUEST_CHANGES"
 
 printf 'model: opus\nverdict: NEEDS_HUMAN\n' >"$laneV"
 run_ledger "$wtV" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$laneV" \
     --attest model_floor=sonnet
 assert_status "NEEDS_HUMAN lane refuses the review stamp" 2 "$STATUS"
-assert_contains "NEEDS_HUMAN refusal names the verdict" "$OUT" "NEEDS_HUMAN"
+assert_contains "NEEDS_HUMAN refusal names the lane and its verdict" "$OUT" \
+    "lane 'integrated' verdict 'NEEDS_HUMAN'"
 
 # Fail CLOSED on an unrecognized verdict, exactly as an unrecognized model
 # ranks 0 and refuses: a denylist of rejection words would let a typo
@@ -1228,13 +1272,16 @@ run_ledger "$wtV" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$laneV" \
     --attest model_floor=sonnet
 assert_status "unrecognized lane verdict refuses the stamp" 2 "$STATUS"
-assert_contains "unrecognized-verdict refusal names the value" "$OUT" "LGTM"
+assert_contains "unrecognized-verdict refusal names the lane and value" "$OUT" \
+    "lane 'integrated' verdict 'LGTM'"
 
 printf 'model: opus\nverdict:\n' >"$laneV"
 run_ledger "$wtV" stamp review --attest verdict=approve \
     --attest review_profile=fast --attest "lanes=integrated=$laneV" \
     --attest model_floor=sonnet
 assert_status "empty verdict value refuses the stamp" 2 "$STATUS"
+assert_contains "empty-verdict refusal reports the value as missing" "$OUT" \
+    "lane 'integrated' verdict 'missing'"
 
 # One approving lane cannot carry a rejecting sibling (multi-lane profile).
 printf 'model: opus\nverdict: APPROVE\n' >"$laneV_logic"
@@ -1244,7 +1291,8 @@ run_ledger "$wtV" stamp review --attest verdict=approve \
     --attest "lanes=logic=$laneV_logic,tests=$laneV_tests" \
     --attest model_floor=opus
 assert_status "one REQUEST_CHANGES lane sinks a multi-lane stamp" 2 "$STATUS"
-assert_contains "multi-lane refusal names the rejecting lane" "$OUT" "tests"
+assert_contains "multi-lane refusal names the rejecting lane and its verdict" \
+    "$OUT" "lane 'tests' verdict 'REQUEST_CHANGES'"
 
 # Accepted spellings. The contract token is APPROVE (reviewer-briefs.md
 # Shared Output Contract); existing lane fixtures and live reviews write
@@ -1257,41 +1305,91 @@ assert_status "uppercase APPROVE stamps" 0 "$STATUS"
 run_ledger "$wtV" check review
 assert_status "check review OK after an approving stamp" 0 "$STATUS"
 
+# First `verdict:` line wins (the documented `head -1` rule, pinned
+# deliberately): a reviewer who QUOTES `verdict: REQUEST_CHANGES` in the prose
+# of an approving lane must not sink their own lane.
+printf 'model: opus\nverdict: APPROVE\nnotes: the brief says to write\nverdict: REQUEST_CHANGES\nwhen a finding blocks\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "first verdict line wins over a quoted rejection" 0 "$STATUS"
+
+run_ledger "$wtV" set review completed --evidence "review round 1 approved"
+assert_status "review step completes alongside its stamp" 0 "$STATUS"
+
+# Negative control for the revocation consequence asserted in G2: with the
+# review gate standing, finalize refuses for OTHER reasons and must not blame
+# the review gate. Without this control, "review gate" in the G2 refusal could
+# be an artifact of the fixture rather than of the revocation.
+run_ledger "$wtV" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+# Pin the exit too: if this probe ever SUCCEEDS, $OUT carries no failure list,
+# the control below passes vacuously, and the probe silently writes a finalize
+# stamp + snapshot commit that changes G2's starting state.
+assert_status "the finalize probe still refuses for other reasons" 2 "$STATUS"
+assert_not_contains "a standing review gate is not a finalize failure" "$OUT" \
+    "review gate"
+
 echo ""
 echo "--- G2: stamp revocation ---"
 
 head_before_unstamp=$(git -C "$wtV" rev-parse HEAD)
 run_ledger "$wtV" unstamp review --reason "tests lane reopened its finding"
 assert_status "unstamp review exits 0" 0 "$STATUS"
+# L2 (logic R1): the same-named step stays `completed`, so `show` would report
+# the step done while `check` says MISSING. Advisory only — exit stays 0.
+assert_contains "unstamp warns about the still-completed step" "$OUT" "WARNING"
+assert_contains "unstamp warning names the command that unwinds the step" "$OUT" \
+    "set review pending"
 if [ "$head_before_unstamp" = "$(git -C "$wtV" rev-parse HEAD)" ]; then
     unstamp_committed=no
 else
     unstamp_committed=yes
 fi
 assert_equal "unstamp commits the revocation" "yes" "$unstamp_committed"
+# R2 tests lane T5: `diff-tree HEAD` alone passes with a STALE head (pre-fix
+# there is no unstamp commit at all and HEAD is the previous stamp commit), so
+# anchor to the captured range AND to the commit subject.
+assert_equal "unstamp commit subject names the revocation" \
+    "chore(ledger): unstamp review" \
+    "$(git -C "$wtV" log -1 --pretty=%s)"
+unstamp_paths=$(git -C "$wtV" diff-tree --no-commit-id --name-only -r \
+    "$head_before_unstamp..HEAD")
+assert_equal "unstamp commit touches only its own run file" \
+    "docs/executions/runs/2026-08-20-verdict.yaml" "$unstamp_paths"
 run_ledger "$wtV" check review
 assert_status "check review MISSING after unstamp" 1 "$STATUS"
 assert_contains "check names the missing stamp" "$OUT" "MISSING"
 run_ledger "$wtV" check-snapshot review
 assert_status "check-snapshot review MISSING after unstamp" 1 "$STATUS"
-stateV=$(live_state "$wtV")
 assert_file_contains "unstamp records the reason in overrides[]" "$stateV" \
     "tests lane reopened its finding"
-assert_file_contains "unstamp records the action in overrides[]" "$stateV" "unstamp"
-snapV="$(run_snap "$wtV" 2026-08-20-verdict)"
+assert_file_contains "unstamp records the action in overrides[]" "$stateV" \
+    "action: unstamp"
 assert_file_contains "unstamp publishes the revocation to the snapshot" \
     "$snapV" "tests lane reopened its finding"
-unstamp_paths=$(git -C "$wtV" diff-tree --no-commit-id --name-only -r HEAD)
-assert_equal "unstamp commit touches only its own run file" \
-    "docs/executions/runs/2026-08-20-verdict.yaml" "$unstamp_paths"
 
+# The CONSEQUENCE the whole revocation feature exists to produce: a revoked
+# review gate must sink the next gate's stamp (checked_finalize opens with
+# check_gate review). Nothing proved this before (R2 tests lane).
+run_ledger "$wtV" stamp finalize --attest post_mortem=docs/pm.md \
+    --attest describe_pr=done
+assert_status "a revoked review sinks the finalize stamp" 2 "$STATUS"
+assert_contains "the finalize refusal blames the review gate" "$OUT" "review gate"
+
+# R2 tests lane T2: exit 1 is shared by "no stamp to revoke" and EVERY usage
+# error, and the usage text itself contains `review-floor`, so a bare `grep -F
+# review` matched pre-fix. Anchor on the refusal sentence and rule out usage.
 run_ledger "$wtV" unstamp review --reason "nothing left to revoke"
 assert_status "unstamp with no stamp to revoke exits 1" 1 "$STATUS"
-assert_contains "no-stamp refusal names the gate" "$OUT" "review"
+assert_contains "no-stamp refusal names the gate and the absent stamp" "$OUT" \
+    "no 'review' stamp to revoke"
+assert_not_contains "no-stamp refusal is not a usage error" "$OUT" "Usage:"
 run_ledger "$wtV" unstamp review
 assert_status "unstamp without --reason exits 4" 4 "$STATUS"
 run_ledger "$wtV" unstamp bogus --reason "x"
 assert_status "unstamp of an unknown gate exits 5" 5 "$STATUS"
+assert_contains "unknown-gate refusal names the gate" "$OUT" "unknown gate: bogus"
 
 # Revocation is not terminal: the gate can be re-earned.
 printf 'model: opus\nverdict: approve   \n' >"$laneV"
@@ -1304,12 +1402,20 @@ assert_status "check review OK after re-stamp" 0 "$STATUS"
 
 # The step-side coupling: a gate stamp may only stand while its same-named
 # step is completed. Unwinding the step revokes the gate.
+#
+# R2 tests lane T1: `--reason` also lands in the STEP's own evidence field
+# (op_set does `step["evidence"] = evidence or reason`) and step evidence is
+# published, so grepping the reason string proved only "something published
+# the snapshot". Grep the coupling's own `action:` value instead — nothing but
+# the overrides[] append can produce it.
 run_ledger "$wtV" set review pending --reason "reopening review after new finding"
 assert_status "set review pending exits 0" 0 "$STATUS"
 run_ledger "$wtV" check review
 assert_status "check review MISSING after the step is unwound" 1 "$STATUS"
-assert_file_contains "step unwind publishes the revocation to the snapshot" \
-    "$snapV" "reopening review after new finding"
+assert_file_contains "step unwind records its own action in live state" \
+    "$stateV" "action: unstamp-via-set"
+assert_file_contains "step unwind publishes its own action to the snapshot" \
+    "$snapV" "action: unstamp-via-set"
 run_ledger "$wtV" check-snapshot review
 assert_status "check-snapshot review MISSING after the step is unwound" 1 "$STATUS"
 
@@ -1324,36 +1430,206 @@ run_ledger "$wtV" check review
 assert_status "completing the step leaves its stamp intact" 0 "$STATUS"
 
 echo ""
+echo "--- G2b: revocation on non-review gates, and its atomicity ---"
+
+# R2 tests lane: `unstamp` and the `set` coupling are documented for
+# diagnose|fix|review|finalize and were tested for `review` only — narrowing
+# either allowlist to `review)` left the suite green. This fixture drives a
+# non-review gate through both entry points, and is also where H2 (revocation
+# must not leave live state and the committed record disagreeing) is
+# constructed, because a bug run reaches a real stamp with no forge mocks.
+repoR=$(new_repo revoke_gates)
+stateR=$(live_state "$repoR")
+gitdirR="$(git -C "$repoR" rev-parse --absolute-git-dir)"
+run_ledger "$repoR" init 2026-08-20-revoke --workflow workflow-deliver \
+    --kind bug --steps "impl"
+assert_status "non-review revocation fixture inits" 0 "$STATUS"
+snapR="$(run_snap "$repoR" 2026-08-20-revoke)"
+headblobR="$TMPDIR_BASE/revoke-head-blob.yaml"
+printf '#!/usr/bin/env bash\ntest -f fixed.txt\n' >"$repoR/repro.sh"
+commit_all "$repoR" "test: add repro script"
+run_ledger "$repoR" stamp diagnose --attest repro_cmd="bash repro.sh" \
+    --attest root_cause="fixed.txt marker missing"
+assert_status "diagnose stamp for the revocation fixture exits 0" 0 "$STATUS"
+run_ledger "$repoR" set diagnose completed --evidence "root cause identified"
+assert_status "diagnose step completes alongside its stamp" 0 "$STATUS"
+
+# H2 (logic R1), explicit-unstamp entry point. `py unstamp` deleted the live
+# stamp BEFORE publishing, so a failed publish left live state MISSING while
+# the committed blob CI reads still carried a fresh stamp — the reviewer got
+# FINALIZE_STAMP_CHECK: PASS on that branch. A stale index.lock forces the
+# publish failure. Contract: live state and the record still AGREE, and the
+# message says the revocation did not apply.
+: >"$gitdirR/index.lock"
+assert_file_exists "index.lock is in place to force a publish failure" \
+    "$gitdirR/index.lock"
+head_pre_lock=$(git -C "$repoR" rev-parse HEAD)
+run_ledger "$repoR" unstamp diagnose --reason "publish is going to fail here"
+assert_status_not "unstamp with an unwritable index does not report success" \
+    0 "$STATUS"
+assert_status "unstamp with a failed publish exits 10" 10 "$STATUS"
+assert_contains "failed-publish message says the revocation did not apply" \
+    "$OUT" "revocation"
+assert_not_contains "failed-publish message is not a usage error" "$OUT" "Usage:"
+rm -f "$gitdirR/index.lock"
+assert_equal "a failed revocation makes no commit" "$head_pre_lock" \
+    "$(git -C "$repoR" rev-parse HEAD)"
+run_ledger "$repoR" check diagnose
+assert_status "a failed revocation leaves the live stamp intact" 0 "$STATUS"
+run_ledger "$repoR" check-snapshot diagnose
+assert_status "a failed revocation leaves the snapshot stamp intact" 0 "$STATUS"
+git -C "$repoR" show "HEAD:docs/executions/runs/2026-08-20-revoke.yaml" \
+    >"$headblobR" 2>/dev/null || : >"$headblobR"
+assert_file_contains "a failed revocation leaves the committed record's stamp intact" \
+    "$headblobR" "repro_exit"
+assert_file_not_contains "a failed revocation records no override in live state" \
+    "$stateR" "publish is going to fail here"
+
+# H2, `set`-coupled entry point (where `py set` has additionally already
+# written live state before the coupling runs). Re-establish the stamp
+# explicitly: pre-fix the case above has already destroyed it, and a coupling
+# that no-ops because there is no stamp left would red for the wrong reason.
+run_ledger "$repoR" set diagnose completed --evidence "root cause identified"
+assert_status "diagnose step completed before the set-coupled failure" 0 "$STATUS"
+run_ledger "$repoR" stamp diagnose --attest repro_cmd="bash repro.sh" \
+    --attest root_cause="fixed.txt marker missing"
+assert_status "diagnose re-stamped before the set-coupled failure" 0 "$STATUS"
+: >"$gitdirR/index.lock"
+assert_file_exists "index.lock is in place for the set-coupled failure" \
+    "$gitdirR/index.lock"
+head_pre_lock2=$(git -C "$repoR" rev-parse HEAD)
+run_ledger "$repoR" set diagnose failed --reason "set-side publish fails here"
+assert_status "set-coupled revocation with a failed publish exits 10" 10 "$STATUS"
+assert_contains "set-coupled failure says the revocation did not apply" "$OUT" \
+    "revocation"
+rm -f "$gitdirR/index.lock"
+assert_equal "a failed set-coupled revocation makes no commit" "$head_pre_lock2" \
+    "$(git -C "$repoR" rev-parse HEAD)"
+run_ledger "$repoR" check diagnose
+assert_status "a failed set-coupled revocation leaves the live stamp intact" \
+    0 "$STATUS"
+run_ledger "$repoR" check-snapshot diagnose
+assert_status "a failed set-coupled revocation leaves the snapshot stamp intact" \
+    0 "$STATUS"
+
+run_ledger "$repoR" set diagnose completed --evidence "root cause identified"
+assert_status "diagnose step restored to completed" 0 "$STATUS"
+
+# The `set` coupling on a gate other than `review`. Assert the precondition:
+# without it, `check diagnose` = 1 afterwards is satisfied by there being no
+# stamp to revoke in the first place.
+run_ledger "$repoR" check diagnose
+assert_status "a diagnose stamp stands before the coupling fires" 0 "$STATUS"
+run_ledger "$repoR" set diagnose failed --reason "diagnose reopened by the fix lane"
+assert_status "set diagnose failed exits 0" 0 "$STATUS"
+run_ledger "$repoR" check diagnose
+assert_status "the set coupling revokes a non-review gate" 1 "$STATUS"
+assert_contains "the coupled revocation reads MISSING, not STALE" "$OUT" "MISSING"
+assert_file_contains "non-review coupling records its own action" "$stateR" \
+    "action: unstamp-via-set"
+run_ledger "$repoR" check-snapshot diagnose
+assert_status "the set coupling revokes a non-review gate in the record too" \
+    1 "$STATUS"
+assert_contains "the coupled record revocation reads MISSING, not STALE" "$OUT" \
+    "MISSING"
+
+# `unstamp` happy path on a gate other than `review`, plus S2 (security R1):
+# the revocation entry must record the REVOKED stamp's own identity, not just
+# the revocation-time HEAD. A code commit between the stamp and the revocation
+# makes the two shas distinguishable.
+run_ledger "$repoR" set diagnose completed --evidence "re-diagnosed"
+assert_status "diagnose step completed for the re-stamp" 0 "$STATUS"
+diag_stamp_head=$(git -C "$repoR" rev-parse HEAD)
+run_ledger "$repoR" stamp diagnose --attest repro_cmd="bash repro.sh" \
+    --attest root_cause="marker still missing"
+assert_status "diagnose re-stamp exits 0" 0 "$STATUS"
+echo "unrelated" >>"$repoR/src/app.py"
+commit_all "$repoR" "docs: a commit between the stamp and the revocation"
+head_before_unstampR=$(git -C "$repoR" rev-parse HEAD)
+run_ledger "$repoR" unstamp diagnose --reason "diagnose revoked for a second look"
+assert_status "unstamp of a non-review gate exits 0" 0 "$STATUS"
+assert_equal "non-review unstamp commit subject names the gate" \
+    "chore(ledger): unstamp diagnose" "$(git -C "$repoR" log -1 --pretty=%s)"
+run_ledger "$repoR" check diagnose
+assert_status "unstamp revokes a non-review gate in live state" 1 "$STATUS"
+# A code commit sits between the stamp and the revocation (so the two shas S2
+# records are distinguishable), which makes exit 1 reachable as STALE as well
+# as MISSING — name the verdict.
+assert_contains "the revoked non-review gate reads MISSING, not STALE" "$OUT" \
+    "MISSING"
+run_ledger "$repoR" check-snapshot diagnose
+assert_status "unstamp revokes a non-review gate in the record" 1 "$STATUS"
+assert_contains "the record's revoked gate reads MISSING, not STALE" "$OUT" \
+    "MISSING"
+assert_file_contains "revocation records the revoked stamp's own head_sha" \
+    "$stateR" "revoked_head_sha: $diag_stamp_head"
+assert_file_contains "revocation still records the revocation-time head_sha" \
+    "$stateR" "head_sha: $head_before_unstampR"
+assert_file_contains "revocation records the revoked stamp's gate_type" \
+    "$stateR" "gate_type: reviewer-validation"
+assert_file_contains "revocation preserves the revoked stamp's checked digests" \
+    "$stateR" "revoked_checked"
+assert_file_contains "the preserved digests still carry the diagnose evidence" \
+    "$stateR" "repro_exit"
+assert_file_contains "the revocation audit reaches the committed record" \
+    "$snapR" "revoked_head_sha: $diag_stamp_head"
+
+echo ""
 echo "--- G3: flush publishes non-gate corrections ---"
 
-run_ledger "$wtV" set fix completed --evidence "regression test at tests/wrong-path.sh"
+# R2 tests lane: G3 gets its own fixture. Chained onto G1/G2's fixture, a
+# verdict-allowlist regression reported as ~30 unrelated flush failures.
+wtF=$(new_wt_fixture flush_gate)
+lanesF="$TMPDIR_BASE/flush_gate/lanes"
+mkdir -p "$lanesF"
+laneF="$lanesF/integrated-review.md"
+run_ledger "$wtF" init 2026-08-20-flush --workflow workflow-deliver \
+    --kind bug --steps "diagnose,fix,review,finalize"
+assert_status "flush fixture inits" 0 "$STATUS"
+printf -- '- "true"\n' >"$wtF/docs/executions/ci-commands.yaml"
+echo "tweak" >>"$wtF/src/app.py"
+commit_all "$wtF" "fix: small change under review"
+stateF=$(live_state "$wtF")
+snapF="$(run_snap "$wtF" 2026-08-20-flush)"
+printf 'model: opus\nverdict: APPROVE\n' >"$laneF"
+run_ledger "$wtF" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneF" \
+    --attest model_floor=sonnet
+assert_status "flush fixture stamps review" 0 "$STATUS"
+
+run_ledger "$wtF" set fix completed --evidence "regression test at tests/wrong-path.sh"
 assert_status "set records the first (wrong) evidence" 0 "$STATUS"
 # Publishing it needs a gate — that is the whole gap. Re-stamp to commit it.
-run_ledger "$wtV" stamp review --attest verdict=approve \
-    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+run_ledger "$wtF" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneF" \
     --attest model_floor=sonnet
 assert_status "re-stamp publishes the wrong evidence" 0 "$STATUS"
-assert_file_contains "snapshot carries the wrong evidence" "$snapV" \
+assert_file_contains "snapshot carries the wrong evidence" "$snapF" \
     "tests/wrong-path.sh"
 
-run_ledger "$wtV" set fix completed --evidence "regression test at test/test-ledger.sh"
+run_ledger "$wtF" set fix completed --evidence "regression test at test/test-ledger.sh"
 assert_status "set records the corrected evidence" 0 "$STATUS"
-assert_file_contains "live state carries the correction" "$stateV" \
+assert_file_contains "live state carries the correction" "$stateF" \
     "test/test-ledger.sh"
 assert_file_contains "snapshot still carries the stale evidence before flush" \
-    "$snapV" "tests/wrong-path.sh"
+    "$snapF" "tests/wrong-path.sh"
 
-head_before_flush=$(git -C "$wtV" rev-parse HEAD)
-run_ledger "$wtV" flush
+head_before_flush=$(git -C "$wtF" rev-parse HEAD)
+run_ledger "$wtF" flush
 assert_status "flush exits 0" 0 "$STATUS"
-assert_file_contains "flush publishes the correction" "$snapV" \
+assert_file_contains "flush publishes the correction" "$snapF" \
     "test/test-ledger.sh"
-assert_file_not_contains "flush removes the stale evidence" "$snapV" \
+assert_file_not_contains "flush removes the stale evidence" "$snapF" \
     "tests/wrong-path.sh"
-flush_paths=$(git -C "$wtV" diff-tree --no-commit-id --name-only -r HEAD)
+# R2 tests lane T5: anchor to the captured range and the commit subject, not
+# to whatever commit happens to be at HEAD.
+assert_equal "flush commit subject names the run" \
+    "chore(ledger): flush 2026-08-20-flush" "$(git -C "$wtF" log -1 --pretty=%s)"
+flush_paths=$(git -C "$wtF" diff-tree --no-commit-id --name-only -r \
+    "$head_before_flush..HEAD")
 assert_equal "flush commit touches only its own run file" \
-    "docs/executions/runs/2026-08-20-verdict.yaml" "$flush_paths"
-if [ "$head_before_flush" = "$(git -C "$wtV" rev-parse HEAD)" ]; then
+    "docs/executions/runs/2026-08-20-flush.yaml" "$flush_paths"
+if [ "$head_before_flush" = "$(git -C "$wtF" rev-parse HEAD)" ]; then
     flush_committed=no
 else
     flush_committed=yes
@@ -1361,32 +1637,84 @@ fi
 assert_equal "flush created a commit" "yes" "$flush_committed"
 
 # flush carries no gate semantics: it must neither create nor stale a stamp.
-run_ledger "$wtV" check review
+run_ledger "$wtF" check review
 assert_status "flush does not stale the review stamp" 0 "$STATUS"
-run_ledger "$wtV" check finalize
+run_ledger "$wtF" check finalize
 assert_status "flush does not conjure an unstamped gate" 1 "$STATUS"
+# flush's whole purpose is the record CI reads, and only NEGATIVE
+# check-snapshot assertions existed (R2 tests lane).
+run_ledger "$wtF" check-snapshot review
+assert_status "flush leaves the snapshot CI-readable" 0 "$STATUS"
 
-head_before_noop=$(git -C "$wtV" rev-parse HEAD)
-run_ledger "$wtV" flush
+head_before_noop=$(git -C "$wtF" rev-parse HEAD)
+run_ledger "$wtF" flush
 assert_status "flush with nothing to publish exits 0" 0 "$STATUS"
 assert_equal "no-op flush makes no commit" "$head_before_noop" \
-    "$(git -C "$wtV" rev-parse HEAD)"
+    "$(git -C "$wtF" rev-parse HEAD)"
 
 # flush must not launder drift: last_seen_sha drives reconcile's
 # "commits outside the ledger" detection, so advancing it on a
 # no-gate publish would erase evidence of real code commits. The
 # snapshot commit is already content-exempt in that loop.
-echo "unledgered code change" >>"$wtV/src/app.py"
-commit_all "$wtV" "feat: a commit the ledger has not seen"
-run_ledger "$wtV" reconcile
+echo "unledgered code change" >>"$wtF/src/app.py"
+commit_all "$wtF" "feat: a commit the ledger has not seen"
+run_ledger "$wtF" reconcile
 assert_status "reconcile reports the unledgered commit" 1 "$STATUS"
-run_ledger "$wtV" set fix completed --evidence "note after the code commit"
-run_ledger "$wtV" flush
+run_ledger "$wtF" set fix completed --evidence "note after the code commit"
+run_ledger "$wtF" flush
 assert_status "flush after a code commit exits 0" 0 "$STATUS"
-run_ledger "$wtV" reconcile
+run_ledger "$wtF" reconcile
 assert_status "flush does not launder drift" 1 "$STATUS"
 assert_contains "drift still names the unledgered commit" "$OUT" \
     "the ledger has not seen"
+
+# H1 (security R1): snapshot_match's durable tuple INCLUDES stamps and
+# overrides, and cmd_flush wrote all of live state — so injecting a fabricated
+# stamp into live state and running flush made it canonical, flipped
+# check-snapshot from MISSING to OK, and silenced the snapshot_current control
+# in stamp finalize entirely. flush's job is steps/meta: a divergent durable
+# tuple must REFUSE (exit 6), never be repaired or published.
+repoH=$(new_repo flush_tamper)
+stateH1=$(live_state "$repoH")
+run_ledger "$repoH" init 2026-08-20-tamper --workflow workflow-deliver \
+    --kind feature --steps "impl"
+assert_status "tamper fixture inits" 0 "$STATUS"
+snapH1="$(run_snap "$repoH" 2026-08-20-tamper)"
+run_ledger "$repoH" check-snapshot review
+assert_status "no review stamp in the record before tampering" 1 "$STATUS"
+inject_forged_stamp "$stateH1" review "$(git -C "$repoH" rev-parse HEAD)"
+assert_file_contains "the forged stamp reached live state" "$stateH1" \
+    "forged-by-hand"
+head_before_tamper=$(git -C "$repoH" rev-parse HEAD)
+run_ledger "$repoH" flush
+assert_status "flush refuses a hand-tampered durable tuple" 6 "$STATUS"
+assert_contains "tamper refusal names the divergent key" "$OUT" "stamps"
+assert_contains "tamper refusal points at the legitimate path" "$OUT" "unstamp"
+assert_not_contains "tamper refusal is not a usage error" "$OUT" "Usage:"
+assert_equal "a refused flush makes no commit" "$head_before_tamper" \
+    "$(git -C "$repoH" rev-parse HEAD)"
+assert_file_not_contains "the forged stamp never reaches the snapshot file" \
+    "$snapH1" "forged-by-hand"
+run_ledger "$repoH" check-snapshot review
+assert_status "the forged stamp never becomes CI-readable" 1 "$STATUS"
+
+# T10: flush on a closed run re-committed the snapshot of a finished audit
+# record. Decided deliberately: refuse (exit 1).
+repoC=$(new_repo flush_closed)
+run_ledger "$repoC" init 2026-08-20-shut --workflow workflow-deliver \
+    --kind feature --steps "impl"
+assert_status "closed-run fixture inits" 0 "$STATUS"
+run_ledger "$repoC" set impl completed --evidence "implemented"
+assert_status "closed-run fixture completes its step" 0 "$STATUS"
+run_ledger "$repoC" close
+assert_status "closed-run fixture closes" 0 "$STATUS"
+head_before_closed_flush=$(git -C "$repoC" rev-parse HEAD)
+run_ledger "$repoC" flush
+assert_status "flush on a closed run exits 1" 1 "$STATUS"
+assert_contains "closed-run refusal says the run is closed" "$OUT" "closed"
+assert_not_contains "closed-run refusal is not a usage error" "$OUT" "Usage:"
+assert_equal "flush on a closed run makes no commit" \
+    "$head_before_closed_flush" "$(git -C "$repoC" rev-parse HEAD)"
 
 repoF=$(new_repo flush_no_run)
 run_ledger "$repoF" flush
