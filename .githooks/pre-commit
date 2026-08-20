@@ -1,0 +1,61 @@
+#!/bin/bash
+# pre-commit hook — routing enforcement circuit breaker
+# Rejects commits without routing evidence unless explicitly bypassed.
+#
+# Bypass: SKIP_ROUTING_CHECK=1 git commit ...
+# Or: git commit --no-verify (bypasses all hooks)
+#
+# Baseline: 2026-08-20 — 3 sessions bypassed all soft guards
+# P0 fix: removed branch name exemption (complete bypass vector)
+
+set -euo pipefail
+
+# Allow explicit bypass for emergencies (logged)
+if [[ "${SKIP_ROUTING_CHECK:-}" == "1" ]]; then
+    echo "⚠️  Routing check bypassed via SKIP_ROUTING_CHECK=1" >&2
+    echo "⚠️  Bypass logged at $(date -Iseconds)" >&2
+    exit 0
+fi
+
+ROUTING_EVIDENCE_FOUND=0
+
+# Method 1: Check staged .md files for ROUTE_CARD
+if git diff --cached --name-only | grep -qE '\.(md|txt)$'; then
+    if git diff --cached | grep -qE '^\+.*ROUTE_CARD:'; then
+        ROUTING_EVIDENCE_FOUND=1
+    fi
+fi
+
+# Method 2: Check environment for routing context (set by tooling)
+if [[ -n "${ROUTE_CARD_ID:-}" ]] || [[ -n "${ROUTED_SESSION:-}" ]]; then
+    ROUTING_EVIDENCE_FOUND=1
+fi
+
+# Method 3: Check for routing marker file in .pi/
+# Tooling can write this file when routing is confirmed
+if [[ -f ".pi/routing-confirmed" ]]; then
+    ROUTING_EVIDENCE_FOUND=1
+fi
+
+# REMOVED: Branch name exemption (P0 bypass vector)
+# REMOVED: Small commit exemption (P1 gameable)
+
+if [[ "$ROUTING_EVIDENCE_FOUND" -eq 0 ]]; then
+    echo "" >&2
+    echo "╔════════════════════════════════════════════════════════════════╗" >&2
+    echo "║  🛑 ROUTING CHECK FAILED — No ROUTE_CARD evidence found        ║" >&2
+    echo "╠════════════════════════════════════════════════════════════════╣" >&2
+    echo "║  Before committing, you must:                                  ║" >&2
+    echo "║    1. Load workflow-router skill                               ║" >&2
+    echo "║    2. Emit a ROUTE_CARD: block                                 ║" >&2
+    echo "║    3. Get user confirmation                                    ║" >&2
+    echo "║                                                                ║" >&2
+    echo "║  Bypass (emergency only):                                      ║" >&2
+    echo "║    SKIP_ROUTING_CHECK=1 git commit ...                         ║" >&2
+    echo "║    git commit --no-verify                                      ║" >&2
+    echo "╚════════════════════════════════════════════════════════════════╝" >&2
+    echo "" >&2
+    exit 1
+fi
+
+exit 0

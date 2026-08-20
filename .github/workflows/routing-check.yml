@@ -1,0 +1,103 @@
+---
+name: Routing Check
+
+"on":
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  check-routing-evidence:
+    name: Verify routing evidence
+    runs-on: ubuntu-latest
+    env:
+      PR_BODY: ${{ github.event.pull_request.body }}
+      PR_TITLE: ${{ github.event.pull_request.title }}
+      PR_BRANCH: ${{ github.head_ref }}
+      BASE_REF: ${{ github.base_ref }}
+    steps:
+      - name: Checkout for file analysis
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Check routing evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "Checking PR for routing evidence..."
+          echo "Branch: $PR_BRANCH"
+          echo "Title: $PR_TITLE"
+
+          # First: check if this is docs/config only (exempt)
+          CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD" || echo "")
+
+          if [[ -n "$CHANGED" ]]; then
+            DOCS_ONLY=1
+            while IFS= read -r file; do
+              case "$file" in
+                *.md|*.txt|*.json|*.yaml|*.yml|*.toml)
+                  ;;
+                docs/*|.github/*|README*|LICENSE*|CHANGELOG*)
+                  ;;
+                *)
+                  DOCS_ONLY=0
+                  break
+                  ;;
+              esac
+            done <<< "$CHANGED"
+
+            if [[ "$DOCS_ONLY" -eq 1 ]]; then
+              echo "✅ Docs/config-only PR — exempt from routing check"
+              exit 0
+            fi
+          fi
+
+          # Automated PRs are exempt
+          if [[ "$PR_BRANCH" =~ ^(dependabot|renovate|release-please) ]]; then
+            echo "✅ Automated PR — exempt"
+            exit 0
+          fi
+
+          # Now check for routing evidence
+          EVIDENCE_FOUND=0
+
+          # Method 1: Check PR body for ROUTE_CARD
+          if echo "$PR_BODY" | grep -qE 'ROUTE_CARD:'; then
+            echo "✅ Found ROUTE_CARD in PR body"
+            EVIDENCE_FOUND=1
+          fi
+
+          # Method 2: Check PR body for explicit workflow reference
+          if echo "$PR_BODY" | grep -qE 'Selected flow:'; then
+            echo "✅ Found 'Selected flow:' in PR body"
+            EVIDENCE_FOUND=1
+          fi
+
+          # Method 3: Check title for [routed] tag
+          if echo "$PR_TITLE" | grep -qiE '^\[routed\]'; then
+            echo "✅ Found [routed] tag in PR title"
+            EVIDENCE_FOUND=1
+          fi
+
+          # REMOVED: Branch name inference (P0 bypass vector)
+          # REMOVED: Weak workflow-* pattern match (P2)
+
+          if [[ "$EVIDENCE_FOUND" -eq 0 ]]; then
+            echo ""
+            echo "🛑 ROUTING CHECK FAILED"
+            echo ""
+            echo "This PR changes code but lacks routing evidence."
+            echo ""
+            echo "To fix, add to PR body:"
+            echo "  ROUTE_CARD:"
+            echo "  - Classification: <type>"
+            echo "  - Selected flow: <workflow>"
+            echo ""
+            echo "Or add [routed] to PR title."
+            echo ""
+            echo "Baseline: 2026-08-20 — 3 sessions bypassed soft guards"
+            exit 1
+          fi
+
+          echo "✅ Routing evidence verified"
