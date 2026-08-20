@@ -213,3 +213,16 @@ cases:
     expected_route: execute-prd
     source: synthetic
     notes: "D-006 planning-lane consolidation tombstone row (pairs PR #186): execute-phase-N phrasing routes to execute-prd against the migration-mode issue tree, never the retired execute-phase"
+  # ---- 2026-08-20 postmortem: imperative multi-agent phrasing ---------------
+  - prompt: "Spin up sub-agents for each lane that goes through the workflow router."
+    expected_route: workflow-router
+    source: log
+    notes: "real misroute 2026-08-20: treated as literal command, skipped all gates. Multi-agent dispatch = routing trigger (team budget), not imperative. Imperative Trigger Patterns section added."
+  - prompt: "Dispatch workers to handle each of these issues in parallel."
+    expected_route: run-backlog
+    source: synthetic
+    notes: "2026-08-20 postmortem: adversarial neighbor for imperative multi-agent phrasing — parallel issue handling = run-backlog (team budget)"
+  - prompt: "Execute PRD #42 — have agents handle each child issue."
+    expected_route: execute-prd
+    source: synthetic
+    notes: "2026-08-20 postmortem: adversarial neighbor for imperative multi-agent phrasing — PRD execution with multi-agent = execute-prd (team budget)"

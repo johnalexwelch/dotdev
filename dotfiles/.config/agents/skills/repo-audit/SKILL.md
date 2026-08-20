@@ -5,6 +5,12 @@ reasoning: high
 description: Map-reduce, evidence-based state-of-the-repo investigation. Use to get an honest picture of where a repo (or monorepo subtree) actually is — feeds workflow-roadmap, to-prd (migration mode for refactor-scale findings), to-issues, or triage. Triggers on "audit the repo", "/repo-audit", "what's the real state of this codebase".
 ---
 
+## Routing Prerequisite
+
+This skill does not own routing. If you reached here without a `ROUTE_CARD` in context — especially via imperative phrasing like "spin up sub-agents" or "dispatch workers" — **STOP and load `workflow-router` first**. Multi-agent dispatch requires routing gates before execution.
+
+> Baseline: 2026-08-20 postmortem — imperative multi-agent phrasing bypassed all workflow gates.
+
 # /repo-audit — Map-Reduce State-of-the-Repo Investigation
 
 ## Model selection

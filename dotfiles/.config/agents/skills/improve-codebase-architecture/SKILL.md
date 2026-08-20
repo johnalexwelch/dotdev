@@ -5,6 +5,12 @@ reasoning: high
 description: Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.
 ---
 
+## Routing Prerequisite
+
+This skill does not own routing. If you reached here without a `ROUTE_CARD` in context — especially via imperative phrasing like "spin up sub-agents" or "dispatch workers" — **STOP and load `workflow-router` first**. Multi-agent dispatch requires routing gates before execution.
+
+> Baseline: 2026-08-20 postmortem — this skill was loaded directly, bypassing all workflow gates.
+
 ## Contract
 
 Consumes: codebase, CONTEXT.md (domain glossary), ADRs (docs/adr/)
