@@ -1163,6 +1163,220 @@ assert_file_exists "merged main carries lane-a's run file" \
 assert_file_exists "merged main carries lane-b's run file" \
     "$(run_snap "$mergeX" 2026-08-19-lane-b)"
 
+# ============================================================================
+# Kernel gaps (recorded 2026-08-20 handoff, unfixed until this run):
+#   G1  `stamp review` records lane_<n>_verdict into CHECKED but never tests
+#       its value — a REQUEST_CHANGES lane stamps clean whenever the agent
+#       attests verdict=approve. Inverts D-006 #3 (a stamp is writable only
+#       when all CHECKED fields pass) and falsifies workflow-review's own
+#       claim that "the stamp's checks refuse to record it regardless".
+#   G2  No revocation path: `set <step> pending` leaves stamps.<gate> intact
+#       and check_gate reads the stamp, so `check review` still returns OK
+#       after an explicit unwind.
+#   G3  `set --evidence` corrections are unpublishable: commit_snapshot runs
+#       only from init/stamp/close, so a run that finds a false evidence
+#       string cannot ship the correction without passing a gate.
+# Every assertion below checks the COMMITTED snapshot as well as live state
+# where the gap is observable there — all three bugs are "live state is one
+# thing, the PR-visible record is another".
+# ============================================================================
+echo ""
+echo "--- G1: lane verdict is a checked field ---"
+
+wtV=$(new_wt_fixture verdict_gate)
+lanesV="$TMPDIR_BASE/verdict_gate/lanes"
+mkdir -p "$lanesV"
+laneV="$lanesV/integrated-review.md"
+laneV_logic="$lanesV/logic-review.md"
+laneV_tests="$lanesV/tests-review.md"
+
+run_ledger "$wtV" init 2026-08-20-verdict --workflow workflow-deliver \
+    --kind bug --steps "diagnose,fix,review,finalize"
+assert_status "verdict fixture inits" 0 "$STATUS"
+printf -- '- "true"\n' >"$wtV/docs/executions/ci-commands.yaml"
+echo "tweak" >>"$wtV/src/app.py"
+commit_all "$wtV" "fix: small change under review"
+
+# The exact live scenario: reviewer said REQUEST_CHANGES, agent attests
+# approve. The lane file is the ground truth and must refuse the stamp.
+printf 'model: opus\nverdict: REQUEST_CHANGES\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "REQUEST_CHANGES lane refuses the review stamp" 2 "$STATUS"
+assert_contains "refusal names the lane" "$OUT" "integrated"
+assert_contains "refusal names the offending verdict" "$OUT" "REQUEST_CHANGES"
+run_ledger "$wtV" check review
+assert_status "check review MISSING after a refused stamp" 1 "$STATUS"
+run_ledger "$wtV" check-snapshot review
+assert_status "check-snapshot review MISSING after a refused stamp" 1 "$STATUS"
+assert_file_not_contains "refused verdict never reaches the committed snapshot" \
+    "$(run_snap "$wtV" 2026-08-20-verdict)" "REQUEST_CHANGES"
+
+printf 'model: opus\nverdict: NEEDS_HUMAN\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "NEEDS_HUMAN lane refuses the review stamp" 2 "$STATUS"
+assert_contains "NEEDS_HUMAN refusal names the verdict" "$OUT" "NEEDS_HUMAN"
+
+# Fail CLOSED on an unrecognized verdict, exactly as an unrecognized model
+# ranks 0 and refuses: a denylist of rejection words would let a typo
+# ("aproved", "LGTM") through.
+printf 'model: opus\nverdict: LGTM\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "unrecognized lane verdict refuses the stamp" 2 "$STATUS"
+assert_contains "unrecognized-verdict refusal names the value" "$OUT" "LGTM"
+
+printf 'model: opus\nverdict:\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "empty verdict value refuses the stamp" 2 "$STATUS"
+
+# One approving lane cannot carry a rejecting sibling (multi-lane profile).
+printf 'model: opus\nverdict: APPROVE\n' >"$laneV_logic"
+printf 'model: opus\nverdict: REQUEST_CHANGES\n' >"$laneV_tests"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=standard \
+    --attest "lanes=logic=$laneV_logic,tests=$laneV_tests" \
+    --attest model_floor=opus
+assert_status "one REQUEST_CHANGES lane sinks a multi-lane stamp" 2 "$STATUS"
+assert_contains "multi-lane refusal names the rejecting lane" "$OUT" "tests"
+
+# Accepted spellings. The contract token is APPROVE (reviewer-briefs.md
+# Shared Output Contract); existing lane fixtures and live reviews write
+# lowercase, and trailing whitespace / CRLF must not decide a gate.
+printf 'model: opus\nverdict: APPROVE\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "uppercase APPROVE stamps" 0 "$STATUS"
+run_ledger "$wtV" check review
+assert_status "check review OK after an approving stamp" 0 "$STATUS"
+
+echo ""
+echo "--- G2: stamp revocation ---"
+
+head_before_unstamp=$(git -C "$wtV" rev-parse HEAD)
+run_ledger "$wtV" unstamp review --reason "tests lane reopened its finding"
+assert_status "unstamp review exits 0" 0 "$STATUS"
+if [ "$head_before_unstamp" = "$(git -C "$wtV" rev-parse HEAD)" ]; then
+    unstamp_committed=no
+else
+    unstamp_committed=yes
+fi
+assert_equal "unstamp commits the revocation" "yes" "$unstamp_committed"
+run_ledger "$wtV" check review
+assert_status "check review MISSING after unstamp" 1 "$STATUS"
+assert_contains "check names the missing stamp" "$OUT" "MISSING"
+run_ledger "$wtV" check-snapshot review
+assert_status "check-snapshot review MISSING after unstamp" 1 "$STATUS"
+stateV=$(live_state "$wtV")
+assert_file_contains "unstamp records the reason in overrides[]" "$stateV" \
+    "tests lane reopened its finding"
+assert_file_contains "unstamp records the action in overrides[]" "$stateV" "unstamp"
+snapV="$(run_snap "$wtV" 2026-08-20-verdict)"
+assert_file_contains "unstamp publishes the revocation to the snapshot" \
+    "$snapV" "tests lane reopened its finding"
+unstamp_paths=$(git -C "$wtV" diff-tree --no-commit-id --name-only -r HEAD)
+assert_equal "unstamp commit touches only its own run file" \
+    "docs/executions/runs/2026-08-20-verdict.yaml" "$unstamp_paths"
+
+run_ledger "$wtV" unstamp review --reason "nothing left to revoke"
+assert_status "unstamp with no stamp to revoke exits 1" 1 "$STATUS"
+assert_contains "no-stamp refusal names the gate" "$OUT" "review"
+run_ledger "$wtV" unstamp review
+assert_status "unstamp without --reason exits 4" 4 "$STATUS"
+run_ledger "$wtV" unstamp bogus --reason "x"
+assert_status "unstamp of an unknown gate exits 5" 5 "$STATUS"
+
+# Revocation is not terminal: the gate can be re-earned.
+printf 'model: opus\nverdict: approve   \n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "lowercase approve with trailing spaces re-stamps" 0 "$STATUS"
+run_ledger "$wtV" check review
+assert_status "check review OK after re-stamp" 0 "$STATUS"
+
+# The step-side coupling: a gate stamp may only stand while its same-named
+# step is completed. Unwinding the step revokes the gate.
+run_ledger "$wtV" set review pending --reason "reopening review after new finding"
+assert_status "set review pending exits 0" 0 "$STATUS"
+run_ledger "$wtV" check review
+assert_status "check review MISSING after the step is unwound" 1 "$STATUS"
+assert_file_contains "step unwind publishes the revocation to the snapshot" \
+    "$snapV" "reopening review after new finding"
+run_ledger "$wtV" check-snapshot review
+assert_status "check-snapshot review MISSING after the step is unwound" 1 "$STATUS"
+
+printf 'model: opus\r\nverdict: APPROVE\r\n' >"$laneV"
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "CRLF lane file stamps (verdict normalized)" 0 "$STATUS"
+run_ledger "$wtV" set review completed --evidence "review round 2 approved"
+assert_status "set review completed exits 0" 0 "$STATUS"
+run_ledger "$wtV" check review
+assert_status "completing the step leaves its stamp intact" 0 "$STATUS"
+
+echo ""
+echo "--- G3: flush publishes non-gate corrections ---"
+
+run_ledger "$wtV" set fix completed --evidence "regression test at tests/wrong-path.sh"
+assert_status "set records the first (wrong) evidence" 0 "$STATUS"
+# Publishing it needs a gate — that is the whole gap. Re-stamp to commit it.
+run_ledger "$wtV" stamp review --attest verdict=approve \
+    --attest review_profile=fast --attest "lanes=integrated=$laneV" \
+    --attest model_floor=sonnet
+assert_status "re-stamp publishes the wrong evidence" 0 "$STATUS"
+assert_file_contains "snapshot carries the wrong evidence" "$snapV" \
+    "tests/wrong-path.sh"
+
+run_ledger "$wtV" set fix completed --evidence "regression test at test/test-ledger.sh"
+assert_status "set records the corrected evidence" 0 "$STATUS"
+assert_file_contains "live state carries the correction" "$stateV" \
+    "test/test-ledger.sh"
+assert_file_contains "snapshot still carries the stale evidence before flush" \
+    "$snapV" "tests/wrong-path.sh"
+
+head_before_flush=$(git -C "$wtV" rev-parse HEAD)
+run_ledger "$wtV" flush
+assert_status "flush exits 0" 0 "$STATUS"
+assert_file_contains "flush publishes the correction" "$snapV" \
+    "test/test-ledger.sh"
+assert_file_not_contains "flush removes the stale evidence" "$snapV" \
+    "tests/wrong-path.sh"
+flush_paths=$(git -C "$wtV" diff-tree --no-commit-id --name-only -r HEAD)
+assert_equal "flush commit touches only its own run file" \
+    "docs/executions/runs/2026-08-20-verdict.yaml" "$flush_paths"
+if [ "$head_before_flush" = "$(git -C "$wtV" rev-parse HEAD)" ]; then
+    flush_committed=no
+else
+    flush_committed=yes
+fi
+assert_equal "flush created a commit" "yes" "$flush_committed"
+
+# flush carries no gate semantics: it must neither create nor stale a stamp.
+run_ledger "$wtV" check review
+assert_status "flush does not stale the review stamp" 0 "$STATUS"
+run_ledger "$wtV" check finalize
+assert_status "flush does not conjure an unstamped gate" 1 "$STATUS"
+
+head_before_noop=$(git -C "$wtV" rev-parse HEAD)
+run_ledger "$wtV" flush
+assert_status "flush with nothing to publish exits 0" 0 "$STATUS"
+assert_equal "no-op flush makes no commit" "$head_before_noop" \
+    "$(git -C "$wtV" rev-parse HEAD)"
+
+repoF=$(new_repo flush_no_run)
+run_ledger "$repoF" flush
+assert_status "flush without a live run exits 1" 1 "$STATUS"
+assert_contains "no-run flush names the missing state" "$OUT" "no live ledger state"
+
 echo ""
 echo "Passed: $PASS"
 echo "Failed: $FAIL"
