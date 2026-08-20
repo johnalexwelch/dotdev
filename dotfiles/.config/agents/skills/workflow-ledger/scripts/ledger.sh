@@ -1450,6 +1450,19 @@ cmd_unstamp() {
     resolve_snapshot_from_live
     revoke_and_publish "$gate" "$reason" "$(git -C "$TOP" rev-parse HEAD)" unstamp
     echo "revoked $gate stamp: $reason"
+    # `unstamp` revokes the gate but leaves the same-named step alone, so
+    # `show` reports the step done while `check` says MISSING — workflow-router
+    # resumes at the reconciled frontier and workflow-finalize then halts on
+    # its `check review` precondition, one wasted resume loop (logic R1 L2).
+    # Advisory, not a refusal: unwinding the step here would silently undo
+    # recorded progress, and the `set` coupling already handles the other
+    # direction. Exit stays 0.
+    local step_status
+    step_status="$(py step_status "$gate")" || step_status=""
+    if [ "$step_status" = "completed" ]; then
+        printf "WARNING: step '%s' is still recorded %s — run 'ledger.sh set %s pending' to unwind it\n" \
+            "$gate" "$step_status" "$gate" >&2
+    fi
 }
 
 # Publish live state to the committed snapshot with NO gate semantics.
