@@ -1,8 +1,15 @@
 # Per-run committed ledger snapshots
 
 One file per workflow run: `<run_id>.yaml`, written and committed only by
-`workflow-ledger/scripts/ledger.sh` (`init`/`stamp`/`close`). These files are
-script-owned — a guard hook blocks direct Edit/Write; never hand-edit them.
+`workflow-ledger/scripts/ledger.sh` — `init`, `set` (when it revokes a gate),
+`stamp`, `unstamp`, `flush`, and `close`. These files are script-owned — a
+guard hook blocks direct Edit/Write; never hand-edit them.
+
+So a `chore(ledger): unstamp <gate>` or `chore(ledger): flush <run_id>` commit
+touching one of these files is expected kernel output, not tampering:
+`unstamp` publishes a gate revocation, and `flush` publishes a `steps`/metadata
+correction that carries no gate semantics. Only `init`/`stamp`/`close` also
+advance `last_seen_sha`.
 
 Why per-run (2026-08-19 migration): the previous single shared snapshot,
 `docs/executions/state.yaml`, was committed by every run, so any two

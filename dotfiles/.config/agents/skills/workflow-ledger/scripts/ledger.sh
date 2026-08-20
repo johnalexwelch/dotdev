@@ -3,9 +3,10 @@
 #
 # Moves workflow enforcement from prose the model complies with to a script
 # the model cannot silently bypass. Live state lives in the git-dir (survives
-# reset --hard, naturally per-worktree); stamp/init/close also write a
-# committed PER-RUN snapshot at docs/executions/runs/<run_id>.yaml for the
-# PR-visible record. Per-run files mean two concurrent runs never commit a
+# reset --hard, naturally per-worktree); init/set (when it revokes a
+# gate)/stamp/unstamp/flush/close all write and commit a PER-RUN snapshot at
+# docs/executions/runs/<run_id>.yaml for the PR-visible record. Only the gate
+# actions (init/stamp/close) also advance last_seen_sha. Per-run files mean two concurrent runs never commit a
 # shared path — the cross-PR state.yaml merge-conflict class (#167/#174/
 # #180/#181) is structurally impossible. docs/executions/state.yaml is a
 # frozen legacy record: never written or read by new runs.
@@ -19,10 +20,13 @@
 #   ledger.sh set <step> <status> [--evidence "..."] [--reason "..."]
 #   ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]
 #   ledger.sh unstamp <gate> --reason "..."   (revoke a stamp; audited in
-#             overrides[] and published to the snapshot. `set <step> <status>`
+#             overrides[] and published to the snapshot atomically — a failed
+#             publish restores the stamp and exits 10. `set <step> <status>`
 #             where status is not `completed` revokes the same-named gate too)
 #   ledger.sh flush   (publish live state to the committed snapshot with no
-#             gate semantics — how a `set --evidence` correction ships)
+#             gate semantics — how a `set --evidence` correction ships.
+#             Refuses a closed run (1) and any divergence from the committed
+#             record on the durable tuple (6): flush never moves gate state)
 #   ledger.sh check <gate>
 #   ledger.sh check-snapshot <gate> [--file <path>]   (CI mode: committed per-run
 #             snapshot, no live state; --file names the run file — without it,
@@ -37,6 +41,7 @@
 # Exit codes (the API — tests assert them):
 #   0  success / check passed
 #   1  check failed (MISSING|STALE), unstamp of an unstamped gate,
+#      flush of a closed run (status: done),
 #      check-snapshot resolution refusals
 #      (AMBIGUOUS, INVALID), reconcile drift, preflight missing tool,
 #      verify-local command failure, usage errors
@@ -46,14 +51,16 @@
 #      unstamp without --reason
 #   5  unknown step / unknown skill / unknown gate (stamp, unstamp)
 #   6  corrupt or schema-invalid state (never silently rewritten); a run_id
-#      unusable as a snapshot filename
+#      unusable as a snapshot filename; flush refused because live state and
+#      the committed record disagree on the durable tuple (stamps/overrides)
 #   7  init refused: an active run already exists, or a committed run file
 #      for the run_id already exists (use --force)
 #   8  stamp refused: non-reviewer-validation gate type without --human
 #   9  verify-local: no docs/executions/ci-commands.yaml manifest (NO_MANIFEST)
 #  10  environment breakage (no python3 with PyYAML; misconfigured
 #      LEDGER_PYTHON; not inside a git repo; git HEAD/snapshot-commit
-#      failures) — distinct from gate-unmet 1 so hooks can warn-permit
+#      failures, including a revocation rolled back because its publish
+#      failed) — distinct from gate-unmet 1 so hooks can warn-permit
 #  11  init refused: no route evidence under LEDGER_REQUIRE_ROUTE=block
 #      (default is a WARNING; same flip pattern as LEDGER_ENTRY_ENFORCE)
 

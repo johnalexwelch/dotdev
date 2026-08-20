@@ -18,7 +18,7 @@ Non-goals for Phase 0: HMAC signing, routing evals (Track B), any SKILL.md edits
 ## State model (D-006 #19)
 
 - **Live state**: `$(git rev-parse --git-dir)/ledger/state.yaml` — survives `reset --hard`/checkout; per-worktree automatically (worktree git-dirs are `.git/worktrees/<name>/`).
-- **Committed snapshot (per-run, 2026-08-19 addendum)**: `docs/executions/runs/<run_id>.yaml`, written **only** by `stamp` (and `init`/`close`), then committed `chore(ledger): <action> <target>`. Reviewers/PRs read this; `check` reads live state. One file per run: two concurrent runs never commit a shared path, so the cross-PR merge-conflict class on the old single snapshot (#167 twice, #174, #180, #181 within 24h — each forcing a keep-ours resolution plus a full restamp ceremony) is structurally impossible. The `run_id` doubles as the tracked filename and a git pathspec, so `init` allowlists it (`A-Za-z0-9._-`, non-empty, no leading dot, no `..` → exit 6 otherwise).
+- **Committed snapshot (per-run, 2026-08-19 addendum)**: `docs/executions/runs/<run_id>.yaml`, written **only** by `init`, `set` (when it revokes a gate), `stamp`, `unstamp`, `flush`, and `close`, then committed `chore(ledger): <action> <target>`. Only the gate actions (`init`/`stamp`/`close`) also advance `last_seen_sha`; `set`-revocation, `unstamp`, and `flush` publish without adopting HEAD, so a no-gate publish cannot launder drift out of `reconcile`. Reviewers/PRs read this; `check` reads live state. One file per run: two concurrent runs never commit a shared path, so the cross-PR merge-conflict class on the old single snapshot (#167 twice, #174, #180, #181 within 24h — each forcing a keep-ours resolution plus a full restamp ceremony) is structurally impossible. The `run_id` doubles as the tracked filename and a git pathspec, so `init` allowlists it (`A-Za-z0-9._-`, non-empty, no leading dot, no `..` → exit 6 otherwise).
 - **Legacy record**: `docs/executions/state.yaml` (the pre-addendum shared snapshot) is frozen history — never written, read, or trusted by new runs, and it satisfies no gate. A tracked pointer replacement was weighed and rejected: any tracked file rewritten by every `init` re-creates the exact cross-PR conflict this addendum removes; locally the live state already carries `run_id`, and in CI the PR diff names the run file.
 - All writes schema-validated (python3 + yaml, as in `_docs/state-cockpit.md` self-check). A corrupt live file is exit 6, never silently rewritten.
 
@@ -67,6 +67,7 @@ Transition rules (each MUST have a red test):
 - `completed|skipped|blocked|failed` with empty evidence/reason → exit 4, no write
 - valid transition → live-state write, `updated` bumped, exit 0
 - schema-invalid resulting doc → exit 6, no write
+- **gate revocation side effect (review round 1):** `set diagnose|fix|review|finalize <anything-but-completed>` on a step whose gate is stamped ALSO revokes that stamp — `stamps[<gate>]` deleted, an `overrides[]` entry appended with `action: unstamp-via-set`, and the snapshot committed `chore(ledger): unstamp <gate>`. A gate stamp may only stand while its same-named step is `completed`. Atomic in the safe direction: if the publish fails, the whole durable tuple is restored and the stamp stands (exit 10) — see `unstamp` below.
 
 ### `ledger.sh stamp <gate> [--attest k=v ...] [--override --reason "..."] [--human] [--gate-type <t>]`
 
@@ -137,6 +138,27 @@ The mechanism is not what decides it: `eval "$CMD" 2>/dev/null` fails open while
 
 Unreachable because the suppressed segment is **not distinguishable by segmentation**: `./deploy.sh 2>/dev/null` (must block) and `bash test.sh 2>/dev/null && git push origin main` (must permit, batch #1) are both a suppressed, non-mutating-looking segment. Whether the suppressed command is bound to a mutation lives outside the command text — in a file, or a previously-defined alias — so no predicate over this text can see it. Narrower shapes *are* separable: a function defined and invoked in the same command can be caught by a scoped carrier (verified by the style lane), but that is one more carrier with the usual batch-#1 cost and it leaves the general class open. Closing this properly needs a tokenizer that tracks redirection scope. The load-bearing controls are the stamps and freshness rules, which do not depend on rule 3.
 4. **Entry enforcement — warn only in Phase 0** (PreToolUse Edit|Write, exit 0 + stderr): tracked-code file edit in a repo with `docs/executions/` and no live `status: active` run → warn "no active run — route via workflow-router or ledger.sh init". Escalation to exit 2 is a Phase 5 flip behind `LEDGER_ENTRY_ENFORCE=block`. Never fires on untracked files, non-opted-in repos, or `docs/executions/**` itself.
+
+### `ledger.sh unstamp <gate> --reason "..."` (review round 1 addendum)
+
+Explicit gate revocation. The `set`-coupled path above is the implicit one; both share `op_unstamp` and both commit `chore(ledger): unstamp <gate>`.
+
+- unknown gate → exit 5. Empty/missing `--reason` → exit 4. No live state → exit 1. No stamp for that gate → exit 1, message names the gate (`no '<gate>' stamp to revoke`).
+- Success → `stamps[<gate>]` deleted, an `overrides[]` entry appended, snapshot published, exit 0.
+- The `overrides[]` entry is `{gate, action, reason, timestamp, head_sha, revoked_head_sha, gate_type, revoked_checked}`. `head_sha` is the revocation-time HEAD; `revoked_head_sha`, `gate_type`, and `revoked_checked` preserve the revoked stamp's own identity and `checked` digests (including the `lane_*_sha256` bindings between a review stamp and its lane files), so a revoke → re-stamp cycle is diffable. Revocation supersedes a stamp; it never erases it.
+- **Atomicity (MUST have a red test).** The publish is all-or-nothing over the durable tuple. On any publish failure: live state, the working-tree snapshot file, and the index are restored verbatim, so live state, `check-snapshot`, and the committed blob all still agree the stamp stands; exit 10, and the message states the revocation did not apply and must be re-run. The rollback is a whole-file restore, not per-key: `overrides` is itself in the durable tuple, so a `stamps`-only rollback would leave live and committed divergent and `flush` would then refuse the operator's recovery path.
+- Revocation is not terminal — the gate is re-earnable by stamping again — and it confers nothing: every consumer of an absent stamp fails closed, so `unstamp` can only remove authority.
+- Advisory: `unstamp` does not touch the same-named step, so it warns on stderr (exit still 0) when that step is still `completed`, naming `ledger.sh set <gate> pending`.
+
+### `ledger.sh flush` (review round 1 addendum)
+
+Publishes `steps` and metadata to the committed snapshot with **no gate semantics**, so a corrected `set --evidence` string can ship without passing a gate (hand-editing the script-owned snapshot is hook-blocked).
+
+- No arguments (any argument → exit 1 usage). No live state → exit 1. Nothing to publish → exit 0, no commit.
+- Commits `chore(ledger): flush <run_id>` touching only that run's file, and does **not** advance `last_seen_sha` — so it cannot launder drift out of `reconcile`, and it cannot create, refresh, or stale a stamp.
+- **Refuses a closed run** (`status: done`) → exit 1: a settled audit record is not reopened by a no-gate publish.
+- **Refuses a divergent durable tuple** → exit 6, naming the divergent key, publishing nothing. `flush` compares live `DURABLE_KEYS` against the **committed blob** (`HEAD:<snapshot>`), not the working-tree file, because `flush` requires no clean tree and a hand-written worktree file must not be able to agree its way past the check.
+- Refuse, do not repair: preserving the record's stamps while writing only `steps`/meta would make `snapshot_match` pass while live and committed genuinely disagree, masking exactly what the tamper detector exists to see. The only ways the divergence arises are a hand-edited live state or a kernel bug, and publishing either makes it canonical — `cmd_flush`'s old write-all-of-live-state behavior flipped `check-snapshot` from MISSING to OK on an injected stamp and silenced `snapshot_current` in `stamp finalize` altogether.
 
 ### `ledger.sh check-snapshot <gate> [--file <path>]` (per-run addendum)
 
