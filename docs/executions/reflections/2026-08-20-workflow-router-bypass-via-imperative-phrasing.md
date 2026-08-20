@@ -53,6 +53,8 @@ All applied in this session:
 ## Defense Layers Now in Place
 
 ```
+Layer 0: Ambient Habit (docs/agents/habits.md) ← ADDED AFTER SAME-SESSION RE-OCCURRENCE
+        ↓ always loaded, catches before any skill
 Layer 1: Imperative Trigger Patterns (workflow-router)
         ↓ catches "spin up sub-agents" at classification
 Layer 2: Pre-Dispatch Self-Check (workflow-router)
@@ -62,6 +64,10 @@ Layer 3: Routing Prerequisite (5 orchestrator skills)
 Layer 4: Golden Routes Eval (CI)
         ↓ catches regression in classification
 ```
+
+## Same-Session Re-Occurrence
+
+After adding Layers 1-4, immediately committed without routing — proving skill-level guards insufficient when no skill loaded. Added Layer 0 (ambient habit) as backstop. Key insight: **user approval is input to routing, not a routing bypass**.
 
 ## Evidence
 
