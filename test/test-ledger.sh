@@ -1372,6 +1372,22 @@ assert_status "flush with nothing to publish exits 0" 0 "$STATUS"
 assert_equal "no-op flush makes no commit" "$head_before_noop" \
     "$(git -C "$wtV" rev-parse HEAD)"
 
+# flush must not launder drift: last_seen_sha drives reconcile's
+# "commits outside the ledger" detection, so advancing it on a
+# no-gate publish would erase evidence of real code commits. The
+# snapshot commit is already content-exempt in that loop.
+echo "unledgered code change" >>"$wtV/src/app.py"
+commit_all "$wtV" "feat: a commit the ledger has not seen"
+run_ledger "$wtV" reconcile
+assert_status "reconcile reports the unledgered commit" 1 "$STATUS"
+run_ledger "$wtV" set fix completed --evidence "note after the code commit"
+run_ledger "$wtV" flush
+assert_status "flush after a code commit exits 0" 0 "$STATUS"
+run_ledger "$wtV" reconcile
+assert_status "flush does not launder drift" 1 "$STATUS"
+assert_contains "drift still names the unledgered commit" "$OUT" \
+    "the ledger has not seen"
+
 repoF=$(new_repo flush_no_run)
 run_ledger "$repoF" flush
 assert_status "flush without a live run exits 1" 1 "$STATUS"
