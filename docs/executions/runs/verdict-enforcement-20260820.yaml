@@ -1,0 +1,46 @@
+run_id: verdict-enforcement-20260820
+workflow: workflow-deliver
+kind: bug
+budget: one-reviewer
+initialized_epoch: 1787239148
+status: active
+next: diagnose
+updated: '2026-08-20T15:19:08.629842+00:00'
+steps:
+- id: diagnose
+  required: true
+  status: pending
+  evidence: ''
+- id: fix
+  required: true
+  status: pending
+  evidence: ''
+- id: preflight
+  required: true
+  status: pending
+  evidence: ''
+- id: triage
+  required: true
+  status: pending
+  evidence: ''
+- id: implement
+  required: true
+  status: pending
+  evidence: ''
+- id: review
+  required: true
+  status: pending
+  evidence: ''
+- id: qa
+  required: true
+  status: pending
+  evidence: ''
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps: {}
+overrides: []
+route: bug|workflow-deliver kind=bug|confirmed
+branch: fix/review-verdict-enforcement
+worktree: /Users/alexwelch/wt/dotdev/verdict-enforcement
