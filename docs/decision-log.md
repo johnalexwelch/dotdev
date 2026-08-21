@@ -762,3 +762,18 @@ This file is the canonical decision record for workflow-feature flows in this re
 - Rotate/replace the key anyway — rejected: nothing to install a replacement for; the public half is authorized nowhere (verified across local machine, GitHub account keys, pergamon; synology confirmed by Alex).
 - Purge the `.pub` too for cosmetic cleanliness — rejected: public keys are not secrets; same full-rewrite cost as above for zero security gain.
 **Tradeoffs accepted**: The private blob remains fetchable from GitHub (PR refs / SHA-addressable / fork network) until GitHub Support acts, and cached diff views may persist even after — acceptable because the key is verified dead. Local unreachable objects persist until Alex runs the handed-off `gc`. This same delivery ships the scanner accommodation for the known-benign evidence quotes: a `private-key`-rule allowlist in `.gitleaks.toml` AND-scoped to *backtick-quoted* header strings on `docs/audits/*.md` lines only (raw key material there still flags), plus refreshed `.secrets.baseline` entries. Known detect-secrets limitation accepted: its `PrivateKeyDetector` hashes only the header string, so within the two baselined audit docs gitleaks is the effective private-key control. **Surviving operator actions after this closure:** (1) the optional GitHub Support request (the only mechanism that purges the still-publicly-fetchable blob behind `refs/pull/*` and cached views — draft in the remediation doc); (2) `git reflog expire --expire=now --all && git gc --prune=now` in `~/dotdev` (handed off, agent-blocked).
+
+## DL-0019 — Defer control.ts split (C2 architecture candidate)
+
+**Date**: 2026-08-21
+**Context**: Architecture candidate C2 evaluation (arch/c2-control-split branch). Target: `herdr-plugins/zed-herdr/src/plugin/control.ts` (948L). Signal: 3 concerns mixed (socket validation, server, client).
+**Question**: Should `control.ts` be split into `control-validation.ts`, `control-server.ts`, and `control-client.ts` to separate concerns?
+**Decision**: **Defer.** Do not split now. The file is extremely stable (1 commit in 12 months), has no existing tests, and the cost of inaction is flat — the file isn't getting worse. Splitting adds effort (~4-8h for tests + 3 modules + wiring) and risk (refactoring without safety net) with no immediate benefit.
+**Alternatives considered**:
+
+- *Split now into 3 modules* — rejected: low churn means low maintenance cost; tight internal coupling (server calls validation, client calls validation) means split is non-trivial; no tests exist → risk of breaking security invariants silently.
+- *Write characterization tests first, then split* — rejected: test investment only pays off if churn increases. Current stability doesn't justify the effort.
+- *Extract validation only (shared by both server and client)* — rejected: still requires characterization tests for trust seam; same cost/benefit profile.
+**Tradeoffs accepted**: The 3 concerns remain mixed in one 948L file. Acceptable because (a) concerns are related (all socket lifecycle), (b) external surface is small (2 files import from it), (c) low churn means low cognitive load on maintainers.
+**Future triggers to revisit**: (1) churn >3 commits/quarter touching different concerns; (2) need to unit-test validation separately; (3) adding second socket protocol requiring validation reuse; (4) security audit demanding isolated validation module.
+**If splitting later**: Extraction order is validation → client → server. Prerequisite: characterization tests for `probeControlSocket`, `validateControlSocketParent`, `validateControlSocketDirectory`, `lstatOwnedSocket`, `prepareControlSocket`.
