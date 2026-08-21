@@ -158,10 +158,10 @@ cases:
     expected_route: prompt-builder
     source: synthetic
     notes: "prompt-evaluation row: rewrite needed = prompt-builder, standalone per its contract"
-  - prompt: "Investigate how the auth middleware works in this codebase."
+  - prompt: "Run a repo-audit to map how the auth middleware works."
     expected_route: repo-audit
     source: synthetic
-    notes: "research row: codebase evidence"
+    notes: "research row: codebase evidence — explicit /repo-audit"
   - prompt: "Prune the stale worktrees piled up across all my repos."
     expected_route: git-worktree-audit
     source: synthetic
@@ -179,10 +179,10 @@ cases:
     source: synthetic
     notes: "session reflection row"
   # ---- Corpus sharpen batch 1 (2026-08-18 corpus-optimization audit §5) ----
-  - prompt: "Log this decision — we accepted the phased rollout; record the alternatives and tradeoffs in the decision log."
+  - prompt: "/decision-log phased rollout — record the alternatives and tradeoffs."
     expected_route: decision-log
     source: synthetic
-    notes: "2026-08-18 corpus audit sharpen 1: decision-log seam vs grill/design/PRD siblings — record-a-decision request is decision-log, not a planning flow"
+    notes: "2026-08-18 corpus audit sharpen 1: explicit /decision-log command"
   - prompt: "Implement this spec end to end — issue #77 is ready-for-agent with clear acceptance criteria."
     expected_route: workflow-deliver
     source: synthetic
