@@ -22,6 +22,8 @@
 
 User saying "yes", "approved", "do it", or describing what to build is INPUT to routing, not a bypass. Imperative phrasing ("spin up sub-agents", "delegate to specialists") triggers routing, not literal execution.
 
+- Team budget selections require delegation via taskflow — orchestrator MUST NOT implement directly.
+
 > Baseline: 2026-08-20 — three sessions bypassed all gates via literal interpretation or "just quickly" thinking.
 
 ---

@@ -79,6 +79,8 @@ Choose the smallest execution shape that preserves quality:
 | `multi-lane` | Auth, data, infra, migrations, public APIs, dependencies, broad refactors, concurrency/state, user-facing UX, or large diffs | `full` |
 | `team` | Two or more independent workstreams benefit from parallel execution more than coordination costs | per child workflow |
 
+**Team Budget Delegation Requirement:** When `team` budget is selected, you MUST delegate each workstream via taskflow. Direct implementation by the orchestrating agent is prohibited.
+
 Independence matters more than agent count. Do not use multiple agents merely
 because a workflow says "review"; use `workflow-review`'s risk-sized
 `review_profile`.
