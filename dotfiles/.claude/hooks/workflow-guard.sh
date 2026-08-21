@@ -312,9 +312,16 @@ has_routing_evidence() {
         return 1 # env var set but no matching evidence → reject
     fi
 
-    # Method 2: marker file alone (no env var) — trust existence
-    # ponytail: TTL/session validation via validate_routing_marker available; skipped for test compat
-    [[ -n "$routing_file" ]] && return 0
+    # Method 2: marker file alone (no env var)
+    if [[ -n "$routing_file" ]]; then
+        # When ROUTING_ENFORCE=block, validate TTL and session binding
+        if [[ "${ROUTING_ENFORCE:-}" = "block" ]]; then
+            validate_routing_marker "$routing_file" && return 0
+            return 1
+        fi
+        # Default: trust existence
+        return 0
+    fi
 
     return 1
 }

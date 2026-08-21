@@ -47,7 +47,7 @@ run_mutation_check() {
 }
 EOF
     )
-    echo "$input" | bash "$GUARD" 2>&1
+    echo "$input" | ROUTING_ENFORCE=block bash "$GUARD" 2>&1
 }
 
 # Test helper
