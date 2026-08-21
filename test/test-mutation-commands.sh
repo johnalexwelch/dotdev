@@ -34,7 +34,7 @@ run_mutation_test() {
     input='{"hook_event_name":"PreToolUse","tool_name":"Bash","tool_input":{"command":"'"$cmd"'"}}'
 
     set +e
-    output="$(printf '%s' "$input" | bash "$SCRIPT" 2>&1)"
+    output="$(printf '%s' "$input" | ROUTING_ENFORCE=block bash "$SCRIPT" 2>&1)"
     status=$?
     set -e
 
