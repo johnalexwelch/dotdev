@@ -10,6 +10,12 @@
 
 set -euo pipefail
 
+# Skip pi-internal repos (checkpoints, sessions, etc.) — not user code
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [[ "$repo_root" == "$HOME/.pi"* ]] || [[ "$repo_root" == *"/.pi/"* ]]; then
+    exit 0
+fi
+
 # Allow explicit bypass for emergencies (logged)
 if [[ "${SKIP_ROUTING_CHECK:-}" == "1" ]]; then
     echo "⚠️  Routing check bypassed via SKIP_ROUTING_CHECK=1" >&2
