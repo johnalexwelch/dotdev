@@ -41,21 +41,6 @@ fi
 # REMOVED: Small commit exemption (P1 gameable)
 
 if [[ "$ROUTING_EVIDENCE_FOUND" -eq 0 ]]; then
-    echo "" >&2
-    echo "╔════════════════════════════════════════════════════════════════╗" >&2
-    echo "║  🛑 ROUTING CHECK FAILED — No ROUTE_CARD evidence found        ║" >&2
-    echo "╠════════════════════════════════════════════════════════════════╣" >&2
-    echo "║  Before committing, you must:                                  ║" >&2
-    echo "║    1. Load workflow-router skill                               ║" >&2
-    echo "║    2. Emit a ROUTE_CARD: block                                 ║" >&2
-    echo "║    3. Get user confirmation                                    ║" >&2
-    echo "║                                                                ║" >&2
-    echo "║  Bypass (emergency only):                                      ║" >&2
-    echo "║    SKIP_ROUTING_CHECK=1 git commit ...                         ║" >&2
-    echo "║    git commit --no-verify                                      ║" >&2
-    echo "╚════════════════════════════════════════════════════════════════╝" >&2
-    echo "" >&2
+    echo "🛑 No ROUTE_CARD — load workflow-router first (or ROUTED_SESSION=1 / --no-verify)" >&2
     exit 1
 fi
-
-exit 0
