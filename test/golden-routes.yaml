@@ -8,14 +8,12 @@ cases:
     flow: taskflow
     source: synthetic
     notes: "team-budget → taskflow delegation; 2026-08-20 postmortem case"
-
   - prompt: "Dispatch workers to handle the auth, API, and UI lanes concurrently."
     expected_route: execute-prd
     budget: team
     flow: taskflow
     source: synthetic
     notes: "team-budget parallel dispatch; explicit multi-lane request"
-
   - prompt: "Parallelize the migration across all five modules — each module gets its own agent."
     expected_route: execute-prd
     budget: team

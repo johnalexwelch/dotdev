@@ -15,14 +15,14 @@ test_file_contains() {
     local file="$1"
     local pattern="$2"
     local description="$3"
-    
+
     if [[ ! -f "$file" ]]; then
         echo "FAIL: $description"
         echo "      File not found: $file"
         ((FAIL++))
         return 1
     fi
-    
+
     if grep -qi "$pattern" "$file" 2>/dev/null; then
         echo "PASS: $description"
         ((PASS++))
@@ -45,7 +45,11 @@ test_file_contains \
     "habits.md contains team budget delegation requirement"
 
 # Test 2: workflow-router SKILL.md documents team budget requires delegation
-SKILL_PATH="$HOME/.claude/skills/workflow-router/SKILL.md"
+# Use repo path (works in CI), fall back to deployed path
+SKILL_PATH="$PROJECT_ROOT/dotfiles/.config/agents/skills/workflow-router/SKILL.md"
+if [[ ! -f "$SKILL_PATH" ]]; then
+    SKILL_PATH="$HOME/.claude/skills/workflow-router/SKILL.md"
+fi
 test_file_contains \
     "$SKILL_PATH" \
     "team.*budget.*delegate\|team-budget.*multi-agent\|team.*budget.*spawn.*subagent" \

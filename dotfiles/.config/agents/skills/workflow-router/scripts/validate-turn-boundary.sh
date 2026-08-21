@@ -21,7 +21,7 @@ INPUT="$(cat)"
 has_route_card() {
     local text="$1"
     printf '%s\n' "$text" | grep -Eq '^[[:space:]]*ROUTE_CARD:[[:space:]]*$' &&
-    printf '%s\n' "$text" | grep -Eq '^[[:space:]]*- Request:'
+        printf '%s\n' "$text" | grep -Eq '^[[:space:]]*- Request:'
 }
 
 # True if the text contains tool invocations.
@@ -59,22 +59,22 @@ while IFS= read -r line || [ -n "$line" ]; do
         ASSISTANT_BLOCK=""
         continue
     fi
-    
+
     if [[ "$line" == "[/ASSISTANT]" ]]; then
         IN_ASSISTANT=0
-        
+
         # Check 1: ROUTE_CARD + tool call in same turn
         if has_route_card "$ASSISTANT_BLOCK" && has_tool_call "$ASSISTANT_BLOCK"; then
             echo "same-turn-tool-call" >&2
             exit 1
         fi
-        
+
         # Check 2: ROUTE_CARD without confirmation question
         if has_route_card "$ASSISTANT_BLOCK" && ! has_confirmation_question "$ASSISTANT_BLOCK"; then
             echo "missing-confirmation" >&2
             exit 1
         fi
-        
+
         # Check 3: Approval bypass (user approved but no ROUTE_CARD, has tool calls)
         if [ "$PREV_WAS_APPROVAL" -eq 1 ]; then
             if has_tool_call "$ASSISTANT_BLOCK" && ! has_route_card "$ASSISTANT_BLOCK"; then
@@ -85,18 +85,18 @@ while IFS= read -r line || [ -n "$line" ]; do
                 fi
             fi
         fi
-        
+
         PREV_WAS_APPROVAL=0
         ASSISTANT_BLOCK=""
         continue
     fi
-    
+
     if [[ "$line" == "[USER]" ]]; then
         IN_USER=1
         USER_BLOCK=""
         continue
     fi
-    
+
     if [[ "$line" == "[/USER]" ]]; then
         IN_USER=0
         if is_approval "$USER_BLOCK"; then
@@ -107,15 +107,15 @@ while IFS= read -r line || [ -n "$line" ]; do
         USER_BLOCK=""
         continue
     fi
-    
+
     if [ "$IN_ASSISTANT" -eq 1 ]; then
         ASSISTANT_BLOCK+="$line"$'\n'
     fi
-    
+
     if [ "$IN_USER" -eq 1 ]; then
         USER_BLOCK+="$line"$'\n'
     fi
-done <<< "$INPUT"
+done <<<"$INPUT"
 
 # No violations found
 exit 0

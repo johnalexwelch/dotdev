@@ -85,8 +85,8 @@ _guard_rule3_tokenizer_path() {
         local link
         link="$(readlink "$src")"
         case "$link" in
-        /*) src="$link" ;;
-        *) src="$(dirname "$src")/$link" ;;
+            /*) src="$link" ;;
+            *) src="$(dirname "$src")/$link" ;;
         esac
     done
     printf '%s/guard-rule3-tokenizer.py' "$(cd "$(dirname "$src")" && pwd)"
@@ -154,18 +154,18 @@ rule3_tokenizer_blocks() {
     python_status=$?
     set -e
     case "$python_status" in
-    0)
-        return 1
-        ;;
-    1)
-        RULE3_REASON="$python_out"
-        return 0
-        ;;
-    *)
-        printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\nRule 3 blocks all candidate commands until this is fixed: check that python3 is on PATH and working, and report this command shape if the tokenizer itself errored.\n' \
-            "$python_status" "$python_out" >&2
-        exit 2
-        ;;
+        0)
+            return 1
+            ;;
+        1)
+            RULE3_REASON="$python_out"
+            return 0
+            ;;
+        *)
+            printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\nRule 3 blocks all candidate commands until this is fixed: check that python3 is on PATH and working, and report this command shape if the tokenizer itself errored.\n' \
+                "$python_status" "$python_out" >&2
+            exit 2
+            ;;
     esac
 }
 
@@ -392,18 +392,18 @@ if [ "$event" = "PreToolUse" ]; then
                 # the --override recovery path runs through the same kernel
                 # (D-006 #5; review R1 should-fix; batch #2).
                 case "$check_status" in
-                1 | 2)
-                    printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
-                    exit 2
-                    ;;
-                *)
-                    printf '[WORKFLOW GUARD] merge gate ERRORED (exit %s) — permitting merge, but the ledger kernel needs repair:\n%s\n' "$check_status" "$check_out" >&2
-                    ;;
+                    1 | 2)
+                        printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
+                        exit 2
+                        ;;
+                    *)
+                        printf '[WORKFLOW GUARD] merge gate ERRORED (exit %s) — permitting merge, but the ledger kernel needs repair:\n%s\n' "$check_status" "$check_out" >&2
+                        ;;
                 esac
             fi
             # Override stamps pass, but the bypass stays loud.
             case "$check_out" in
-            *OVERRIDDEN*) printf '%s\n' "$check_out" ;;
+                *OVERRIDDEN*) printf '%s\n' "$check_out" ;;
             esac
         fi
     fi
