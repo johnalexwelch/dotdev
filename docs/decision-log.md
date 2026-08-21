@@ -762,3 +762,36 @@ This file is the canonical decision record for workflow-feature flows in this re
 - Rotate/replace the key anyway — rejected: nothing to install a replacement for; the public half is authorized nowhere (verified across local machine, GitHub account keys, pergamon; synology confirmed by Alex).
 - Purge the `.pub` too for cosmetic cleanliness — rejected: public keys are not secrets; same full-rewrite cost as above for zero security gain.
 **Tradeoffs accepted**: The private blob remains fetchable from GitHub (PR refs / SHA-addressable / fork network) until GitHub Support acts, and cached diff views may persist even after — acceptable because the key is verified dead. Local unreachable objects persist until Alex runs the handed-off `gc`. This same delivery ships the scanner accommodation for the known-benign evidence quotes: a `private-key`-rule allowlist in `.gitleaks.toml` AND-scoped to *backtick-quoted* header strings on `docs/audits/*.md` lines only (raw key material there still flags), plus refreshed `.secrets.baseline` entries. Known detect-secrets limitation accepted: its `PrivateKeyDetector` hashes only the header string, so within the two baselined audit docs gitleaks is the effective private-key control. **Surviving operator actions after this closure:** (1) the optional GitHub Support request (the only mechanism that purges the still-publicly-fetchable blob behind `refs/pull/*` and cached views — draft in the remediation doc); (2) `git reflog expire --expire=now --all && git gc --prune=now` in `~/dotdev` (handed off, agent-blocked).
+
+## DL-0019 — C3 lock extraction discarded: one adapter, hypothetical seam
+
+**Date**: 2026-08-21
+**Context**: Architecture candidate evaluation (Candidate 3) for extracting lock logic (~170 lines) from `herdr-plugins/zed-herdr/src/plugin/hook.ts` to a standalone `lock.ts` module. Evaluated on branch `arch/c3-lock-extract` in worktree `/Users/alexwelch/.herdr/worktrees/dotdev/arch-c3-lock-extract`.
+**Question**: Should the file-based lock acquire/release logic be extracted from `hook.ts` to improve reusability and testability?
+**Decision**: Discard/defer. Do not extract lock logic until a second caller emerges.
+
+**Deletion test results:**
+
+| Test | Answer | Evidence |
+|------|--------|----------|
+| Would extraction reduce complexity or just move it? | Just move | Lock logic complexity stays identical; no composition/reuse gains |
+| Second caller emerging? | No | grep shows only `hook.ts` calls lock fns (`acquireLock`, `releaseLock`); no daemon/other adapter needs it |
+| Testability alone sufficient? | No | Lock fns already testable in-place (deps injected: `now`, `sleep`, `token`) |
+
+**Evidence:**
+
+- `acquireLock` called once (L576)
+- `releaseLock` called once (L618)
+- Zero external callers across `herdr-plugins/` (grep verified)
+- Lock logic tightly coupled to hook semantics: stale detection thresholds (`LOCK_STALE_MS = 5_000`), token format (`randomUUID`), directory structure (`.lock` suffix, `${token}.json` owner file)
+- No evidence of VSCode/Cursor/other editor adapters needing same lock
+
+**Skill guidance applied:** "One adapter = hypothetical seam. Don't extract until second caller."
+
+**Alternatives considered:**
+
+- Extract now for testability — rejected: deps already injected, extraction adds a file with no consumers
+- Extract now in anticipation of multi-adapter — rejected: speculative, YAGNI; if second adapter emerges, extraction is trivial at that point
+- Partial extraction (just `acquireLock`/`releaseLock`) — rejected: same objection, plus breaks internal cohesion of stale detection, identity checking, etc.
+
+**Tradeoffs accepted:** If a second adapter does emerge, extraction will require touching tests that reference the internal functions. Acceptable because: (1) that cost is paid only if/when a second caller exists, (2) extraction at that point is mechanical, not design work, and (3) premature extraction creates maintenance burden (two files to update) with zero current benefit.
