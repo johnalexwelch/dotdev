@@ -198,6 +198,14 @@ if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" 
         exit 2
     fi
 
+    # Rule 2c: routing-confirmed marker is script-owned — written by
+    # routing-confirm.sh on explicit user confirmation. Direct writes bypass
+    # the routing gate (P0 vulnerability: agent could forge evidence).
+    if grep -Eiq '(^|/)(\.pi/)?routing-confirmed$' <<<"$file_path"; then
+        printf 'Blocked: %s is script-owned; it is written by routing-confirm.sh on user confirmation — never write it by hand.\n' "$file_path" >&2
+        exit 2
+    fi
+
     # Rule 4: entry enforcement — tracked-code edit in an opted-in repo with no
     # active ledger run. Warn-only in Phase 0; LEDGER_ENTRY_ENFORCE=block
     # escalates to a hard block (the Phase 5 default flip).
@@ -221,7 +229,132 @@ fi
 [ "$tool" = "Bash" ] || exit 0
 [ -n "$cmd" ] || exit 0
 
+# Routing enforcement: block mutations without routing evidence
+# This is the HARD gate — documentation/habits are soft.
+is_mutation_cmd() {
+    # Original patterns
+    has '\bgh[[:space:]]+issue[[:space:]]+create\b' ||
+        has '\bgh[[:space:]]+pr[[:space:]]+(create|merge|ready)\b' ||
+        has '\bgit[[:space:]]+(commit|push)\b' ||
+        has '\bgit-forge\b[^|;&]*\b(create|merge)\b' ||
+        # Gap #1: gh api -X POST/PATCH/DELETE
+        has '\bgh[[:space:]]+api\b[^|;&]*(-X|--method)[[:space:]]*(POST|PUT|PATCH|DELETE)' ||
+        # Gap #2: curl to github API with mutating methods
+        has '\bcurl\b[^|;&]*(-X[[:space:]]*|--request[[:space:]]+)(POST|PUT|PATCH|DELETE)[^|;&]*github' ||
+        has '\bcurl\b[^|;&]*github[^|;&]*(-X[[:space:]]*|--request[[:space:]]+)(POST|PUT|PATCH|DELETE)' ||
+        # Gap #3: hub CLI
+        has '\bhub[[:space:]]+(pull-request|create|issue)\b' ||
+        # Gap #4: glab (GitLab CLI)
+        has '\bglab[[:space:]]+(mr|issue)[[:space:]]+(create|merge)\b' ||
+        # Gap #5: git -C <path> or --git-dir before commit/push
+        has '\bgit[[:space:]]+(-C[[:space:]]+[^[:space:]]+|--git-dir=[^[:space:]]+)[[:space:]]+(commit|push)\b'
+}
+
+# Validate routing marker: check expires_at and session_pid
+# Returns 0 if valid, 1 if invalid/missing/expired
+validate_routing_marker() {
+    local marker_path="$1"
+    [[ -f "$marker_path" ]] || return 1
+    [[ -s "$marker_path" ]] || return 1 # empty file
+
+    # Parse YAML fields (grep-based, no deps)
+    local expires_at session_pid
+    expires_at="$(grep -E '^expires_at:' "$marker_path" 2>/dev/null | sed 's/^expires_at:[[:space:]]*//' | tr -d '[:space:]')"
+    session_pid="$(grep -E '^session_pid:' "$marker_path" 2>/dev/null | sed 's/^session_pid:[[:space:]]*//' | tr -d '[:space:]')"
+
+    # Reject if expires_at missing
+    [[ -n "$expires_at" ]] || return 1
+
+    # Reject if expired
+    local now
+    now="$(date +%s)"
+    [[ "$expires_at" =~ ^[0-9]+$ ]] || return 1
+    ((expires_at > now)) || return 1
+
+    # Reject if session_pid missing or doesn't match process tree
+    [[ -n "$session_pid" && "$session_pid" =~ ^[0-9]+$ ]] || return 1
+
+    # Check if session_pid is current process or ancestor
+    local check_pid=$$
+    while [[ "$check_pid" -gt 1 ]]; do
+        [[ "$check_pid" == "$session_pid" ]] && return 0
+        # Get parent PID (portable: ps)
+        check_pid="$(ps -o ppid= -p "$check_pid" 2>/dev/null | tr -d '[:space:]')"
+        [[ -n "$check_pid" && "$check_pid" =~ ^[0-9]+$ ]] || break
+    done
+
+    return 1
+}
+
+has_routing_evidence() {
+    # Find routing-confirmed file (repo > cwd > home)
+    local routing_file=""
+    local repo_top
+    repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+
+    if [[ -n "$repo_top" && -f "$repo_top/.pi/routing-confirmed" ]]; then
+        routing_file="$repo_top/.pi/routing-confirmed"
+    elif [[ -f "$cwd/.pi/routing-confirmed" ]]; then
+        routing_file="$cwd/.pi/routing-confirmed"
+    elif [[ -f "$HOME/.pi/routing-confirmed" ]]; then
+        routing_file="$HOME/.pi/routing-confirmed"
+    fi
+
+    # Method 1: env var — must validate against stored evidence
+    # ponytail: grep for line match; upgrade to proper YAML parse if format changes
+    if [[ -n "${ROUTED_SESSION:-}" ]]; then
+        [[ -n "$routing_file" ]] && grep -q "^session_pid: ${ROUTED_SESSION}$" "$routing_file" 2>/dev/null && return 0
+        return 1 # env var set but no matching evidence → reject
+    fi
+
+    if [[ -n "${ROUTE_CARD_ID:-}" ]]; then
+        [[ -n "$routing_file" ]] && grep -q "^route_id: ${ROUTE_CARD_ID}$" "$routing_file" 2>/dev/null && return 0
+        return 1 # env var set but no matching evidence → reject
+    fi
+
+    # Method 2: marker file alone (no env var)
+    if [[ -n "$routing_file" ]]; then
+        # When ROUTING_ENFORCE=block, validate TTL and session binding
+        if [[ "${ROUTING_ENFORCE:-}" = "block" ]]; then
+            validate_routing_marker "$routing_file" && return 0
+            return 1
+        fi
+        # Default: trust existence
+        return 0
+    fi
+
+    return 1
+}
+
 if [ "$event" = "PreToolUse" ]; then
+    # RULE -1: Block Bash writes to routing-confirmed marker (prevents forge)
+    # ponytail: simple pattern match; upgrade to AST tokenizer if evasion found
+    if has 'routing-confirmed' &&
+        { has '(>|>>)[[:space:]]*(\./)?(\.pi/)?routing-confirmed' ||
+            has '(cat|echo|printf|tee)[[:space:]]' && has '(>|>>)' ||
+            has '\b(cp|mv|install)\b.*(\.pi/)?routing-confirmed'; }; then
+        printf 'Blocked: cannot write routing-confirmed via Bash — use routing-confirm.sh\n' >&2
+        exit 2
+    fi
+
+    # RULE 0: Routing gate — mutations require routing evidence
+    # This catches: gh issue create, gh pr create/merge, git commit/push
+    # Bypass: ROUTED_SESSION=1 or .pi/routing-confirmed file
+    # Warn-only in Phase 0; ROUTING_ENFORCE=block escalates to a hard block.
+    if is_mutation_cmd && ! has_routing_evidence; then
+        if [ "${ROUTING_ENFORCE:-}" = "block" ]; then
+            printf '\n' >&2
+            printf '╔════════════════════════════════════════════════════════════════╗\n' >&2
+            printf '║  🛑 BLOCKED: No routing evidence for mutation                  ║\n' >&2
+            printf '╠════════════════════════════════════════════════════════════════╣\n' >&2
+            printf '║  Load workflow-router → emit ROUTE_CARD → get confirmation    ║\n' >&2
+            printf '║                                                                ║\n' >&2
+            printf '║  Bypass: ROUTED_SESSION=1 <command>                            ║\n' >&2
+            printf '╚════════════════════════════════════════════════════════════════╝\n' >&2
+            exit 2
+        fi
+    fi
+
     if has '\bgh[[:space:]]+issue[[:space:]]+(create|edit)\b' &&
         adds_ready_for_agent &&
         { prd_like_text "$cmd" || prd_like_text "$(existing_issue_text)"; }; then

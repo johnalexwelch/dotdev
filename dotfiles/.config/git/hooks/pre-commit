@@ -11,8 +11,13 @@
 set -euo pipefail
 
 # Skip pi-internal repos (checkpoints, sessions, etc.) — not user code
+# Check both work-tree AND git-dir because pi-checkpoint uses:
+#   --git-dir=~/.pi/.../checkpoints/.../.git --work-tree=/Users/...
+# which means rev-parse --show-toplevel returns the work-tree, not the git-dir
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
-if [[ "$repo_root" == "$HOME/.pi"* ]] || [[ "$repo_root" == *"/.pi/"* ]]; then
+git_dir="${GIT_DIR:-$(git rev-parse --absolute-git-dir 2>/dev/null || true)}"
+if [[ "$repo_root" == "$HOME/.pi"* ]] || [[ "$repo_root" == *"/.pi/"* ]] ||
+    [[ "$git_dir" == "$HOME/.pi"* ]] || [[ "$git_dir" == *"/.pi/"* ]]; then
     exit 0
 fi
 
