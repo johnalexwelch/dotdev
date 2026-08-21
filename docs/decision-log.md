@@ -762,3 +762,37 @@ This file is the canonical decision record for workflow-feature flows in this re
 - Rotate/replace the key anyway — rejected: nothing to install a replacement for; the public half is authorized nowhere (verified across local machine, GitHub account keys, pergamon; synology confirmed by Alex).
 - Purge the `.pub` too for cosmetic cleanliness — rejected: public keys are not secrets; same full-rewrite cost as above for zero security gain.
 **Tradeoffs accepted**: The private blob remains fetchable from GitHub (PR refs / SHA-addressable / fork network) until GitHub Support acts, and cached diff views may persist even after — acceptable because the key is verified dead. Local unreachable objects persist until Alex runs the handed-off `gc`. This same delivery ships the scanner accommodation for the known-benign evidence quotes: a `private-key`-rule allowlist in `.gitleaks.toml` AND-scoped to *backtick-quoted* header strings on `docs/audits/*.md` lines only (raw key material there still flags), plus refreshed `.secrets.baseline` entries. Known detect-secrets limitation accepted: its `PrivateKeyDetector` hashes only the header string, so within the two baselined audit docs gitleaks is the effective private-key control. **Surviving operator actions after this closure:** (1) the optional GitHub Support request (the only mechanism that purges the still-publicly-fetchable blob behind `refs/pull/*` and cached views — draft in the remediation doc); (2) `git reflog expire --expire=now --all && git gc --prune=now` in `~/dotdev` (handed off, agent-blocked).
+
+## DL-0019 — C3 lock extraction discarded: one adapter, hypothetical seam
+
+**Date**: 2026-08-21
+**Context**: Architecture candidate evaluation (Candidate 3) for extracting lock logic (~170 lines) from `herdr-plugins/zed-herdr/src/plugin/hook.ts` to a standalone `lock.ts` module. Evaluated on branch `arch/c3-lock-extract`.
+**Question**: Should the file-based lock acquire/release logic be extracted from `hook.ts` to improve reusability and testability?
+**Decision**: Discard/defer. Do not extract lock logic until a second caller emerges.
+
+**Deletion test results:**
+
+| Test | Answer | Evidence |
+|------|--------|----------|
+| Would extraction reduce complexity or just move it? | Just move | Lock logic complexity stays identical; no composition/reuse gains |
+| Second caller emerging? | No | grep shows only `hook.ts` calls lock fns; no daemon/other adapter needs it |
+| Testability alone sufficient? | No | Lock fns already testable in-place (deps injected: `now`, `sleep`, `token`) |
+
+**Skill guidance applied:** "One adapter = hypothetical seam. Don't extract until second caller."
+
+**Tradeoffs accepted:** If a second adapter does emerge, extraction will require touching tests that reference the internal functions. Acceptable because: (1) that cost is paid only if/when a second caller exists, (2) extraction at that point is mechanical, not design work.
+
+## DL-0020 — Defer control.ts split (C2 architecture candidate)
+
+**Date**: 2026-08-21
+**Context**: Architecture candidate C2 evaluation (arch/c2-control-split branch). Target: `herdr-plugins/zed-herdr/src/plugin/control.ts` (948L). Signal: 3 concerns mixed (socket validation, server, client).
+**Question**: Should `control.ts` be split into `control-validation.ts`, `control-server.ts`, and `control-client.ts` to separate concerns?
+**Decision**: **Defer.** Do not split now. The file is extremely stable (1 commit in 12 months), has no existing tests, and the cost of inaction is flat.
+
+**Alternatives considered**:
+- *Split now into 3 modules* — rejected: low churn, tight coupling, no tests = risk without benefit.
+- *Write characterization tests first, then split* — rejected: test investment only pays off if churn increases.
+
+**Tradeoffs accepted**: The 3 concerns remain mixed in one 948L file. Acceptable because concerns are related (all socket lifecycle), external surface is small (2 files import from it), low churn means low cognitive load.
+
+**Future triggers to revisit**: (1) churn >3 commits/quarter; (2) need to unit-test validation separately; (3) adding second socket protocol; (4) security audit demanding isolation.
