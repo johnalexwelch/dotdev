@@ -221,7 +221,48 @@ fi
 [ "$tool" = "Bash" ] || exit 0
 [ -n "$cmd" ] || exit 0
 
+# Routing enforcement: block mutations without routing evidence
+# This is the HARD gate — documentation/habits are soft.
+is_mutation_cmd() {
+    has '\bgh[[:space:]]+issue[[:space:]]+create\b' ||
+        has '\bgh[[:space:]]+pr[[:space:]]+(create|merge|ready)\b' ||
+        has '\bgit[[:space:]]+(commit|push)\b' ||
+        has '\bgit-forge\b[^|;&]*\b(create|merge)\b'
+}
+
+has_routing_evidence() {
+    # Method 1: env var (set by tooling or manually)
+    [[ -n "${ROUTED_SESSION:-}" ]] && return 0
+    [[ -n "${ROUTE_CARD_ID:-}" ]] && return 0
+    
+    # Method 2: marker file (written by workflow-router on confirmation)
+    [[ -f "$cwd/.pi/routing-confirmed" ]] && return 0
+    [[ -f "$HOME/.pi/routing-confirmed" ]] && return 0
+    
+    # Method 3: check repo's .pi/routing-confirmed
+    local repo_top
+    repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+    [[ -n "$repo_top" && -f "$repo_top/.pi/routing-confirmed" ]] && return 0
+    
+    return 1
+}
+
 if [ "$event" = "PreToolUse" ]; then
+    # RULE 0: Routing gate — mutations require routing evidence
+    # This catches: gh issue create, gh pr create/merge, git commit/push
+    # Bypass: ROUTED_SESSION=1 or .pi/routing-confirmed file
+    if is_mutation_cmd && ! has_routing_evidence; then
+        printf '\n' >&2
+        printf '╔════════════════════════════════════════════════════════════════╗\n' >&2
+        printf '║  🛑 BLOCKED: No routing evidence for mutation                  ║\n' >&2
+        printf '╠════════════════════════════════════════════════════════════════╣\n' >&2
+        printf '║  Load workflow-router → emit ROUTE_CARD → get confirmation    ║\n' >&2
+        printf '║                                                                ║\n' >&2
+        printf '║  Bypass: ROUTED_SESSION=1 <command>                            ║\n' >&2
+        printf '╚════════════════════════════════════════════════════════════════╝\n' >&2
+        exit 2
+    fi
+
     if has '\bgh[[:space:]]+issue[[:space:]]+(create|edit)\b' &&
         adds_ready_for_agent &&
         { prd_like_text "$cmd" || prd_like_text "$(existing_issue_text)"; }; then
