@@ -246,7 +246,7 @@ echo ""
 
 check_golden_case() {
     local pattern="$1" description="$2"
-    
+
     if grep -q "$pattern" "${GOLDEN}" 2>/dev/null; then
         echo "  PASS: golden-routes.yaml includes: ${description}"
         PASS=$((PASS + 1))

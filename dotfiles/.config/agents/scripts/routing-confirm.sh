@@ -10,7 +10,7 @@ set -euo pipefail
 route_id="${1:-$(date +%s)}"
 timestamp="$(date -Iseconds)"
 created_at="$(date +%s)"
-expires_at="$((created_at + 86400))"  # 24h TTL
+expires_at="$((created_at + 86400))" # 24h TTL
 
 # Find repo root or use home
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"

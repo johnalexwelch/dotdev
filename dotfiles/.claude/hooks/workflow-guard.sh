@@ -85,8 +85,8 @@ _guard_rule3_tokenizer_path() {
         local link
         link="$(readlink "$src")"
         case "$link" in
-        /*) src="$link" ;;
-        *) src="$(dirname "$src")/$link" ;;
+            /*) src="$link" ;;
+            *) src="$(dirname "$src")/$link" ;;
         esac
     done
     printf '%s/guard-rule3-tokenizer.py' "$(cd "$(dirname "$src")" && pwd)"
@@ -154,18 +154,18 @@ rule3_tokenizer_blocks() {
     python_status=$?
     set -e
     case "$python_status" in
-    0)
-        return 1
-        ;;
-    1)
-        RULE3_REASON="$python_out"
-        return 0
-        ;;
-    *)
-        printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\nRule 3 blocks all candidate commands until this is fixed: check that python3 is on PATH and working, and report this command shape if the tokenizer itself errored.\n' \
-            "$python_status" "$python_out" >&2
-        exit 2
-        ;;
+        0)
+            return 1
+            ;;
+        1)
+            RULE3_REASON="$python_out"
+            return 0
+            ;;
+        *)
+            printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\nRule 3 blocks all candidate commands until this is fixed: check that python3 is on PATH and working, and report this command shape if the tokenizer itself errored.\n' \
+                "$python_status" "$python_out" >&2
+            exit 2
+            ;;
     esac
 }
 
@@ -255,7 +255,7 @@ is_mutation_cmd() {
 validate_routing_marker() {
     local marker_path="$1"
     [[ -f "$marker_path" ]] || return 1
-    [[ -s "$marker_path" ]] || return 1  # empty file
+    [[ -s "$marker_path" ]] || return 1 # empty file
 
     # Parse YAML fields (grep-based, no deps)
     local expires_at session_pid
@@ -269,7 +269,7 @@ validate_routing_marker() {
     local now
     now="$(date +%s)"
     [[ "$expires_at" =~ ^[0-9]+$ ]] || return 1
-    (( expires_at > now )) || return 1
+    ((expires_at > now)) || return 1
 
     # Reject if session_pid missing or doesn't match process tree
     [[ -n "$session_pid" && "$session_pid" =~ ^[0-9]+$ ]] || return 1
@@ -291,7 +291,7 @@ has_routing_evidence() {
     local routing_file=""
     local repo_top
     repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
-    
+
     if [[ -n "$repo_top" && -f "$repo_top/.pi/routing-confirmed" ]]; then
         routing_file="$repo_top/.pi/routing-confirmed"
     elif [[ -f "$cwd/.pi/routing-confirmed" ]]; then
@@ -299,17 +299,17 @@ has_routing_evidence() {
     elif [[ -f "$HOME/.pi/routing-confirmed" ]]; then
         routing_file="$HOME/.pi/routing-confirmed"
     fi
-    
+
     # Method 1: env var — must validate against stored evidence
     # ponytail: grep for line match; upgrade to proper YAML parse if format changes
     if [[ -n "${ROUTED_SESSION:-}" ]]; then
         [[ -n "$routing_file" ]] && grep -q "^session_pid: ${ROUTED_SESSION}$" "$routing_file" 2>/dev/null && return 0
-        return 1  # env var set but no matching evidence → reject
+        return 1 # env var set but no matching evidence → reject
     fi
-    
+
     if [[ -n "${ROUTE_CARD_ID:-}" ]]; then
         [[ -n "$routing_file" ]] && grep -q "^route_id: ${ROUTE_CARD_ID}$" "$routing_file" 2>/dev/null && return 0
-        return 1  # env var set but no matching evidence → reject
+        return 1 # env var set but no matching evidence → reject
     fi
 
     # Method 2: marker file alone (no env var) — trust existence
@@ -382,18 +382,18 @@ if [ "$event" = "PreToolUse" ]; then
                 # the --override recovery path runs through the same kernel
                 # (D-006 #5; review R1 should-fix; batch #2).
                 case "$check_status" in
-                1 | 2)
-                    printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
-                    exit 2
-                    ;;
-                *)
-                    printf '[WORKFLOW GUARD] merge gate ERRORED (exit %s) — permitting merge, but the ledger kernel needs repair:\n%s\n' "$check_status" "$check_out" >&2
-                    ;;
+                    1 | 2)
+                        printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
+                        exit 2
+                        ;;
+                    *)
+                        printf '[WORKFLOW GUARD] merge gate ERRORED (exit %s) — permitting merge, but the ledger kernel needs repair:\n%s\n' "$check_status" "$check_out" >&2
+                        ;;
                 esac
             fi
             # Override stamps pass, but the bypass stays loud.
             case "$check_out" in
-            *OVERRIDDEN*) printf '%s\n' "$check_out" ;;
+                *OVERRIDDEN*) printf '%s\n' "$check_out" ;;
             esac
         fi
     fi

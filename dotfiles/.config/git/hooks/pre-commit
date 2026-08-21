@@ -16,8 +16,8 @@ set -euo pipefail
 # which means rev-parse --show-toplevel returns the work-tree, not the git-dir
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 git_dir="${GIT_DIR:-$(git rev-parse --absolute-git-dir 2>/dev/null || true)}"
-if [[ "$repo_root" == "$HOME/.pi"* ]] || [[ "$repo_root" == *"/.pi/"* ]] || \
-   [[ "$git_dir" == "$HOME/.pi"* ]] || [[ "$git_dir" == *"/.pi/"* ]]; then
+if [[ "$repo_root" == "$HOME/.pi"* ]] || [[ "$repo_root" == *"/.pi/"* ]] ||
+    [[ "$git_dir" == "$HOME/.pi"* ]] || [[ "$git_dir" == *"/.pi/"* ]]; then
     exit 0
 fi
 

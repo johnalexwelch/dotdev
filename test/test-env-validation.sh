@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-env-validation.sh — Tests for ROUTED_SESSION/ROUTE_CARD_ID validation
-# 
+#
 # Issue: env vars currently bypass routing with ANY value:
 #   ROUTED_SESSION=1 git commit -m "bypass"
 #   ROUTE_CARD_ID=fake gh pr create
@@ -37,12 +37,12 @@ run_guard() {
 assert_status() {
     local name="$1" expected="$2" tool_cmd="$3"
     shift 3
-    
+
     set +e
     output=$(run_guard "$tool_cmd" "$@")
     actual=$?
     set -e
-    
+
     if [ "$actual" -eq "$expected" ]; then
         echo "  PASS: $name"
         PASS=$((PASS + 1))
