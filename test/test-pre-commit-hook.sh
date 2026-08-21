@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-pre-commit-hook.sh — Tests for the routing enforcement pre-commit hook
-# 
+#
 # Baseline: 2026-08-21 — hook fails on pi-checkpoint commits because it checks
 # work-tree path instead of git-dir path
 
@@ -23,7 +23,7 @@ setup_test_repo() {
     mkdir -p "${repo_dir}"
     cd "${repo_dir}"
     git init --quiet
-    echo "test" > file.txt
+    echo "test" >file.txt
     git add file.txt
     git commit --quiet -m "initial" --no-verify
     echo "${repo_dir}"
@@ -34,10 +34,10 @@ run_hook_test() {
     local name="$1"
     local expected_exit="$2"
     shift 2
-    
+
     local status=0
     "$@" bash "${HOOK}" >/dev/null 2>&1 || status=$?
-    
+
     if [[ "${status}" -eq "${expected_exit}" ]]; then
         echo "  PASS: ${name}"
         PASS=$((PASS + 1))
@@ -54,7 +54,7 @@ echo ""
 echo "Test: Normal repo without routing evidence"
 repo=$(setup_test_repo)
 cd "${repo}"
-echo "change" >> file.txt
+echo "change" >>file.txt
 git add file.txt
 run_hook_test "rejects commit without routing evidence" 1 env -i HOME="${HOME}" PATH="${PATH}"
 
@@ -62,10 +62,10 @@ run_hook_test "rejects commit without routing evidence" 1 env -i HOME="${HOME}" 
 echo "Test: Bypass with ROUTED_SESSION"
 run_hook_test "allows commit with ROUTED_SESSION=1" 0 env -i HOME="${HOME}" PATH="${PATH}" ROUTED_SESSION=1
 
-# Test 3: Repo with .pi/routing-confirmed file should pass  
+# Test 3: Repo with .pi/routing-confirmed file should pass
 echo "Test: Bypass with routing-confirmed file"
 mkdir -p .pi
-echo "route_id: test" > .pi/routing-confirmed
+echo "route_id: test" >.pi/routing-confirmed
 run_hook_test "allows commit with routing-confirmed file" 0 env -i HOME="${HOME}" PATH="${PATH}"
 rm -rf .pi
 
@@ -81,7 +81,7 @@ git init --bare --quiet "${checkpoint_git_dir}"
 cd "${TMPDIR_BASE}"
 mkdir -p checkpoint-workdir
 cd checkpoint-workdir
-echo "checkpoint data" > data.txt
+echo "checkpoint data" >data.txt
 
 # Run the hook with git-dir pointing to ~/.pi/...
 # The hook should detect this and exit 0 (skip)
