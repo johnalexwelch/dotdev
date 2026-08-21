@@ -9,6 +9,7 @@
     editor = code --wait
     excludesfile = ~/.gitignore_global
     pager = delta
+    hooksPath = ~/.config/git/hooks
 
 [interactive]
     diffFilter = delta --color-only
