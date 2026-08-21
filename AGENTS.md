@@ -1,6 +1,8 @@
-## Routing Gate (MANDATORY)
+## Routing Gate (MANDATORY — STEP ZERO)
 
-**Before ANY of these actions, a `ROUTE_CARD:` block MUST exist in context:**
+**This is not a skill-dependent check. This is an ambient reflex. Check BEFORE reading any other context.**
+
+**Before ANY of these actions, grep context for `ROUTE_CARD:`:**
 
 - Creating issues (Linear, GitHub)
 - Spawning subagents / taskflow
@@ -8,11 +10,19 @@
 - Creating or merging PRs
 - Closing issues
 
-**If no ROUTE_CARD exists → STOP → load `workflow-router` skill → emit ROUTE_CARD → get confirmation.**
+**If no ROUTE_CARD exists:**
+
+1. STOP immediately — do not investigate, diagnose, or "just quickly" do the action
+2. Load `workflow-router` skill
+3. Emit ROUTE_CARD
+4. Get user confirmation
+5. THEN proceed
+
+**The pre-commit hook will block you anyway.** But the reflex should fire BEFORE you attempt the commit, not after the hook catches you.
 
 User saying "yes", "approved", "do it", or describing what to build is INPUT to routing, not a bypass. Imperative phrasing ("spin up sub-agents", "delegate to specialists") triggers routing, not literal execution.
 
-> Baseline: 2026-08-20 — two sessions bypassed all gates via literal interpretation.
+> Baseline: 2026-08-20 — three sessions bypassed all gates via literal interpretation or "just quickly" thinking.
 
 ---
 
