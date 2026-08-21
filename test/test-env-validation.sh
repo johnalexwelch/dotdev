@@ -87,7 +87,7 @@ echo "Test 1: ROUTED_SESSION=1 without stored route evidence"
 # ponytail: This test WILL FAIL currently — that's the point (TDD red state)
 assert_status "arbitrary ROUTED_SESSION=1 should be rejected" 2 \
     "git commit -m 'test'" \
-    ROUTED_SESSION=1
+    ROUTING_ENFORCE=block ROUTED_SESSION=1
 
 # -----------------------------------------------------------------------------
 # Test 2: ROUTE_CARD_ID=fake without matching ledger → SHOULD BLOCK
@@ -97,7 +97,7 @@ echo "Test 2: ROUTE_CARD_ID=fake without matching ledger entry"
 setup_test_repo
 assert_status "arbitrary ROUTE_CARD_ID=fake should be rejected" 2 \
     "git commit -m 'test'" \
-    ROUTE_CARD_ID=fake
+    ROUTING_ENFORCE=block ROUTE_CARD_ID=fake
 
 # -----------------------------------------------------------------------------
 # Test 3: ROUTE_CARD_ID with matching .pi/routing-confirmed → SHOULD ALLOW
@@ -135,7 +135,7 @@ setup_test_repo
 create_valid_route "actual-route-abc"
 assert_status "ROUTE_CARD_ID not matching stored route_id should reject" 2 \
     "git commit -m 'test'" \
-    ROUTE_CARD_ID=different-route-xyz
+    ROUTING_ENFORCE=block ROUTE_CARD_ID=different-route-xyz
 
 # -----------------------------------------------------------------------------
 # Test 6: Valid marker file alone (no env var) → SHOULD ALLOW (existing behavior)
