@@ -1,0 +1,24 @@
+# golden-routes.yaml — Team-budget delegation enforcement test cases.
+# These cases verify that team-budget prompts route to multi-agent flows.
+cases:
+  # ---- Team-budget multi-agent routing (3) --------------------------------
+  - prompt: "Spin up sub-agents for each of these three workstreams and have them run in parallel."
+    expected_route: execute-prd
+    budget: team
+    flow: taskflow
+    source: synthetic
+    notes: "team-budget → taskflow delegation; 2026-08-20 postmortem case"
+
+  - prompt: "Dispatch workers to handle the auth, API, and UI lanes concurrently."
+    expected_route: execute-prd
+    budget: team
+    flow: taskflow
+    source: synthetic
+    notes: "team-budget parallel dispatch; explicit multi-lane request"
+
+  - prompt: "Parallelize the migration across all five modules — each module gets its own agent."
+    expected_route: execute-prd
+    budget: team
+    flow: subagent
+    source: synthetic
+    notes: "team-budget fan-out; migration parallelization"
