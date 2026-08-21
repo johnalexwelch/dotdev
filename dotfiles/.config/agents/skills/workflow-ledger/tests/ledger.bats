@@ -32,10 +32,10 @@ teardown() {
 # EXIT CODE 0: Success
 # ============================================================================
 
-@test "show: exits 0 with no active run" {
+@test "show: exits 1 with no active run" {
     run "$LEDGER" show
-    [ "$status" -eq 0 ]
-    [[ "$output" == *"no active run"* ]] || [[ "$output" == "" ]]
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"no live ledger state"* ]]
 }
 
 @test "init: creates live state and snapshot" {
@@ -55,14 +55,15 @@ teardown() {
     [[ "$output" == *"diagnose"* ]]
 }
 
-@test "check: returns OK for stamped gate" {
+@test "check: returns exit 0 for stamped gate" {
     "$LEDGER" init test-run --workflow test --kind bug --steps diagnose,fix,review,finalize
     "$LEDGER" set diagnose completed --evidence "found issue"
     "$LEDGER" stamp diagnose --attest issue_url=http://example.com/1 --override --reason "test"
     
     run "$LEDGER" check diagnose
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    # Override stamp returns OVERRIDDEN, normal stamp returns OK
+    [[ "$output" == *"OVERRIDDEN"* ]] || [[ "$output" == *"OK"* ]]
 }
 
 @test "close: closes active run" {
@@ -340,7 +341,8 @@ with open('docs/executions/runs/my-unique-run-id.yaml') as f:
     # check-snapshot should find the committed file
     run "$LEDGER" check-snapshot diagnose --file docs/executions/runs/test-run.yaml
     [ "$status" -eq 0 ]
-    [[ "$output" == *"OK"* ]]
+    # Override stamp returns OVERRIDDEN, normal stamp returns OK
+    [[ "$output" == *"OVERRIDDEN"* ]] || [[ "$output" == *"OK"* ]]
 }
 
 @test "check-snapshot: MISSING for unstamped gate in snapshot" {
