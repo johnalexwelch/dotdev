@@ -773,7 +773,7 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Deletion test results:**
 
 | Test | Answer | Evidence |
-|------|--------|----------|
+| ------ | -------- | ---------- |
 | Would extraction reduce complexity or just move it? | Just move | Lock logic complexity stays identical; no composition/reuse gains |
 | Second caller emerging? | No | grep shows only `hook.ts` calls lock fns; no daemon/other adapter needs it |
 | Testability alone sufficient? | No | Lock fns already testable in-place (deps injected: `now`, `sleep`, `token`) |
@@ -790,6 +790,7 @@ This file is the canonical decision record for workflow-feature flows in this re
 **Decision**: **Defer.** Do not split now. The file is extremely stable (1 commit in 12 months), has no existing tests, and the cost of inaction is flat.
 
 **Alternatives considered**:
+
 - *Split now into 3 modules* — rejected: low churn, tight coupling, no tests = risk without benefit.
 - *Write characterization tests first, then split* — rejected: test investment only pays off if churn increases.
 
