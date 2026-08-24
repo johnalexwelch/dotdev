@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCRIPT="$ROOT/dotfiles/.claude/hooks/workflow-guard.sh"
+SCRIPT="$ROOT/dotfiles/.config/agents/hooks/workflow-guard.sh"
 PASS=0
 FAIL=0
 
