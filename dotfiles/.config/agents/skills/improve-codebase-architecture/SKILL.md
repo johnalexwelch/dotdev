@@ -75,6 +75,7 @@ Ground each suspicion in a cheap signal so the eventual **Expected benefit** and
 - **Call sites** — grep the module's exported names to count callers. Many callers repeating the same setup = leverage waiting to be captured; one caller = pass-through (fails deletion test).
 - **Co-change coupling** — files that keep changing together (`git log --format= --name-only` grouped by commit) reveal a hidden seam that the module boundaries don't reflect.
 - **Test reach** — note what can't be tested through the current interface; that gap is a concrete benefit line, not a vibe.
+- **Test infrastructure survey** — before recommending characterization tests, survey what test infrastructure already exists: check both co-located tests (`.test.ts`, `.spec.ts`, `*_test.go`) and centralized test directories (`test/`, `tests/`, `__tests__/`, `spec/`). A quick `find . -name "*.test.*" -o -name "test_*" -o -name "*_test.*" | wc -l` and `ls test/ tests/ __tests__/ 2>/dev/null` saves hours of duplicate work. Record test LOC and coverage shape so recommendations don't reinvent what exists.
 
 A candidate with no measurable signal is `Speculative` at best — say so.
 
