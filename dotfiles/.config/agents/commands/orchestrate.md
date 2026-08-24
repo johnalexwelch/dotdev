@@ -25,7 +25,7 @@ is the only confirmed way to set this.
 
 4. Create `td-completed-log.md` in the project root if it doesn't exist.
 
-5. Read your system prompt from `~/.claude/prompts/orchestrator.md`.
+5. Read your system prompt from `~/.pi/agent/agents/orchestrator.md`.
    Substitute all {PLACEHOLDERS} with the values from step 3.
 
 6. Begin the orchestration loop as defined in the prompt.
