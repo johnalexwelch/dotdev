@@ -11,7 +11,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GUARD="${ROOT}/dotfiles/.config/agents/hooks/workflow-guard.sh"
+GUARD="${ROOT}/dotfiles/.claude/hooks/workflow-guard.sh"
 TMPDIR_BASE="$(mktemp -d)"
 PASS=0
 FAIL=0
