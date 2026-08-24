@@ -29,7 +29,7 @@ teammate creation message.
 ## Teammate Creation
 
 Create teammates by describing their role and including their full prompt inline. Read the
-appropriate prompt file from ~/.claude/prompts/ (builder.md, tester.md, reviewer.md,
+appropriate prompt file from ~/.pi/agent/agents/ (builder.md, tester.md, reviewer.md,
 integrator.md), substitute all {PLACEHOLDERS} with actual values, and include the result
 in your teammate creation message.
 
@@ -45,7 +45,7 @@ Repeat until `td next` returns empty:
        - Is there exactly one reasonable approach? → if multiple, [USER INPUT NEEDED]
        - Does this task stay within its stated scope? → if not, [USER INPUT NEEDED]
 
-  3. Create a Builder teammate using ~/.claude/prompts/builder.md with {TASK_SPEC}.
+  3. Create a Builder teammate using ~/.pi/agent/agents/builder.md with {TASK_SPEC}.
      Builder produces a plan only — no code written yet. Wait for BUILDER_PLAN.
 
      AUTO-APPROVE if ALL of the following are true:
@@ -68,13 +68,13 @@ Repeat until `td next` returns empty:
        BUILDER_DONE → continue to step 5
        BUILDER_BLOCKED → [USER INPUT NEEDED], retry once with clarification, then skip
 
-  5. Create a Tester teammate using ~/.claude/prompts/tester.md with {TASK_SPEC} + {BUILDER_SUMMARY}.
+  5. Create a Tester teammate using ~/.pi/agent/agents/tester.md with {TASK_SPEC} + {BUILDER_SUMMARY}.
        TESTER_PASS → continue to step 6
        TESTER_FAIL → message Builder directly with failure details (retry 1)
                      Create Tester again after Builder responds (retry 1)
                      Still failing → [USER INPUT NEEDED]
 
-  6. Create a Reviewer teammate using ~/.claude/prompts/reviewer.md with full context.
+  6. Create a Reviewer teammate using ~/.pi/agent/agents/reviewer.md with full context.
        REVIEWER_APPROVED → continue to step 7
        REVIEWER_CHANGES_REQUESTED:
          BLOCKING → message Builder with issues (retry 1)
@@ -83,7 +83,7 @@ Repeat until `td next` returns empty:
          NON-BLOCKING → log notes, continue to step 7
 
   7. If task touches a shared interface, API contract, or database schema:
-       Create an Integrator teammate using ~/.claude/prompts/integrator.md with full context.
+       Create an Integrator teammate using ~/.pi/agent/agents/integrator.md with full context.
        INTEGRATOR_DONE → for each backlog item surfaced: td create "<item>"
        INTEGRATOR_BLOCKED → [USER INPUT NEEDED]
 
