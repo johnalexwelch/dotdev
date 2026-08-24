@@ -18,7 +18,7 @@ set -uo pipefail
 #     (Phase 5 merely flips the default).
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-GUARD="$ROOT/dotfiles/.config/agents/hooks/workflow-guard.sh"
+GUARD="$ROOT/dotfiles/.claude/hooks/workflow-guard.sh"
 LEDGER="$ROOT/dotfiles/.config/agents/skills/workflow-ledger/scripts/ledger.sh"
 SKILLS_ROOT_REAL="$ROOT/dotfiles/.config/agents/skills"
 TMPDIR_BASE=$(mktemp -d)
