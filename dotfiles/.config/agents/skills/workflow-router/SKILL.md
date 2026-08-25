@@ -68,6 +68,20 @@ The old "Audit Loop" is not an execution route. If a prompt, transcript, repo do
 
 Do not dispatch `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
 
+## Session Cost Guardrail
+
+Track cumulative estimated session cost. Emit a warning at $25 and require explicit confirmation to continue at $50:
+
+| Threshold | Action |
+|-----------|--------|
+| $25 | Emit warning: "Session cost approaching $25. Consider checkpointing." |
+| $50 | Hard pause: "Session cost at $50. Continue? (y/N)" |
+| $100 | Halt: "Session exceeded $100. Handoff required." |
+
+Subagent spawns count toward parent session budget. This guardrail exists because a single Aug 2026 session spawned 102 subagents and spent $729 — way beyond any skill's configured limits. The issue was ad-hoc orchestration during exploratory work that escalated into execution without re-routing.
+
+> ponytail: Estimated cost only — no live API integration. Upgrade path: hook into usage-cache when available.
+
 ## Agent Budget Rule
 
 Choose the smallest execution shape that preserves quality:
@@ -81,9 +95,29 @@ Choose the smallest execution shape that preserves quality:
 
 **Team Budget Delegation Requirement:** When `team` budget is selected, you MUST delegate each workstream via taskflow. Direct implementation by the orchestrating agent is prohibited.
 
+**Parallelism Cap:** No single session may spawn more than 10 concurrent subagents. If the work requires more parallelism, checkpoint, handoff, or split into multiple sessions. This cap exists because uncontrolled fan-out is the primary cost driver — 102 subagents in one session cost $729.
+
 Independence matters more than agent count. Do not use multiple agents merely
 because a workflow says "review"; use `workflow-review`'s risk-sized
 `review_profile`.
+
+## Model Selection by Task Type
+
+Default to Sonnet unless judgment is the primary value. Opus costs 5x more per token.
+
+| Task Type | Model | Reasoning |
+|-----------|-------|-----------|
+| Fact gathering, exploration | Sonnet | Cheap, parallelizable |
+| Code review lanes | Sonnet | Adequate for checklists |
+| Corpus/batch evaluation | Sonnet | Volume > depth |
+| Skill testing/eval reps | Sonnet | Statistical coverage |
+| Synthesis, judgment | Opus | Worth the cost |
+| Architecture decisions | Opus | Judgment-heavy |
+| Security/concurrency review | Opus | Risk-sensitive |
+
+**Cost evidence:** Aug 2026 analysis showed claude-opus-5 at $12,262 vs claude-sonnet-5 at $1,882. The 6.5x ratio means model selection is the highest-leverage cost control after parallelism caps.
+
+> ponytail: This table is advisory prose. Upgrade path: frontmatter `model:` enforcement in skill lints.
 
 **Inline-doable is not a routing signal.** A request to transform, polish, or
 rewrite TEXT the user will actually use — "de-AI this paragraph", "humanize

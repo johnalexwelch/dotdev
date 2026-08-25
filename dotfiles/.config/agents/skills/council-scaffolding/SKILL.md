@@ -17,6 +17,16 @@ Judgment personas and the synthesis run on **Opus** (persona `default_model: opu
 
 This skill is a **library**, not a workflow. Council skills (`analysis-council`, `worldbuilding-council`, etc.) reference it for shared mechanics. If you are invoking it directly, you probably want `analysis-council` instead.
 
+## Hard Limits
+
+| Limit | Value | Rationale |
+|-------|-------|-----------|
+| `max_concurrent_subagents` | 10 | Uncontrolled fan-out is the primary cost driver. A single Aug 2026 session spawned 102 subagents and cost $729. |
+| `max_subagent_messages` | 100 | Long-running subagents compound cost; force conclusion or handoff. |
+| `max_experts` | 5 | Per roster.yml; enforced here as a ceiling. |
+
+These limits apply to ALL council invocations. A council that needs more parallelism should checkpoint and resume, not escalate fan-out.
+
 ## What a council is
 
 A council assembles 2–5 named experts who each evaluate a topic through their lens, then synthesize their disagreements into a hybrid output. Each expert runs as a fresh subagent so its context is independent. Councils default to 2 rounds of debate (lens → response). Feedback-rich domains (worldbuilding, narrative) may use round-1 waves for sequential dependencies, then go fully parallel.
