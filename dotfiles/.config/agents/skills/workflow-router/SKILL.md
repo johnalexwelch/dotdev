@@ -58,7 +58,7 @@ The old "Audit Loop" is not an execution route. If a prompt, transcript, repo do
 
 - Code review gate → `workflow-review`
 - Delivery closure, PR body, reviewer comments, CI, reconciliation, and final PR action → `workflow-finalize`
-- Broad repo evidence gathering → `repo-audit`, then route findings through `to-prd` (migration mode for refactor-scale findings) or `to-issues`
+- Broad repo evidence gathering → direct investigation, then route findings through `to-prd` (migration mode for refactor-scale findings) or `to-issues`
 - Multi-phase refactor execution → `to-prd` (migration mode) → `to-issues` → `triage` → `execute-prd`, whose children carry `workflow-review` and `workflow-finalize`
 
 Do not dispatch `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
@@ -248,7 +248,7 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "turn this roadmap into PRDs/issues", "roadmap to backlog", "break milestones into PRDs", "break PRDs into issues", approved roadmap needing issue queue | **roadmap-to-backlog transition** | `to-prd` for spec parents → `to-issues` with `references/issue-dependency-audit.md` → `execute-prd` for parent/dependent trees or `run-backlog` only for independent ready issues |
 | "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
 | "we're launching X", "launch plan", "launch checklist", "go-to-market checklist", "are we ready to ship", "go-live readiness" | **product launch** | product-launch-checklist |
-| "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog** | `repo-audit` → `to-prd` → `to-issues` → `run-backlog` (compose the canonical chain; no unbounded autonomous orchestration) |
+| "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog** | Direct investigation → `to-prd` → `to-issues` → `run-backlog` (no unbounded autonomous orchestration) |
 | Bug report, error, "it's broken", regression | **bug** | workflow-deliver with `kind=bug` |
 | Vague idea, "what if we...", "I want to build...", "I want to set up...", "standardize how we..." — capability work within an existing system or internal tooling/infrastructure (templates, standardized workflows, checks, developer/DS tooling, features of existing products), even when large, vague, or multi-part | **ambiguous feature** | `grill-with-docs` → `to-prd` → `to-issues` → `triage` (the canonical chain) |
 | "improve the wording", "the error message is confusing", "reword this label/tooltip/notification", any change to user-facing product copy or UX text | **UX copy change (tracked code)** | `grill-with-docs` → `to-prd` → `to-issues` → `triage` — user-visible copy lives in tracked source, so a copy edit is a code commit carrying the full worktree/review/finalize gates; never `direct` even when nothing is "broken" |
@@ -259,8 +259,8 @@ If the user corrects the route, treat that correction as fresh routing input and
 | A prompt/plan/handoff names `design-plan` (superseded), "turn this audit into a plan", "create a refactor plan", refactor/migration/governance brief needing a phased plan | **refactor/migration planning** | to-prd (migration mode) — tombstone redirect, D-006 planning-lane consolidation 2026-08-19; then to-issues → triage → execute-prd |
 | A prompt/plan/handoff names `execute-phase` (retired), "execute phase N", "run phase", "land phase" | **phase execution (legacy name)** | execute-prd against the migration-mode parent issue tree; a lone slice routes to workflow-deliver — tombstone redirect, D-006 planning-lane consolidation 2026-08-19 |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
-| "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | `repo-audit` → `to-prd` (migration mode for refactor-scale findings) or `to-issues` |
-| Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `to-prd` (migration mode for refactor-scale) or `to-issues` |
+| "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | Direct investigation (grep, read, map tools) → `to-prd` (migration mode for refactor-scale findings) or `to-issues` |
+| Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | Direct investigation or `improve-codebase-architecture` (for deepening opportunities); findings feed `to-prd` (migration mode for refactor-scale) or `to-issues` |
 | "Review this", "review my changes" | **review** | workflow-review — **exception:** if the review scope is SQL/dbt models, dashboards, metric trees, or executive-facing analyses (even inside a PR), route to the artifact-specific skill (`sql-review`, `dashboard-review`, `metric-tree-review`, `strategic-analysis-review`); ask which is intended when both PR and artifact signals are present. Per-model correctness/performance concerns on a SQL or dbt model — join fanout, NULL handling, window pitfalls — are `sql-review`, not `dbt-project-evaluator` (that is a whole-project structure/conventions audit, never a per-model review) |
 | "review this doc/email/Slack post/memo for clarity", "tighten this writing", "make this clearer", "proofread this", feedback wanted on HOW prose is written | **writing clarity review** | clarity-review — **carve-out vs `workflow-review`:** when the artifact is prose (doc, email, post, memo, spec text) and the concern is communication clarity rather than change correctness, route `clarity-review` even if the prose lives in a PR; `workflow-review` owns code/change correctness only |
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step (e.g. "just address the review comments on #42, don't finalize/merge yet") **or names the skill imperatively** (e.g. "Run receive-review on PR #17"), dispatch `receive-review` directly per the owner-vs-sub-step rule below — an imperative verb+skill-name is the explicit scope, not an ambiguity |
@@ -417,17 +417,16 @@ workflow-review → workflow-finalize → cleanup-delivery
 - **No horizontal issue creation** at any stage — all issues are independent vertical slices with observable outcomes.
 - **Matched wording** to #43/#47: emphasis on vertical-slice concepts, AFK safety gates, outage risk, rollback expectations, verification, and decision-log references.
 
-## Specialized Audit / Refactor Lane (NOT the default product flow)
+## Migration / Refactor Lane
 
-`repo-audit` and `to-prd` migration mode form a **specialized lane** separate from the default vertical-slice product workflow (successor to the retired `design-plan` + `execute-phase` pair — D-006 planning-lane consolidation, 2026-08-19):
+`to-prd` migration mode handles repo-wide refactors, migrations, or multi-phase remediation:
 
-- **Repo evidence audit** → `repo-audit` (input to current workflow, not a default loop itself)
-- **Route audit findings** based on type:
-  - Product/feature gaps → feed into `grill-with-docs` → `to-prd` → `to-issues` (the canonical chain)
-  - Already-clear vertical implementation slices → route to `to-issues` or `triage` directly
-  - Repo-wide refactors, migrations, or multi-phase remediation → `to-prd` **migration mode** (FIND-NN/REQ-NN anchors, parent + ordered children, pilot/canary, rollback, sync-gate child issues) → `to-issues` → `triage` → `execute-prd`; each child carries the normal `workflow-review` and `workflow-finalize` gates
-- **Do not route audit findings straight to execution** — a human-approved PRD from the canonical chain, or a migration-mode PRD built from a human-approved audit/brief with triaged children, must exist first
-- **Key constraint:** PRD/spec parent issues must not be labeled `ready-for-agent` (per `triage` skill) — only child implementation issues produced by `to-issues` and meeting all readiness criteria may receive `ready-for-agent`
+- **Route findings** based on type:
+  - Product/feature gaps → `grill-with-docs` → `to-prd` → `to-issues` (canonical chain)
+  - Already-clear vertical slices → `to-issues` or `triage` directly
+  - Repo-wide refactors/migrations → `to-prd` **migration mode** (FIND-NN/REQ-NN anchors, parent + ordered children, pilot/canary, rollback) → `to-issues` → `triage` → `execute-prd`
+- **Do not route findings straight to execution** — human-approved PRD required first
+- **Key constraint:** PRD/spec parent issues must not be labeled `ready-for-agent` — only triaged child issues may receive that label
 
 ## Planning Gate Rule
 
@@ -436,7 +435,7 @@ For product/feature planning that will produce PRDs and implementation issues, r
 - If a grilled and approved PRD exists: proceed to `to-issues`.
 - If no PRD exists: start with `grill-with-docs`.
 - Only an explicit user waiver may bypass this gate.
-- **Migration-mode exception (in-rule, not a waiver):** `to-prd` migration mode satisfies this gate with its input artifact instead — a **human-approved** repo-audit report or migration brief. The scope there is already settled.
+- **Migration-mode exception (in-rule, not a waiver):** `to-prd` migration mode satisfies this gate with its input artifact instead — a **human-approved** migration brief. The scope there is already settled.
 
 ### Roadmap Doc Invariant (drift guard)
 

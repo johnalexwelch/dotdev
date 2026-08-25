@@ -10,7 +10,7 @@ description: Universal delivery closure after review passes (PR body → reviewe
 
 ## Purpose
 
-Close the delivery loop after the review gate passes. Handles PR creation/description, reviewer-comment resolution, CI monitoring, issue reconciliation, the conditional post-mortem gate, and repo-policy-controlled final PR actions, ending in the kernel's finalize stamp. Does not duplicate review or testing logic.
+Close the delivery loop after the review gate passes. Handles PR creation/description, reviewer-comment resolution, CI monitoring, issue reconciliation, and repo-policy-controlled final PR actions, ending in the kernel's finalize stamp. Does not duplicate review or testing logic.
 
 ## Precondition — `ledger.sh check review`
 
@@ -38,7 +38,7 @@ The finalize stamp is the authority: at stamp time the kernel resolves the branc
 ## Flow
 
 ```
-[conditional post-mortem gate] → describe-pr → ensure draft PR → enumerate session PRs → receive-review (fan-out, per PR) → watch-ci → reconcile-issues → [docs-freshness hook] → verify-local → ledger.sh stamp finalize → repo-policy final action
+describe-pr → ensure draft PR → enumerate session PRs → receive-review (fan-out, per PR) → watch-ci → reconcile-issues → [docs-freshness hook] → verify-local → ledger.sh stamp finalize → repo-policy final action
 ```
 
 ## Workflow Progress Reporting
@@ -55,7 +55,6 @@ WORKFLOW_STEPS:
 ### Step 0.5: Conditional Post-mortem Gate
 
 - Required before `describe-pr` for migration-mode PRD work (or legacy design-plan/execute-phase branches), audit-derived refactors, multi-phase execution, significant drift, or `NEW-NN` findings.
-- The post-mortem output is consumed by `describe-pr`, so do not generate the PR body first for migration-mode, audit-derived, or multi-phase work.
 - Skip only for routine single-issue work with no meaningful drift, and record `not_applicable_with_reason` (it becomes the stamp's `post_mortem` attestation).
 
 ### Step 1: Describe PR (describe-pr)
@@ -113,7 +112,6 @@ Applies only to **openwiki-enabled repos**. Detect via any of: an `openwiki/` di
 ### Step 5: Post-CI Retro Addendum (conditional)
 
 - Triggered when CI required auto-fixes, or `watch-ci` discovered new follow-up work after the PR body was generated.
-- Append to the existing post-mortem or create a small follow-up note. Do not require `describe-pr` to consume this late addendum.
 - Skip only for routine single-issue work with no CI auto-fixes and no new follow-up work.
 
 ### Step 6: Verify before handoff
@@ -157,7 +155,6 @@ When all steps pass:
 - Report final status to user with **evidence** (verify-local output, CI link, comment-resolution summary, stamp result) and include the `WORKFLOW_FINALIZE_GATE` block in the final response and any handoff artifact.
 - When invoked by `run-backlog`, `workflow-autonomous-backlog`, Codex, or any AFK worker, always write a per-issue handoff artifact even when no follow-up work remains: PR URL, gate blocks, verification evidence, review-comment resolution, CI status, issue reconciliation, residual risks.
 - Enforce the Partial-Completion Contract before exit: **Complete** (all changes committed and pushed), **WIP-paused** (`wip:` commit naming what remains, pushed), or **Rolled back** (`git reset --hard <baseline>`, clean tree). Run `git status --short` before exit; any `M`/`??` source file fails the contract (and would fail the stamp).
-- If follow-up work was discovered (NEW-NN findings, post-mortem action items, reconciliation drift): **auto-handoff** (exit_reason: completion with follow-ups, remaining: the follow-up items with prompt-builder outputs). If no remaining work and this was not an AFK/backlog/Codex run: skip handoff.
 - **Close the run**: `ledger.sh close` on clean completion — the kernel owns the state files; never hand-edit the run snapshot (`docs/executions/runs/<run_id>.yaml`) or the live state.
 - After merge or explicit abandonment, **Load and run `cleanup-delivery/SKILL.md`** to remove stale local worktrees/branches and reconcile ticket residue — do not hand-roll the git cleanup commands. Do not run cleanup before the merge/abandonment decision.
 
@@ -187,9 +184,7 @@ Consumes: stamped review gate (`ledger.sh check review`), committed code on bran
 Produces: finalize stamp, PR ready for human review/merge or auto-merge according to repo delivery policy, reconciliation report, closed ledger run (`ledger.sh close`)
 Requires: gh (or Forgejo token via forge.sh), git, `ledger.sh` (workflow-ledger kernel)
 Side effects: creates/updates PR, pushes commits (review/CI fixes), posts comments, commits `chore(ledger):` stamp snapshots, may mark ready and enable GitHub auto-merge when repo policy allows
-Human gates: failed `ledger.sh check review`; missing/failed user-journey QA for frontend or user-facing changes unless waived; unresolved reviewer comments; CI exhaustion halts for diagnose; post-mortem presented for review; auto-merge setup failure on auto-merge-eligible repos
 
 ## Context
 
 Typical workflows: workflow-deliver (final step), execute-prd (per-child final step), workflow-autonomous-backlog (per-issue repo-policy-controlled PR handoff)
-Pairs well with: workflow-review (produces the verdict the review stamp records), workflow-ledger (owns the gates), describe-pr, receive-review, watch-ci, reconcile-issues, cleanup-delivery, post-mortem, handoff (auto-invoked at halt or completion-with-follow-ups), run-backlog
