@@ -58,7 +58,7 @@ The old "Audit Loop" is not an execution route. If a prompt, transcript, repo do
 
 - Code review gate → `workflow-review`
 - Delivery closure, PR body, reviewer comments, CI, reconciliation, and final PR action → `workflow-finalize`
-- Broad repo evidence gathering → `repo-audit`, then route findings through `workflow-roadmap`, `to-prd` (migration mode for refactor-scale findings), or `to-issues`
+- Broad repo evidence gathering → `repo-audit`, then route findings through `to-prd` (migration mode for refactor-scale findings) or `to-issues`
 - Multi-phase refactor execution → `to-prd` (migration mode) → `to-issues` → `triage` → `execute-prd`, whose children carry `workflow-review` and `workflow-finalize`
 
 Do not dispatch `/post-mortem`, `/describe-pr`, or `/watch-ci` as a standalone default loop unless the owning workflow explicitly calls that skill.
@@ -243,15 +243,15 @@ If the user corrects the route, treat that correction as fresh routing input and
 
 | Signal | Classification | Routes to |
 |--------|---------------|-----------|
-| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", "new app/tool for <audience>" — a **new product for end users**, with its own users, promise, and success metrics, needing a V1_IDEA_BRIEF and system design; loose idea for such a product needing functionality details, "design the system for this V1", "turn this V1 brief into architecture", "design the architecture for this approved V1 brief" | **V1** | `v1-workflow` (full gated pipeline: idea grill via `grill-with-docs` → approval → decision-log → system design → roadmap → issues). Do NOT route directly to `v1-system-design` — **even when the brief is already approved**: `v1-workflow` resumes at the right stage, while `v1-system-design` alone skips the roadmap/issue gates that follow design |
-| "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | workflow-roadmap |
-| "turn this roadmap into PRDs/issues", "roadmap to backlog", "break milestones into PRDs", "break PRDs into issues", approved roadmap needing issue queue | **roadmap-to-backlog transition** | `workflow-roadmap` if no approved roadmap -> `to-prd` for spec parents -> `to-issues` with `references/issue-dependency-audit.md` -> `execute-prd` for parent/dependent trees or `run-backlog` only for independent ready issues |
+| "build a V1", "turn this idea into a V1", "shape this product idea", "define the MVP", "new app/tool for <audience>" — a **new product for end users** | **V1 (use canonical chain)** | `grill-with-docs` → `to-prd` → `to-issues` → `triage` → implementation. For system design needs, use `v1-system-design` as a helper within this chain |
+| "roadmap", "what should we build next", "feature gaps", "implementation gaps", "hardening roadmap", "product and implementation plan", multi-area sequencing across product/security/infrastructure | **product/engineering roadmap** | `grill-with-docs` → `to-prd` → `to-issues` (roadmap emerges from the canonical chain, not a separate skill) |
+| "turn this roadmap into PRDs/issues", "roadmap to backlog", "break milestones into PRDs", "break PRDs into issues", approved roadmap needing issue queue | **roadmap-to-backlog transition** | `to-prd` for spec parents → `to-issues` with `references/issue-dependency-audit.md` → `execute-prd` for parent/dependent trees or `run-backlog` only for independent ready issues |
 | "write OKRs", "set quarterly goals", "objectives and key results", "turn strategy into OKRs", "review these OKRs" | **OKRs** | okr-generator |
 | "we're launching X", "launch plan", "launch checklist", "go-to-market checklist", "are we ready to ship", "go-live readiness" | **product launch** | product-launch-checklist |
-| "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog workflow** | workflow-autonomous-backlog |
+| "autonomous module discovery", "find modules and create PRDs", "action the backlog AFK", "run backlog without outages", "autonomous backlog" | **autonomous backlog** | `repo-audit` → `to-prd` → `to-issues` → `run-backlog` (compose the canonical chain; no unbounded autonomous orchestration) |
 | Bug report, error, "it's broken", regression | **bug** | workflow-deliver with `kind=bug` |
-| Vague idea, "what if we...", "I want to build...", "I want to set up...", "standardize how we..." — capability work within an existing system or internal tooling/infrastructure (templates, standardized workflows, checks, developer/DS tooling, features of existing products), even when large, vague, or multi-part | **ambiguous feature** | workflow-feature — downstream, workflow-feature may escalate to `wayfinder` on grill evidence (user-confirmed); the router itself never routes to wayfinder, which is explicit-invocation only (`/wayfinder`) |
-| "improve the wording", "the error message is confusing", "reword this label/tooltip/notification", any change to user-facing product copy or UX text | **UX copy change (tracked code)** | workflow-feature — user-visible copy lives in tracked source, so a copy edit is a code commit carrying the full worktree/review/finalize gates; never `direct` even when nothing is "broken" (baseline case 21: bug-ish phrasing, feature-shaped change) |
+| Vague idea, "what if we...", "I want to build...", "I want to set up...", "standardize how we..." — capability work within an existing system or internal tooling/infrastructure (templates, standardized workflows, checks, developer/DS tooling, features of existing products), even when large, vague, or multi-part | **ambiguous feature** | `grill-with-docs` → `to-prd` → `to-issues` → `triage` (the canonical chain) |
+| "improve the wording", "the error message is confusing", "reword this label/tooltip/notification", any change to user-facing product copy or UX text | **UX copy change (tracked code)** | `grill-with-docs` → `to-prd` → `to-issues` → `triage` — user-visible copy lives in tracked source, so a copy edit is a code commit carrying the full worktree/review/finalize gates; never `direct` even when nothing is "broken" |
 | Issue with `ready-for-agent` + clear acceptance criteria | **ready issue** | workflow-deliver with `kind=feature` (`skill`/`docs` when the issue is a skill or docs change) |
 | A prompt/plan/handoff names `workflow-build-one` (superseded) | **ready issue (legacy name)** | workflow-deliver with `kind=feature` — tombstone redirect, D-006 #11 |
 | A prompt/plan/handoff names `workflow-debug` (superseded) | **bug (legacy name)** | workflow-deliver with `kind=bug` — tombstone redirect, D-006 #11 |
@@ -259,8 +259,8 @@ If the user corrects the route, treat that correction as fresh routing input and
 | A prompt/plan/handoff names `design-plan` (superseded), "turn this audit into a plan", "create a refactor plan", refactor/migration/governance brief needing a phased plan | **refactor/migration planning** | to-prd (migration mode) — tombstone redirect, D-006 planning-lane consolidation 2026-08-19; then to-issues → triage → execute-prd |
 | A prompt/plan/handoff names `execute-phase` (retired), "execute phase N", "run phase", "land phase" | **phase execution (legacy name)** | execute-prd against the migration-mode parent issue tree; a lone slice routes to workflow-deliver — tombstone redirect, D-006 planning-lane consolidation 2026-08-19 |
 | Multiple ready issues, "run the backlog", AFK batch | **AFK backlog** | run-backlog |
-| "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | repo-audit → workflow-roadmap / to-prd / to-issues; refactor-scale findings take to-prd migration mode |
-| Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `workflow-roadmap`, `to-prd` (migration mode for refactor-scale), or `to-issues` |
+| "Audit the repo", "state of repo", broad evidence gathering needed | **repo evidence audit** | `repo-audit` → `to-prd` (migration mode for refactor-scale findings) or `to-issues` |
+| Research question, "investigate how...", "what does X look like in the codebase", "investigate Y" | **research** | `repo-audit` (for codebase evidence) or `improve-codebase-architecture` (for deepening opportunities); findings feed `to-prd` (migration mode for refactor-scale) or `to-issues` |
 | "Review this", "review my changes" | **review** | workflow-review — **exception:** if the review scope is SQL/dbt models, dashboards, metric trees, or executive-facing analyses (even inside a PR), route to the artifact-specific skill (`sql-review`, `dashboard-review`, `metric-tree-review`, `strategic-analysis-review`); ask which is intended when both PR and artifact signals are present. Per-model correctness/performance concerns on a SQL or dbt model — join fanout, NULL handling, window pitfalls — are `sql-review`, not `dbt-project-evaluator` (that is a whole-project structure/conventions audit, never a per-model review) |
 | "review this doc/email/Slack post/memo for clarity", "tighten this writing", "make this clearer", "proofread this", feedback wanted on HOW prose is written | **writing clarity review** | clarity-review — **carve-out vs `workflow-review`:** when the artifact is prose (doc, email, post, memo, spec text) and the concern is communication clarity rather than change correctness, route `clarity-review` even if the prose lives in a PR; `workflow-review` owns code/change correctness only |
 | "Address review comments", "handle the feedback", "respond to review", PR has unresolved comments | **receive review** | `workflow-finalize` (its Step 2 invokes `receive-review` for reviewer-comment resolution) — **carve-out:** if the user explicitly wants only the comment-resolution sub-step (e.g. "just address the review comments on #42, don't finalize/merge yet") **or names the skill imperatively** (e.g. "Run receive-review on PR #17"), dispatch `receive-review` directly per the owner-vs-sub-step rule below — an imperative verb+skill-name is the explicit scope, not an ambiguity |
@@ -271,19 +271,19 @@ If the user corrects the route, treat that correction as fresh routing input and
 | "Evaluate workflow effectiveness", "audit skill effectiveness", "find workflow gaps", "audit recent agent transcripts", "did this workflow skip steps" | **skill system audit** | skill-system-audit |
 | "reflect", "what did we learn", "how could this have gone better", "skillify", "turn this into a skill", "improve the skills based on this" | **session reflection / skill extraction** | session-insight |
 | "process the skill backlog", "review skill improvements", "turn reflections into skill changes", accumulated reflections needing triage | **skill backlog** | skill-backlog |
-| "write a skill", "create a skill", "revise this skill", "fix this skill's description", implement an approved skill-backlog item | **skill authoring/revision** | workflow-skill |
+| "write a skill", "create a skill", "revise this skill", "fix this skill's description", implement an approved skill-backlog item | **skill authoring/revision** | `skill-backlog` (if from backlog) → `to-issues` → `triage` → `workflow-deliver` with `kind=skill` |
 | "evaluate this skill", "benchmark a skill", "pressure-test a skill", "is this skill any good", "is the new version of this skill better" | **skill evaluation** | skill-evaluator |
 | "route this", "choose the workflow", "what flow do we need", "single wrapper", "intake", "which skill should run", "start the right workflow" | **workflow intake** | workflow-router route card, then confirmed target workflow |
 | D&D, campaign, session prep, mystery, encounter, NPC, worldbuilding | **creative/D&D → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); creative/D&D skills (`dnd-workflow`, etc.) live in Wren's kit, not here |
 | Executive memo, board update, strategy doc, leadership recommendation, org analysis, product engagement analysis | **executive document** | workflow-executive-doc |
-| "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | prototype |
-| "grill me", "stress test this", "poke holes in this plan", "challenge this design", design/plan interrogation outside the V1 pipeline | **plan grill** | grill-with-docs (standalone; the V1 row above owns idea grills only when they run inside the `v1-workflow` pipeline) |
+| "prototype this", "try it out", "play with it", "sanity-check the model" | **prototype** | Direct implementation with throwaway flag — no workflow needed for exploratory spikes |
+| "grill me", "stress test this", "poke holes in this plan", "challenge this design", design/plan interrogation | **plan grill** | `grill-with-docs` (entry point to canonical chain; can stop here if user only wants interrogation) |
 | "write an article", "blog post", "draft", "write about" | **writing → Wren** | Switch to the **Wren** agent (`~/projects/agents/wren`); the writing pipeline (`writing-fragments` → `writing-shape` (beats mode) → humanizer) lives in Wren's kit |
 | "humanize", "de-AI", "make it sound human", "remove AI patterns" | **polish** | humanizer |
 | "handoff", "wrap up session", "save context for next time" | **session exit** | handoff |
 | "generate prompt for", "prep for codex", "prep for AFK" — a standalone prompt-text request, not a request to run the batch/dispatch; also "evaluate this prompt", "rewrite this work-order", "check this brief" — prompt or work-order evaluation/rewrite with **NO repo-artifact mutation** | **prompt generation or evaluation** | `prompt-builder` whenever any generated or rewritten prompt/work-order text is returned — "just give me the text back" scopes output format, not the route (baseline case 35 collapsed exactly this to `direct`); `direct` **only** for pure evaluation that returns judgment with no rewritten text. Emit a full non-direct route card and dispatch only if the user asks to create/update project artifacts, issues, PRDs, roadmaps, or other repo-tracked deliverables; for prompt-only work, return the result as a conversational response or markdown block without a route card (legitimate standalone entry point per prompt-builder's own contract's "manual Codex task" use case) |
 
-**V1-vs-feature boundary:** `v1-workflow` is reserved for a NEW PRODUCT for end users — its own users, promise, and success metrics, needing a V1_IDEA_BRIEF and system design — while capability work within an existing system or internal tooling/infrastructure (templates, standardized workflows, checks, developer/DS tooling — e.g. "a standardized ML workflow so data scientists go from EDA to deployment with checks built in, plus agent skills to help build models" is internal ML tooling → `workflow-feature`) stays **workflow-feature** no matter how large or vague; scale is handled downstream by workflow-feature's own grill evidence (which may escalate to `wayfinder` — never a router route), not by upgrading the classification to `v1-workflow`.
+**V1-vs-feature boundary:** New products for end users and capability work within existing systems both follow the same canonical chain: `grill-with-docs` → `to-prd` → `to-issues` → `triage` → implementation. The chain handles scale naturally — larger work produces more issues, smaller work produces fewer. No separate "V1 workflow" exists.
 
 ## Owner vs. sub-step routing rule (SB-021 / SB-022)
 
@@ -405,8 +405,7 @@ Read-only workflows (`workflow-review`, `skill-system-audit`, repo audits, docum
 The authoritative workflow for all product work follows this sequence:
 
 ```
-workflow-feature → grill-with-docs → decision-log → to-prd →
-to-issues → triage →
+grill-with-docs → to-prd → to-issues → triage →
 [execution: workflow-deliver | execute-prd | run-backlog] →
 workflow-review → workflow-finalize → cleanup-delivery
 ```
@@ -424,27 +423,27 @@ workflow-review → workflow-finalize → cleanup-delivery
 
 - **Repo evidence audit** → `repo-audit` (input to current workflow, not a default loop itself)
 - **Route audit findings** based on type:
-  - Product/feature gaps → feed into `workflow-roadmap`, then proceed through the default flow above
+  - Product/feature gaps → feed into `grill-with-docs` → `to-prd` → `to-issues` (the canonical chain)
   - Already-clear vertical implementation slices → route to `to-issues` or `triage` directly
   - Repo-wide refactors, migrations, or multi-phase remediation → `to-prd` **migration mode** (FIND-NN/REQ-NN anchors, parent + ordered children, pilot/canary, rollback, sync-gate child issues) → `to-issues` → `triage` → `execute-prd`; each child carries the normal `workflow-review` and `workflow-finalize` gates
-- **Do not route audit findings straight to execution** — a human-approved roadmap, or a migration-mode PRD built from a human-approved audit/brief with triaged children, must exist first
+- **Do not route audit findings straight to execution** — a human-approved PRD from the canonical chain, or a migration-mode PRD built from a human-approved audit/brief with triaged children, must exist first
 - **Key constraint:** PRD/spec parent issues must not be labeled `ready-for-agent` (per `triage` skill) — only child implementation issues produced by `to-issues` and meeting all readiness criteria may receive `ready-for-agent`
 
-## Roadmap Gate Rule
+## Planning Gate Rule
 
-For product/feature planning that will produce PRDs and implementation issues, require an approved `workflow-roadmap` artifact before dispatching `to-prd` (product mode) or `to-issues`.
+For product/feature planning that will produce PRDs and implementation issues, require passage through the canonical chain (`grill-with-docs` → `to-prd` → `to-issues`) before implementation.
 
-- If roadmap evidence exists and is in scope: proceed.
-- If roadmap is missing, stale, or out of scope: route to `workflow-roadmap` first and halt downstream dispatch until approved.
+- If a grilled and approved PRD exists: proceed to `to-issues`.
+- If no PRD exists: start with `grill-with-docs`.
 - Only an explicit user waiver may bypass this gate.
-- **Migration-mode exception (in-rule, not a waiver):** `to-prd` migration mode satisfies this gate with its input artifact instead — a **human-approved** repo-audit report or migration brief, per the mode's own roadmap-gate delta (D-006 planning-lane consolidation, 2026-08-19). The scope there is already settled; do not force a `workflow-roadmap` detour.
+- **Migration-mode exception (in-rule, not a waiver):** `to-prd` migration mode satisfies this gate with its input artifact instead — a **human-approved** repo-audit report or migration brief. The scope there is already settled.
 
 ### Roadmap Doc Invariant (drift guard)
 
-The roadmap is a **capability-altitude** artifact, not a status tracker. Enforce, and instruct `workflow-roadmap` to enforce:
+If a `docs/roadmap.md` exists, it is a **capability-altitude** artifact, not a status tracker:
 
-- **Exactly one canonical `docs/roadmap.md`.** Never create a dated/named roadmap sibling (`docs/roadmaps/2026-*.md`, `fleet-roadmap.md`). Update the canonical, or move superseded planning to `docs/roadmaps/archive/`. Where a repo ships it, `python3 scripts/chorus/validate.py roadmap` fails on a competing file.
-- **Never restate execution state in the roadmap** — per-issue status, agent/board state, and progress live in GitHub + the workboard. The roadmap holds capabilities ordered by `depends on` (bands Now/Next/Later), each with `outcome` · `unlocks` · `effort` · `priority`. Copied state is what drifts.
+- **Exactly one canonical `docs/roadmap.md`.** Never create a dated/named roadmap sibling. Update the canonical, or move superseded planning to `docs/roadmaps/archive/`.
+- **Never restate execution state in the roadmap** — per-issue status lives in GitHub. The roadmap holds capabilities ordered by `depends on` (bands Now/Next/Later), each with `outcome` · `unlocks` · `effort` · `priority`.
 - New idea → append a capability (or backlog-pool entry) with its deps; do not renumber or fork the doc.
 
 ## Learning Loop

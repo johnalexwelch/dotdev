@@ -1,4 +1,5 @@
 # Global Agent Instructions
+
 # Agent habits (cross-runtime, read first)
 
 Durable cross-runtime agent habits (ground truth over speculation, scoped filesystem searches, verify newly-wired tools before manual work, treat mutating/regen tools as destructive, post-rewrite semantic sanity pass) live at `~/dotdev/docs/agents/habits.md`. Read it before diving into work — in any repo, not just `~/dotdev`.
