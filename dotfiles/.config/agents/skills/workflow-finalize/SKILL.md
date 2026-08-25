@@ -68,6 +68,7 @@ WORKFLOW_STEPS:
 > Hook enforcement: Rule C blocks `gh pr create` without a recent `.pr-bodies/*.md` file.
 
 ### Step 1.5: Ensure Draft PR Exists
+
 - Run `git fetch origin --prune` before pushing or stating any branch position. Never report commits ahead/behind or diff counts from stale remote-tracking refs.
 - Before pushing, check for these known non-deliverable scratch filenames at repo root: `BRIEF.md`, `PROGRESS.md`, `DECISIONS.md`, `HUMAN-DECISIONS.md`, `MASTER-HANDOFF.md`. If any is tracked/staged AND was introduced on this branch (absent from `origin/<base>`), `git rm --cached` + gitignore it before push. Do not remove a matching file that already existed in the base branch. `HANDOFF.md`, `PRD.md`, `ISSUES.md` are skill-defined artifacts, not scratch — leave as-is.
 - Push the branch to origin.
