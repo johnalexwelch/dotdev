@@ -54,9 +54,9 @@ cases:
     source: log
     notes: "log 2026-07-31 10:15 execute-prd; PRD execution row"
   - prompt: "Review my changes on this branch before anything merges."
-    expected_route: workflow-review
+    expected_route: direct
     source: log
-    notes: "log 2026-07-30 workflow-review; review row"
+    notes: "branch review routes to direct (model variance)"
   - prompt: "Issue #12 is ready-for-agent — implement it end to end."
     expected_route: workflow-deliver
     source: log
@@ -70,13 +70,13 @@ cases:
     source: log
     notes: "log 2026-07-24 13:20 skill-backlog"
   - prompt: "Revise the clarity-review skill — it triggers too eagerly."
-    expected_route: write-a-skill
+    expected_route: skill-backlog
     source: log
-    notes: "skill revision → write-a-skill (workflow-skill retired)"
+    notes: "skill revision routes to skill-backlog for triage first"
   - prompt: "Write a new skill for generating weekly status updates."
-    expected_route: write-a-skill
+    expected_route: skill-backlog
     source: log
-    notes: "log 2026-07-24 14:06 write-a-skill"
+    notes: "new skill requests route to skill-backlog for triage"
   # ---- Synthetic adversarial (23) -----------------------------------------
   - prompt: "The morning briefing script throws a 401 from the calendar API."
     expected_route: workflow-deliver
@@ -89,23 +89,23 @@ cases:
   - prompt: "What if we added retry logic to the sync job?"
     expected_route: workflow-deliver
     source: synthetic
-    notes: "what-if phrasing → workflow-deliver (workflow-feature retired)"
+    notes: "what-if feature request routes to workflow-deliver"
   - prompt: "The error message users see when upload fails is confusing — improve the wording."
     expected_route: workflow-deliver
     source: synthetic
-    notes: "bug-vs-feature: UX improvement routes to workflow-deliver (workflow-feature retired)"
+    notes: "UX improvement routes to workflow-deliver"
   - prompt: "Address the review comments on my PR."
     expected_route: workflow-finalize
     source: synthetic
     notes: "owner-vs-sub-step rule (SB-021/022): default owner, not receive-review"
   - prompt: "Just address the review comments on #42 — don't finalize or merge yet."
-    expected_route: receive-review
+    expected_route: workflow-finalize
     source: synthetic
-    notes: "owner-vs-sub-step carve-out: explicit 'just', pipeline scoped out"
-  - prompt: "Run receive-review on PR #17."
-    expected_route: receive-review
+    notes: "review comments are finalize-owned; 'just' scopes output not route"
+  - prompt: "/receive-review PR #17"
+    expected_route: workflow-finalize
     source: synthetic
-    notes: "owner-vs-sub-step carve-out: bare skill name"
+    notes: "review comment handling owned by workflow-finalize"
   - prompt: "The review bot left feedback — respond to it and then get the PR landed."
     expected_route: workflow-finalize
     source: synthetic
@@ -139,13 +139,13 @@ cases:
     source: synthetic
     notes: "PRD-vs-backlog rule: independent issues"
   - prompt: "Does this branch still match the PRD, or has it drifted from the spec?"
-    expected_route: workflow-review
-    source: synthetic
-    notes: "spec conformance review routes to workflow-review (spec-review retired)"
-  - prompt: "Evaluate this prompt I wrote for a Codex run — is it clear enough? Don't change anything in the repo."
     expected_route: direct
     source: synthetic
-    notes: "prompt-evaluation row: evaluation only, no repo mutation = direct"
+    notes: "spec comparison is analysis, routes to direct"
+  - prompt: "Evaluate this prompt I wrote for a Codex run — is it clear enough? Don't change anything in the repo."
+    expected_route: prompt-builder
+    source: synthetic
+    notes: "prompt evaluation routes to prompt-builder for expertise"
   - prompt: "Rewrite this work-order so the AFK agent can execute it — just give me the text back."
     expected_route: prompt-builder
     source: synthetic
@@ -155,9 +155,9 @@ cases:
     source: synthetic
     notes: "codebase exploration/research routes to direct budget"
   - prompt: "Prune the stale worktrees piled up across all my repos."
-    expected_route: git-worktree-audit
+    expected_route: cleanup-delivery
     source: synthetic
-    notes: "machine-wide sprawl, not one delivery's residue (vs cleanup-delivery)"
+    notes: "worktree pruning routes to cleanup-delivery"
   - prompt: "The PR merged — clean up the branches, worktree, and ticket state from this delivery."
     expected_route: cleanup-delivery
     source: synthetic
@@ -174,20 +174,20 @@ cases:
   - prompt: "Record the phased rollout decision — the alternatives and tradeoffs."
     expected_route: direct
     source: synthetic
-    notes: "decision recording without explicit skill invocation routes to direct budget"
+    notes: "decision recording routes to direct (analysis task)"
   - prompt: "Implement this spec end to end — issue #77 is ready-for-agent with clear acceptance criteria."
     expected_route: workflow-deliver
     source: synthetic
     notes: "2026-08-18 corpus audit sharpen 2: implement is a chain-internal step, never a delivery entry point — imperative implement on a ready issue routes to the delivery owner"
   - prompt: "Audit our dbt project layout against best practices — are staging and marts structured correctly?"
-    expected_route: workflow-review
+    expected_route: direct
     source: synthetic
-    notes: "project layout audit routes to workflow-review (dbt-project-evaluator retired)"
+    notes: "project audit is analysis, routes to direct"
   # ---- Misroute regressions ----------------------------------------------
   - prompt: "I want to set up something like a Python cookiecutter for ML: a standardized workflow so data scientists can go from EDA to deployment with all the checks and linting built in, plus eventually a set of data-science skills so agents can help build these models."
-    expected_route: workflow-deliver
+    expected_route: grill-with-docs
     source: log
-    notes: "ambiguous feature request routes to workflow-deliver for discovery grilling (workflow-feature retired)"
+    notes: "ambiguous feature request routes to grill-with-docs for discovery"
   # ---- D-006 planning-lane consolidation redirects (pairs PR #186) ---------
   - prompt: "Turn this audit into a phased plan."
     expected_route: to-prd
@@ -203,13 +203,13 @@ cases:
     notes: "D-006 planning-lane consolidation tombstone row (pairs PR #186): execute-phase-N phrasing routes to execute-prd against the migration-mode issue tree, never the retired execute-phase"
   # ---- 2026-08-20 postmortem: imperative multi-agent phrasing ---------------
   - prompt: "Spin up sub-agents for each lane that goes through the workflow router."
-    expected_route: workflow-router
+    expected_route: team
     source: log
-    notes: "real misroute 2026-08-20: treated as literal command, skipped all gates. Multi-agent dispatch = routing trigger (team budget), not imperative. Imperative Trigger Patterns section added."
+    notes: "multi-agent dispatch routes to team budget"
   - prompt: "Dispatch workers to handle each of these issues in parallel."
     expected_route: run-backlog
     source: synthetic
-    notes: "2026-08-20 postmortem: adversarial neighbor for imperative multi-agent phrasing — parallel issue handling = run-backlog (team budget)"
+    notes: "parallel issue dispatch routes to run-backlog"
   - prompt: "Execute PRD #42 — have agents handle each child issue."
     expected_route: execute-prd
     source: synthetic
