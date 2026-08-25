@@ -206,6 +206,35 @@ if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" 
         exit 2
     fi
 
+    # Rule G: Secret scan in handoffs — warn if writing to handoffs/ and content
+    # contains potential secrets (API keys, tokens, passwords).
+    # ponytail: simple regex patterns; upgrade to gitleaks if needed.
+    if grep -Eiq '(^|/)docs/executions/handoffs/' <<<"$file_path"; then
+        # Read the tool_input.content field for Write operations
+        content="$(jq -r '.tool_input.content // ""' <<<"$input" 2>/dev/null || true)"
+        if [[ -n "$content" ]]; then
+            secret_patterns='(api[_-]?key|secret[_-]?key|access[_-]?token|bearer[[:space:]]+[a-zA-Z0-9_-]{20,}|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{36}|xox[baprs]-[a-zA-Z0-9-]+|password[[:space:]]*[=:][[:space:]]*[^[:space:]]{8,})'
+            if grep -Eiq "$secret_patterns" <<<"$content"; then
+                printf '[WORKFLOW GUARD] Warning: handoff may contain secrets. Redact API keys, tokens, and passwords before writing.\n' >&2
+                printf '  File: %s\n' "$file_path" >&2
+            fi
+        fi
+    fi
+
+    # Rule H: Handoff cwd gate — warn if handoff mentions a different repo path
+    # but does not include --repo flag guidance for gh commands.
+    if grep -Eiq '(^|/)docs/executions/handoffs/' <<<"$file_path"; then
+        content="$(jq -r '.tool_input.content // ""' <<<"$input" 2>/dev/null || true)"
+        if [[ -n "$content" ]]; then
+            # Check if mentions a different repo path (e.g., /Users/.../other-repo)
+            other_repo="$(printf '%s' "$content" | grep -oE '/Users/[^[:space:]]*/[a-zA-Z0-9_-]+' | grep -v "$cwd" | head -1 || true)"
+            if [[ -n "$other_repo" ]] && ! grep -qi '\-\-repo' <<<"$content"; then
+                printf '[WORKFLOW GUARD] Warning: handoff references %s but does not mention --repo flag for gh commands.\n' "$other_repo" >&2
+                printf '  Add: gh --repo <owner/slug> to ensure resuming sessions target the correct repo.\n' >&2
+            fi
+        fi
+    fi
+
     # Rule 4: entry enforcement — tracked-code edit in an opted-in repo with no
     # active ledger run. Warn-only in Phase 0; LEDGER_ENTRY_ENFORCE=block
     # escalates to a hard block (the Phase 5 default flip).
@@ -508,6 +537,20 @@ if [ "$event" = "PreToolUse" ]; then
         { prd_like_text "$cmd" || prd_like_text "$(existing_issue_text)"; }; then
         printf 'Blocked: PRD/spec parent issues must not be labeled ready-for-agent. Use child implementation issues from to-issues.\n' >&2
         exit 2
+    fi
+
+    # Rule F: Issue duplication check — warn if creating an issue with a title
+    # that fuzzy-matches an existing open issue (to-issues idempotency gate).
+    # ponytail: simple substring match; upgrade to Levenshtein if needed.
+    if has '\bgh[[:space:]]+issue[[:space:]]+create\b'; then
+        new_title="$(printf '%s' "$cmd" | grep -oE '\-\-title[[:space:]]+[^[:space:]-]+' | sed 's/--title[[:space:]]*//' | tr -d '"' | head -1)"
+        if [[ -n "$new_title" ]]; then
+            existing_match="$(gh issue list --state open --limit 100 --json number,title --jq '.[].title' 2>/dev/null | grep -i "${new_title:0:40}" | head -1 || true)"
+            if [[ -n "$existing_match" ]]; then
+                printf '[WORKFLOW GUARD] Warning: issue title "%s" may duplicate existing issue "%s". Run: gh issue list --state all | grep -i "%s"\n' \
+                    "${new_title:0:50}" "${existing_match:0:50}" "${new_title:0:30}" >&2
+            fi
+        fi
     fi
 
     # Rule 3: stderr suppression on mutating git/gh/tea/git-forge commands
