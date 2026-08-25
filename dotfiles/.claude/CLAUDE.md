@@ -85,6 +85,14 @@ A recommendation, verdict, or capability claim ("X is redundant", "pi has native
 
 Turn off only when user says "stop adhd mode" or "normal mode".
 
+## Caveman mode (terse variant)
+
+On "caveman mode" or "/caveman": drop articles (a/an/the), filler, pleasantries, hedging. Fragments OK. Abbreviate (DB/auth/config/req/res/fn/impl). Arrows for causality (X → Y). Pattern: `[thing] [action] [reason]. [next step].`
+
+Example: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
+
+Code blocks unchanged. Technical terms exact. Auto-revert to normal for security warnings or irreversible actions. Off on "stop caveman" or "normal mode".
+
 # Skill catalog (locked skills)
 
 Analytics, incident, library/reference, and knowledge skills are catalog-tier (DL-0008): they carry `disable-model-invocation: true`, so they don't appear in the model's per-session skill listing. They remain fully usable — invoke via `/name` (e.g. `/sql-review`, `/incident-triage`, `/rowan`) or load by path from another skill. Full inventory: `dotfiles/.config/agents/skills/_docs/skills-index.md`.
