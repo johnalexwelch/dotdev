@@ -44,7 +44,7 @@ Transition legality (required steps unskippable, evidence on completion/skip) is
 
 ## Output discipline
 
-Compress routine progress narration to caveman style during the implementation loop (Load and run `caveman/SKILL.md` for the rules). Snap back to full prose for judgment: findings, blockers, scope violations, decisions, and the final summary/handoff.
+Compress routine progress narration to caveman style during the implementation loop (terse fragments, technical abbreviations, arrows for causality — see caveman mode in CLAUDE.md). Snap back to full prose for judgment: findings, blockers, scope violations, decisions, and the final summary/handoff.
 
 ### Step 0: Preflight
 
@@ -84,7 +84,7 @@ Confirm the item is well-formed for autonomous execution: clear acceptance crite
 
 ### Step 5: User Journey QA (conditional blocking gate)
 
-Trigger when the change touches frontend code, user-facing behavior, auth/navigation/payment flows, UX acceptance criteria — or when a bug was user-reported rather than CI-caught. Skip (with reason) for purely backend/infrastructure/tooling changes. When triggered: Load and run `user-journey-qa/SKILL.md`; proceed only on PASS or an explicit user waiver; on FAIL/PARTIAL/cannot-run, auto-handoff with the QA blocker and halt.
+Trigger when the change touches frontend code, user-facing behavior, auth/navigation/payment flows, UX acceptance criteria — or when a bug was user-reported rather than CI-caught. Skip (with reason) for purely backend/infrastructure/tooling changes. When triggered: run user-journey QA checks (manual verification of affected user flows); proceed only on PASS or an explicit user waiver; on FAIL/PARTIAL/cannot-run, auto-handoff with the QA blocker and halt.
 
 ### Step 6: Finalize
 
