@@ -234,7 +234,6 @@ relay.sh --handoff <file> [--max-legs N=5] [--repo <path>]
 Continues only on AFK-eligible exit_reasons (`completion-with-follow-ups`, `halt-for-continuation`). Stops on `complete`, NEEDS_HUMAN, missing exit_reason, max legs, or claude error.
 
 ## Rules
-## Rules
 
 - Do NOT duplicate content already in artifacts (PRDs, plans, ADRs, issues, commits). Reference by path or URL.
 - Prefer durable, repo-relative artifact paths over session-scratch temp files (e.g. `/tmp/...`, `/private/tmp/.../scratchpad/...`). If an artifact referenced in the handoff exists only as ephemeral scratch, either copy it into the repo (e.g. under `docs/executions/` or another suitable `docs/` subdir) before referencing it, or explicitly flag it as likely-gone and give the exact command to regenerate it.
