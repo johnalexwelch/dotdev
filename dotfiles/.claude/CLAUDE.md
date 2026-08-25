@@ -1,10 +1,10 @@
 # Global Agent Instructions
 
-# Agent habits (cross-runtime, read first)
+## Agent habits (cross-runtime, read first)
 
 Durable cross-runtime agent habits (ground truth over speculation, scoped filesystem searches, verify newly-wired tools before manual work, treat mutating/regen tools as destructive, post-rewrite semantic sanity pass) live at `~/dotdev/docs/agents/habits.md`. Read it before diving into work — in any repo, not just `~/dotdev`.
 
-# Code standards (on-demand)
+## Code standards (on-demand)
 
 Language/stack coding standards are **not** auto-loaded into every session (they're waste in DnD, writing, and analysis sessions). When doing code work, read the relevant file(s) from `~/.claude/code-standards-reference/`:
 
@@ -15,7 +15,7 @@ Language/stack coding standards are **not** auto-loaded into every session (they
 
 Universal rules (git, security, coding-standards, task-context) remain in `~/.claude/rules/` and auto-load. The workflow loop map moved to `~/.claude/reference/workflows.md` (on-demand) — the `workflow-router` skill is the live routing authority and fires regardless; read the reference only when you need the full route table.
 
-# graphify
+## graphify
 
 - **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
 When the user types `/graphify`, invoke the Skill tool with `skill: "graphify"` before doing anything else.

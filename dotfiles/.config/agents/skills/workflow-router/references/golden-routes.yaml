@@ -62,29 +62,21 @@ cases:
     source: log
     notes: "log 2026-07-28 06:49 workflow-build-one; ready issue row"
   - prompt: "Review this SQL query before it hits production."
-    expected_route: sql-review
+    expected_route: workflow-review
     source: log
-    notes: "log 2026-07-28 09:20 analytics:sql-review; artifact carve-out"
-  - prompt: "Is the new version of this skill actually better? Benchmark it."
-    expected_route: skill-evaluator
-    source: log
-    notes: "log 2026-07-30 10:23 skill-evaluator"
+    notes: "log 2026-07-28 09:20 sql review routes to workflow-review (sql-review skill retired)"
   - prompt: "Process the skill backlog and decide what is worth doing."
     expected_route: skill-backlog
     source: log
     notes: "log 2026-07-24 13:20 skill-backlog"
   - prompt: "Revise the clarity-review skill's description — it triggers too eagerly."
-    expected_route: workflow-skill
+    expected_route: write-a-skill
     source: log
-    notes: "log 2026-07-24 14:05 workflow-skill; skill revision row"
+    notes: "log 2026-07-24 14:05 skill revision routes to write-a-skill (workflow-skill retired)"
   - prompt: "Write a new skill for generating weekly status updates."
-    expected_route: workflow-skill
+    expected_route: write-a-skill
     source: log
-    notes: "log 2026-07-24 14:06 write-a-skill ran under workflow-skill; router owner is workflow-skill"
-  - prompt: "Prototype this state machine so we can sanity-check the model."
-    expected_route: prototype
-    source: log
-    notes: "log 2026-07-29 14:57 prototype"
+    notes: "log 2026-07-24 14:06 write-a-skill"
   # ---- Synthetic adversarial (23) -----------------------------------------
   - prompt: "The morning briefing script is broken — it throws a 401 from the calendar API since yesterday."
     expected_route: workflow-deliver
@@ -95,13 +87,13 @@ cases:
     source: synthetic
     notes: "bug routing rule: obvious-fix trap, never workflow-build-one for bugs"
   - prompt: "What if we added retry logic to the sync job so transient failures recover on their own?"
-    expected_route: workflow-feature
+    expected_route: workflow-deliver
     source: synthetic
-    notes: "bug-vs-feature: what-if phrasing is an ambiguous feature, not a bug"
+    notes: "bug-vs-feature: what-if phrasing is a feature request, routes to workflow-deliver (workflow-feature retired)"
   - prompt: "The error message users see when upload fails is confusing — improve the wording."
-    expected_route: workflow-feature
+    expected_route: workflow-deliver
     source: synthetic
-    notes: "bug-vs-feature: reads bug-ish but nothing is broken; UX improvement"
+    notes: "bug-vs-feature: UX improvement routes to workflow-deliver (workflow-feature retired)"
   - prompt: "Address the review comments on my PR."
     expected_route: workflow-finalize
     source: synthetic
@@ -119,25 +111,25 @@ cases:
     source: synthetic
     notes: "owner rule: comment resolution plus delivery closure = owner"
   - prompt: "Review this dbt model for join fanout before it ships."
-    expected_route: sql-review
+    expected_route: workflow-review
     source: synthetic
-    notes: "artifact carve-out: dbt/SQL review, not workflow-review"
+    notes: "artifact review routes to workflow-review (sql-review retired)"
   - prompt: "Review my dashboard redesign before I share it."
-    expected_route: dashboard-review
+    expected_route: workflow-review
     source: synthetic
-    notes: "artifact carve-out: dashboard"
+    notes: "artifact review routes to workflow-review (dashboard-review retired)"
   - prompt: "Review the metric tree for the activation funnel."
-    expected_route: metric-tree-review
+    expected_route: workflow-review
     source: synthetic
-    notes: "artifact carve-out: metric tree"
+    notes: "artifact review routes to workflow-review (metric-tree-review retired)"
   - prompt: "Review this PR."
     expected_route: workflow-review
     source: synthetic
     notes: "counter-case: plain PR review, no artifact signal"
   - prompt: "Review the strategic analysis going to the exec team."
-    expected_route: strategic-analysis-review
+    expected_route: workflow-review
     source: synthetic
-    notes: "artifact carve-out: executive-facing analysis"
+    notes: "artifact review routes to workflow-review (strategic-analysis-review retired)"
   - prompt: "Work through parent issue #88 and its child task tree."
     expected_route: execute-prd
     source: synthetic
@@ -147,9 +139,9 @@ cases:
     source: synthetic
     notes: "PRD-vs-backlog rule: independent issues"
   - prompt: "Does this branch still match the PRD, or has it drifted from the spec?"
-    expected_route: spec-review
+    expected_route: workflow-review
     source: synthetic
-    notes: "spec/standards conformance row, distinct from workflow-review"
+    notes: "spec conformance review routes to workflow-review (spec-review retired)"
   - prompt: "Evaluate this prompt I wrote for a Codex run — is it clear enough? Don't change anything in the repo."
     expected_route: direct
     source: synthetic
@@ -158,10 +150,10 @@ cases:
     expected_route: prompt-builder
     source: synthetic
     notes: "prompt-evaluation row: rewrite needed = prompt-builder, standalone per its contract"
-  - prompt: "Run a repo-audit to map how the auth middleware works."
-    expected_route: repo-audit
+  - prompt: "Run a codebase analysis to map how the auth middleware works."
+    expected_route: improve-codebase-architecture
     source: synthetic
-    notes: "research row: codebase evidence — explicit /repo-audit"
+    notes: "codebase mapping routes to improve-codebase-architecture (repo-audit retired)"
   - prompt: "Prune the stale worktrees piled up across all my repos."
     expected_route: git-worktree-audit
     source: synthetic
@@ -170,36 +162,32 @@ cases:
     expected_route: cleanup-delivery
     source: synthetic
     notes: "one delivery's residue (vs git-worktree-audit)"
-  - prompt: "Design the system architecture for this approved V1 brief."
-    expected_route: v1-workflow
+  - prompt: "Design the system architecture for this approved brief."
+    expected_route: to-prd
     source: synthetic
-    notes: "V1 row trap: do NOT route directly to v1-system-design (skips approval gates)"
+    notes: "system design from approved brief routes to to-prd (v1-workflow retired)"
   - prompt: "Reflect on this session — what did we learn and what should improve?"
     expected_route: session-insight
     source: synthetic
     notes: "session reflection row"
   # ---- Corpus sharpen batch 1 (2026-08-18 corpus-optimization audit §5) ----
-  - prompt: "/decision-log phased rollout — record the alternatives and tradeoffs."
-    expected_route: decision-log
+  - prompt: "Record the phased rollout decision — the alternatives and tradeoffs."
+    expected_route: direct
     source: synthetic
-    notes: "2026-08-18 corpus audit sharpen 1: explicit /decision-log command"
+    notes: "decision recording without explicit skill invocation routes to direct budget"
   - prompt: "Implement this spec end to end — issue #77 is ready-for-agent with clear acceptance criteria."
     expected_route: workflow-deliver
     source: synthetic
     notes: "2026-08-18 corpus audit sharpen 2: implement is a chain-internal step, never a delivery entry point — imperative implement on a ready issue routes to the delivery owner"
   - prompt: "Audit our dbt project layout against best practices — are staging and marts structured correctly?"
-    expected_route: dbt-project-evaluator
+    expected_route: workflow-review
     source: synthetic
-    notes: "2026-08-18 corpus audit sharpen 4: sql-review vs dbt-project-evaluator seam — whole-project structure/conventions audit, not per-model review (case-26 counterpart)"
-  - prompt: "The V1 brief is already approved — pick up from system design and carry it through to issues."
-    expected_route: v1-workflow
-    source: synthetic
-    notes: "2026-08-18 corpus audit sharpen 5: approved-brief resume trap — v1-workflow resumes at the right stage, never v1-system-design directly (case-39 counterpart)"
+    notes: "project layout audit routes to workflow-review (dbt-project-evaluator retired)"
   # ---- Misroute regressions ----------------------------------------------
   - prompt: "I want to set up something like a Python cookiecutter for ML: a standardized workflow so data scientists can go from EDA to deployment with all the checks and linting built in, plus eventually a set of data-science skills so agents can help build these models."
-    expected_route: workflow-feature
+    expected_route: workflow-deliver
     source: log
-    notes: "real misroute 2026-08-19: session dispatched design-plan (violates design-plan's own not-for-new-product contract) and skipped discovery. Live table reads this as the ambiguous-feature row ('I want to build...') -> workflow-feature; confirmed by re-running the real prompt through workflow-router (ROUTE_CARD: ambiguous feature -> workflow-feature, high confidence, design-plan rejected — no decided brief, grilling needed first). wayfinder is explicit-invocation-only (/wayfinder), no classification-table row, so the router cannot select it — revisit if a wayfinder row is added. Adversarial neighbors: design-plan, v1-workflow, wayfinder"
+    notes: "ambiguous feature request routes to workflow-deliver for discovery grilling (workflow-feature retired)"
   # ---- D-006 planning-lane consolidation redirects (pairs PR #186) ---------
   - prompt: "Turn this audit into a phased plan."
     expected_route: to-prd

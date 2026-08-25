@@ -123,6 +123,7 @@ Once the user picks a candidate, drop into a grilling conversation. Walk the des
 When called by `workflow-autonomous-backlog`, run this grilling loop for every selected module candidate before `to-prd`. If the user asks to "accept recommended answers", provide the recommended answer for each question and proceed with it unless uncertainty is high or the answer would change product behavior, public interfaces, data models, auth/payment behavior, infrastructure, or rollout risk. Record which answers were accepted, overridden, or still need human judgment.
 
 **Before marking a slice as human-gated, distinguish:**
+
 - **Missing tests** → write red→green tests, then proceed (not a human gate)
 - **Invariant is a judgment call** → genuine human gate (document what decision is needed)
 
