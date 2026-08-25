@@ -1,0 +1,30 @@
+run_id: arch-improve-20260821-173340
+workflow: improve-codebase-architecture
+kind: feature
+budget: one-reviewer
+initialized_epoch: 1787348020
+status: done
+next: ''
+updated: '2026-08-21T22:28:33.048906+00:00'
+steps:
+- id: grill
+  required: true
+  status: pending
+  evidence: ''
+- id: deliver
+  required: true
+  status: pending
+  evidence: ''
+- id: finalize
+  required: true
+  status: pending
+  evidence: ''
+stamps: {}
+overrides:
+- action: force-init
+  reason: --force re-init over prior run arch-improve-20260821-173332
+  timestamp: '2026-08-21T21:33:40.112028+00:00'
+route: team|grill->deliver->finalize|confirmed
+branch: worktree/silver-meadow-da6f
+worktree: /Users/alexwelch/.herdr/worktrees/dotdev/worktree-silver-meadow-da6f
+last_seen_sha: 0bce054a60d3d4f726e55bdf0762d061391a0558

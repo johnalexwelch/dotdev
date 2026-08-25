@@ -43,4 +43,4 @@
 
 ## Skill Extraction Candidates
 
-_None — the lesson is a refinement of existing skills, not a new repeatable workflow._
+*None — the lesson is a refinement of existing skills, not a new repeatable workflow.*
