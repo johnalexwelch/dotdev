@@ -226,6 +226,50 @@ if [ "$event" = "PreToolUse" ] && { [ "$tool" = "Edit" ] || [ "$tool" = "Write" 
     exit 0
 fi
 
+# RULE A: Agent/subagent dispatch requires routing evidence in opted-in repos
+# This is the HARD gate that would have caught the Aug 2026 $729 session
+# where 102 subagents were spawned without ROUTE_CARD.
+# D-006 learning: exploring/planning work that escalates into execution
+# must re-route through workflow-router, not spawn agents directly.
+case "$tool" in
+    Agent|subagent|Task|Dispatch|spawn_agent|TaskDispatch|dispatch_agent)
+        repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+        # Only enforce in opted-in repos (docs/executions/ present)
+        if [ -n "$repo_top" ] && [ -d "$repo_top/docs/executions" ]; then
+            # Reuse has_routing_evidence if available (defined later for Bash)
+            # For now, check .pi/routing-confirmed file directly
+            routing_file=""
+            if [ -f "$repo_top/.pi/routing-confirmed" ]; then
+                routing_file="$repo_top/.pi/routing-confirmed"
+            elif [ -f "$cwd/.pi/routing-confirmed" ]; then
+                routing_file="$cwd/.pi/routing-confirmed"
+            elif [ -f "$HOME/.pi/routing-confirmed" ]; then
+                routing_file="$HOME/.pi/routing-confirmed"
+            fi
+            
+            if [ -z "$routing_file" ]; then
+                if [ "${ROUTING_ENFORCE:-}" = "block" ]; then
+                    printf '\n' >&2
+                    printf '╔════════════════════════════════════════════════════════════════╗\n' >&2
+                    printf '║  🚨 BLOCKED: Agent/subagent dispatch without ROUTE_CARD       ║\n' >&2
+                    printf '╠════════════════════════════════════════════════════════════════╣\n' >&2
+                    printf '║  Load workflow-router → emit ROUTE_CARD → get confirmation    ║\n' >&2
+                    printf '║                                                                ║\n' >&2
+                    printf '║  Baseline: Aug 2026 session spawned 102 subagents ($729)       ║\n' >&2
+                    printf '║  without routing through workflow-router.                      ║\n' >&2
+                    printf '╚════════════════════════════════════════════════════════════════╝\n' >&2
+                    exit 2
+                else
+                    printf '\n[WORKFLOW GUARD] ⚠️ Agent/subagent dispatch without ROUTE_CARD.\n' >&2
+                    printf '[WORKFLOW GUARD] Load workflow-router and emit ROUTE_CARD first.\n' >&2
+                    printf '[WORKFLOW GUARD] Baseline: Aug 2026 session spawned 102 subagents ($729) without routing.\n' >&2
+                fi
+            fi
+        fi
+        exit 0
+        ;;
+esac
+
 [ "$tool" = "Bash" ] || exit 0
 [ -n "$cmd" ] || exit 0
 
