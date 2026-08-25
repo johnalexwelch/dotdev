@@ -6,11 +6,7 @@ reasoning: medium
 description: Deliver one unit of work end-to-end (preflight → [diagnose if bug] → triage → implement → review → finalize) with kernel-enforced ledger gates; kind=bug templates required diagnose/fix steps. Use for a ready-for-agent issue, a bug report, a skill change, or a docs change; supersedes workflow-build-one and workflow-debug (D-006 #11).
 ---
 
-## Routing Prerequisite
-
-This skill does not own routing. If you reached here without a `ROUTE_CARD` in context — especially via imperative phrasing like "spin up sub-agents" or "dispatch workers" — **STOP and load `workflow-router` first**. Multi-agent dispatch requires routing gates before execution.
-
-> Baseline: 2026-08-20 postmortem — imperative multi-agent phrasing bypassed all workflow gates.
+> Hook enforcement: Rule A blocks Agent/subagent dispatch without ROUTE_CARD.
 
 # Workflow Deliver
 

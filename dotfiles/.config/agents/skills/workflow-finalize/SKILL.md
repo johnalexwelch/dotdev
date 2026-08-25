@@ -60,18 +60,14 @@ WORKFLOW_STEPS:
 
 ### Step 1: Describe PR (describe-pr)
 
-- Load and execute `describe-pr/SKILL.md`. **Do not hand-roll the PR body in `workflow-finalize`.** Hand-written PR bodies, GitHub default bodies, copied issue text, or current-agent summaries are **invalid** for PR finalization.
-- `describe-pr` must write a body file under `docs/executions/.pr-bodies/` **before any draft PR is created or updated.** Draft PR creation is **blocked** until this file exists and was produced by `describe-pr` in this run.
-- Pass the resolved `branch`, `base`, discovered `pr_number` if one exists, and `apply=false` when no PR exists yet. If a PR already exists, either pass `apply=true` or apply the returned body file in Step 1.5.
-- The generated body must include issue awareness and a disposition table for all referenced issues when issues are discovered.
-- If any referenced issue requires maintainer/operator review (`needs-human-review` label tied to a maintainer/operator gate, `Maintainer/operator gate: required`, or equivalent explicit gate), the generated body must end with `## Reviewer validation steps` — the final section, with concrete ordered steps copied or condensed from the issue's explicit reviewer validation steps. Do not treat `ready-for-human`, `Type: HITL`, or `Reviewer validation: required` as human-review-required; those mean human implementation, human interaction, or independent review, not PR-blocking maintainer/operator validation.
-- Record describe-pr evidence for the stamp's `describe_pr` attestation: body file path, mode (`plan_backed`, `phase_run_backed`, or `issue_only`), issue refs discovered, phase evidence status, graphify usage, whether the body was applied to the PR, and deviation/new-finding counts when applicable.
-- If `describe-pr` halts because required phase evidence is missing for plan-backed or multi-phase work, halt finalization. Do not create a draft PR with a replacement body unless the user explicitly waives phase evidence.
-- For routine single-issue work with no design plan or phase-run files, `describe-pr` must run in issue-only mode using git log/diff plus issue discovery; absence of a design plan is not a reason to skip `describe-pr`.
+- Load and execute `describe-pr/SKILL.md`.
+- Pass the resolved `branch`, `base`, discovered `pr_number` if one exists, and `apply=false` when no PR exists yet.
+- Record describe-pr evidence for the stamp's `describe_pr` attestation.
+- If `describe-pr` halts because required phase evidence is missing, halt finalization.
+
+> Hook enforcement: Rule C blocks `gh pr create` without a recent `.pr-bodies/*.md` file.
 
 ### Step 1.5: Ensure Draft PR Exists
-
-- Verify that the `describe-pr` body file from Step 1 exists and was produced by `describe-pr` in this run. If not, halt and rerun `describe-pr` first.
 - Run `git fetch origin --prune` before pushing or stating any branch position. Never report commits ahead/behind or diff counts from stale remote-tracking refs.
 - Before pushing, check for these known non-deliverable scratch filenames at repo root: `BRIEF.md`, `PROGRESS.md`, `DECISIONS.md`, `HUMAN-DECISIONS.md`, `MASTER-HANDOFF.md`. If any is tracked/staged AND was introduced on this branch (absent from `origin/<base>`), `git rm --cached` + gitignore it before push. Do not remove a matching file that already existed in the base branch. `HANDOFF.md`, `PRD.md`, `ISSUES.md` are skill-defined artifacts, not scratch — leave as-is.
 - Push the branch to origin.
