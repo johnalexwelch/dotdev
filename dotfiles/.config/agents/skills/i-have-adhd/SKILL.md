@@ -102,11 +102,18 @@ Never use "Uh oh," "Oh no," or "There seems to be a problem." State cause and fi
 Bad: "Uh oh, the test is failing. There seems to be an issue..."
 Good: "Test fails at `auth.spec.ts:42`: expected 200, got 401. Cause: missing auth header. Fix: add `Authorization: Bearer ${token}` to the request."
 
-### 9. Cap lists at 5 items
+### 9. Show verification evidence
+
+When claiming "fixed," show the verification command and its output. Never say "fixed" without evidence.
+
+Bad: "Fixed the auth bug."
+Good: "Fixed. Verification: `npm test -- auth.spec.ts` → 12 passing, 0 failing."
+
+### 10. Cap lists at 5 items
 
 If a list grows past five, split into "do now" vs "later," or "must" vs "nice to have." Five items ranked beats ten unranked.
 
-### 10. No preamble, no recap, no closing pleasantries
+### 11. No preamble, no recap, no closing pleasantries
 
 Forbidden openers: "Great question," "Let me...", "I'll...", "Sure!", "Looking at your...", "To answer your question..."
 

@@ -234,7 +234,6 @@ relay.sh --handoff <file> [--max-legs N=5] [--repo <path>]
 Continues only on AFK-eligible exit_reasons (`completion-with-follow-ups`, `halt-for-continuation`). Stops on `complete`, NEEDS_HUMAN, missing exit_reason, max legs, or claude error.
 
 ## Rules
-## Rules
 
 - Do NOT duplicate content already in artifacts (PRDs, plans, ADRs, issues, commits). Reference by path or URL.
 - Prefer durable, repo-relative artifact paths over session-scratch temp files (e.g. `/tmp/...`, `/private/tmp/.../scratchpad/...`). If an artifact referenced in the handoff exists only as ephemeral scratch, either copy it into the repo (e.g. under `docs/executions/` or another suitable `docs/` subdir) before referencing it, or explicitly flag it as likely-gone and give the exact command to regenerate it.
@@ -251,3 +250,4 @@ Continues only on AFK-eligible exit_reasons (`completion-with-follow-ups`, `halt
 - Always write the global mirror under `~/.chorus/handoffs/<repo-name>/` so the handoff survives worktree destruction. Derive `<repo-name>` from `git rev-parse --absolute-git-dir` (strip `/.git*`, then basename) — never from `--show-toplevel`, which is a transient slug under worktrees.
 - Always print the global mirror path as the last line of output (it is the durable reference).
 - **Handoff files and checkout dirtiness**: A repo-copy handoff file at `docs/executions/handoffs/<date>-<slug>.md` makes the current checkout dirty (untracked) unless committed, .gitignore'd, or removed. If the user asked for a "clean primary" checkout or emphasized not mixing this session's artifacts with unrelated in-flight work, ASK before writing the repo copy: "This handoff file will create an untracked file in the repo. Shall I commit it to the branch, write mirror-only, or add it to .gitignore?" Respect the user's choice. For most sessions, the default (write both) is fine; this gate is for precision in environments where checkout state is tightly managed.
+- **Env-assumption notes**: When origin is self-hosted (Forgejo/Gitea), state that `gh` won't work and name the right tool (`tea`, `curl`, raw API). Always include IP alongside LAN hostnames — the resuming machine may lack the `/etc/hosts` entry.
