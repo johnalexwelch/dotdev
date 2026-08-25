@@ -21,13 +21,13 @@ Review a piece of writing against ClassDojo's standards for clear communication.
 
 The core idea: communication is expensive for the *reader*, and the writer should absorb that cost rather than push it onto everyone who reads the message. A vague sentence written once gets misread by fifty people. So the test for every recommendation is: would a busy reader, who doesn't share the writer's full context, understand this correctly on the first pass?
 
-**Mechanics:** follow `review-scaffolding` for the review discipline, severity vocabulary, and report contract. The criteria, unit of analysis, and deltas below are what make this a *clarity* review.
+**Mechanics:** follow the review discipline, severity vocabulary (`PASS`/`PARTIAL`/`FAIL`), and structured report contract used across review skills. The criteria, unit of analysis, and deltas below are what make this a *clarity* review.
 
 ## Contract
 
 Consumes: document, email, Slack post, memo, metrics update, spec, instructions, or pasted draft
 Produces: structured clarity review with findings, severity, rationale, and concrete rewrites
-Requires: none; review-scaffolding guidance is used when available
+Requires: none
 Side effects: none unless the user explicitly asks to edit a file
 Human gates: unclear audience/purpose may require an assumption or clarification before high-stakes rewrites
 

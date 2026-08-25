@@ -10,7 +10,7 @@ description: Universal delivery closure after review passes (PR body → reviewe
 
 ## Purpose
 
-Close the delivery loop after the review gate passes. Handles PR creation/description, reviewer-comment resolution, CI monitoring, issue reconciliation, the conditional post-mortem gate, and repo-policy-controlled final PR actions, ending in the kernel's finalize stamp. Does not duplicate review or testing logic.
+Close the delivery loop after the review gate passes. Handles PR creation/description, reviewer-comment resolution, CI monitoring, issue reconciliation, and repo-policy-controlled final PR actions, ending in the kernel's finalize stamp. Does not duplicate review or testing logic.
 
 ## Precondition — `ledger.sh check review`
 
@@ -38,7 +38,7 @@ The finalize stamp is the authority: at stamp time the kernel resolves the branc
 ## Flow
 
 ```
-[conditional post-mortem gate] → describe-pr → ensure draft PR → enumerate session PRs → receive-review (fan-out, per PR) → watch-ci → reconcile-issues → [docs-freshness hook] → verify-local → ledger.sh stamp finalize → repo-policy final action
+describe-pr → ensure draft PR → enumerate session PRs → receive-review (fan-out, per PR) → watch-ci → reconcile-issues → [docs-freshness hook] → verify-local → ledger.sh stamp finalize → repo-policy final action
 ```
 
 ## Workflow Progress Reporting
@@ -55,23 +55,19 @@ WORKFLOW_STEPS:
 ### Step 0.5: Conditional Post-mortem Gate
 
 - Required before `describe-pr` for migration-mode PRD work (or legacy design-plan/execute-phase branches), audit-derived refactors, multi-phase execution, significant drift, or `NEW-NN` findings.
-- The post-mortem output is consumed by `describe-pr`, so do not generate the PR body first for migration-mode, audit-derived, or multi-phase work.
 - Skip only for routine single-issue work with no meaningful drift, and record `not_applicable_with_reason` (it becomes the stamp's `post_mortem` attestation).
 
 ### Step 1: Describe PR (describe-pr)
 
-- Load and execute `describe-pr/SKILL.md`. **Do not hand-roll the PR body in `workflow-finalize`.** Hand-written PR bodies, GitHub default bodies, copied issue text, or current-agent summaries are **invalid** for PR finalization.
-- `describe-pr` must write a body file under `docs/executions/.pr-bodies/` **before any draft PR is created or updated.** Draft PR creation is **blocked** until this file exists and was produced by `describe-pr` in this run.
-- Pass the resolved `branch`, `base`, discovered `pr_number` if one exists, and `apply=false` when no PR exists yet. If a PR already exists, either pass `apply=true` or apply the returned body file in Step 1.5.
-- The generated body must include issue awareness and a disposition table for all referenced issues when issues are discovered.
-- If any referenced issue requires maintainer/operator review (`needs-human-review` label tied to a maintainer/operator gate, `Maintainer/operator gate: required`, or equivalent explicit gate), the generated body must end with `## Reviewer validation steps` — the final section, with concrete ordered steps copied or condensed from the issue's explicit reviewer validation steps. Do not treat `ready-for-human`, `Type: HITL`, or `Reviewer validation: required` as human-review-required; those mean human implementation, human interaction, or independent review, not PR-blocking maintainer/operator validation.
-- Record describe-pr evidence for the stamp's `describe_pr` attestation: body file path, mode (`plan_backed`, `phase_run_backed`, or `issue_only`), issue refs discovered, phase evidence status, graphify usage, whether the body was applied to the PR, and deviation/new-finding counts when applicable.
-- If `describe-pr` halts because required phase evidence is missing for plan-backed or multi-phase work, halt finalization. Do not create a draft PR with a replacement body unless the user explicitly waives phase evidence.
-- For routine single-issue work with no design plan or phase-run files, `describe-pr` must run in issue-only mode using git log/diff plus issue discovery; absence of a design plan is not a reason to skip `describe-pr`.
+- Load and execute `describe-pr/SKILL.md`.
+- Pass the resolved `branch`, `base`, discovered `pr_number` if one exists, and `apply=false` when no PR exists yet.
+- Record describe-pr evidence for the stamp's `describe_pr` attestation.
+- If `describe-pr` halts because required phase evidence is missing, halt finalization.
+
+> Hook enforcement: Rule C blocks `gh pr create` without a recent `.pr-bodies/*.md` file.
 
 ### Step 1.5: Ensure Draft PR Exists
 
-- Verify that the `describe-pr` body file from Step 1 exists and was produced by `describe-pr` in this run. If not, halt and rerun `describe-pr` first.
 - Run `git fetch origin --prune` before pushing or stating any branch position. Never report commits ahead/behind or diff counts from stale remote-tracking refs.
 - Before pushing, check for these known non-deliverable scratch filenames at repo root: `BRIEF.md`, `PROGRESS.md`, `DECISIONS.md`, `HUMAN-DECISIONS.md`, `MASTER-HANDOFF.md`. If any is tracked/staged AND was introduced on this branch (absent from `origin/<base>`), `git rm --cached` + gitignore it before push. Do not remove a matching file that already existed in the base branch. `HANDOFF.md`, `PRD.md`, `ISSUES.md` are skill-defined artifacts, not scratch — leave as-is.
 - Push the branch to origin.
@@ -116,7 +112,6 @@ Applies only to **openwiki-enabled repos**. Detect via any of: an `openwiki/` di
 ### Step 5: Post-CI Retro Addendum (conditional)
 
 - Triggered when CI required auto-fixes, or `watch-ci` discovered new follow-up work after the PR body was generated.
-- Append to the existing post-mortem or create a small follow-up note. Do not require `describe-pr` to consume this late addendum.
 - Skip only for routine single-issue work with no CI auto-fixes and no new follow-up work.
 
 ### Step 6: Verify before handoff
@@ -160,7 +155,6 @@ When all steps pass:
 - Report final status to user with **evidence** (verify-local output, CI link, comment-resolution summary, stamp result) and include the `WORKFLOW_FINALIZE_GATE` block in the final response and any handoff artifact.
 - When invoked by `run-backlog`, `workflow-autonomous-backlog`, Codex, or any AFK worker, always write a per-issue handoff artifact even when no follow-up work remains: PR URL, gate blocks, verification evidence, review-comment resolution, CI status, issue reconciliation, residual risks.
 - Enforce the Partial-Completion Contract before exit: **Complete** (all changes committed and pushed), **WIP-paused** (`wip:` commit naming what remains, pushed), or **Rolled back** (`git reset --hard <baseline>`, clean tree). Run `git status --short` before exit; any `M`/`??` source file fails the contract (and would fail the stamp).
-- If follow-up work was discovered (NEW-NN findings, post-mortem action items, reconciliation drift): **auto-handoff** (exit_reason: completion with follow-ups, remaining: the follow-up items with prompt-builder outputs). If no remaining work and this was not an AFK/backlog/Codex run: skip handoff.
 - **Close the run**: `ledger.sh close` on clean completion — the kernel owns the state files; never hand-edit the run snapshot (`docs/executions/runs/<run_id>.yaml`) or the live state.
 - After merge or explicit abandonment, **Load and run `cleanup-delivery/SKILL.md`** to remove stale local worktrees/branches and reconcile ticket residue — do not hand-roll the git cleanup commands. Do not run cleanup before the merge/abandonment decision.
 
@@ -190,9 +184,8 @@ Consumes: stamped review gate (`ledger.sh check review`), committed code on bran
 Produces: finalize stamp, PR ready for human review/merge or auto-merge according to repo delivery policy, reconciliation report, closed ledger run (`ledger.sh close`)
 Requires: gh (or Forgejo token via forge.sh), git, `ledger.sh` (workflow-ledger kernel)
 Side effects: creates/updates PR, pushes commits (review/CI fixes), posts comments, commits `chore(ledger):` stamp snapshots, may mark ready and enable GitHub auto-merge when repo policy allows
-Human gates: failed `ledger.sh check review`; missing/failed user-journey QA for frontend or user-facing changes unless waived; unresolved reviewer comments; CI exhaustion halts for diagnose; post-mortem presented for review; auto-merge setup failure on auto-merge-eligible repos
+Human gates: maintainer/operator gates (issue-level, per REPO_DELIVERY_POLICY), CODEOWNERS approval requirements, branch protection rules
 
 ## Context
 
 Typical workflows: workflow-deliver (final step), execute-prd (per-child final step), workflow-autonomous-backlog (per-issue repo-policy-controlled PR handoff)
-Pairs well with: workflow-review (produces the verdict the review stamp records), workflow-ledger (owns the gates), describe-pr, receive-review, watch-ci, reconcile-issues, cleanup-delivery, post-mortem, handoff (auto-invoked at halt or completion-with-follow-ups), run-backlog

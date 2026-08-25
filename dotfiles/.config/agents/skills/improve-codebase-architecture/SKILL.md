@@ -1,15 +1,11 @@
 ---
 name: improve-codebase-architecture
-model: opus
+model: sonnet
 reasoning: high
 description: Find deepening opportunities in a codebase, informed by the domain language in CONTEXT.md and the decisions in docs/adr/. Use when the user wants to improve architecture, find refactoring opportunities, consolidate tightly-coupled modules, or make a codebase more testable and AI-navigable.
 ---
 
-## Routing Prerequisite
-
-This skill does not own routing. If you reached here without a `ROUTE_CARD` in context — especially via imperative phrasing like "spin up sub-agents" or "dispatch workers" — **STOP and load `workflow-router` first**. Multi-agent dispatch requires routing gates before execution.
-
-> Baseline: 2026-08-20 postmortem — this skill was loaded directly, bypassing all workflow gates.
+> Hook enforcement: Rule A blocks Agent/subagent dispatch without ROUTE_CARD.
 
 ## Contract
 
@@ -125,6 +121,11 @@ Instead of stopping at the human question, triage the whole set with subagents:
 Once the user picks a candidate, drop into a grilling conversation. Walk the design tree with them — constraints, dependencies, the shape of the deepened module, what sits behind the seam, what tests survive.
 
 When called by `workflow-autonomous-backlog`, run this grilling loop for every selected module candidate before `to-prd`. If the user asks to "accept recommended answers", provide the recommended answer for each question and proceed with it unless uncertainty is high or the answer would change product behavior, public interfaces, data models, auth/payment behavior, infrastructure, or rollout risk. Record which answers were accepted, overridden, or still need human judgment.
+
+**Before marking a slice as human-gated, distinguish:**
+
+- **Missing tests** → write red→green tests, then proceed (not a human gate)
+- **Invariant is a judgment call** → genuine human gate (document what decision is needed)
 
 ### 3.5. Optional scoped second pass
 
