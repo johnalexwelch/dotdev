@@ -45,6 +45,21 @@ herdr pane read 1-1 --source recent --lines 50      # visible | recent | recent-
 herdr pane close 1-3
 ```
 
+Git worktrees (workspace-backed):
+
+```bash
+herdr worktree list                                  # list worktree workspaces
+herdr worktree list --workspace 1                    # filter by workspace
+herdr worktree create --branch feat/foo --base main  # create worktree + open in workspace
+herdr worktree create --cwd /path/to/repo --branch fix/bar --path ../fix-bar --label "Fix bar"
+herdr worktree open --path ../existing-worktree      # open existing worktree in workspace
+herdr worktree open --branch feat/foo                # open by branch name
+herdr worktree remove --workspace 1                  # remove worktree (targets open workspace)
+herdr worktree remove --workspace 1 --force          # force removal even if dirty
+```
+
+Note: `worktree remove` targets open workspace IDs only — use plain `git worktree remove` for orphaned worktrees not tracked by herdr. Auto-naming extension (`herdr-task-naming.ts`) generates slug labels from issue/PR titles when available.
+
 Parsing new ids: `workspace create` returns `result.workspace`/`result.tab`/`result.root_pane`; `tab create` returns `result.tab`/`result.root_pane`; `pane split` puts the new id at `result.pane.pane_id`:
 
 ```bash

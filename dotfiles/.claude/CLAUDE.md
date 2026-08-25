@@ -1,10 +1,10 @@
 # Global Agent Instructions
 
-# Agent habits (cross-runtime, read first)
+## Agent habits (cross-runtime, read first)
 
 Durable cross-runtime agent habits (ground truth over speculation, scoped filesystem searches, verify newly-wired tools before manual work, treat mutating/regen tools as destructive, post-rewrite semantic sanity pass) live at `~/dotdev/docs/agents/habits.md`. Read it before diving into work — in any repo, not just `~/dotdev`.
 
-# Code standards (on-demand)
+## Code standards (on-demand)
 
 Language/stack coding standards are **not** auto-loaded into every session (they're waste in DnD, writing, and analysis sessions). When doing code work, read the relevant file(s) from `~/.claude/code-standards-reference/`:
 
@@ -15,12 +15,12 @@ Language/stack coding standards are **not** auto-loaded into every session (they
 
 Universal rules (git, security, coding-standards, task-context) remain in `~/.claude/rules/` and auto-load. The workflow loop map moved to `~/.claude/reference/workflows.md` (on-demand) — the `workflow-router` skill is the live routing authority and fires regardless; read the reference only when you need the full route table.
 
-# graphify
+## graphify
 
 - **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
 When the user types `/graphify`, invoke the Skill tool with `skill: "graphify"` before doing anything else.
 
-# Check for existing solutions first (prior-art check)
+## Check for existing solutions first (prior-art check)
 
 Before building anything custom — integration, plugin, wrapper, helper, script, config glue — first check if someone already solved it. Building custom when an off-the-shelf solution exists is the default failure mode.
 
@@ -35,15 +35,15 @@ Before building anything custom — integration, plugin, wrapper, helper, script
 
 Example failure to avoid: hand-rolling Pi↔Headroom glue when `pi-extension-headroom` already exists. Always check `pi-extension-*` namespace before custom Pi integrations.
 
-# Communication contract (every user-facing reply)
+## Communication contract (every user-facing reply)
 
 The reader has ADHD. Full rule set: `~/.claude/output-styles/adhd.md` (Claude Code applies it automatically as the default output style; other runtimes read it, or the canonical `~/.claude/skills/i-have-adhd/SKILL.md`). The three highest-value rules, always: lead with the next action (first line is something the reader can do, not context); number multi-step work (one bounded action per step); end with one concrete next action doable in under two minutes. Machine-facing artifacts (PR bodies, lane reviews, ledger evidence, agent-targeted handoffs) keep their own contracts.
 
-# Delivery routing (apply before any code edit)
+## Delivery routing (apply before any code edit)
 
 Any request that will result in a commit or push to tracked code must be routed through `workflow-router` before the first code edit. Do not start delivery work in the primary checkout or on `main` — cut a worktree from the workflow base and land via a PR, even when CI is disabled/manual-only (the PR is the review/merge boundary regardless of automated checks). A code-delivery task is never the `direct` budget.
 
-# Fable-style working habits (apply every session)
+## Fable-style working habits (apply every session)
 
 Derived from measured Fable-corpus vs Opus behavioral analysis (`~/.cora/session-playbooks/fable-style-opus/`).
 Fable completes tasks in ~14 turns vs Opus ~17; 43% cheaper per task at same prices.
@@ -57,7 +57,7 @@ Fable completes tasks in ~14 turns vs Opus ~17; 43% cheaper per task at same pri
 7. **Cite evidence before claiming done** — command output, test result, diff, or file line.
 8. **No unnecessary scaffolding** — avoid new deps, hooks, or global config changes unless the task proves it needs them.
 
-# Recommendations carry the same evidence bar as completion claims
+## Recommendations carry the same evidence bar as completion claims
 
 A recommendation, verdict, or capability claim ("X is redundant", "pi has native Y", "switch to Z") is a claim — hold it to the same evidence bar as "the work is done."
 
@@ -66,7 +66,7 @@ A recommendation, verdict, or capability claim ("X is redundant", "pi has native
 - The user's lived experience is ground truth and outranks generic heuristics — ask about it before recommending a change that contradicts it.
 - When unverified, lead with the check ("let me confirm X first"), not the verdict.
 
-# Always-on: i-have-adhd output style
+## Always-on: i-have-adhd output style
 
 **Rules (apply every response):**
 
@@ -93,6 +93,6 @@ Example: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
 
 Code blocks unchanged. Technical terms exact. Auto-revert to normal for security warnings or irreversible actions. Off on "stop caveman" or "normal mode".
 
-# Skill catalog (locked skills)
+## Skill catalog (locked skills)
 
 Analytics, incident, library/reference, and knowledge skills are catalog-tier (DL-0008): they carry `disable-model-invocation: true`, so they don't appear in the model's per-session skill listing. They remain fully usable — invoke via `/name` (e.g. `/sql-review`, `/incident-triage`, `/rowan`) or load by path from another skill. Full inventory: `dotfiles/.config/agents/skills/_docs/skills-index.md`.

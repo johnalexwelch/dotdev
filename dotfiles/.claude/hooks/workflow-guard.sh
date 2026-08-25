@@ -85,8 +85,8 @@ _guard_rule3_tokenizer_path() {
         local link
         link="$(readlink "$src")"
         case "$link" in
-        /*) src="$link" ;;
-        *) src="$(dirname "$src")/$link" ;;
+            /*) src="$link" ;;
+            *) src="$(dirname "$src")/$link" ;;
         esac
     done
     printf '%s/guard-rule3-tokenizer.py' "$(cd "$(dirname "$src")" && pwd)"
@@ -154,18 +154,18 @@ rule3_tokenizer_blocks() {
     python_status=$?
     set -e
     case "$python_status" in
-    0)
-        return 1
-        ;;
-    1)
-        RULE3_REASON="$python_out"
-        return 0
-        ;;
-    *)
-        printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\nRule 3 blocks all candidate commands until this is fixed: check that python3 is on PATH and working, and report this command shape if the tokenizer itself errored.\n' \
-            "$python_status" "$python_out" >&2
-        exit 2
-        ;;
+        0)
+            return 1
+            ;;
+        1)
+            RULE3_REASON="$python_out"
+            return 0
+            ;;
+        *)
+            printf 'Blocked: rule 3 tokenizer errored (exit %s) -- failing closed:\n%s\nRule 3 blocks all candidate commands until this is fixed: check that python3 is on PATH and working, and report this command shape if the tokenizer itself errored.\n' \
+                "$python_status" "$python_out" >&2
+            exit 2
+            ;;
     esac
 }
 
@@ -261,86 +261,86 @@ fi
 # D-006 learning: exploring/planning work that escalates into execution
 # must re-route through workflow-router, not spawn agents directly.
 case "$tool" in
-Agent | subagent | Task | Dispatch | spawn_agent | TaskDispatch | dispatch_agent)
-    repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
-    # Only enforce in opted-in repos (docs/executions/ present)
-    if [ -n "$repo_top" ] && [ -d "$repo_top/docs/executions" ]; then
-        # Reuse has_routing_evidence if available (defined later for Bash)
-        # For now, check .pi/routing-confirmed file directly
-        routing_file=""
-        if [ -f "$repo_top/.pi/routing-confirmed" ]; then
-            routing_file="$repo_top/.pi/routing-confirmed"
-        elif [ -f "$cwd/.pi/routing-confirmed" ]; then
-            routing_file="$cwd/.pi/routing-confirmed"
-        elif [ -f "$HOME/.pi/routing-confirmed" ]; then
-            routing_file="$HOME/.pi/routing-confirmed"
+    Agent | subagent | Task | Dispatch | spawn_agent | TaskDispatch | dispatch_agent)
+        repo_top="$(git -C "$cwd" rev-parse --show-toplevel 2>/dev/null || true)"
+        # Only enforce in opted-in repos (docs/executions/ present)
+        if [ -n "$repo_top" ] && [ -d "$repo_top/docs/executions" ]; then
+            # Reuse has_routing_evidence if available (defined later for Bash)
+            # For now, check .pi/routing-confirmed file directly
+            routing_file=""
+            if [ -f "$repo_top/.pi/routing-confirmed" ]; then
+                routing_file="$repo_top/.pi/routing-confirmed"
+            elif [ -f "$cwd/.pi/routing-confirmed" ]; then
+                routing_file="$cwd/.pi/routing-confirmed"
+            elif [ -f "$HOME/.pi/routing-confirmed" ]; then
+                routing_file="$HOME/.pi/routing-confirmed"
+            fi
+
+            if [ -z "$routing_file" ]; then
+                if [ "${ROUTING_ENFORCE:-}" = "block" ]; then
+                    printf '\n' >&2
+                    printf '╔════════════════════════════════════════════════════════════════╗\n' >&2
+                    printf '║  🚨 BLOCKED: Agent/subagent dispatch without ROUTE_CARD       ║\n' >&2
+                    printf '╠════════════════════════════════════════════════════════════════╣\n' >&2
+                    printf '║  Load workflow-router → emit ROUTE_CARD → get confirmation    ║\n' >&2
+                    printf '║                                                                ║\n' >&2
+                    printf '║  Baseline: Aug 2026 session spawned 102 subagents ($729)       ║\n' >&2
+                    printf '║  without routing through workflow-router.                      ║\n' >&2
+                    printf '╚════════════════════════════════════════════════════════════════╝\n' >&2
+                    exit 2
+                else
+                    printf '\n[WORKFLOW GUARD] ⚠️ Agent/subagent dispatch without ROUTE_CARD.\n' >&2
+                    printf '[WORKFLOW GUARD] Load workflow-router and emit ROUTE_CARD first.\n' >&2
+                    printf '[WORKFLOW GUARD] Baseline: Aug 2026 session spawned 102 subagents ($729) without routing.\n' >&2
+                fi
+            fi
         fi
 
-        if [ -z "$routing_file" ]; then
-            if [ "${ROUTING_ENFORCE:-}" = "block" ]; then
+        # RULE E: Model routing — warn when using Opus for non-judgment tasks
+        # Sonnet should be default; Opus is 5x more expensive per token
+        # Cost evidence: Aug 2026 claude-opus-5 $12,262 vs claude-sonnet-5 $1,882
+        agent_model="$(jq -r '.tool_input.model // ""' <<<"$input" 2>/dev/null || true)"
+        agent_task="$(jq -r '.tool_input.task // .tool_input.prompt // ""' <<<"$input" 2>/dev/null || true)"
+        if [[ "$agent_model" =~ opus ]] && [ -n "$agent_task" ]; then
+            # Check if task looks like judgment work (synthesis, architecture, security)
+            is_judgment_task=false
+            if echo "$agent_task" | grep -Eiq '(synthesize|synthesis|judge|judgment|decide|decision|architect|security|review.*security|concurrency|final.*review|arbiter)'; then
+                is_judgment_task=true
+            fi
+            if [ "$is_judgment_task" = false ]; then
+                # Check for fact-gathering patterns that should use Sonnet
+                if echo "$agent_task" | grep -Eiq '(gather|collect|scan|audit|explore|discover|find|list|enumerate|check|verify|validate|test|eval)'; then
+                    printf '\n[WORKFLOW GUARD] 💰 Opus model for fact-gathering task. Consider Sonnet.\n' >&2
+                    printf '[WORKFLOW GUARD] Task: %.80s...\n' "$agent_task" >&2
+                    printf '[WORKFLOW GUARD] Opus costs 5x more. Reserve for synthesis/judgment.\n' >&2
+                fi
+            fi
+        fi
+
+        # RULE B: Parallelism cap — no session may spawn >10 subagents
+        # Track spawns in a session-scoped counter file
+        # Baseline: Aug 2026 session spawned 102 subagents ($729)
+        session_id="${CLAUDE_SESSION_ID:-${PI_SESSION_ID:-$$}}"
+        count_file="/tmp/.agent-spawn-count-$session_id"
+        count=$(cat "$count_file" 2>/dev/null || echo 0)
+        if [ "$count" -ge 10 ]; then
+            if [ "${PARALLELISM_ENFORCE:-}" = "block" ]; then
                 printf '\n' >&2
                 printf '╔════════════════════════════════════════════════════════════════╗\n' >&2
-                printf '║  🚨 BLOCKED: Agent/subagent dispatch without ROUTE_CARD       ║\n' >&2
+                printf '║  🚨 BLOCKED: Parallelism cap (10 subagents) exceeded          ║\n' >&2
                 printf '╠════════════════════════════════════════════════════════════════╣\n' >&2
-                printf '║  Load workflow-router → emit ROUTE_CARD → get confirmation    ║\n' >&2
-                printf '║                                                                ║\n' >&2
-                printf '║  Baseline: Aug 2026 session spawned 102 subagents ($729)       ║\n' >&2
-                printf '║  without routing through workflow-router.                      ║\n' >&2
+                printf '║  Checkpoint, handoff, or split into multiple sessions.        ║\n' >&2
+                printf '║  Current count: %d / 10                                        ║\n' "$count" >&2
                 printf '╚════════════════════════════════════════════════════════════════╝\n' >&2
                 exit 2
             else
-                printf '\n[WORKFLOW GUARD] ⚠️ Agent/subagent dispatch without ROUTE_CARD.\n' >&2
-                printf '[WORKFLOW GUARD] Load workflow-router and emit ROUTE_CARD first.\n' >&2
-                printf '[WORKFLOW GUARD] Baseline: Aug 2026 session spawned 102 subagents ($729) without routing.\n' >&2
+                printf '\n[WORKFLOW GUARD] ⚠️ Parallelism cap (10 subagents) exceeded. Count: %d\n' "$count" >&2
+                printf '[WORKFLOW GUARD] Checkpoint, handoff, or split into multiple sessions.\n' >&2
             fi
         fi
-    fi
-
-    # RULE E: Model routing — warn when using Opus for non-judgment tasks
-    # Sonnet should be default; Opus is 5x more expensive per token
-    # Cost evidence: Aug 2026 claude-opus-5 $12,262 vs claude-sonnet-5 $1,882
-    agent_model="$(jq -r '.tool_input.model // ""' <<<"$input" 2>/dev/null || true)"
-    agent_task="$(jq -r '.tool_input.task // .tool_input.prompt // ""' <<<"$input" 2>/dev/null || true)"
-    if [[ "$agent_model" =~ opus ]] && [ -n "$agent_task" ]; then
-        # Check if task looks like judgment work (synthesis, architecture, security)
-        is_judgment_task=false
-        if echo "$agent_task" | grep -Eiq '(synthesize|synthesis|judge|judgment|decide|decision|architect|security|review.*security|concurrency|final.*review|arbiter)'; then
-            is_judgment_task=true
-        fi
-        if [ "$is_judgment_task" = false ]; then
-            # Check for fact-gathering patterns that should use Sonnet
-            if echo "$agent_task" | grep -Eiq '(gather|collect|scan|audit|explore|discover|find|list|enumerate|check|verify|validate|test|eval)'; then
-                printf '\n[WORKFLOW GUARD] 💰 Opus model for fact-gathering task. Consider Sonnet.\n' >&2
-                printf '[WORKFLOW GUARD] Task: %.80s...\n' "$agent_task" >&2
-                printf '[WORKFLOW GUARD] Opus costs 5x more. Reserve for synthesis/judgment.\n' >&2
-            fi
-        fi
-    fi
-
-    # RULE B: Parallelism cap — no session may spawn >10 subagents
-    # Track spawns in a session-scoped counter file
-    # Baseline: Aug 2026 session spawned 102 subagents ($729)
-    session_id="${CLAUDE_SESSION_ID:-${PI_SESSION_ID:-$$}}"
-    count_file="/tmp/.agent-spawn-count-$session_id"
-    count=$(cat "$count_file" 2>/dev/null || echo 0)
-    if [ "$count" -ge 10 ]; then
-        if [ "${PARALLELISM_ENFORCE:-}" = "block" ]; then
-            printf '\n' >&2
-            printf '╔════════════════════════════════════════════════════════════════╗\n' >&2
-            printf '║  🚨 BLOCKED: Parallelism cap (10 subagents) exceeded          ║\n' >&2
-            printf '╠════════════════════════════════════════════════════════════════╣\n' >&2
-            printf '║  Checkpoint, handoff, or split into multiple sessions.        ║\n' >&2
-            printf '║  Current count: %d / 10                                        ║\n' "$count" >&2
-            printf '╚════════════════════════════════════════════════════════════════╝\n' >&2
-            exit 2
-        else
-            printf '\n[WORKFLOW GUARD] ⚠️ Parallelism cap (10 subagents) exceeded. Count: %d\n' "$count" >&2
-            printf '[WORKFLOW GUARD] Checkpoint, handoff, or split into multiple sessions.\n' >&2
-        fi
-    fi
-    echo $((count + 1)) >"$count_file"
-    exit 0
-    ;;
+        echo $((count + 1)) >"$count_file"
+        exit 0
+        ;;
 esac
 
 [ "$tool" = "Bash" ] || exit 0
@@ -583,18 +583,18 @@ if [ "$event" = "PreToolUse" ]; then
                 # the --override recovery path runs through the same kernel
                 # (D-006 #5; review R1 should-fix; batch #2).
                 case "$check_status" in
-                1 | 2)
-                    printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
-                    exit 2
-                    ;;
-                *)
-                    printf '[WORKFLOW GUARD] merge gate ERRORED (exit %s) — permitting merge, but the ledger kernel needs repair:\n%s\n' "$check_status" "$check_out" >&2
-                    ;;
+                    1 | 2)
+                        printf 'Blocked: merge gate — ledger check finalize failed:\n%s\n' "$check_out" >&2
+                        exit 2
+                        ;;
+                    *)
+                        printf '[WORKFLOW GUARD] merge gate ERRORED (exit %s) — permitting merge, but the ledger kernel needs repair:\n%s\n' "$check_status" "$check_out" >&2
+                        ;;
                 esac
             fi
             # Override stamps pass, but the bypass stays loud.
             case "$check_out" in
-            *OVERRIDDEN*) printf '%s\n' "$check_out" ;;
+                *OVERRIDDEN*) printf '%s\n' "$check_out" ;;
             esac
         fi
     fi

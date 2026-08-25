@@ -2,7 +2,7 @@
 name: skill-backlog
 model: sonnet
 reasoning: high
-description: 'Harvest accumulated skill-improvement suggestions from session reflections into one standing ledger, cluster them by failure mode and cross-session frequency, decide what is worth doing, and dispatch approved items to workflow-skill. Use to process the skill backlog, review skill improvements, or turn reflections into skill changes.'
+description: 'Harvest accumulated skill-improvement suggestions from session reflections into one standing ledger, cluster them by failure mode and cross-session frequency, decide what is worth doing, and dispatch approved items to skill implementation. Use to process the skill backlog, review skill improvements, or turn reflections into skill changes.'
 codex-compatible: true
 ---
 
@@ -10,7 +10,7 @@ codex-compatible: true
 
 The consumer that closes the loop `session-insight` opens. Each session drops improvement proposals and skill-extraction candidates into `~/dotdev/docs/executions/reflections/`; those pile up and no single session can see that the *same* friction recurred four times. This skill reads the whole pile, so **cross-session frequency of a failure mode** — the signal no producer has — becomes the primary prioritizer.
 
-It plans and stops at approval, then hands each approved item to `workflow-skill` for implementation (the same seam as `workflow-feature` → `workflow-deliver`). It never edits a skill itself.
+It plans and stops at approval, then hands each approved item to `skill implementation` for implementation (the same seam as `workflow-feature` → `workflow-deliver`). It never edits a skill itself.
 
 ## When to invoke
 
@@ -37,7 +37,7 @@ WORKFLOW_STEPS:
 | Step 2: Cluster By Failure Mode | required | pending | - |
 | Step 3: Evaluate Value | required | pending | - |
 | Step 4: Plan + Approval Gate | required | pending | - |
-| Step 5: Dispatch To workflow-skill | conditional | pending | Per approved item |
+| Step 5: Dispatch To skill implementation | conditional | pending | Per approved item |
 | Step 6: Update Ledger | required | pending | - |
 ```
 
@@ -105,15 +105,15 @@ Completion criterion: user selected items (possibly none).
 
 ### Step 5: Dispatch (conditional)
 
-Per approved item, Load and run `workflow-skill/SKILL.md` with the scoped change and harvested evidence. Process independently; rejected/deferred items are not dispatched.
+Per approved item, implement the skill change directly (create/edit SKILL.md, test, commit) with the scoped change and harvested evidence. Process independently; rejected/deferred items are not dispatched.
 
-**Resolve each item's *actual* target file before dispatching, and bundle same-file edits into one dispatch.** The ledger's "owning skill" is the *nominal* owner, which is not always where the change lands — a skill often delegates a gate to another (observed 2026-07-24: a CI-parity item nominally owned by the delivery orchestrator — then `workflow-build-one`, now `workflow-deliver` — actually landed in `workflow-finalize`, because delivery delegates its finalize gate there). Two dispatches editing the same `SKILL.md` on independent branches force an avoidable rebase. Follow the delegation/reference chain to the file that will actually change, group approved items by that file, and dispatch one `workflow-skill` run per file.
+**Resolve each item's *actual* target file before dispatching, and bundle same-file edits into one dispatch.** The ledger's "owning skill" is the *nominal* owner, which is not always where the change lands — a skill often delegates a gate to another (observed 2026-07-24: a CI-parity item nominally owned by the delivery orchestrator — then `workflow-build-one`, now `workflow-deliver` — actually landed in `workflow-finalize`, because delivery delegates its finalize gate there). Two dispatches editing the same `SKILL.md` on independent branches force an avoidable rebase. Follow the delegation/reference chain to the file that will actually change, group approved items by that file, and dispatch one `skill implementation` run per file.
 
-Completion criterion: every approved item dispatched (grouped by actual target file); `workflow-skill` result captured.
+Completion criterion: every approved item dispatched (grouped by actual target file); `skill implementation` result captured.
 
 ### Step 6: Update ledger
 
-Write final statuses: dispatched-and-PR-open-but-unmerged → `accepted` (with PR ref); **only flip to `implemented` once the PR actually merges** (dispatch opens a PR, it does not land the change — a `workflow-skill` PASS means "PR opened," not "on `main`"); rejected → `rejected` (+ reason); untouched open → stay `new`/`deferred`. Prefer ground-truth over rewriting old reflections.
+Write final statuses: dispatched-and-PR-open-but-unmerged → `accepted` (with PR ref); **only flip to `implemented` once the PR actually merges** (dispatch opens a PR, it does not land the change — a `skill implementation` PASS means "PR opened," not "on `main`"); rejected → `rejected` (+ reason); untouched open → stay `new`/`deferred`. Prefer ground-truth over rewriting old reflections.
 
 **Post-merge lifecycle (when the run's PRs get merged, same session or later):** this skill dispatches edits that land as PRs; closing the loop after merge is part of the job. On merge: (1) flip the affected rows `accepted → implemented` with the merge commit; (2) run the Codex mirror for any *skill* edits — `~/dotdev/dotfiles/.config/agents/skills/sync-codex-skills.sh --apply` from merged-`main` content, **not** pre-merge (mirroring unreviewed content is wrong); (3) clean up merged worktrees/branches (hand off to `cleanup-delivery`). If merging is out of scope this run, say so and leave the rows `accepted`. Do not claim `implemented` from a green-but-unmerged PR.
 
@@ -142,12 +142,12 @@ Assign ids sequentially (`SB-NNN`).
 ## Contract
 
 Consumes: `~/dotdev/docs/executions/reflections/*.md`, existing `~/dotdev/docs/executions/skill-backlog.md`
-Produces: an updated backlog ledger, a ranked decision queue, dispatched `workflow-skill` runs for approved items
-Requires: nothing (stdlib/native — keeps `codex-compatible: true`); `workflow-skill` for implementation
+Produces: an updated backlog ledger, a ranked decision queue, dispatched `skill implementation` runs for approved items
+Requires: nothing (stdlib/native — keeps `codex-compatible: true`); `skill implementation` for implementation
 Side effects: writes/updates `skill-backlog.md`; dispatches implementation runs only after approval
 Human gates: Step 4 approval before any dispatch
 
 ## Context
 
-Typical workflows: periodic skill retro; the consumer end of the session-insight → skill-backlog → workflow-skill pipeline
-Pairs well with: session-insight (producer), workflow-skill (implements approved items), skill-evaluator (values uncertain items)
+Typical workflows: periodic skill retro; the consumer end of the session-insight → skill-backlog → skill implementation pipeline
+Pairs well with: session-insight (producer), skill implementation (implements approved items), skill-evaluator (values uncertain items)

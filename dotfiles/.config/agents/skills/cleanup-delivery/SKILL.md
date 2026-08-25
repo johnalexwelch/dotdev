@@ -93,6 +93,7 @@ Before acting, show:
 ### Primary Checkout State
 - **Sync**: behind/ahead/in-sync with <remote>/<branch>
 - **Dirty files**: <untracked/uncommitted files, if any>
+- **Reconcile action** (if behind and clean): offer `git fetch && git reset --hard <remote>/<branch>`
 
 ### Safe Local Cleanup
 - remove worktree: <path> (<branch>) because <evidence>
@@ -125,6 +126,16 @@ Before acting, show:
 > I approve the cleanup plan above: removing the listed worktrees/branches and closing the listed items. I will not touch: <remote branches>, <dirty worktrees>, <unresolved tickets>.
 
 State explicitly what will be left untouched; this prevents silent misunderstanding of scope.
+
+### 4.5. Reconcile Stale Primary (if applicable)
+
+When primary checkout is behind authoritative remote AND clean (no uncommitted changes):
+
+1. Report the state (Step 4 already does this)
+2. Offer reconcile ACTION: `git stash -u && git fetch origin && git reset --hard origin/<branch> && git stash pop` (safety-patches any uncommitted changes first)
+3. Gate on user approval before executing — never auto-reset
+
+If the primary has uncommitted changes that conflict with the remote, route to `needs-user-approval` instead of offering the reconcile action.
 
 ### 5. Execute Approved Cleanup
 

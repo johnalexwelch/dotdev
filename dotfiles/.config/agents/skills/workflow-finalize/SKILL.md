@@ -184,6 +184,7 @@ Consumes: stamped review gate (`ledger.sh check review`), committed code on bran
 Produces: finalize stamp, PR ready for human review/merge or auto-merge according to repo delivery policy, reconciliation report, closed ledger run (`ledger.sh close`)
 Requires: gh (or Forgejo token via forge.sh), git, `ledger.sh` (workflow-ledger kernel)
 Side effects: creates/updates PR, pushes commits (review/CI fixes), posts comments, commits `chore(ledger):` stamp snapshots, may mark ready and enable GitHub auto-merge when repo policy allows
+Human gates: maintainer/operator gates (issue-level, per REPO_DELIVERY_POLICY), CODEOWNERS approval requirements, branch protection rules
 
 ## Context
 
