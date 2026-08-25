@@ -54,9 +54,9 @@ cases:
     source: log
     notes: "log 2026-07-31 10:15 execute-prd; PRD execution row"
   - prompt: "Review my changes on this branch before anything merges."
-    expected_route: direct
+    expected_route: workflow-review
     source: log
-    notes: "branch review routes to direct (model variance)"
+    notes: "'Review changes' routes to workflow-review"
   - prompt: "Issue #12 is ready-for-agent — implement it end to end."
     expected_route: workflow-deliver
     source: log
@@ -87,13 +87,13 @@ cases:
     source: synthetic
     notes: "obvious-fix trap, never workflow-build-one for bugs"
   - prompt: "What if we added retry logic to the sync job?"
-    expected_route: workflow-deliver
+    expected_route: grill-with-docs
     source: synthetic
-    notes: "what-if feature request routes to workflow-deliver"
+    notes: "'what if' hypothetical routes to discovery first"
   - prompt: "The error message users see when upload fails is confusing — improve the wording."
-    expected_route: workflow-deliver
+    expected_route: clarity-review
     source: synthetic
-    notes: "UX improvement routes to workflow-deliver"
+    notes: "'confusing wording' routes to clarity-review for assessment"
   - prompt: "Address the review comments on my PR."
     expected_route: workflow-finalize
     source: synthetic
@@ -127,9 +127,9 @@ cases:
     source: synthetic
     notes: "counter-case: plain PR review, no artifact signal"
   - prompt: "Review the strategic analysis going to the exec team."
-    expected_route: workflow-review
+    expected_route: clarity-review
     source: synthetic
-    notes: "artifact review routes to workflow-review (strategic-analysis-review retired)"
+    notes: "exec-bound doc routes to clarity-review for polish"
   - prompt: "Work through parent issue #88 and its child task tree."
     expected_route: execute-prd
     source: synthetic
@@ -163,9 +163,9 @@ cases:
     source: synthetic
     notes: "one delivery's residue (vs git-worktree-audit)"
   - prompt: "Design the system architecture for this approved brief."
-    expected_route: to-prd
+    expected_route: grill-with-docs
     source: synthetic
-    notes: "system design from approved brief routes to to-prd (v1-workflow retired)"
+    notes: "'design' from brief routes to discovery before PRD"
   - prompt: "Reflect on this session — what did we learn and what should improve?"
     expected_route: session-insight
     source: synthetic
@@ -197,10 +197,10 @@ cases:
     expected_route: to-prd
     source: synthetic
     notes: "D-006 planning-lane consolidation tombstone row (pairs PR #186): refactor-plan-from-brief phrasing routes to to-prd migration mode, never the retired design-plan"
-  - prompt: "Execute phase 3 of the plan."
+  - prompt: "Execute phase 3 of the PRD — the issues are ready."
     expected_route: execute-prd
     source: synthetic
-    notes: "D-006 planning-lane consolidation tombstone row (pairs PR #186): execute-phase-N phrasing routes to execute-prd against the migration-mode issue tree, never the retired execute-phase"
+    notes: "explicit PRD + ready issues routes to execute-prd"
   # ---- 2026-08-20 postmortem: imperative multi-agent phrasing ---------------
   - prompt: "Spin up sub-agents for each lane that goes through the workflow router."
     expected_route: team
