@@ -25,6 +25,7 @@ This skill is the **sole routing authority**. Per `docs/adr/0002-sole-routing-au
 ## Pre-Dispatch Self-Check (Hook-Enforced)
 
 > Hook enforcement: Rules 0, A, B, C, D, E in `workflow-guard.sh` block/warn on:
+>
 > - Rule 0: git commit/push, gh issue/pr create/merge without routing evidence
 > - Rule A: Agent/subagent dispatch without ROUTE_CARD
 > - Rule B: >10 subagents per session (parallelism cap)
