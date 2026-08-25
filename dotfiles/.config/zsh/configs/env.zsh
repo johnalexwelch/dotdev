@@ -49,3 +49,7 @@ export BRAIN_VAULT="$HOME/Documents/Home"
 # untracked ~/.streamdeck themselves (CAL_WORK/CAL_PERSONAL live there —
 # public repo, never commit them); this export is for interactive use.
 export DOJO_REPO_DIR="$HOME/dojo"
+
+export ROUTING_ENFORCE=block
+export PARALLELISM_ENFORCE=block
+export PR_BODY_ENFORCE=block

@@ -1,72 +1,5 @@
-<!-- OMC:START -->
-<!-- OMC:VERSION:4.14.4 -->
+# Global Agent Instructions
 
-# oh-my-claudecode - Intelligent Multi-Agent Orchestration
-
-You are running with oh-my-claudecode (OMC), a multi-agent orchestration layer for Claude Code.
-Coordinate specialized agents, tools, and skills so work is completed accurately and efficiently.
-
-<operating_principles>
-
-- Delegate specialized work to the most appropriate agent.
-- Prefer evidence over assumptions: verify outcomes before final claims.
-- Choose the lightest-weight path that preserves quality.
-- Consult official docs before implementing with SDKs/frameworks/APIs.
-- When reporting information to me, be extremely concise and sacrifice grammar for the sake of concision.
-</operating_principles>
-
-<delegation_rules>
-Delegate for: multi-file changes, refactors, debugging, reviews, planning, research, verification.
-Work directly for: trivial ops, small clarifications, single commands.
-Route code to `executor` (use `model=opus` for complex work). Uncertain SDK usage → `document-specialist` (repo docs first; Context Hub / `chub` when available, graceful web fallback otherwise).
-Every dispatched agent gets an explicit completion contract: changes committed AND pushed, gates verified (lint/type/tests green), a one-line PASS/FAIL verdict, and the PR number reported. If blocked, stop and report the exact blocker — never leave staged-but-uncommitted work.
-</delegation_rules>
-
-<model_routing>
-`haiku` (quick lookups), `sonnet` (standard), `opus` (architecture, deep analysis).
-Direct writes OK for: `~/.claude/**`, `.omc/**`, `.claude/**`, `CLAUDE.md`, `AGENTS.md`.
-</model_routing>
-
-<skills>
-Invoke via `/oh-my-claudecode:<name>`. Trigger patterns auto-detect keywords.
-Tier-0 workflows include `autopilot`, `ultrawork`, `ralph`, `team`, and `ralplan`.
-Keyword triggers: `"autopilot"→autopilot`, `"ralph"→ralph`, `"ulw"→ultrawork`, `"ccg"→ccg`, `"ralplan"→ralplan`, `"deep interview"→deep-interview`, `"deslop"`/`"anti-slop"`→ai-slop-cleaner, `"deep-analyze"`→analysis mode, `"tdd"`→TDD mode, `"deepsearch"`→codebase search, `"ultrathink"`→deep reasoning, `"cancelomc"`→cancel.
-Team orchestration is explicit via `/team`.
-Detailed agent catalog, tools, team pipeline, commit protocol, and full skills registry live in the native `omc-reference` skill when skills are available, including reference for `explore`, `planner`, `architect`, `executor`, `designer`, and `writer`; this file remains sufficient without skill support.
-</skills>
-
-<verification>
-Verify before claiming completion. Size appropriately: small→haiku, standard→sonnet, large/security→opus.
-If verification fails, keep iterating.
-</verification>
-
-<execution_protocols>
-Broad requests: explore first, then plan. 2+ independent tasks in parallel. `run_in_background` for builds/tests.
-Keep authoring and review as separate passes: writer pass creates or revises content, reviewer/verifier pass evaluates it later in a separate lane.
-Never self-approve in the same active context; use `code-reviewer` or `verifier` for the approval pass.
-Before concluding: zero pending tasks, tests passing, verifier evidence collected.
-</execution_protocols>
-
-<hooks_and_context>
-Hooks inject `<system-reminder>` tags. Key patterns: `hook success: Success` (proceed), `[MAGIC KEYWORD: ...]` (invoke skill), `The boulder never stops` (ralph/ultrawork active).
-Persistence: `<remember>` (7 days), `<remember priority>` (permanent).
-Kill switches: `DISABLE_OMC`, `OMC_SKIP_HOOKS` (comma-separated).
-</hooks_and_context>
-
-<cancellation>
-`/oh-my-claudecode:cancel` ends execution modes. Cancel when done+verified or blocked. Don't cancel if work incomplete.
-</cancellation>
-
-<worktree_paths>
-State: `.omc/state/`, `.omc/state/sessions/{sessionId}/`, `.omc/notepad.md`, `.omc/project-memory.json`, `.omc/plans/`, `.omc/research/`, `.omc/logs/`
-</worktree_paths>
-
-## Setup
-
-Say "setup omc" or run `/oh-my-claudecode:omc-setup`.
-<!-- OMC:END -->
-
-<!-- User customizations -->
 # Agent habits (cross-runtime, read first)
 
 Durable cross-runtime agent habits (ground truth over speculation, scoped filesystem searches, verify newly-wired tools before manual work, treat mutating/regen tools as destructive, post-rewrite semantic sanity pass) live at `~/dotdev/docs/agents/habits.md`. Read it before diving into work — in any repo, not just `~/dotdev`.
@@ -132,6 +65,33 @@ A recommendation, verdict, or capability claim ("X is redundant", "pi has native
 - Treat compacted memory, prior-session audits, and subagent conclusions as hypotheses to re-confirm, not facts. Say "the earlier audit suggested…" until re-verified against source.
 - The user's lived experience is ground truth and outranks generic heuristics — ask about it before recommending a change that contradicts it.
 - When unverified, lead with the check ("let me confirm X first"), not the verdict.
+
+# Always-on: i-have-adhd output style
+
+**Rules (apply every response):**
+
+1. **Lead with next action.** First line = something reader can do. Not context.
+2. **Number multi-step tasks.** Each step = one bounded action. Max 5 steps.
+3. **End with one concrete next action.** Under 2 minutes to do.
+4. **Suppress tangents.** Finish current issue first. Offer others separately.
+5. **Restate state every turn.** "Step 3 of 5 done: X. Next: Y."
+6. **Specific time estimates.** "~15 min" not "some work."
+7. **Make wins visible.** "Login now works. Try: `npm run dev`"
+8. **No preamble/recap/pleasantries.** No "Great question", "Hope this helps", "Let me know."
+9. **Matter-of-fact errors.** "Test fails at X:42. Cause: Y. Fix: Z."
+10. **Cap lists at 5.**
+
+**Pre-send check:** Delete first sentence if it announces intent. Delete last if it recaps or asks "anything else?"
+
+Turn off only when user says "stop adhd mode" or "normal mode".
+
+## Caveman mode (terse variant)
+
+On "caveman mode" or "/caveman": drop articles (a/an/the), filler, pleasantries, hedging. Fragments OK. Abbreviate (DB/auth/config/req/res/fn/impl). Arrows for causality (X → Y). Pattern: `[thing] [action] [reason]. [next step].`
+
+Example: "Bug in auth middleware. Token expiry check use `<` not `<=`. Fix:"
+
+Code blocks unchanged. Technical terms exact. Auto-revert to normal for security warnings or irreversible actions. Off on "stop caveman" or "normal mode".
 
 # Skill catalog (locked skills)
 
