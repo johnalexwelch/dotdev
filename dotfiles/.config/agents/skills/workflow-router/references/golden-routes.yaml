@@ -150,10 +150,10 @@ cases:
     expected_route: prompt-builder
     source: synthetic
     notes: "prompt-evaluation row: rewrite needed = prompt-builder, standalone per its contract"
-  - prompt: "Run a codebase analysis to map how the auth middleware works."
-    expected_route: improve-codebase-architecture
+  - prompt: "Map how the auth middleware works."
+    expected_route: direct
     source: synthetic
-    notes: "codebase mapping routes to improve-codebase-architecture (repo-audit retired)"
+    notes: "codebase exploration/research routes to direct budget"
   - prompt: "Prune the stale worktrees piled up across all my repos."
     expected_route: git-worktree-audit
     source: synthetic
