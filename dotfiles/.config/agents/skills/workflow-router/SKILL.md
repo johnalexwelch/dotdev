@@ -12,6 +12,14 @@ description: Use when a request may need routing to a project workflow, AFK exec
 
 The single routing authority for all incoming work. Classifies the task, presents a route card for confirmation, runs preflight checks, and dispatches to the appropriate workflow skill only after the user confirms the route. Replaces ad-hoc routing decisions with a consistent classification system.
 
+## Canonical Workflow Chain
+
+```
+grill-with-docs → to-prd → to-issues → triage → tdd → workflow-deliver → workflow-review → workflow-finalize
+```
+
+This is the **default product flow**. Most work follows this chain or enters at a specific step. Deviations require explicit justification in the ROUTE_CARD.
+
 ## Authority
 
 This skill is the **sole routing authority**. Per `docs/adr/0002-sole-routing-authority.md`:
@@ -328,7 +336,6 @@ If a `docs/roadmap.md` exists, it is a **capability-altitude** artifact, not a s
 - **Exactly one canonical `docs/roadmap.md`.** Never create a dated/named roadmap sibling. Update the canonical, or move superseded planning to `docs/roadmaps/archive/`.
 - **Never restate execution state in the roadmap** — per-issue status lives in GitHub. The roadmap holds capabilities ordered by `depends on` (bands Now/Next/Later), each with `outcome` · `unlocks` · `effort` · `priority`.
 - New idea → append a capability (or backlog-pool entry) with its deps; do not renumber or fork the doc.
-
 
 ## Process
 
