@@ -22,23 +22,17 @@ This skill is the **sole routing authority**. Per `docs/adr/0002-sole-routing-au
 - **Naming a skill is a load-and-gate instruction, not a verb.** When any goal, plan, prompt, or handoff names a workflow skill (e.g. `workflow-review`, `workflow-finalize`), load that skill's `SKILL.md` and follow it — including emitting its required gate block. A prose claim that the skill ran (or "basically ran") without its gate block present in the evidence means it did **not** run; treat it as unrun. Do not reconstruct a skill's intent from memory in place of loading it.
 - The router owns classification, confirmation, preflight, and learning notes. Target workflow skills own the actual workflow behavior. Do not copy target workflow procedures into this skill.
 
-## Pre-Dispatch Self-Check (Hard Gate)
+## Pre-Dispatch Self-Check (Hook-Enforced)
 
-**Before ANY of these actions, verify a ROUTE_CARD was emitted in this session:**
-
-- Creating GitHub issues (`gh issue create`, `mcp github create_issue`)
-- Spawning subagents/workers (`subagent`, `taskflow` with agent phases)
-- Running taskflow with multiple phases or parallel execution
-- Committing code (`git commit`)
-- Creating or merging PRs (`gh pr create`, `gh pr merge`)
-- Running `workflow-deliver`, `execute-prd`, `run-backlog`
-- Closing issues (`gh issue close`, `issue_close`)
-
-**If no ROUTE_CARD exists in context → STOP and emit one before proceeding.**
-
-This gate catches the failure mode where imperative phrasing ("spin up sub-agents for X") bypasses routing entirely. The check is a reflex, not a research project: scan recent context for `ROUTE_CARD:`, and if absent, load this skill and emit one.
-
-> ponytail: Single grep-like check. Upgrade path: structured route-card registry if cross-session tracking needed.
+> Hook enforcement: Rules 0, A, B, C, D, E in `workflow-guard.sh` block/warn on:
+> - Rule 0: git commit/push, gh issue/pr create/merge without routing evidence
+> - Rule A: Agent/subagent dispatch without ROUTE_CARD
+> - Rule B: >10 subagents per session (parallelism cap)
+> - Rule C: `gh pr create` without describe-pr body file
+> - Rule D: >500 line diffs (warning)
+> - Rule E: Opus for fact-gathering tasks (warning)
+>
+> Enable hard blocks: `ROUTING_ENFORCE=block PARALLELISM_ENFORCE=block PR_BODY_ENFORCE=block`
 
 ## Imperative Trigger Patterns (MUST Route, Never Execute Literally)
 

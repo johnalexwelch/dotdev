@@ -309,7 +309,7 @@ Agent | subagent | Task | Dispatch | spawn_agent | TaskDispatch | dispatch_agent
             printf '[WORKFLOW GUARD] Checkpoint, handoff, or split into multiple sessions.\n' >&2
         fi
     fi
-    echo $((count + 1)) > "$count_file"
+    echo $((count + 1)) >"$count_file"
     exit 0
     ;;
 esac

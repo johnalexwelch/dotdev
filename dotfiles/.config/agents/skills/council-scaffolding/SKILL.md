@@ -19,13 +19,11 @@ This skill is a **library**, not a workflow. Council skills (`analysis-council`,
 
 ## Hard Limits
 
-| Limit | Value | Rationale |
-|-------|-------|-----------|
-| `max_concurrent_subagents` | 10 | Uncontrolled fan-out is the primary cost driver. A single Aug 2026 session spawned 102 subagents and cost $729. |
-| `max_subagent_messages` | 100 | Long-running subagents compound cost; force conclusion or handoff. |
-| `max_experts` | 5 | Per roster.yml; enforced here as a ceiling. |
-
-These limits apply to ALL council invocations. A council that needs more parallelism should checkpoint and resume, not escalate fan-out.
+| Limit | Value | Enforcement |
+|-------|-------|-------------|
+| `max_concurrent_subagents` | 10 | **Hook Rule B** (warn at 10, block at 11 with `PARALLELISM_ENFORCE=block`) |
+| `max_subagent_messages` | 100 | Prose only — force conclusion or handoff |
+| `max_experts` | 5 | Per roster.yml ceiling |
 
 ## What a council is
 
