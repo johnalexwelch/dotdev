@@ -445,61 +445,18 @@ If a `docs/roadmap.md` exists, it is a **capability-altitude** artifact, not a s
 - **Never restate execution state in the roadmap** — per-issue status lives in GitHub. The roadmap holds capabilities ordered by `depends on` (bands Now/Next/Later), each with `outcome` · `unlocks` · `effort` · `priority`.
 - New idea → append a capability (or backlog-pool entry) with its deps; do not renumber or fork the doc.
 
-## Learning Loop
-
-At the end of any confirmed non-trivial route, and whenever the user corrects the routing choice, produce a `ROUTER_LEARNING_NOTE`.
-
-```markdown
-ROUTER_LEARNING_NOTE:
-- Initial classification:
-- Confirmed classification:
-- Confidence was:
-- User correction:
-- What made the route right or wrong:
-- Accepted feedback:
-- Durable destination: none|project decision log|backlog|skill-backlog (via session-insight reflection)|memory proposal
-- Skill/workflow improvement suggested:
-```
-
-Learning rules:
-
-- Do not silently edit memories or skills.
-- Project-specific lessons go to the project decision log only when the active workflow allows writing project artifacts.
-- Future-work items go to backlog only with user approval or inside a workflow that already owns issue creation.
-- Reusable process lessons become `session-insight` reflections, harvested and triaged by `skill-backlog`.
-- If the workflow was AFK, multi-stage, corrected by the user, halted for a process gap, or produced planning/execution artifacts, run or recommend `skill-system-audit` before final closure.
-- If a recommendation is accepted during a review or audit loop, classify it before persisting: project-specific, future-work, reusable process, or local wording only.
-
-## Graceful degradation
-
-These fallbacks apply only when the target workflow does not list the
-missing tool in `Requires:` and does not define it as a blocking runtime
-gate. If a required dependency is missing, the preflight rule above wins:
-halt, report the missing requirement, and do not proceed.
-
-| Missing tool | Impact | Behavior |
-|--------------|--------|----------|
-| `gh` | Can't interact with GitHub | Local-only analysis is allowed only for non-shipping workflows that do not require `gh`; delivery workflows halt |
-| OMC | Can't dispatch to Codex team | Halt unless the selected workflow/mode explicitly allows Claude fallback and the user approves it |
-| CORA | Can't validate contracts | Skip CORA validation only; do not skip the target workflow's own gates |
-| `playwright-mcp` | Can't run UJ QA | For frontend/user-facing changes, halt for human waiver or setup; do not silently skip |
-| Project test runner | Can't verify | Halt and request setup info |
 
 ## Process
 
-```
-0. Resume check: `ledger.sh reconcile`; if an active/paused run exists, offer to resume at the reconciled frontier before classifying
-1. Receive work description (user input, issue, or automated trigger)
-2. Classify using signal table above
-3. If ambiguous or confidence is low: ask ONE clarifying question (max 1 — don't interrogate)
-4. Select the smallest safe agent budget
+1. Resume check: `ledger.sh reconcile`; if active/paused run exists, offer to resume
+2. Classify using signal table
+3. If ambiguous: ask ONE clarifying question (max 1)
+4. Select smallest safe agent budget
 5. Emit ROUTE_CARD
-6. Wait for user confirmation unless the route qualifies for the direct/read-only skip
-7. After confirmation, run `ledger.sh preflight --skill <target>` (plus manual MCP/project-config checks and the Prior-Art & Roadmap Gate for any build/implement/design/ADR route); persist the run via `ledger.sh init`
-8. If preflight passes: dispatch to target workflow (`ledger.sh set <step> active` on dispatch)
+6. Wait for user confirmation unless route qualifies for direct/read-only skip
+7. Run `ledger.sh preflight --skill <target>`; persist via `ledger.sh init`
+8. If preflight passes: dispatch to target workflow
 9. If preflight fails: report missing requirements
-10. At completion, halt, or user correction: emit ROUTER_LEARNING_NOTE and run or recommend skill-system-audit when triggered
-```
 
 ## Contract
 
