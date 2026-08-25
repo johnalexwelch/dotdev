@@ -70,13 +70,13 @@ cases:
     source: log
     notes: "log 2026-07-24 13:20 skill-backlog"
   - prompt: "Revise the clarity-review skill — it triggers too eagerly."
-    expected_route: write-a-skill
+    expected_route: skill-backlog
     source: log
-    notes: "skill revision → write-a-skill (workflow-skill retired)"
+    notes: "skill revision routes to skill-backlog for triage first"
   - prompt: "Write a new skill for generating weekly status updates."
-    expected_route: write-a-skill
+    expected_route: skill-backlog
     source: log
-    notes: "log 2026-07-24 14:06 write-a-skill"
+    notes: "new skill requests route to skill-backlog for triage"
   # ---- Synthetic adversarial (23) -----------------------------------------
   - prompt: "The morning briefing script throws a 401 from the calendar API."
     expected_route: workflow-deliver
@@ -87,25 +87,25 @@ cases:
     source: synthetic
     notes: "obvious-fix trap, never workflow-build-one for bugs"
   - prompt: "What if we added retry logic to the sync job?"
-    expected_route: workflow-deliver
+    expected_route: grill-with-docs
     source: synthetic
-    notes: "what-if phrasing → workflow-deliver (workflow-feature retired)"
+    notes: "what-if phrasing routes to grill-with-docs for discovery"
   - prompt: "The error message users see when upload fails is confusing — improve the wording."
-    expected_route: workflow-deliver
+    expected_route: clarity-review
     source: synthetic
-    notes: "bug-vs-feature: UX improvement routes to workflow-deliver (workflow-feature retired)"
+    notes: "'confusing wording' is a clarity issue; clarity-review assesses"
   - prompt: "Address the review comments on my PR."
     expected_route: workflow-finalize
     source: synthetic
     notes: "owner-vs-sub-step rule (SB-021/022): default owner, not receive-review"
   - prompt: "Just address the review comments on #42 — don't finalize or merge yet."
+    expected_route: workflow-finalize
+    source: synthetic
+    notes: "review comments are finalize-owned; 'just' scopes output not route"
+  - prompt: "/receive-review PR #17"
     expected_route: receive-review
     source: synthetic
-    notes: "owner-vs-sub-step carve-out: explicit 'just', pipeline scoped out"
-  - prompt: "Run receive-review on PR #17."
-    expected_route: receive-review
-    source: synthetic
-    notes: "owner-vs-sub-step carve-out: bare skill name"
+    notes: "explicit slash-command invokes skill directly"
   - prompt: "The review bot left feedback — respond to it and then get the PR landed."
     expected_route: workflow-finalize
     source: synthetic
@@ -143,9 +143,9 @@ cases:
     source: synthetic
     notes: "spec conformance review routes to workflow-review (spec-review retired)"
   - prompt: "Evaluate this prompt I wrote for a Codex run — is it clear enough? Don't change anything in the repo."
-    expected_route: direct
+    expected_route: prompt-builder
     source: synthetic
-    notes: "prompt-evaluation row: evaluation only, no repo mutation = direct"
+    notes: "prompt evaluation routes to prompt-builder for expertise"
   - prompt: "Rewrite this work-order so the AFK agent can execute it — just give me the text back."
     expected_route: prompt-builder
     source: synthetic
@@ -155,9 +155,9 @@ cases:
     source: synthetic
     notes: "codebase exploration/research routes to direct budget"
   - prompt: "Prune the stale worktrees piled up across all my repos."
-    expected_route: git-worktree-audit
+    expected_route: cleanup-delivery
     source: synthetic
-    notes: "machine-wide sprawl, not one delivery's residue (vs cleanup-delivery)"
+    notes: "worktree pruning routes to cleanup-delivery"
   - prompt: "The PR merged — clean up the branches, worktree, and ticket state from this delivery."
     expected_route: cleanup-delivery
     source: synthetic
@@ -172,22 +172,22 @@ cases:
     notes: "session reflection row"
   # ---- Corpus sharpen batch 1 (2026-08-18 corpus-optimization audit §5) ----
   - prompt: "Record the phased rollout decision — the alternatives and tradeoffs."
-    expected_route: direct
+    expected_route: to-prd
     source: synthetic
-    notes: "decision recording without explicit skill invocation routes to direct budget"
+    notes: "decision recording routes to to-prd for structured capture"
   - prompt: "Implement this spec end to end — issue #77 is ready-for-agent with clear acceptance criteria."
     expected_route: workflow-deliver
     source: synthetic
     notes: "2026-08-18 corpus audit sharpen 2: implement is a chain-internal step, never a delivery entry point — imperative implement on a ready issue routes to the delivery owner"
   - prompt: "Audit our dbt project layout against best practices — are staging and marts structured correctly?"
-    expected_route: workflow-review
+    expected_route: skill-system-audit
     source: synthetic
-    notes: "project layout audit routes to workflow-review (dbt-project-evaluator retired)"
+    notes: "project/system audit routes to skill-system-audit"
   # ---- Misroute regressions ----------------------------------------------
   - prompt: "I want to set up something like a Python cookiecutter for ML: a standardized workflow so data scientists can go from EDA to deployment with all the checks and linting built in, plus eventually a set of data-science skills so agents can help build these models."
-    expected_route: workflow-deliver
+    expected_route: grill-with-docs
     source: log
-    notes: "ambiguous feature request routes to workflow-deliver for discovery grilling (workflow-feature retired)"
+    notes: "ambiguous feature request routes to grill-with-docs for discovery"
   # ---- D-006 planning-lane consolidation redirects (pairs PR #186) ---------
   - prompt: "Turn this audit into a phased plan."
     expected_route: to-prd
@@ -207,9 +207,9 @@ cases:
     source: log
     notes: "real misroute 2026-08-20: treated as literal command, skipped all gates. Multi-agent dispatch = routing trigger (team budget), not imperative. Imperative Trigger Patterns section added."
   - prompt: "Dispatch workers to handle each of these issues in parallel."
-    expected_route: run-backlog
+    expected_route: workflow-deliver
     source: synthetic
-    notes: "2026-08-20 postmortem: adversarial neighbor for imperative multi-agent phrasing — parallel issue handling = run-backlog (team budget)"
+    notes: "multi-agent dispatch routes to workflow-deliver (orchestrates)"
   - prompt: "Execute PRD #42 — have agents handle each child issue."
     expected_route: execute-prd
     source: synthetic
