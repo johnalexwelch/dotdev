@@ -1,0 +1,99 @@
+name: Verify Intent Evidence
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-intent-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR for intent evidence
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          set -euo pipefail
+
+          echo "Checking PR for intent evidence..."
+          echo "Title: $PR_TITLE"
+
+          # Get changed files
+          CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD" || echo "")
+
+          # Check if this PR requires intent evidence
+          REQUIRES_INTENT=0
+
+          # Pattern 1: Research docs added/modified
+          if echo "$CHANGED" | grep -qE '^docs/research/'; then
+            echo "📊 Research doc changes detected"
+            REQUIRES_INTENT=1
+          fi
+
+          # Pattern 2: Multi-file refactoring (>10 files in same directory)
+          FILE_COUNT=$(echo "$CHANGED" | wc -l)
+          if [[ "$FILE_COUNT" -gt 10 ]]; then
+            echo "📁 Multi-file changes detected ($FILE_COUNT files)"
+            REQUIRES_INTENT=1
+          fi
+
+          # Pattern 3: PR title/body mentions research/investigation/migration
+          PATTERN='\b(research|survey|investigate|migration'
+          PATTERN="${PATTERN}|refactor|comprehensive)\b"
+          if echo "$PR_TITLE $PR_BODY" | grep -qiE "$PATTERN"; then
+            echo "🔍 Research/investigation keywords detected"
+            REQUIRES_INTENT=1
+          fi
+
+          # If not required, pass
+          if [[ "$REQUIRES_INTENT" -eq 0 ]]; then
+            echo "✅ Intent not required for this PR type"
+            exit 0
+          fi
+
+          # Intent required — check for evidence
+          EVIDENCE_FOUND=0
+
+          # Method 1: Check for intent_id in handoff docs
+          if grep -rq "intent_id:" docs/executions/handoffs/ 2>/dev/null; then
+            echo "✅ Found intent_id in handoff doc"
+            EVIDENCE_FOUND=1
+          fi
+
+          # Method 2: Check PR body for "intent:" or "Intent:"
+          if echo "$PR_BODY" | grep -qiE '^\s*(intent|Intent ID):'; then
+            echo "✅ Found intent reference in PR body"
+            EVIDENCE_FOUND=1
+          fi
+
+          # Method 3: Check for .pi/intents/*.yaml additions
+          if echo "$CHANGED" | grep -qE '\.pi/intents/.*\.yaml$'; then
+            echo "✅ Found intent YAML file in changes"
+            EVIDENCE_FOUND=1
+          fi
+
+          if [[ "$EVIDENCE_FOUND" -eq 0 ]]; then
+            echo ""
+            echo "🛑 INTENT EVIDENCE REQUIRED"
+            echo ""
+            echo "This PR requires intent folding evidence because:"
+            echo "  - Research/investigation work, multi-file changes,"
+            echo "    or comprehensive task"
+            echo ""
+            echo "To fix, add ONE of:"
+            echo "  1. intent_id: <id> in docs/executions/handoffs/<file>.md"
+            echo "  2. Intent: <name> line in PR body"
+            echo "  3. Include .pi/intents/<name>.yaml in the PR"
+            echo ""
+            echo "Baseline: 2026-08-25 — enforcement ensures agents"
+            echo "  use cost/context guards"
+            exit 1
+          fi
+
+          echo "✅ Intent evidence verified"

@@ -9,7 +9,9 @@
     "build": "tsc",
     "test": "node --test",
     "lint": "eslint src test",
-    "validate-schema": "node dist/validator.js"
+    "validate-schema": "node dist/validator.js",
+    "audit": "node dist/audit.js",
+    "preflight": "node dist/preflight.js"
   },
   "keywords": [
     "pi",
