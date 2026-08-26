@@ -134,7 +134,7 @@ intent:
   id: research-deep-dive
   version: 1
   description: "Deep research with automatic folding"
-  
+
   fold:
     trigger: token_threshold
     threshold: 24000
@@ -146,7 +146,7 @@ intent:
       - intermediate_tool_outputs
       - reasoning_traces
     summary_budget: 2000
-    
+
   guards:
     max_context: 120000
     max_cost_usd: 5.00
@@ -192,7 +192,7 @@ intent:
   id: string                    # Required: unique identifier
   version: number               # Required: schema version (currently 1)
   description: string           # Required: human-readable purpose
-  
+
   fold:                         # Required: fold configuration
     trigger: string             # Required: token_threshold | turn_count | explicit
     threshold: number           # Required (token_threshold/turn_count only)
@@ -201,7 +201,7 @@ intent:
     custom_preserve: string[]   # Optional: custom categories
     custom_discard: string[]    # Optional: custom categories
     summary_budget: number      # Required: max tokens for summary (default: 2000)
-    
+
   guards:                       # Required: safety limits
     max_context: number         # Required: hard limit (blocks task)
     max_cost_usd: number        # Required: hard limit (blocks task)
@@ -299,7 +299,7 @@ intent:
   id: research-agent-architectures
   version: 1
   description: "Survey 2026 agent architectures with cost control"
-  
+
   fold:
     trigger: token_threshold
     threshold: 32000
@@ -311,7 +311,7 @@ intent:
       - intermediate_tool_outputs
       - reasoning_traces
     summary_budget: 2000
-    
+
   guards:
     max_context: 128000
     max_cost_usd: 3.00
@@ -333,7 +333,7 @@ intent:
   id: refactor-auth-layer
   version: 1
   description: "Multi-file auth refactor with loop detection"
-  
+
   fold:
     trigger: token_threshold
     threshold: 48000
@@ -348,7 +348,7 @@ intent:
       - "api_contracts"       # Keep interface definitions
       - "test_coverage_delta"  # Track test changes
     summary_budget: 2000
-    
+
   guards:
     max_context: 200000
     max_cost_usd: 8.00
@@ -370,7 +370,7 @@ intent:
   id: staged-migration
   version: 1
   description: "Database migration with manual checkpoints"
-  
+
   fold:
     trigger: explicit       # No auto-fold
     preserve:
@@ -381,7 +381,7 @@ intent:
       - intermediate_tool_outputs
       - reasoning_traces
     summary_budget: 2000
-    
+
   guards:
     max_context: 150000
     max_cost_usd: 10.00
@@ -504,21 +504,21 @@ export default function (pi: ExtensionAPI) {
   pi.on('session_start', (event, ctx) => {
     const intentPath = ctx.args.intent;
     if (!intentPath) return;
-    
+
     const intent = loadIntent(intentPath);
     validateIntent(intent);
-    
+
     ctx.session.intent = intent;
   });
-  
+
   pi.on('turn_complete', (event, ctx) => {
     const usage = ctx.getContextUsage();
     const guardResult = validateGuards(ctx.session.intent, usage);
-    
+
     if (!guardResult.passed) {
       throw new GuardViolationError(guardResult.violations);
     }
-    
+
     if (shouldFold(ctx.session.intent, usage)) {
       executeFold(ctx);
     }

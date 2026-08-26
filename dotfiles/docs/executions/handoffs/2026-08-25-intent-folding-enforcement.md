@@ -373,7 +373,7 @@ intent:
   id: dogfood-research
   version: 1
   description: "Dogfood pi-intent-folding during research session"
-  
+
 fold:
   trigger: token_threshold
   threshold: 32000
@@ -385,7 +385,7 @@ fold:
     - intermediate_tool_outputs
     - reasoning_traces
   summary_budget: 2000
-  
+
 guards:
   max_context: 128000
   max_cost_usd: 3.00

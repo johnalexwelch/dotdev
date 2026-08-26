@@ -1,9 +1,7 @@
 name: Verify Intent Evidence
-
 on:
   pull_request:
     types: [opened, synchronize, reopened]
-
 jobs:
   check-intent-evidence:
     runs-on: ubuntu-latest
@@ -12,7 +10,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Check PR for intent evidence
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}

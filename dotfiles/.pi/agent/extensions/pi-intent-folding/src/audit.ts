@@ -14,8 +14,8 @@
  * 3 = malformed telemetry
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 interface TelemetryEvent {
   timestamp: string;
@@ -38,9 +38,17 @@ interface AuditResult {
   violations: string[];
 }
 
-export function auditSession(sessionId: string, requireIntent = false): AuditResult {
-  const sessionDir = path.join(process.env.HOME || '', '.pi', 'sessions', sessionId);
-  const telemetryPath = path.join(sessionDir, 'intent-events.jsonl');
+export function auditSession(
+  sessionId: string,
+  requireIntent = false,
+): AuditResult {
+  const sessionDir = path.join(
+    process.env.HOME || "",
+    ".pi",
+    "sessions",
+    sessionId,
+  );
+  const telemetryPath = path.join(sessionDir, "intent-events.jsonl");
 
   // Check if telemetry exists
   if (!fs.existsSync(telemetryPath)) {
@@ -48,7 +56,7 @@ export function auditSession(sessionId: string, requireIntent = false): AuditRes
       return {
         compliant: false,
         exitCode: 1,
-        summary: '❌ No intent telemetry found (required)',
+        summary: "❌ No intent telemetry found (required)",
         details: {
           intent_loaded: false,
           guard_checks: 0,
@@ -56,14 +64,16 @@ export function auditSession(sessionId: string, requireIntent = false): AuditRes
           folds_executed: 0,
           events_total: 0,
         },
-        violations: ['No intent loaded (intent required for this session type)'],
+        violations: [
+          "No intent loaded (intent required for this session type)",
+        ],
       };
     }
 
     return {
       compliant: true,
       exitCode: 0,
-      summary: '✅ No intent used (not required)',
+      summary: "✅ No intent used (not required)",
       details: {
         intent_loaded: false,
         guard_checks: 0,
@@ -76,8 +86,8 @@ export function auditSession(sessionId: string, requireIntent = false): AuditRes
   }
 
   // Parse telemetry
-  const content = fs.readFileSync(telemetryPath, 'utf-8');
-  const lines = content.trim().split('\n');
+  const content = fs.readFileSync(telemetryPath, "utf-8");
+  const lines = content.trim().split("\n");
   const events: TelemetryEvent[] = [];
 
   for (const line of lines) {
@@ -87,7 +97,7 @@ export function auditSession(sessionId: string, requireIntent = false): AuditRes
       return {
         compliant: false,
         exitCode: 3,
-        summary: '❌ Malformed telemetry (parse error)',
+        summary: "❌ Malformed telemetry (parse error)",
         details: {
           intent_loaded: false,
           guard_checks: 0,
@@ -95,25 +105,29 @@ export function auditSession(sessionId: string, requireIntent = false): AuditRes
           folds_executed: 0,
           events_total: lines.length,
         },
-        violations: ['Telemetry JSONL parse error'],
+        violations: ["Telemetry JSONL parse error"],
       };
     }
   }
 
   // Analyze events
-  const intentLoaded = events.some((e) => e.event === 'intent_loaded');
-  const intentLoadFailed = events.some((e) => e.event === 'intent_load_failed');
-  const guardChecks = events.filter((e) => e.event === 'guard_check').length;
-  const guardViolations = events.filter((e) => e.event === 'guard_violation').length;
-  const foldsExecuted = events.filter((e) => e.event === 'fold_executed').length;
+  const intentLoaded = events.some((e) => e.event === "intent_loaded");
+  const intentLoadFailed = events.some((e) => e.event === "intent_load_failed");
+  const guardChecks = events.filter((e) => e.event === "guard_check").length;
+  const guardViolations = events.filter(
+    (e) => e.event === "guard_violation",
+  ).length;
+  const foldsExecuted = events.filter(
+    (e) => e.event === "fold_executed",
+  ).length;
 
-  const intentLoadedEvent = events.find((e) => e.event === 'intent_loaded');
+  const intentLoadedEvent = events.find((e) => e.event === "intent_loaded");
   const intentId = intentLoadedEvent?.intent_id as string | undefined;
 
   const violations: string[] = [];
 
   if (intentLoadFailed) {
-    violations.push('Intent load failed');
+    violations.push("Intent load failed");
   }
 
   if (guardViolations > 0) {
@@ -124,8 +138,8 @@ export function auditSession(sessionId: string, requireIntent = false): AuditRes
   const exitCode = compliant ? 0 : guardViolations > 0 ? 2 : 1;
 
   const summary = compliant
-    ? `✅ Session compliant (intent: ${intentId || 'none'}, ${foldsExecuted} fold(s))`
-    : `❌ Session non-compliant: ${violations.join(', ')}`;
+    ? `✅ Session compliant (intent: ${intentId || "none"}, ${foldsExecuted} fold(s))`
+    : `❌ Session non-compliant: ${violations.join(", ")}`;
 
   return {
     compliant,
@@ -146,7 +160,7 @@ export function auditSession(sessionId: string, requireIntent = false): AuditRes
 export function runAuditCLI(): void {
   const args = process.argv.slice(2);
 
-  if (args.length === 0 || args.includes('--help')) {
+  if (args.length === 0 || args.includes("--help")) {
     console.log(`
 Usage: npm run audit -- <session-id> [--require-intent]
 
@@ -169,14 +183,14 @@ Examples:
   }
 
   const sessionId = args[0];
-  const requireIntent = args.includes('--require-intent');
+  const requireIntent = args.includes("--require-intent");
 
   const result = auditSession(sessionId, requireIntent);
 
   console.log(result.summary);
-  console.log('');
-  console.log('Details:');
-  console.log(`  Intent loaded: ${result.details.intent_loaded ? '✅' : '❌'}`);
+  console.log("");
+  console.log("Details:");
+  console.log(`  Intent loaded: ${result.details.intent_loaded ? "✅" : "❌"}`);
   if (result.details.intent_id) {
     console.log(`  Intent ID: ${result.details.intent_id}`);
   }
@@ -186,8 +200,8 @@ Examples:
   console.log(`  Total events: ${result.details.events_total}`);
 
   if (result.violations.length > 0) {
-    console.log('');
-    console.log('Violations:');
+    console.log("");
+    console.log("Violations:");
     for (const violation of result.violations) {
       console.log(`  - ${violation}`);
     }
