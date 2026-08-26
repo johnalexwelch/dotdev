@@ -346,3 +346,4 @@ if [ $((PASS * 100)) -ge $((TOTAL * 85)) ]; then
 fi
 echo "RESULT: FAIL (< 85%)"
 exit 1
+# PR #225 threshold change
