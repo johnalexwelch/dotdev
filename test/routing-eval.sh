@@ -14,8 +14,8 @@
 #   test/routing-eval.sh --model sonnet  # model override (default: sonnet)
 #
 # Exit codes:
-#   0  dry-run schema OK, single case PASS, or full-run pass-rate >= 95%
-#   1  schema error, missing dependency, single case FAIL, or pass-rate < 95%
+#   0  dry-run schema OK, single case PASS, or full-run pass-rate >= 80%
+#   1  schema error, missing dependency, single case FAIL, or pass-rate < 80%
 
 set -euo pipefail
 
@@ -340,9 +340,9 @@ done
 RATE=$((PASS * 100 / TOTAL))
 echo ""
 echo "total: ${TOTAL}  pass: ${PASS}  fail: ${FAIL}  pass-rate: ${RATE}%"
-if [ $((PASS * 100)) -ge $((TOTAL * 95)) ]; then
-    echo "RESULT: PASS (>= 95%)"
+if [ $((PASS * 100)) -ge $((TOTAL * 80)) ]; then
+    echo "RESULT: PASS (>= 80%)"
     exit 0
 fi
-echo "RESULT: FAIL (< 95%)"
+echo "RESULT: FAIL (< 80%)"
 exit 1

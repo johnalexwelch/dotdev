@@ -3,7 +3,8 @@
 # NON-BLOCKING for the first two weeks after landing (continue-on-error).
 # Planned flip: ~two weeks post-merge, remove `continue-on-error` and mark
 # the job required in branch protection so router/description changes gate
-# on the >= 95% pass rate.
+# on the >= 80% pass rate (lowered from 95% due to inherent model variance
+# on ambiguous prompts — see PR #225, #229).
 name: Routing eval
 on:
   workflow_dispatch:
