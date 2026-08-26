@@ -52,7 +52,7 @@ intent:
   id: research-deep-dive
   version: 1
   description: "Deep research with automatic folding"
-  
+
   fold:
     trigger: token_threshold
     threshold: 24000
@@ -64,7 +64,7 @@ intent:
       - intermediate_tool_outputs
       - reasoning_traces
     summary_budget: 2000
-    
+
   guards:
     max_context: 120000
     max_cost_usd: 5.00

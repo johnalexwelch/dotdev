@@ -159,18 +159,18 @@ interface FoldMetrics {
   fold_id: string;
   timestamp: string;
   trigger: 'token_threshold' | 'turn_count' | 'explicit' | 'cost_ceiling';
-  
+
   // Token accounting
   pre_fold_tokens: number;
   post_fold_tokens: number;
   compression_ratio: number;
-  
+
   // Cost accounting
   input_cost_usd: number;   // tokens * model_input_rate
   output_cost_usd: number;  // tokens * model_output_rate
   cumulative_cost_usd: number;
   estimated_savings_usd: number;
-  
+
   // Quality signals
   preserved_intents: string[];
   discarded_categories: string[];
@@ -211,7 +211,7 @@ intents:
     description: "Fix bug Y discovered during X"
     status: suspended
     resumes_after: primary
-    
+
 fold:
   preserve_across_intents: [error_context, blocking_dependencies]
 ```
@@ -243,14 +243,14 @@ intent:
   id: string (required)
   version: number (required)
   description: string
-  
+
 fold:
   trigger: enum [tool_complete, token_threshold, turn_count, cost_ceiling, explicit]
   threshold: number (for token_threshold, turn_count, cost_ceiling)
   preserve: string[] (categories to keep)
   discard: string[] (categories to remove)
   summary_budget: number (max tokens for fold summary)
-  
+
 guards:
   max_context: number (hard ceiling)
   max_turns: number
@@ -298,11 +298,11 @@ policies:
   - name: budget-gate
     when: cost_usd > threshold
     action: require_approval | fold | terminate
-    
+
   - name: intent-drift
     when: similarity(current_action, declared_intent) < 0.7
     action: pause | confirm | reject
-    
+
   - name: auto-fold
     when: tokens > max_context * 0.8
     action: fold

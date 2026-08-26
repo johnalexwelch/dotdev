@@ -18,12 +18,14 @@ All 5 vertical slices implemented using test-driven development (RED → GREEN p
 ### Test Coverage by Domain
 
 #### Schema Foundation (12 tests)
+
 - Valid YAML with all trigger types: token_threshold, turn_count, explicit
 - Schema validation: required fields, trigger conditionals, array minimums
 - README example validates cleanly
 - Type exports available for TypeScript consumers
 
 #### Guards & Validation (14 tests)
+
 - Hard guards: context limit enforcement, cost ceiling enforcement
 - Soft guards: turn count warnings (non-fatal)
 - Guard boundary cases: exactly at limit, just over limit
@@ -32,6 +34,7 @@ All 5 vertical slices implemented using test-driven development (RED → GREEN p
 - YAML parsing with validation
 
 #### Validator CLI (10 tests)
+
 - File I/O: valid files pass, missing files reported
 - Error reporting: invalid trigger, missing fields, syntax errors
 - Suggestion-based error messages
@@ -40,6 +43,7 @@ All 5 vertical slices implemented using test-driven development (RED → GREEN p
 - Multiple errors reported
 
 #### Metrics & Telemetry (14 tests)
+
 - Compression ratio calculation (rounded to 3 decimals)
 - Cumulative cost calculation (input + output, rounded to 2 decimals)
 - Estimated savings calculation (tokens × avg model rate)
@@ -50,6 +54,7 @@ All 5 vertical slices implemented using test-driven development (RED → GREEN p
 - Preserves intent and category data
 
 #### Pi Extension (10 tests)
+
 - All public APIs exported and callable
 - Schema available for downstream use
 - Guard functions callable with typed parameters
