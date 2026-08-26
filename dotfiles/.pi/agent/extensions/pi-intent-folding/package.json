@@ -1,0 +1,34 @@
+{
+  "name": "pi-intent-folding",
+  "version": "0.1.0",
+  "description": "Deterministic intent folding for Pi agents - YAML schema + TypeScript guards + cost tracking",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test",
+    "lint": "eslint src test",
+    "validate-schema": "node dist/validator.js"
+  },
+  "keywords": [
+    "pi",
+    "extension",
+    "intent-folding",
+    "context-compression"
+  ],
+  "author": "alexwelch",
+  "license": "MIT",
+  "private": true,
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "yaml": "^2.3.0",
+    "zod": "^3.22.0"
+  }
+}
