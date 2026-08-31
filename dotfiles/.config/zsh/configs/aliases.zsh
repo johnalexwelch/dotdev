@@ -85,3 +85,8 @@ hdash() {
 # Pi with intent folding (cost guards)
 alias pii='pi --intent ~/.pi/intents/default.yaml'        # default: $10 cap, 48K fold
 alias piid='pi --intent ~/.pi/intents/delphi-work.yaml'   # delphi: $5 cap, 32K fold
+
+# tuneloop — AI session analytics
+# ponytail: explicit path avoids OpenCode auto-discovery bug in v0.8.1
+alias tl='tuneloop analyze ~/.claude/projects'
+alias tld='tuneloop dashboard'
