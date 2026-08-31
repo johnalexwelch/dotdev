@@ -63,7 +63,7 @@ Session grew unbounded → $20.
 
 ```bash
 cd ~/projects/delphi
-pi --intent ~/.pi/intents/delphi-work.yaml
+piid  # alias for: pi --intent ~/.pi/intents/delphi-work.yaml
 ```
 
 **Guards in delphi-work.yaml:**
